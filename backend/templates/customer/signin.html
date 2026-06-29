@@ -1,0 +1,499 @@
+{% include "base.html" %}
+
+
+{% load static %}
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" href="{% static 'accounts/images/vaipen-logo-ico.ico' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'customer/css/signin.css'%}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+   
+    <title>{% block title %}Sign In - PIELAM{% endblock %}</title>
+
+        <style>
+    /* ============================================================
+       DESIGN SYSTEM TOKENS
+    ============================================================ */
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --ink:          #0f0f0f;
+        --ink-2:        #3a3a3a;
+        --ink-3:        #6b6b6b;
+        --ink-4:        #9b9b9b;
+        --surface:      #ffffff;
+        --surface-2:    #f5f5f3;
+        --surface-3:    #eeede9;
+        --border:       #e4e3df;
+        --border-2:     #d0cfc9;
+        --accent:       #c8102e;
+        --accent-2:     #a00d24;
+        --gold:         #b8860b;
+        --gold-2:       #8b6508;
+        --green:        #1a6b3a;
+        --green-bg:     #edf7f1;
+        --warn:         #92400e;
+        --warn-bg:      #fffbeb;
+        --blue:         #1e3a8a;
+        --blue-light:   #3b82f6;
+
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --primary-light:    #1976d2;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-secondary:     #f7fafc;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
+        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
+        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
+        --font-display: 'DM Serif Display', 'Playfair Display', serif;
+        --font-body:    'DM Sans', 'Outfit', sans-serif;
+
+        --nav-h:    64px;
+        --r-sm:     8px;
+        --r-md:     14px;
+        --r-lg:     20px;
+        --r-xl:     28px;
+        --ease:     cubic-bezier(.4,0,.2,1);
+        --transition-fast: .15s ease;
+        --transition-base: .25s ease;
+        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+        --bottom-bar-height: 68px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+        padding-bottom: var(--bottom-bar-height);
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+
+    .logo-section { display: flex; align-items: center; }
+
+    .logo-left {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .logo-brand {
+        margin-left: 0.5rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+    }
+
+    .logo-icon {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-dark);
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+        transition: all var(--transition-slow);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .logo-icon:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(212,175,55,0.55);
+    }
+
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+        .product-grid { grid-template-columns: 1fr; gap: 28px; }
+        .product-title { font-size: 1.7rem; }
+    }
+
+    @media (max-width: 768px) {
+        :root { --nav-h: 56px; }
+        .product-detail-wrapper { padding: 16px 14px 100px; }
+        .product-container { padding: 20px; border-radius: var(--r-lg); }
+        .product-title { font-size: 1.5rem; }
+        
+        .original-price {  font-size: 1.2rem; }
+        .offer-price { font-size: 1.8rem; }
+        .order-section { display: none; }
+        .mob-order-bar { display: flex; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .related-products-section, .dealer-products-section { padding: 20px; }
+        .tab-panel { padding: 20px 0 0; }
+        .dealer-header { flex-direction: column; text-align: center; }
+        .dealer-stats { grid-template-columns: 1fr; }
+        .dealer-details-grid { grid-template-columns: 1fr; }
+        .contact-buttons { grid-template-columns: 1fr; }
+
+        .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .product-container { padding: 14px; }
+        .product-title { font-size: 1.3rem; }
+        .trust-row { gap: 5px; }
+        .trust-item span { font-size: .65rem; }
+        .products-grid { grid-template-columns: repeat(2,1fr); }
+        .spec-row { grid-template-columns: 40% 60%; }
+    }
+
+    @media print {
+        .menu-top, .mob-order-bar { display: none !important; }
+        body { padding-bottom: 0; background: white; }
+        body::before { display: none; }
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+        </style>
+</head>
+
+<body>
+
+
+<!-- Main Content Area -->
+<main class="main-content">
+    <div class="auth-container">
+        
+        <!-- Left Side - Branding & Info -->
+        <div class="auth-branding">
+            <div class="branding-content">
+                <div class="brand-logo-large">
+                    <div class="logo-icon-large">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h1 class="brand-title">PIELAM</h1>
+                </div>
+                
+                <div class="brand-description">
+                    <h2 class="welcome-title">
+                        Welcome <span class="title-accent">Back</span>
+                    </h2>
+                    <p class="welcome-text">
+                        Sign in to access your account and continue your journey with premium electronics marketplace.
+                    </p>
+                </div>
+
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Secure & Safe</h3>
+                            <p>Your data is protected with industry-standard encryption</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Fast & Easy</h3>
+                            <p>Quick sign-in process to get you started immediately</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Premium Products</h3>
+                            <p>Access to thousands of verified electronic products</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="decoration-circles">
+                    <div class="circle circle-1"></div>
+                    <div class="circle circle-2"></div>
+                    <div class="circle circle-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Sign In Form -->
+        <div class="auth-form-section">
+            <div class="form-wrapper">
+                
+                <!-- Form Header -->
+                <div class="form-header">
+                    <h2 class="form-title">
+                        <span class="title-accent">Sign</span> In
+                    </h2>
+                    <p class="form-subtitle">Enter your credentials to access your account</p>
+                </div>
+
+                <!-- Messages Display -->
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <div class="alert-icon">
+                                {% if message.tags == 'success' %}
+                                    <i class="fa-solid fa-check-circle"></i>
+                                {% elif message.tags == 'error' %}
+                                    <i class="fa-solid fa-exclamation-circle"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-info-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div class="alert-content">
+                                <p>{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Social Sign In Options -->
+                <div class="social-signin">
+                    <a href="{% provider_login_url 'google' %}" class="btn-social google">
+                        <i class="fa-brands fa-google"></i>
+                        <span>Continue with Google</span>
+                    </a>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider">
+                    <span class="divider-text">OR SIGN IN WITH EMAIL</span>
+                </div>
+
+                <!-- Sign In Form -->
+                <form action="" method="post" class="auth-form" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Email Input -->
+                    <div class="form-group">
+                        <label for="email_or_phone" class="form-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Email Address
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="text"
+                                id="email_or_phone"
+                                name="email_or_phone"
+                                class="form-input"
+                                placeholder="Enter your email address"
+                                value="{{ request.POST.email_or_phone|default:'' }}"
+                                required
+                                autocomplete="username"
+                            >
+                            <div class="input-icon">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                        </div>
+                        <span id="email_or_phone-feedback" class="field-feedback" aria-live="polite"></span>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fa-solid fa-lock"></i>
+                            Password
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-input"
+                                placeholder="Enter your password"
+                                required
+                                autocomplete="current-password"
+                                minlength="8"
+                            >
+                            <div class="input-icon">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <button type="button" class="toggle-password" onclick="togglePassword()">
+                                <i class="fa-solid fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <div id="password-feedback" class="field-feedback error" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember_me" id="remember_me">
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">Remember me</span>
+                        </label>
+                        <a href="{% url 'customer:forgot-password' %}" class="forgot-link">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- reCAPTCHA -->
+                    <div class="recaptcha-wrapper">
+                        <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary btn-submit">
+                            <span>Sign In</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Sign Up Link -->
+                <div class="form-footer">
+                    <p class="footer-text">
+                        Don't have an account? 
+                        <a href="{% url 'customer:signup' %}" class="signup-link">
+                            Sign Up <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</main>
+
+
+<script>
+// Toggle password visibility
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+// Email validation feedback
+const emailInput = document.getElementById('email_or_phone');
+const emailFeedback = document.getElementById('email_or_phone-feedback');
+
+emailInput.addEventListener('blur', function() {
+    const value = this.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (value === '') {
+        emailFeedback.textContent = '';
+        emailFeedback.className = 'field-feedback';
+    } else if (emailPattern.test(value)) {
+        emailFeedback.textContent = '✓ Valid email';
+        emailFeedback.className = 'field-feedback success';
+    } else {
+        emailFeedback.textContent = '⚠ Please enter a valid email address';
+        emailFeedback.className = 'field-feedback error';
+    }
+});
+
+// Password validation feedback
+const passwordInput = document.getElementById('password');
+const passwordFeedback = document.getElementById('password-feedback');
+
+passwordInput.addEventListener('input', function() {
+    const value = this.value;
+    
+    if (value.length === 0) {
+        passwordFeedback.textContent = '';
+    } else if (value.length < 8) {
+        passwordFeedback.textContent = '⚠ Password must be at least 8 characters';
+        passwordFeedback.className = 'field-feedback error';
+    } else {
+        passwordFeedback.textContent = '✓ Password length is good';
+        passwordFeedback.className = 'field-feedback success';
+    }
+});
+
+// Form submit loading state
+document.querySelector('.auth-form').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('.btn-submit');
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+});
+
+// Auto-hide messages after 5 seconds
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        alert.style.animation = 'slideOutRight 0.4s ease-out forwards';
+        setTimeout(() => alert.remove(), 400);
+    });
+}, 5000);
+</script>
+
+</body>
+</html>

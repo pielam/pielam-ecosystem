@@ -1,0 +1,185 @@
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEARCH BAR + LIVE DROPDOWN
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  /* FIX-10 (search bar): removed hard-coded `padding: 0.5rem 15rem`
+     which broke layout on narrower screens. Now uses responsive
+     padding consistent with the rest of the page. */
+
+  .search-section {
+    width:100%; padding: 0.5rem 1.5rem;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    top: var(--header-h);
+    z-index: 999;
+    box-shadow: 0 2px 8px rgba(10,37,64,.08);
+  }
+
+  .search-wrap {
+    max-width:900px;
+    width: 100%;
+    background:#fff;
+    border:1px solid blue;
+    border-radius:12px; display:flex;
+    align-items:stretch;
+    overflow:hidden;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .search-wrap:focus-within {
+    border-color:var(--accent-gold);
+  }
+  .search-input {
+    flex:1;
+    background:transparent;
+    border:none; outline:none;
+    font-family: 'roboto';
+    font-size:.95rem; color:#1a202c;
+    padding:.75rem 1rem; letter-spacing:.3px; min-width:0;
+  }
+  .search-input::placeholder { color:#a0aec0; }
+  .search-clear-btn {
+    display:none; align-items:center; justify-content:center;
+    border:none; background:transparent; color:#a0aec0;
+    padding:0 .75rem; cursor:pointer; font-size:.85rem;
+    transition:color var(--transition-fast); flex-shrink:0;
+  }
+  .search-clear-btn:hover { color:#e94560; }
+  .search-submit {
+    border:none; cursor:pointer;
+    background: whitesmoke;
+    color: black;
+    padding:0 1.75rem;
+    font-family:var(--font-body); font-size:.85rem; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase;
+    transition:background .2s, color .2s; flex-shrink:0;
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .search-submit:hover  { background:linear-gradient(135deg,#0d47a1 0%,#1976d2 100%); color:#ffb300; }
+  .search-submit:active { transform:scale(.98); }
+
+  /* Dropdown */
+  .search-dropdown {
+    position:fixed; z-index:2000;
+    top:calc(var(--header-h) + 58px); left:50%; transform:translateX(-50%);
+    width:min(860px,calc(100vw - 2.5rem));
+    background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+    max-height:420px; overflow-y:auto; display:none;
+    box-shadow:0 16px 48px rgba(10,37,64,.15);
+    scrollbar-width:thin; scrollbar-color:var(--border-2) transparent;
+  }
+  .search-dropdown.open { display:block; animation:dropIn .2s ease; }
+  @keyframes dropIn {
+    from { opacity:0; transform:translateX(-50%) translateY(-8px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+  .search-result-item {
+    display:flex; align-items:center; gap:1rem; padding:.875rem 1.25rem;
+    text-decoration:none; color:inherit; border-bottom:1px solid #f0f0f0;
+    transition:background .15s;
+  }
+  .search-result-item:hover      { background:#f7fafc; }
+  .search-result-item:last-child { border-bottom:none; }
+  .sri-img   { width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid #e2e8f0; flex-shrink:0; }
+  .sri-info  { flex:1; min-width:0; }
+  .sri-name  { font-weight:600; font-size:.9rem; color:#1a202c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sri-meta  { font-size:.78rem; color:#718096; margin-top:.1rem; }
+  .sri-price { font-size:.85rem; color:#0d47a1; font-weight:700; flex-shrink:0; }
+  .search-empty, .search-loader {
+    display:flex; flex-direction:column; align-items:center;
+    gap:.75rem; padding:2rem; color:#718096;
+  }
+  .spinner {
+    width:32px; height:32px;
+    border:2px solid #e2e8f0; border-top-color:#0d47a1;
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Search responsive */
+  @media (max-width:1024px) { .search-section{padding:.45rem 1.25rem;} }
+  @media (max-width:768px)  { .search-section{padding:.4rem 1rem;} .search-submit span{display:none;} }
+  @media (max-width:600px)  { .search-section{padding:.35rem .75rem;} .search-input{font-size:.875rem;padding:.625rem .875rem;} .search-submit{padding:0 1rem;font-size:.75rem;letter-spacing:1px;} }
+  @media (max-width:480px)  { .search-section{padding:.3rem .625rem;} .search-input{font-size:.825rem;padding:.5rem .75rem;} .search-submit{padding:0 .875rem;letter-spacing:.8px;} .search-dropdown{width:calc(100vw - 1.25rem);} .sri-img{width:40px;height:40px;} }
+  @media (max-width:360px)  { .search-section{padding:.25rem .5rem;} .search-input{font-size:.8rem;padding:.45rem .625rem;} .search-submit{padding:0 .75rem;} }
+  @media (max-width:320px)  { .search-section{padding:.2rem .375rem;} .search-input{font-size:.75rem;padding:.4rem .5rem;} .search-submit{padding:0 .625rem;letter-spacing:0;} }
+</style>
+
+  <div class="search-section">
+    <form method="GET" action="{% url 'ponno:discovery_engine' %}" class="search-wrap">
+      <input type="text" id="q" name="q" value="{{ query }}"
+             class="search-input"
+             placeholder="Search products, brands, categories..."
+             autocomplete="off" aria-label="Search products">
+      <button type="button" class="search-clear-btn" id="srchClear" aria-label="Clear">
+        <i class="fa-solid fa-times"></i>
+      </button>
+      <button type="submit" class="search-submit" aria-label="Submit search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </form>
+  </div>
+
+</div><!-- /sticky-header -->
+
+<div id="srchDrop" class="search-dropdown" role="listbox" aria-label="Search suggestions"></div>
+
+<script>
+  /* ── Search dropdown JS ── */
+  (function () {
+    const inp  = document.getElementById('q');
+    const clr  = document.getElementById('srchClear');
+    const drop = document.getElementById('srchDrop');
+    let timer;
+
+    function show() { drop.classList.add('open'); }
+    function hide() { drop.classList.remove('open'); }
+
+    inp.addEventListener('input', function () {
+      clr.style.display = this.value ? 'flex' : 'none';
+      clearTimeout(timer);
+      if (!this.value.trim()) { hide(); return; }
+      drop.innerHTML = '<div class="search-loader"><div class="spinner"></div></div>';
+      show();
+      timer = setTimeout(() => doSearch(this.value.trim()), 300);
+    });
+
+    clr.addEventListener('click', () => { inp.value=''; clr.style.display='none'; hide(); inp.focus(); });
+
+    function doSearch(q) {
+      fetch('/ajax/search/?q=' + encodeURIComponent(q))
+        .then(r => r.json())
+        .then(data => {
+          if (!data.length) {
+            drop.innerHTML = '<div class="search-empty"><i class="fa-solid fa-box-open"></i><span>No products found</span></div>';
+            return;
+          }
+          drop.innerHTML = data.map(p => `
+            <a class="search-result-item" href="/product/${p.slug}/">
+              <img class="sri-img" src="${p.image}" alt="${p.name}" onerror="this.src='/static/defaults/default-product.png'">
+              <div class="sri-info">
+                <div class="sri-name">${p.name}</div>
+                <div class="sri-meta">${p.category} · ${p.brand}</div>
+              </div>
+              <span class="sri-price">${p.selling_price} Tk</span>
+            </a>`).join('');
+        })
+        .catch(() => {
+          drop.innerHTML = '<div class="search-empty"><i class="fa-solid fa-circle-exclamation"></i><span>Error fetching results</span></div>';
+        });
+    }
+
+    let ki = -1;
+    inp.addEventListener('keydown', e => {
+      const items = drop.querySelectorAll('.search-result-item');
+      if      (e.key==='ArrowDown') { e.preventDefault(); ki=Math.min(ki+1,items.length-1); items[ki]?.focus(); }
+      else if (e.key==='ArrowUp')   { e.preventDefault(); ki=Math.max(ki-1,-1); ki===-1?inp.focus():items[ki]?.focus(); }
+      else if (e.key==='Escape')    { hide(); inp.focus(); ki=-1; }
+    });
+    document.addEventListener('click', e => { if (!drop.contains(e.target) && e.target!==inp) hide(); });
+  })();
+</script>
+
+

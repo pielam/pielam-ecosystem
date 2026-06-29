@@ -1,0 +1,89 @@
+from django.urls import path
+from apps.ponno.views.home import HomeEngineView
+from apps.ponno.views.product_upload import ProductUploadView
+from apps.ponno.views.search import AjaxSearchView
+from apps.ponno.views.product_detail import ProductDetailView
+from apps.ponno.views.brand_products import BrandProducts
+from apps.ponno.views.category_products import CategoryProducts
+from apps.ponno.views.discovery_engine_views import DiscoveryEngineView
+# Import other views similarly if needed
+from apps.ponno.views.product_edit import ProductEditView  # ← add this
+from apps.ponno.views.brand_list import BrandListView  # ← add this
+from apps.ponno.views.category_list import CategoryListView  # ← add this
+from apps.ponno.views.sub_categories_for_category import sub_categories_for_category
+
+from django.urls import path
+from apps.ponno.views.product_actions import (
+    WishlistToggleView,
+    ProductRatingView,
+    UserProductRatingView,
+    ProductShareView,
+)
+from apps.ponno.views.brand_create import BrandCreateView
+from apps.ponno.views.brand_edit import BrandEditView
+
+from apps.ponno.views.category_create import CategoryCreateView
+from apps.ponno.views.category_edit import CategoryEditView
+
+from apps.ponno.views.sub_category_create import SubCategoryCreateView
+from apps.ponno.views.sub_category_edit import SubCategoryEditView
+
+
+app_name = "ponno"  # Namespace for URL names
+
+urlpatterns = [
+    path('', DiscoveryEngineView, name='discovery_engine'),
+    path('home', HomeEngineView, name='home'),
+
+
+    path('product/upload/', ProductUploadView, name='product_upload'),
+    path('product/<slug:slug>/edit/', ProductEditView, name='product_edit'),  # ← add this
+
+
+    path('ajax/search/', AjaxSearchView, name='ajax_search'),
+    path('product/<slug:slug>/', ProductDetailView, name='product_detail'),
+
+    path('brand/create/', BrandCreateView, name='brand_create'),
+    path('brand/<slug:slug>/edit/', BrandEditView, name='brand_edit'),  # ← add this
+    path('brand/', BrandListView, name='brand_list'),
+    path('brand/<slug:brand_slug>/', BrandProducts, name='brand_products'),
+
+    path('category/', CategoryListView, name='category_list'),
+    path('category/create/', CategoryCreateView, name='category_create'),
+    path('category/<slug:slug>/edit/', CategoryEditView, name='category_edit'),
+    path('category/<slug:category_slug>/', CategoryProducts, name='category_products'),
+
+
+    path("sub-categories/", sub_categories_for_category, name="sub_categories_for_category"),
+
+    #path('category/', CategoryListView, name='category_list'),
+    path('sub_categories/create/', SubCategoryCreateView, name='subcategory_create'),
+    path('sub_categories/<slug:slug>/edit/', SubCategoryEditView, name='subcategory_edit'),
+    #path('category/<slug:category_slug>/', CategoryProducts, name='category_products'),
+
+    # Wishlist
+    path(
+        'wishlist/toggle/<uuid:product_id>/',
+        WishlistToggleView,
+        name='wishlist_toggle',
+    ),
+
+    # Rating — POST to submit, GET to fetch user's existing rating
+    path(
+        'rate/<uuid:product_id>/',
+        ProductRatingView,
+        name='rate_product',
+    ),
+    path(
+        'rate/<uuid:product_id>/me/',
+        UserProductRatingView,
+        name='user_product_rating',
+    ),
+
+    path(
+        'share/<uuid:product_id>/',
+        ProductShareView,
+        name='share_product',
+    ),
+  
+]

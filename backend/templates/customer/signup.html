@@ -1,0 +1,619 @@
+{% include "base.html" %}
+
+
+{% load static %}
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" href="{% static 'accounts/images/vaipen-logo-ico.ico' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'customer/css/signup.css'%}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+   
+    <title>{% block title %}Sign Up - PIELAM {% endblock %}</title>
+
+    <style>
+    /* ============================================================
+       DESIGN SYSTEM TOKENS
+    ============================================================ */
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --ink:          #0f0f0f;
+        --ink-2:        #3a3a3a;
+        --ink-3:        #6b6b6b;
+        --ink-4:        #9b9b9b;
+        --surface:      #ffffff;
+        --surface-2:    #f5f5f3;
+        --surface-3:    #eeede9;
+        --border:       #e4e3df;
+        --border-2:     #d0cfc9;
+        --accent:       #c8102e;
+        --accent-2:     #a00d24;
+        --gold:         #b8860b;
+        --gold-2:       #8b6508;
+        --green:        #1a6b3a;
+        --green-bg:     #edf7f1;
+        --warn:         #92400e;
+        --warn-bg:      #fffbeb;
+        --blue:         #1e3a8a;
+        --blue-light:   #3b82f6;
+
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --primary-light:    #1976d2;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-secondary:     #f7fafc;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
+        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
+        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
+        --font-display: 'DM Serif Display', 'Playfair Display', serif;
+        --font-body:    'DM Sans', 'Outfit', sans-serif;
+
+        --nav-h:    64px;
+        --r-sm:     8px;
+        --r-md:     14px;
+        --r-lg:     20px;
+        --r-xl:     28px;
+        --ease:     cubic-bezier(.4,0,.2,1);
+        --transition-fast: .15s ease;
+        --transition-base: .25s ease;
+        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+        --bottom-bar-height: 68px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+        padding-bottom: var(--bottom-bar-height);
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+
+    .logo-section { display: flex; align-items: center; }
+
+    .logo-left {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .logo-brand {
+        margin-left: 0.5rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+    }
+
+    .logo-icon {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-dark);
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+        transition: all var(--transition-slow);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .logo-icon:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(212,175,55,0.55);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+        .product-grid { grid-template-columns: 1fr; gap: 28px; }
+        .product-title { font-size: 1.7rem; }
+    }
+
+    @media (max-width: 768px) {
+        :root { --nav-h: 56px; }
+        .product-detail-wrapper { padding: 16px 14px 100px; }
+        .product-container { padding: 20px; border-radius: var(--r-lg); }
+        .product-title { font-size: 1.5rem; }
+        
+        .original-price {  font-size: 1.2rem; }
+        .offer-price { font-size: 1.8rem; }
+        .order-section { display: none; }
+        .mob-order-bar { display: flex; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .related-products-section, .dealer-products-section { padding: 20px; }
+        .tab-panel { padding: 20px 0 0; }
+        .dealer-header { flex-direction: column; text-align: center; }
+        .dealer-stats { grid-template-columns: 1fr; }
+        .dealer-details-grid { grid-template-columns: 1fr; }
+        .contact-buttons { grid-template-columns: 1fr; }
+
+        .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .product-container { padding: 14px; }
+        .product-title { font-size: 1.3rem; }
+        .trust-row { gap: 5px; }
+        .trust-item span { font-size: .65rem; }
+        .products-grid { grid-template-columns: repeat(2,1fr); }
+        .spec-row { grid-template-columns: 40% 60%; }
+    }
+
+    @media print {
+
+        body { padding-bottom: 0; background: white; }
+        body::before { display: none; }
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+        </style>
+</head>
+
+<body>
+
+
+<!-- Main Content Area -->
+<main class="main-content">
+    <div class="auth-container">
+        
+        <!-- Left Side - Branding & Info -->
+        <div class="auth-branding">
+            <div class="branding-content">
+                <div class="brand-logo-large">
+                    <div class="logo-icon-large">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h1 class="brand-title">PIELAM</h1>
+                </div>
+                
+                <div class="brand-description">
+                    <h2 class="welcome-title">
+                        Join <span class="title-accent">PIELAM</span>
+                    </h2>
+                    <p class="welcome-text">
+                        Create your account and start your journey with the premium electronics marketplace. Access thousands of verified products.
+                    </p>
+                </div>
+
+                <div class="features-list">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Quick Registration</h3>
+                            <p>Simple sign-up process - get started in less than 2 minutes</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Secure Account</h3>
+                            <p>Your information is protected with enterprise-grade security</p>
+                        </div>
+                    </div>
+
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-crown"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Premium Access</h3>
+                            <p>Unlock exclusive deals and verified seller marketplace</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="benefits-banner">
+                    <div class="banner-icon">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <div class="banner-text">
+                        <h4>Special Offer</h4>
+                        <p>Get 10% off your first purchase when you sign up today!</p>
+                    </div>
+                </div>
+
+                <div class="decoration-circles">
+                    <div class="circle circle-1"></div>
+                    <div class="circle circle-2"></div>
+                    <div class="circle circle-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Sign Up Form -->
+        <div class="auth-form-section">
+            <div class="form-wrapper">
+                
+                <!-- Form Header -->
+                <div class="form-header">
+                    <h2 class="form-title">
+                        <span class="title-accent">Create</span> Account
+                    </h2>
+                    <p class="form-subtitle">Fill in your details to get started</p>
+                </div>
+
+                <!-- Messages Display -->
+                {% if messages %}
+                <div class="messages-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <div class="alert-icon">
+                                {% if message.tags == 'success' %}
+                                    <i class="fa-solid fa-check-circle"></i>
+                                {% elif message.tags == 'error' %}
+                                    <i class="fa-solid fa-exclamation-circle"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-info-circle"></i>
+                                {% endif %}
+                            </div>
+                            <div class="alert-content">
+                                <p>{{ message }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Social Sign Up Options -->
+                <div class="social-signin">
+                    <a href="{% provider_login_url 'google' %}" class="btn-social google">
+                        <i class="fa-brands fa-google"></i>
+                        <span>Sign Up with Google</span>
+                    </a>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider">
+                    <span class="divider-text">OR SIGN UP WITH EMAIL</span>
+                </div>
+
+                <!-- Sign Up Form -->
+                <form action="" method="post" class="auth-form" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Email Input -->
+                    <div class="form-group">
+                        <label for="email_or_phone" class="form-label">
+                            <i class="fa-solid fa-envelope"></i>
+                            Email Address
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="text"
+                                id="email_or_phone"
+                                name="email_or_phone"
+                                class="form-input"
+                                placeholder="Enter your email address"
+                                value="{{ request.POST.email_or_phone|default:'' }}"
+                                required
+                                autocomplete="username"
+                            >
+                            <div class="input-icon">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                        </div>
+                        <span id="email_or_phone-feedback" class="field-feedback" aria-live="polite"></span>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="form-group">
+                        <label for="password1" class="form-label">
+                            <i class="fa-solid fa-lock"></i>
+                            Password
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="password1"
+                                name="password1"
+                                class="form-input"
+                                placeholder="Create a strong password"
+                                required
+                                autocomplete="new-password"
+                                minlength="8"
+                            >
+                            <div class="input-icon">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <button type="button" class="toggle-password" onclick="togglePassword('password1', 'toggleIcon1')">
+                                <i class="fa-solid fa-eye" id="toggleIcon1"></i>
+                            </button>
+                        </div>
+                        <div id="password-feedback" class="field-feedback" aria-live="polite"></div>
+                        
+                        <!-- Password Strength Indicator -->
+                        <div class="password-strength">
+                            <div class="strength-bars">
+                                <div class="strength-bar" id="bar1"></div>
+                                <div class="strength-bar" id="bar2"></div>
+                                <div class="strength-bar" id="bar3"></div>
+                                <div class="strength-bar" id="bar4"></div>
+                            </div>
+                            <span class="strength-text" id="strength-text">Password strength</span>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Input -->
+                    <div class="form-group">
+                        <label for="password2" class="form-label">
+                            <i class="fa-solid fa-lock"></i>
+                            Confirm Password
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input
+                                type="password"
+                                id="password2"
+                                name="password2"
+                                class="form-input"
+                                placeholder="Re-enter your password"
+                                required
+                                autocomplete="new-password"
+                                minlength="8"
+                            >
+                            <div class="input-icon">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <button type="button" class="toggle-password" onclick="togglePassword('password2', 'toggleIcon2')">
+                                <i class="fa-solid fa-eye" id="toggleIcon2"></i>
+                            </button>
+                        </div>
+                        <div id="confirm-password-feedback" class="field-feedback" aria-live="polite"></div>
+                    </div>
+
+                    <!-- Terms & Conditions -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="terms" id="terms" required>
+                            <span class="checkbox-custom"></span>
+                            <span class="checkbox-text">
+                                I agree to the <a href="#" class="link-accent">Terms & Conditions</a> and <a href="#" class="link-accent">Privacy Policy</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- reCAPTCHA -->
+                    <div class="recaptcha-wrapper">
+                        <div class="g-recaptcha" data-sitekey="{{ RECAPTCHA_SITE_KEY }}"></div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary btn-submit">
+                            <span>Create Account</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Sign In Link -->
+                <div class="form-footer">
+                    <p class="footer-text">
+                        Already have an account? 
+                        <a href="{% url 'customer:signin' %}" class="signin-link">
+                            Sign In <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</main>
+
+
+
+<script>
+// Toggle password visibility
+function togglePassword(inputId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleIcon = document.getElementById(iconId);
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+// Email validation feedback
+const emailInput = document.getElementById('email_or_phone');
+const emailFeedback = document.getElementById('email_or_phone-feedback');
+
+emailInput.addEventListener('blur', function() {
+    const value = this.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (value === '') {
+        emailFeedback.textContent = '';
+        emailFeedback.className = 'field-feedback';
+    } else if (emailPattern.test(value)) {
+        emailFeedback.textContent = '✓ Valid email';
+        emailFeedback.className = 'field-feedback success';
+    } else {
+        emailFeedback.textContent = '⚠ Please enter a valid email address';
+        emailFeedback.className = 'field-feedback error';
+    }
+});
+
+// Password strength checker
+const password1Input = document.getElementById('password1');
+const passwordFeedback = document.getElementById('password-feedback');
+const strengthText = document.getElementById('strength-text');
+
+password1Input.addEventListener('input', function() {
+    const value = this.value;
+    const strength = calculatePasswordStrength(value);
+    
+    // Reset bars
+    for (let i = 1; i <= 4; i++) {
+        const bar = document.getElementById(`bar${i}`);
+        bar.className = 'strength-bar';
+    }
+    
+    // Update bars based on strength
+    if (strength.score > 0) {
+        for (let i = 1; i <= strength.score; i++) {
+            const bar = document.getElementById(`bar${i}`);
+            bar.classList.add(strength.class);
+        }
+    }
+    
+    // Update text
+    if (value.length === 0) {
+        strengthText.textContent = 'Password strength';
+        strengthText.className = 'strength-text';
+        passwordFeedback.textContent = '';
+    } else if (value.length < 8) {
+        strengthText.textContent = 'Too short';
+        strengthText.className = 'strength-text weak';
+        passwordFeedback.textContent = '⚠ Password must be at least 8 characters';
+        passwordFeedback.className = 'field-feedback error';
+    } else {
+        strengthText.textContent = strength.text;
+        strengthText.className = `strength-text ${strength.class}`;
+        passwordFeedback.textContent = `✓ ${strength.feedback}`;
+        passwordFeedback.className = 'field-feedback success';
+    }
+});
+
+function calculatePasswordStrength(password) {
+    let score = 0;
+    let feedback = '';
+    
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^a-zA-Z0-9]/.test(password)) score++;
+    
+    if (score <= 1) {
+        return { score: 1, class: 'weak', text: 'Weak', feedback: 'Password is weak' };
+    } else if (score === 2) {
+        return { score: 2, class: 'fair', text: 'Fair', feedback: 'Password is fair' };
+    } else if (score === 3) {
+        return { score: 3, class: 'good', text: 'Good', feedback: 'Password is good' };
+    } else {
+        return { score: 4, class: 'strong', text: 'Strong', feedback: 'Password is strong!' };
+    }
+}
+
+// Confirm password validation
+const password2Input = document.getElementById('password2');
+const confirmFeedback = document.getElementById('confirm-password-feedback');
+
+password2Input.addEventListener('input', function() {
+    const password1 = password1Input.value;
+    const password2 = this.value;
+    
+    if (password2.length === 0) {
+        confirmFeedback.textContent = '';
+        confirmFeedback.className = 'field-feedback';
+    } else if (password1 === password2) {
+        confirmFeedback.textContent = '✓ Passwords match';
+        confirmFeedback.className = 'field-feedback success';
+    } else {
+        confirmFeedback.textContent = '⚠ Passwords do not match';
+        confirmFeedback.className = 'field-feedback error';
+    }
+});
+
+// Form submit loading state
+document.querySelector('.auth-form').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('.btn-submit');
+    const termsCheckbox = document.getElementById('terms');
+    
+    if (!termsCheckbox.checked) {
+        e.preventDefault();
+        alert('Please agree to the Terms & Conditions and Privacy Policy');
+        return;
+    }
+    
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+});
+
+// Auto-hide messages after 5 seconds
+setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        alert.style.animation = 'slideOutRight 0.4s ease-out forwards';
+        setTimeout(() => alert.remove(), 400);
+    });
+}, 5000);
+</script>
+
+</body>
+</html>

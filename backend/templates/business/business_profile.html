@@ -1,0 +1,1796 @@
+{% include "base.html" %}
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title> Business-Profile | PIELAM</title>
+
+<style>
+
+/* ═══════════════════════════════════════════════
+       GLOBAL — Design Tokens, Reset, Base
+    ═══════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --r: 12px; 
+      --r-sm: 8px;   
+      --purple: #7c3aed; 
+      --shadow-xs: 0 1px 3px rgba(10,37,64,.05); 
+
+      --ink:        #0f0f0f;
+      --ink-2:      #3a3a3a;
+      --ink-3:      #6b6b6b;
+      --ink-4:      #9b9b9b;
+      --surface:    #ffffff;
+      --surface-2:  #f5f5f3;
+      --surface-3:  #eeede9;
+      --border:     #e4e3df;
+      --border-2:   #d0cfc9;
+      --accent:     #c8102e;
+      --accent-2:   #a00d24;
+      --gold:       #b8860b;
+      --gold-2:     #8b6508;
+      --green:      #1a6b3a;
+      --green-bg:   #edf7f1;
+      --warn:       #92400e;
+      --warn-bg:    #fffbeb;
+      --blue:       #1e3a8a;
+      --blue-light: #3b82f6;
+      --primary-dark:    #0a2540;
+      --primary-blue:    #0d47a1;
+      --primary-light:   #1976d2;
+      --accent-gold:     #d4af37;
+      --accent-amber:    #ffb300;
+      --success-emerald: #00b894;
+      --danger-crimson:  #e74c3c;
+      --text-primary:    #1a202c;
+      --text-secondary:  #4a5568;
+      --text-muted:      #718096;
+      --bg-primary:      #ffffff;
+      --bg-secondary:    #f7fafc;
+      --bg-tertiary:     #edf2f7;
+      --border-light:    #e2e8f0;
+      --border-medium:   #cbd5e0;
+      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body:    'Syne', sans-serif;
+      --f-mono:       'JetBrains Mono', monospace;
+      --f-display:    'Cormorant Garamond', serif;
+      --f-body:       'Syne', sans-serif;
+      --header-h:          64px;
+      --bg:       var(--bg-primary);
+      --nav-h:             64px;
+      --bottom-bar-height: 68px;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+      --ease:            cubic-bezier(.4,0,.2,1);
+      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: .15s ease;
+      --transition-base: .25s ease;
+      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+      --t-primary:   #0f0f0f;
+      --t-secondary: #3a3a3a;
+      --t-muted:     #6b6b6b;
+      --t-ghost:     #9b9b9b;
+      --rim:         #e4e3df;
+      --raised:      #f5f5f3;
+      --overlay:     #eeede9;
+      --abyss:       #0f0f0f;
+      --gold-pure:   #b8860b;
+      --gold-dim:    rgba(184,134,11,0.40);
+      --gold-trace:  rgba(184,134,11,0.08);
+      --gold-bright: #d4a017;
+      --emerald:  #1a6b3a;
+      --amber:    #92400e;
+      --ruby:     #c8102e;
+      --sapphire: #1e3a8a;
+
+      
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
+    body {
+      font-family: 'roboto';
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;  /* ← safe cross-browser fix */
+
+      padding-bottom: var(--bottom-bar-height);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+      pointer-events: none; 
+      z-index: 0;
+    }
+    a      { text-decoration:none; color:inherit; }
+    img    { max-width:100%; display:block; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    ::-webkit-scrollbar       { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
+    .hide-mobile { display:none; }
+@media (max-width: 768px) { :root { --header-h: 58px; } }
+@media (max-width: 480px) { :root { --header-h: 54px; } }
+@media (max-width: 360px) { :root { --header-h: 50px; } }
+@media (max-width: 320px) { :root { --header-h: 48px; } }
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+
+  .avatar-glow-ring{animation:none}
+  .profile-cover:hover .cover-image{transform:none}
+  .profile-avatar-wrap:hover .profile-avatar{transform:none}
+}
+
+
+</style>
+
+</head>
+
+<body>
+
+
+
+<style>
+
+/* ─── Profile Bar ─────────────────────────── */
+.profile-bar {
+  background: var(--bg-secondary);
+  border: 1px solid #d4af37;
+  border-radius: 16px;
+  padding: 2.875rem 2.25rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  flex-wrap: nowrap;
+}
+
+.profile-bar__left {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* ─── Avatar ────────────────────────────────── */
+.avatar-wrap { position: relative; flex-shrink: 0; }
+.avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-medium);
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(25,118,210,.15), rgba(124,58,237,.15));
+  font-size: .9375rem; font-weight: 600;
+  color: var(--primary-light);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-dot {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--border-medium);
+  border: 2px solid var(--bg-secondary);
+}
+.avatar-dot.online { background: var(--success-emerald); }
+
+/* ─── Profile Info ───────────────────────────── */
+.profile-bar__info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.profile-bar__name {
+  font-size: .9375rem; font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-bar__name a { color: inherit; text-decoration: none; }
+.profile-bar__name a:hover { color: var(--primary-light); }
+
+/* ─── Inline pills (under name) ───────────────── */
+.profile-pills-row { display: flex; gap: .375rem; flex-wrap: wrap; }
+.profile-pill {
+  display: inline-flex; align-items: center;
+  font-size: .6875rem; font-weight: 600;
+  padding: .2rem .625rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+.pill-blue  { background: rgba(25,118,210,.1);  color: #1565c0; border: 1px solid rgba(25,118,210,.2); }
+.pill-gray  { background: rgba(113,128,150,.1); color: #4a5568; border: 1px solid rgba(113,128,150,.2); }
+.pill-amber { background: rgba(255,179,0,.12);  color: #b45309; border: 1px solid rgba(255,179,0,.25); }
+.pill-green { background: rgba(0,184,148,.1);   color: #065f46; border: 1px solid rgba(0,184,148,.2); }
+.pill-red   { background: rgba(231,76,60,.1);   color: #991b1b; border: 1px solid rgba(231,76,60,.2); }
+
+/* ─── Scrollable stat pills (right side) ───────── */
+.profile-bar__right {
+  flex: 1; min-width: 0;
+  display: flex; justify-content: flex-end;
+}
+.stats-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.stats-scroll-wrap::-webkit-scrollbar { display: none; }
+.stats-scroll { display: flex; gap: .5rem; width: max-content; padding: 2px 0; }
+
+.stat-pill {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: .4rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  min-width: 72px; flex-shrink: 0;
+  cursor: default;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.stat-pill:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-medium);
+  box-shadow: 0 2px 6px rgba(10,37,64,.08);
+}
+.stat-pill__label {
+  font-size: .6rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-muted); white-space: nowrap;
+}
+.stat-pill__value { font-size: 1.2rem; font-weight: 700; line-height: 1.1; }
+.stat-pill__value.blue  { color: var(--primary-light); }
+.stat-pill__value.green { color: var(--success-emerald); }
+.stat-pill__value.red   { color: var(--danger-crimson); }
+.stat-pill__value.amber { color: var(--accent-amber); }
+
+/* ─── icon-btn ───────────────────────────────── */
+.icon-btn {
+  display: inline-flex; align-items: center; gap: .375rem;
+  padding: .4rem .875rem;
+  background: var(--bg-tertiary); border: 1px solid var(--border-light);
+  border-radius: 9999px; color: var(--text-secondary);
+  font-size: .8125rem; font-weight: 500;
+  transition: all .15s; cursor: pointer; flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border-medium); }
+.icon-btn.primary { background: rgba(25,118,210,.1); color: var(--primary-light); border-color: rgba(25,118,210,.25); }
+.icon-btn.primary:hover { background: rgba(25,118,210,.2); }
+.icon-btn i { font-size: .8125rem; }
+
+/* ════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+════════════════════════════════════════════ */
+
+/* ── Tablet: 601–768px ─ stats wrap below ── */
+@media (max-width: 768px) {
+  .profile-bar { flex-wrap: wrap; padding: .8rem 1rem; gap: .625rem; }
+  .profile-bar__right { justify-content: flex-start; width: 100%; }
+  .stats-scroll-wrap { width: 100%; }
+}
+
+/* ── Mobile: 481–600px ─ tighter spacing ─── */
+@media (max-width: 600px) {
+  .profile-bar { padding: .75rem .875rem; }
+  .avatar { width: 42px; height: 42px; font-size: .875rem; }
+  .stat-pill { min-width: 64px; padding: .35rem .875rem; }
+  .stat-pill__value { font-size: 1.1rem; }
+  .profile-bar__name { font-size: .875rem; }
+}
+
+/* ── Mobile XS: 361–480px ─ compact ──────── */
+@media (max-width: 480px) {
+  .profile-bar { border-radius: 12px; padding: .6875rem .75rem; margin-top: 3.5rem; }
+  .profile-bar__left { gap: .625rem; }
+  .avatar { width: 38px; height: 38px; font-size: .8125rem; }
+  .avatar-dot { width: 9px; height: 9px; }
+  .profile-bar__name { font-size: .8125rem; }
+  .profile-pill { font-size: .625rem; padding: .175rem .5rem; }
+  .stat-pill { min-width: 58px; padding: .3rem .75rem; }
+  .stat-pill__value { font-size: 1rem; }
+  .stat-pill__label { font-size: .55rem; }
+}
+
+/* ── Mobile XXS: ≤360px ─ column layout ─── */
+@media (max-width: 360px) {
+  .profile-bar {
+    flex-direction: column; align-items: stretch;
+    padding: .625rem; border-radius: 10px; margin-top: 3rem;
+  }
+  .profile-bar__left { gap: .5rem; }
+  .avatar { width: 34px; height: 34px; font-size: .75rem; }
+  .avatar-dot { width: 8px; height: 8px; }
+  .profile-bar__name { font-size: .75rem; }
+  .profile-pill { font-size: .6rem; padding: .15rem .45rem; }
+  .stat-pill { min-width: 54px; padding: .275rem .625rem; }
+  .stat-pill__value { font-size: .9375rem; }
+  .stat-pill__label { font-size: .5rem; }
+}
+
+/* ── Large screens: ≥1200px ─ max comfort ── */
+@media (min-width: 1200px) {
+  .profile-bar { padding: 1rem 1.5rem; }
+  .avatar { width: 50px; height: 50px; font-size: 1rem; }
+  .stat-pill { min-width: 80px; padding: .45rem 1.125rem; }
+  .stat-pill__value { font-size: 1.3rem; }
+}
+
+</style>
+    
+<div class="profile-bar">
+  <div class="profile-bar__left">
+    <div class="avatar-wrap">
+      <div class="avatar">
+        {% if profile_info.profile_photo %}
+          <img src="{{ profile_info.get_profile_photo_url }}"
+               alt="{{ profile_info.profile_name|default:'Profile Photo' }}"
+               loading="lazy">
+        {% else %}
+          {{ profile_info.profile_name|default:"A"|slice:":2"|upper }}
+        {% endif %}
+      </div>
+      <span class="avatar-dot {% if request.user.is_active %}online{% endif %}" aria-hidden="true"></span>
+    </div>
+
+    <div class="profile-bar__info">
+      <div class="profile-bar__name">
+        <a href="{% url 'customer:profile' %}">
+          {{ profile_info.profile_name|default:request.user.email_or_phone }}
+        </a>
+      </div>
+      <div class="profile-pills-row">
+        <span class="profile-pill pill-blue">{{ total_product_views }} Views</span>
+        <span class="profile-pill pill-gray">{{ wishlist_total }} Wishlist</span>
+        <span class="profile-pill pill-amber">{{ total_ratings }} Rating</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-bar__right">
+    <div class="stats-scroll-wrap">
+      <div class="stats-scroll">
+        <div class="stat-pill">
+          <span class="stat-pill__label">Product</span>
+          <span class="stat-pill__value blue">{{ total_products }}</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill__label">Brand</span>
+          <span class="stat-pill__value green">{{ total_brands }}</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill__label">Category</span>
+          <span class="stat-pill__value red">{{ total_categories }}</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill__label">Sub Category</span>
+          <span class="stat-pill__value amber">{{ total_sub_categories }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<style>
+
+  
+/* ═══════════════════════════════════════════════════════
+   EXCLUSIVE BUSINESS PROFILE — DESIGN SYSTEM
+═══════════════════════════════════════════════════════ */
+
+
+
+/* ═══════════════════════════════════════════════════════
+   MAIN GRID
+═══════════════════════════════════════════════════════ */
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    padding: 0 32px 40px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════ */
+
+/* Wrapper replaces .main-grid */
+.profile-body {
+    padding: 0 32px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tab bar */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    background: white;
+    
+    border: 1px solid #d4af37;
+    border-radius: var(--r-lg);
+    padding: 5px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: relative;
+}
+
+.tab-bar::-webkit-scrollbar { display: none; }
+
+/* Gold shimmer top edge */
+.tab-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 1px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--role-color) 35%,
+        var(--gold) 65%,
+        transparent
+    );
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: max-content;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 18px;
+    border-radius: calc(var(--r-lg) - 4px);
+    font-family: 'roboto';
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    color: black;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+}
+
+.tab-btn i {
+    font-size: 11px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.tab-btn:hover {
+    background: color-mix(in srgb, var(--role-color) 8%, transparent);
+    color: #d4af37;
+}
+
+.tab-btn.active {
+    background: var(--role-color);
+    color: blue;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--role-color) 40%, transparent);
+}
+
+.tab-btn.active i { opacity: 1; }
+
+/* Tab panels */
+.tab-panel { display: none; animation: fadeUp 0.3s ease both; }
+.tab-panel.active { display: block; }
+
+/* Products section — always visible below tabs */
+.products-section {
+    margin-top: 28px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .profile-body { padding: 0 16px 32px; }
+    .tab-btn { font-size: 11px; padding: 9px 13px; }
+}
+
+@media (max-width: 480px) {
+    .profile-body { padding: 0 12px 24px; }
+    .tab-btn { font-size: 10.5px; padding: 8px 11px; gap: 5px; }
+}
+/* ═══════════════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════════════ */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg, 20px);
+    overflow: hidden;
+    margin-bottom: 16px;
+    animation: fadeUp 0.45s ease both;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--role-color) 40%, transparent),
+        transparent
+    );
+}
+
+.card:hover {
+    border-color: var(--border-h);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--role-color) 4%, var(--surface));
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-2);
+}
+
+.card-title i {
+    color: var(--role-color);
+    font-size: 11px;
+}
+
+.card-body { padding: 18px; }
+
+/* ═══════════════════════════════════════════════════════
+   INFO ROWS
+═══════════════════════════════════════════════════════ */
+
+.info-list { display: flex; flex-direction: column; }
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--role-color) 12%, transparent);
+    color: var(--role-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: background 0.2s ease;
+}
+
+.info-row:hover .info-icon {
+    background: color-mix(in srgb, var(--role-color) 20%, transparent);
+}
+
+.info-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 13px;
+    color: var(--text);
+    margin-top: 2px;
+    word-break: break-all;
+    font-weight: 400;
+}
+
+.info-value a {
+    color: var(--role-color);
+    text-decoration: none;
+}
+
+.info-value a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════
+   PROGRESS BARS
+═══════════════════════════════════════════════════════ */
+
+.prog-wrap { margin-bottom: 14px; }
+.prog-wrap:last-child { margin-bottom: 0; }
+
+.prog-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.prog-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.prog-val {
+    font-size: 11px;
+    color: var(--role-color);
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+.prog-track {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.prog-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(
+        90deg,
+        var(--role-color) 0%,
+        color-mix(in srgb, var(--gold) 50%, var(--role-color)) 100%
+    );
+    transition: width 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0;
+    position: relative;
+}
+
+/* glow on fill end */
+.prog-fill::after {
+    content: '';
+    position: absolute;
+    right: -2px; top: -2px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--role-color);
+    box-shadow: 0 0 8px var(--role-color);
+    opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BIO CARD
+═══════════════════════════════════════════════════════ */
+
+.bio-tagline {
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 700;
+    font-style: italic;
+    color: var(--role-color);
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.bio-text {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.8;
+}
+
+.meta-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-2);
+    background: var(--surface-2);
+    transition: border-color 0.2s ease;
+}
+
+.meta-pill:hover { border-color: var(--border-h); }
+.meta-pill i { color: var(--muted); font-size: 10px; }
+
+.social-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.social-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-2);
+    text-decoration: none;
+    background: var(--surface-2);
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.social-pill:hover {
+    border-color: var(--role-color);
+    color: var(--text);
+    background: color-mix(in srgb, var(--role-color) 8%, var(--surface-2));
+}
+
+/* ═══════════════════════════════════════════════════════
+   FOLLOWER LIST
+═══════════════════════════════════════════════════════ */
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+}
+
+.user-item:last-child { border-bottom: none; }
+.user-item:hover { opacity: 0.75; }
+
+.user-thumb {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--role-color);
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+}
+
+.user-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.user-name { font-size: 13px; color: var(--text); font-weight: 500; }
+.user-handle { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+/* ═══════════════════════════════════════════════════════
+   VERIFICATION
+═══════════════════════════════════════════════════════ */
+
+.verify-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.verify-row:last-child { border-bottom: none; }
+
+.verify-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.v-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.v-ok   { background: rgba(46,204,113,0.12); color: var(--green); }
+.v-warn { background: rgba(245,158,11,0.12); color: var(--amber); }
+
+.v-label { font-size: 13px; color: var(--text); font-weight: 500; }
+.v-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.btn-verify {
+    font-size: 10.5px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    padding: 4px 13px;
+    border-radius: 100px;
+    border: 1px solid var(--role-color);
+    color: var(--role-color);
+    background: transparent;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-verify:hover {
+    background: var(--role-color);
+    color: #fff;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BUSINESS DETAILS
+═══════════════════════════════════════════════════════ */
+
+.biz-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.biz-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--role-color) 14%, var(--surface-3));
+    border: 1px solid color-mix(in srgb, var(--role-color) 25%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--role-color);
+    flex-shrink: 0;
+}
+
+.biz-name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.biz-type {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+    font-weight: 400;
+}
+
+.biz-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(46,204,113,0.1);
+    border: 1px solid rgba(46,204,113,0.2);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 7px;
+}
+
+.biz-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 22px;
+    border: 1px solid var(--border);
+}
+
+.biz-stat-cell {
+    background: var(--surface-2);
+    padding: 16px 12px;
+    text-align: center;
+    transition: background 0.2s ease;
+}
+
+.biz-stat-cell:hover {
+    background: color-mix(in srgb, var(--role-color) 6%, var(--surface-2));
+}
+
+.biz-stat-n {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--role-color);
+    line-height: 1;
+}
+
+.biz-stat-l {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════════════ */
+
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title i { color: var(--role-color); font-size: 12px; }
+
+.section-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 100px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PRODUCT GRID & CARDS
+═══════════════════════════════════════════════════════ */
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg, 20px);
+    overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    animation: fadeUp 0.45s ease both;
+    position: relative;
+}
+
+.product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--role-color) 35%, transparent),
+        transparent
+    );
+    z-index: 1;
+}
+
+.product-card:hover {
+    border-color: color-mix(in srgb, var(--role-color) 35%, transparent);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+}
+
+.product-thumb {
+    position: relative;
+    aspect-ratio: 4/3;
+    background: var(--surface-2);
+    overflow: hidden;
+}
+
+.product-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+    filter: brightness(0.9);
+}
+
+.product-card:hover .product-thumb img {
+    transform: scale(1.06);
+    filter: brightness(1);
+}
+
+.thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: var(--muted);
+    background: var(--surface-2);
+}
+
+.p-badges {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 2;
+}
+
+.p-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    font-family: var(--font-display);
+    backdrop-filter: blur(4px);
+}
+
+.p-badge-discount  { background: rgba(239,68,68,0.85);  color: #fff; }
+.p-badge-featured  { background: rgba(245,158,11,0.85); color: #fff; }
+.p-badge-verified  { background: rgba(46,204,113,0.85); color: #fff; }
+.p-badge-ship      { background: rgba(59,130,246,0.85); color: #fff; }
+.p-badge-condition { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border-h); }
+.p-badge-sold-out  { background: rgba(239,68,68,0.85);  color: #fff; }
+.p-badge-low-stock { background: rgba(245,158,11,0.85); color: #fff; }
+
+.price-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: white;
+    border: 1px solid var(--border-h);
+    padding: 4px 11px;
+    border-radius: 7px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    backdrop-filter: blur(4px);
+    z-index: 2;
+}
+
+.price-original {
+    text-decoration: line-through;
+    color: var(--muted);
+    font-size: 10px;
+    margin-right: 4px;
+}
+
+.product-info { padding: 13px 15px; }
+
+.product-title-row { margin-bottom: 7px; }
+
+.product-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.product-title:hover { color: var(--role-color); }
+
+.product-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--muted);
+    flex-wrap: wrap;
+}
+
+.product-meta-row i { font-size: 10px; }
+.p-sep { opacity: 0.3; }
+.rating-star { color: var(--amber); }
+.stock-ok  { color: var(--green); }
+.stock-low { color: var(--amber); }
+.stock-out { color: var(--red); }
+
+/* ── Product edit overlay ── */
+.product-edit-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(7,7,13,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(3px);
+    z-index: 3;
+}
+
+.product-card:hover .product-edit-overlay { opacity: 1; }
+
+.product-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: var(--role-color);
+    color: #fff;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s ease, transform 0.2s ease;
+    transform: translateY(6px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.product-card:hover .product-edit-btn { transform: translateY(0); }
+.product-edit-btn:hover { opacity: 0.85; }
+
+/* ═══════════════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════════════ */
+
+.empty-state {
+    text-align: center;
+    padding: 44px 20px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.empty-state i {
+    font-size: 30px;
+    display: block;
+    margin-bottom: 10px;
+    opacity: 0.3;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: opacity 0.2s ease, transform 0.1s ease, background 0.2s ease;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+    background: var(--role-color);
+    color: #fff;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--role-color) 35%, transparent);
+}
+
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+}
+
+.btn-ghost:hover {
+    border-color: var(--border-h);
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+}
+
+.btn-danger {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    color: var(--red);
+}
+
+.btn-sm { padding: 5px 13px; font-size: 11px; }
+
+/* ═══════════════════════════════════════════════════════
+   NODE BLOCK (JWT key)
+═══════════════════════════════════════════════════════ */
+
+.node-block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+}
+
+.node-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.copy-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 3px 9px;
+    font-size: 11px;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.copy-btn:hover {
+    border-color: var(--border-h);
+    color: var(--text);
+}
+
+
+
+</style>
+
+
+<div class="profile-body">
+
+<!-- ── TAB BAR ──────────────────────────────────────────────── -->
+<div class="tab-bar" role="tablist">
+
+    <button class="tab-btn active" data-tab="products" role="tab" aria-selected="true">
+        <i class="fas fa-box"></i> Products
+        
+    </button>
+
+    {% if show_business_section %}
+    <button class="tab-btn" data-tab="business" role="tab" aria-selected="false">
+        <i class="fas fa-store"></i> Brands
+    </button>
+    {% endif %}
+
+    <button class="tab-btn" data-tab="bio" role="tab" aria-selected="false">
+        <i class="fas fa-feather"></i> Category
+    </button>
+
+    <button class="tab-btn" data-tab="about" role="tab" aria-selected="false">
+        <i class="fas fa-id-card"></i> Sub Category
+    </button>
+
+
+</div>
+<!-- ── TAB PANELS ───────────────────────────────────────────── -->
+
+<!-- ▸ PRODUCTS TAB -->
+<div class="tab-panel active" id="tab-products" role="tabpanel">
+    <div class="section-head">
+        <div class="section-title">
+            <i class="fas fa-box"></i> Products
+        </div>
+        <span class="section-count">{{ total_products }} total · {{ active_products }} active</span>
+    </div>
+
+    {% if total_products > 0 %}
+    <div class="products-grid">
+        {% for product in user.products.all %}
+        <div class="product-card">
+
+            <div class="product-thumb">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.product_name }}" loading="lazy">
+                {% else %}
+                    <div class="thumb-placeholder"><i class="fas fa-box"></i></div>
+                {% endif %}
+
+                <div class="p-badges">
+                    {% if product.discount_percentage > 0 %}
+                        <span class="p-badge p-badge-discount">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+                    {% endif %}
+                    {% if product.is_featured %}
+                        <span class="p-badge p-badge-featured"><i class="fas fa-star"></i> Featured</span>
+                    {% endif %}
+                    {% if product.is_verified %}
+                        <span class="p-badge p-badge-verified"><i class="fas fa-circle-check"></i> Verified</span>
+                    {% endif %}
+                    {% if product.free_shipping %}
+                        <span class="p-badge p-badge-ship"><i class="fas fa-truck"></i> Free ship</span>
+                    {% endif %}
+                    {% if product.product_condition != 'new' %}
+                        <span class="p-badge p-badge-condition">{{ product.get_product_condition_display }}</span>
+                    {% endif %}
+                    {% if product.stock == 0 %}
+                        <span class="p-badge p-badge-sold-out">Out of stock</span>
+                    {% elif product.is_low_stock %}
+                        <span class="p-badge p-badge-low-stock">{{ product.stock }} left</span>
+                    {% endif %}
+                </div>
+
+                <div class="price-badge">
+                    {% if product.discount_percentage > 0 and product.final_price %}
+                        <span class="price-original">{{ product.currency }} {{ product.selling_price|floatformat:0 }}</span>
+                        {{ product.currency }} {{ product.final_price|floatformat:0 }}
+                    {% else %}
+                        {{ product.currency }} {{ product.selling_price|floatformat:0 }}
+                    {% endif %}
+                </div>
+
+                <div class="product-edit-overlay">
+                    <a href="{% url 'ponno:product_edit' slug=product.slug %}" class="product-edit-btn">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                </div>
+            </div>
+
+            <div class="product-info">
+                <div class="product-title-row">
+    {% if product.is_active %}
+        <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="product-title">
+            {{ product.product_name }}
+        </a>
+    {% else %}
+        <span class="product-title" style="cursor:default; color: red;">
+            {{ product.product_name }}
+        </span>
+    {% endif %}
+</div>
+                <div class="product-meta-row">
+                    <span><i class="fas fa-eye"></i> {{ product.view_count }}</span>
+                    {% if product.review_count > 0 %}
+                        <span class="p-sep">·</span>
+                        <span class="rating-star"><i class="fas fa-star"></i> {{ product.rating_average|floatformat:1 }}</span>
+                    {% endif %}
+                    {% if product.total_sales > 0 %}
+                        <span class="p-sep">·</span>
+                        <span><i class="fas fa-bag-shopping"></i> {{ product.total_sales }}</span>
+                    {% endif %}
+                    <span class="p-sep">·</span>
+                    <span class="{% if product.stock == 0 %}stock-out{% elif product.is_low_stock %}stock-low{% else %}stock-ok{% endif %}">
+                        <i class="fas fa-box"></i> {{ product.stock }}
+                    </span>
+                    {% if product.category %}
+                        <span class="p-sep">·</span>
+                        <span>{{ product.category.category_name }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="fas fa-box-open"></i>
+            No products listed yet.
+        </div>
+    </div>
+    {% endif %}
+</div>
+<!-- ▸ END PRODUCTS TAB -->
+
+  <!-- ▸ BRAND TAB -->
+{% if show_business_section %}
+<div class="tab-panel" id="tab-business" role="tabpanel">
+
+  <div class="section-head">
+  <div class="section-title">
+    <i class="fas fa-tag"></i> Brands
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="section-count">{{ total_brands }} total · {{ active_brands }} active · {{ verified_brands_count }} verified</span>
+    <a href="{% url 'ponno:brand_create' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> New Brand
+    </a>
+  </div>
+</div>
+
+  {% if total_brands > 0 %}
+  <div class="products-grid">
+    {% for brand in dealer_brands %}
+    <div class="product-card">
+
+      <div class="product-thumb">
+        {% if brand.brand_logo %}
+          <img src="{{ brand.brand_logo.url }}" alt="{{ brand.brand_name }}" loading="lazy">
+        {% else %}
+          <div class="thumb-placeholder">
+            <i class="fas fa-tag"></i>
+          </div>
+        {% endif %}
+
+        <div class="p-badges">
+          {% if brand.is_verified %}
+            <span class="p-badge p-badge-verified"><i class="fas fa-circle-check"></i> Verified</span>
+          {% endif %}
+          {% if brand.is_featured %}
+            <span class="p-badge p-badge-featured"><i class="fas fa-star"></i> Featured</span>
+          {% endif %}
+          {% if brand.is_official %}
+            <span class="p-badge p-badge-ship"><i class="fas fa-building"></i> Official</span>
+          {% endif %}
+          {% if brand.is_trending %}
+            <span class="p-badge p-badge-discount"><i class="fas fa-fire"></i> Trending</span>
+          {% endif %}
+          {% if brand.is_exclusive %}
+            <span class="p-badge p-badge-condition">Exclusive</span>
+          {% endif %}
+          {% if not brand.is_active %}
+            <span class="p-badge p-badge-sold-out">Inactive</span>
+          {% endif %}
+        </div>
+
+        <div class="price-badge">
+          {{ brand.product_count }} product{{ brand.product_count|pluralize }}
+        </div>
+
+        <div class="product-edit-overlay">
+          <a href="{% url 'ponno:brand_edit' slug=brand.brand_slug %}" class="product-edit-btn">
+            <i class="fas fa-pen"></i> Edit
+          </a>
+        </div>
+      </div>
+
+      <div class="product-info">
+        <div class="product-title-row">
+          {% if brand.is_active %}
+            <a href="#" class="product-title">
+              {{ brand.brand_name }}
+            </a>
+          {% else %}
+            <span class="product-title" style="cursor:default; color:red;">
+              {{ brand.brand_name }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="product-meta-row">
+          {% if brand.brand_type %}
+            <span><i class="fas fa-layer-group"></i> {{ brand.get_brand_type_display }}</span>
+          {% endif %}
+          {% if brand.brand_tagline %}
+            <span class="p-sep">·</span>
+            <span style="font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">
+              {{ brand.brand_tagline }}
+            </span>
+          {% endif %}
+          {% if brand.country_of_origin %}
+            <span class="p-sep">·</span>
+            <span><i class="fas fa-flag"></i> {{ brand.country_of_origin }}</span>
+          {% endif %}
+          <span class="p-sep">·</span>
+          <span><i class="fas fa-eye"></i> {{ brand.view_count }}</span>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <i class="fas fa-tag"></i>
+      No brands created yet.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+<!-- ▸ END BRAND TAB -->
+
+<!-- ▸ CATEGORY TAB -->
+<div class="tab-panel" id="tab-bio" role="tabpanel">
+
+  <div class="section-head">
+    <div class="section-title">
+      <i class="fas fa-layer-group"></i> Categories
+    </div>
+    <span class="section-count">{{ total_categories }} total · {{ active_categories }} active · {{ root_categories }} root</span>
+    <a href="{% url 'ponno:category_create' %}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> New Category
+    </a>
+  </div>
+
+  {% if total_categories > 0 %}
+  <div class="products-grid">
+    {% for category in dealer_categories %}
+    <div class="product-card">
+
+      <div class="product-thumb">
+        {% if category.category_image %}
+          <img src="{{ category.category_image.url }}" alt="{{ category.category_name }}" loading="lazy">
+        {% else %}
+          <div class="thumb-placeholder" {% if category.color_code %}style="background:{{ category.color_code }}22;"{% endif %}>
+            {% if category.icon_class %}
+              <i class="{{ category.icon_class }}" {% if category.color_code %}style="color:{{ category.color_code }};"{% endif %}></i>
+            {% else %}
+              <i class="fas fa-layer-group"></i>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="p-badges">
+          {% if category.is_featured %}
+            <span class="p-badge p-badge-featured"><i class="fas fa-star"></i> Featured</span>
+          {% endif %}
+          {% if category.is_trending %}
+            <span class="p-badge p-badge-discount"><i class="fas fa-fire"></i> Trending</span>
+          {% endif %}
+          {% if category.parent %}
+            <span class="p-badge p-badge-condition"><i class="fas fa-sitemap"></i> Level {{ category.level }}</span>
+          {% else %}
+            <span class="p-badge p-badge-ship"><i class="fas fa-crown"></i> Root</span>
+          {% endif %}
+          {% if not category.is_active %}
+            <span class="p-badge p-badge-sold-out">Inactive</span>
+          {% endif %}
+        </div>
+
+        <div class="price-badge">
+          {{ category.product_count }} product{{ category.product_count|pluralize }}
+        </div>
+
+        <div class="product-edit-overlay">
+          <a href="{% url 'ponno:category_edit' slug=category.category_slug %}" class="product-edit-btn">
+            <i class="fas fa-pen"></i> Edit
+          </a>
+        </div>
+      </div>
+
+      <div class="product-info">
+        <div class="product-title-row">
+          {% if category.is_active %}
+            <a href="#" class="product-title">
+              {{ category.category_name }}
+            </a>
+          {% else %}
+            <span class="product-title" style="cursor:default; color:red;">
+              {{ category.category_name }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="product-meta-row">
+          <span><i class="fas fa-tag"></i> {{ category.get_category_type_display }}</span>
+          {% if category.parent %}
+            <span class="p-sep">·</span>
+            <span><i class="fas fa-sitemap"></i> {{ category.parent.category_name }}</span>
+          {% endif %}
+          {% if category.brand %}
+            <span class="p-sep">·</span>
+            <span><i class="fas fa-registered"></i> {{ category.brand.brand_name }}</span>
+          {% endif %}
+          <span class="p-sep">·</span>
+          <span><i class="fas fa-eye"></i> {{ category.view_count }}</span>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <i class="fas fa-layer-group"></i>
+      No categories created yet.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+<!-- ▸ END CATEGORY TAB -->
+
+<!-- ▸ SUB CATEGORY TAB -->
+<div class="tab-panel" id="tab-about" role="tabpanel">
+
+  <div class="section-head">
+    <div class="section-title">
+      <i class="fas fa-list-ul"></i> Sub Categories
+    </div>
+    <span class="section-count">{{ total_sub_categories }} total · {{ active_sub_categories }} active</span>
+  </div>
+
+  {% if total_sub_categories > 0 %}
+  <div class="products-grid">
+    {% for sub in dealer_sub_categories %}
+    <div class="product-card">
+
+      <div class="product-thumb">
+        {% if sub.sub_category_image %}
+          <img src="{{ sub.sub_category_image.url }}" alt="{{ sub.sub_category_name }}" loading="lazy">
+        {% else %}
+          <div class="thumb-placeholder" {% if sub.color_code %}style="background:{{ sub.color_code }}22;"{% endif %}>
+            {% if sub.icon_class %}
+              <i class="{{ sub.icon_class }}" {% if sub.color_code %}style="color:{{ sub.color_code }};"{% endif %}></i>
+            {% else %}
+              <i class="fas fa-list-ul"></i>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="p-badges">
+          {% if sub.is_featured %}
+            <span class="p-badge p-badge-featured"><i class="fas fa-star"></i> Featured</span>
+          {% endif %}
+          {% if sub.is_trending %}
+            <span class="p-badge p-badge-discount"><i class="fas fa-fire"></i> Trending</span>
+          {% endif %}
+          {% if not sub.is_active %}
+            <span class="p-badge p-badge-sold-out">Inactive</span>
+          {% endif %}
+        </div>
+
+        <div class="price-badge">
+          {{ sub.product_count }} product{{ sub.product_count|pluralize }}
+        </div>
+
+        <div class="product-edit-overlay">
+          <a href="{% url 'ponno:sub_category_edit' slug=sub.sub_category_slug %}" class="product-edit-btn">
+            <i class="fas fa-pen"></i> Edit
+          </a>
+        </div>
+      </div>
+
+      <div class="product-info">
+        <div class="product-title-row">
+          {% if sub.is_active %}
+            <a href="{% url 'ponno:sub_category_detail' slug=sub.sub_category_slug %}" class="product-title">
+              {{ sub.sub_category_name }}
+            </a>
+          {% else %}
+            <span class="product-title" style="cursor:default; color:red;">
+              {{ sub.sub_category_name }}
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="product-meta-row">
+          <span><i class="fas fa-layer-group"></i> {{ sub.category.category_name }}</span>
+          {% if sub.brand %}
+            <span class="p-sep">·</span>
+            <span><i class="fas fa-registered"></i> {{ sub.brand.brand_name }}</span>
+          {% endif %}
+          <span class="p-sep">·</span>
+          <span><i class="fas fa-tag"></i> {{ sub.get_sub_category_type_display }}</span>
+          <span class="p-sep">·</span>
+          <span><i class="fas fa-eye"></i> {{ sub.view_count }}</span>
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <i class="fas fa-list-ul"></i>
+      No sub categories created yet.
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+<!-- ▸ END SUB CATEGORY TAB -->
+
+
+
+
+</div>
+<!-- ══ END PROFILE BODY ══════════════════════════════════════════ -->
+
+
+<!-- ── TAB SWITCHING SCRIPT ─────────────────────────────────── -->
+<script>
+(function () {
+  const tabMap = {
+    'products': 'tab-products',
+    'business': 'tab-business',
+    'bio':      'tab-bio',
+    'about':    'tab-about',
+    'services': 'tab-services',
+  };
+
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+
+      // Deactivate all
+      document.querySelectorAll('.tab-bar .tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+      // Activate clicked
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(tabMap[target]);
+      if (panel) panel.classList.add('active');
+
+      // Animate progress bars in the newly shown panel
+      if (panel) {
+        panel.querySelectorAll('.prog-fill').forEach(el => {
+          el.style.width = (el.dataset.width || 0) + '%';
+        });
+      }
+    });
+  });
+})();
+</script>

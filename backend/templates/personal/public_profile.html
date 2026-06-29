@@ -1,0 +1,2276 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{{ profile_info.profile_name|default:profile_user.email_or_phone }} — PIELAM">
+  <title>{{ profile_info.profile_name|default:profile_user.email_or_phone }} — PIELAM</title>
+
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+
+
+/* ============================================================
+   PIELAM — PUBLIC PROFILE
+   Complete stylesheet — paste entirely inside <style> tag
+============================================================ */
+
+    /* ============================================================
+       DESIGN SYSTEM TOKENS
+    ============================================================ */
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --ink:          #0f0f0f;
+        --ink-2:        #3a3a3a;
+        --ink-3:        #6b6b6b;
+        --ink-4:        #9b9b9b;
+        --surface:      #ffffff;
+        --surface-2:    #f5f5f3;
+        --surface-3:    #eeede9;
+        --border:       #e4e3df;
+        --border-2:     #d0cfc9;
+        --accent:       #c8102e;
+        --accent-2:     #a00d24;
+        --gold:         #b8860b;
+        --gold-2:       #8b6508;
+        --green:        #1a6b3a;
+        --green-bg:     #edf7f1;
+        --warn:         #92400e;
+        --warn-bg:      #fffbeb;
+        --blue:         #1e3a8a;
+        --blue-light:   #3b82f6;
+
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --primary-light:    #1976d2;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-secondary:     #f7fafc;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
+        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
+        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
+        --font-display: 'DM Serif Display', 'Playfair Display', serif;
+        --font-body:    'DM Sans', 'Outfit', sans-serif;
+
+        --nav-h:    64px;
+        --r-sm:     8px;
+        --r-md:     14px;
+        --r-lg:     20px;
+        --r-xl:     28px;
+        --ease:     cubic-bezier(.4,0,.2,1);
+        --transition-fast: .15s ease;
+        --transition-base: .25s ease;
+        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+        --bottom-bar-height: 68px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+        padding-bottom: var(--bottom-bar-height);
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    /* ============================================================
+       SIDE DRAWER
+    ============================================================ */
+    #drawerOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 1999;
+        transition: opacity .3s;
+        opacity: 0;
+    }
+
+    #sideDrawer {
+        position: fixed;
+        top: 0; left: 0;
+        width: 260px; height: 100%;
+        background: linear-gradient(160deg, #0a2540 0%, #0d47a1 100%);
+        z-index: 2000;
+        transform: translateX(-100%);
+        transition: transform .35s cubic-bezier(.4,0,.2,1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 4px 0 32px rgba(0,0,0,.35);
+        overflow-y: auto;
+    }
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,.12);
+        position: sticky;
+        top: 0;
+        background: #0a2540;
+        z-index: 1;
+    }
+
+    .drawer-brand {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: .5px;
+    }
+
+    #drawerClose {
+        width: 34px; height: 34px;
+        background: rgba(255,255,255,.1);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .2s;
+    }
+    #drawerClose:hover { background: rgba(255,255,255,.2); }
+
+    .drawer-nav {
+        padding: 18px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .drawer-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 16px;
+        border-radius: 10px;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: .95rem;
+        transition: background .2s;
+    }
+    .drawer-link:hover { background: rgba(255,255,255,.12); }
+    .drawer-link i { width: 18px; text-align: center; opacity: .8; }
+
+    .drawer-divider {
+        height: 1px;
+        background: rgba(255,255,255,.12);
+        margin: 8px 4px;
+    }
+
+    .drawer-link.secondary {
+        color: rgba(255,255,255,.7);
+        font-weight: 500;
+        font-size: .88rem;
+    }
+    .drawer-link.secondary:hover { background: rgba(255,255,255,.08); }
+    .drawer-link.secondary i { opacity: .7; }
+
+    /* ============================================================
+       NAVBAR
+    ============================================================ */
+    .menu-top {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .navbar-container {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .navbar-glow {
+        position: absolute;
+        top: 0; left: -100%;
+        width: 200%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
+        animation: navGlow 4s infinite;
+    }
+
+    @keyframes navGlow {
+        0%, 100% { left: -100%; }
+        50% { left: 100%; }
+    }
+
+    .menu {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.875rem 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logo-section { display: flex; align-items: center; }
+
+    .logo-left {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .logo-brand {
+        margin-left: 0.5rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+    }
+
+    .logo-icon {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-dark);
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+        transition: all var(--transition-slow);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .logo-icon:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(212,175,55,0.55);
+    }
+
+    .navbar-brand {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+    }
+
+    .menu-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all var(--transition-base);
+    }
+    .menu-item:hover {
+        background: rgba(255,255,255,0.18);
+        border-color: rgba(212,175,55,0.4);
+        transform: translateY(-2px);
+    }
+    .menu-item.active {
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        color: var(--primary-dark);
+        border-color: transparent;
+        box-shadow: 0 4px 16px rgba(212,175,55,0.5);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+        .product-grid { grid-template-columns: 1fr; gap: 28px; }
+        .product-title { font-size: 1.7rem; }
+    }
+
+    @media (max-width: 768px) {
+        :root { --nav-h: 56px; }
+        .product-detail-wrapper { padding: 16px 14px 100px; }
+        .product-container { padding: 20px; border-radius: var(--r-lg); }
+        .product-title { font-size: 1.5rem; }
+        
+        .original-price {  font-size: 1.2rem; }
+        .offer-price { font-size: 1.8rem; }
+        .order-section { display: none; }
+        .mob-order-bar { display: flex; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .related-products-section, .dealer-products-section { padding: 20px; }
+        .tab-panel { padding: 20px 0 0; }
+        .dealer-header { flex-direction: column; text-align: center; }
+        .dealer-stats { grid-template-columns: 1fr; }
+        .dealer-details-grid { grid-template-columns: 1fr; }
+        .contact-buttons { grid-template-columns: 1fr; }
+        .menu-item span { display: none; }
+        .menu-item { padding: 8px 10px; }
+        .menu { padding: 0.75rem 1rem; }
+        .navbar-brand { font-size: 1.4rem; }
+        .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .product-container { padding: 14px; }
+        .product-title { font-size: 1.3rem; }
+        .trust-row { gap: 5px; }
+        .trust-item span { font-size: .65rem; }
+        .products-grid { grid-template-columns: repeat(2,1fr); }
+        .spec-row { grid-template-columns: 40% 60%; }
+    }
+
+    @media print {
+        .menu-top, .mob-order-bar { display: none !important; }
+        body { padding-bottom: 0; background: white; }
+        body::before { display: none; }
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+
+/* ══════════════════════════════════════════════
+   COVER PHOTO
+══════════════════════════════════════════════ */
+.cover {
+  position: relative;
+  height: clamp(180px, 28vw, 280px);
+  margin-top: var(--nav-h);
+  overflow: hidden;
+}
+
+.cover-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: brightness(.75) saturate(1.1);
+}
+
+.cover-gradient {
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #090909 0%, #121212 45%, #1f1f1f 100%);
+}
+
+.cover::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 1;
+  background:
+    radial-gradient(ellipse 70% 80% at 15% 50%, rgba(254,44,85,.18) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 70% at 85% 40%, rgba(37,244,238,.14) 0%, transparent 65%);
+}
+
+.cover::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(to bottom, transparent 30%, var(--ink) 100%);
+}
+
+/* ══════════════════════════════════════════════
+   PAGE WRAPPER
+══════════════════════════════════════════════ */
+.page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 clamp(14px, 4vw, 32px) 80px;
+}
+
+/* ══════════════════════════════════════════════
+   PROFILE CARD
+══════════════════════════════════════════════ */
+.profile-card {
+  position: relative; z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: clamp(16px, 4vw, 28px);
+  margin-top: clamp(-56px, -8vw, -72px);
+  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(14px, 3vw, 24px);
+  align-items: flex-start;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute; top: 0; left: 16px; right: 16px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan) 30%, var(--gold) 70%, transparent);
+  opacity: .6;
+  border-radius: 999px;
+}
+
+/* ── Avatar ───────────────────────────────── */
+.avatar-col { flex-shrink: 0; }
+
+.avatar-ring {
+  position: relative;
+  width: clamp(80px, 14vw, 110px);
+  height: clamp(80px, 14vw, 110px);
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--cyan), var(--gold));
+  box-shadow:
+    0 0 0 3px var(--surface),
+    0 0 20px rgba(254,44,85,.4),
+    0 0 40px rgba(37,244,238,.2);
+}
+
+.avatar-inner {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.avatar-inner img { width: 100%; height: 100%; object-fit: cover; }
+
+.avatar-initials {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 5vw, 36px);
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.online-dot {
+  position: absolute; bottom: 5px; right: 5px;
+  width: 14px; height: 14px;
+  background: var(--green);
+  border-radius: 50%;
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 0 8px rgba(34,197,94,.5);
+  animation: pulseGreen 2.5s infinite;
+}
+
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,.5); }
+  50%       { box-shadow: 0 0 16px rgba(34,197,94,.7); }
+}
+
+/* ── Info block ───────────────────────────── */
+.info-col { flex: 1; min-width: 0; }
+
+.profile-name {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4.5vw, 30px);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.profile-handle {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 2vw, 12px);
+  color: var(--text-3);
+  margin-top: 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.badges {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 12px;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  font-family: var(--font-display);
+  border: 1px solid;
+}
+
+.badge-role {
+  background: var(--gold-glow);
+  border-color: rgba(254,44,85,.3);
+  color: var(--gold);
+}
+
+.badge-verified {
+  background: rgba(34,197,94,.1);
+  border-color: rgba(34,197,94,.25);
+  color: var(--green);
+}
+
+.badge-location {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-3);
+  font-weight: 400;
+  text-transform: none;
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+/* ── Action buttons ───────────────────────── */
+.actions-col {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 20px;
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 12px;
+  letter-spacing: .04em;
+  cursor: pointer; border: none;
+  text-decoration: none;
+  transition: var(--ease);
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.96); }
+
+.btn-primary {
+  background: var(--gold);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(254,44,85,.4);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background: var(--gold-dim);
+  box-shadow: 0 8px 28px rgba(254,44,85,.55);
+}
+
+.btn-ghost {
+  background: rgba(255,255,255,.07);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,.12);
+  border-color: var(--border-h);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.22);
+  color: var(--red);
+}
+.btn-danger:hover { background: rgba(239,68,68,.2); }
+
+/* ══════════════════════════════════════════════
+   STATS STRIP
+══════════════════════════════════════════════ */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.stat {
+  background: var(--surface);
+  padding: clamp(14px, 3vw, 20px) 12px;
+  text-align: center;
+  transition: background var(--ease);
+  position: relative;
+}
+
+.stat::after {
+  content: '';
+  position: absolute; top: 10px; right: 10px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0;
+  transition: var(--ease);
+}
+
+.stat:hover { background: var(--surface-2); }
+.stat:hover::after { opacity: .6; }
+
+.stat-n {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--gold), #ff6b8a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-l {
+  font-size: 11px; color: var(--text-3);
+  margin-top: 4px; letter-spacing: .04em; text-transform: uppercase;
+  font-family: var(--font-display); font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   BIO CARD
+══════════════════════════════════════════════ */
+.bio-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: clamp(18px, 4vw, 28px);
+  margin-top: 20px;
+  position: relative; overflow: hidden;
+}
+
+.bio-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--gold));
+}
+
+.bio-tagline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(14px, 2.5vw, 16px);
+  color: var(--gold);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.bio-tagline::before { content: '\201C'; }
+.bio-tagline::after  { content: '\201D'; }
+
+.bio-text {
+  font-size: clamp(13px, 2vw, 14px);
+  color: var(--text-2); line-height: 1.75;
+}
+
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.meta-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-3);
+}
+.meta-item i { color: var(--gold); font-size: 10px; }
+.meta-item a { color: var(--text-3); text-decoration: none; transition: color var(--ease); }
+.meta-item a:hover { color: var(--gold); }
+
+.social-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 14px;
+}
+
+.social-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 13px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  font-size: 12px; color: var(--text-3);
+  text-decoration: none;
+  transition: var(--ease);
+  font-family: var(--font-body);
+}
+.social-pill:hover {
+  border-color: var(--border-h);
+  color: var(--gold);
+  background: var(--gold-glow);
+}
+
+/* ══════════════════════════════════════════════
+   SECTION HEADING
+══════════════════════════════════════════════ */
+.sec-head {
+  display: flex; align-items: center; gap: 10px;
+  margin: 28px 0 14px;
+}
+
+.sec-title {
+  font-family: var(--font-display);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.sec-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ══════════════════════════════════════════════
+   TWO-COLUMN GRID
+══════════════════════════════════════════════ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════════════
+   CARD COMPONENT
+══════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 16px;
+  animation: riseUp .4s ease both;
+}
+.card:nth-child(2) { animation-delay: .07s; }
+.card:nth-child(3) { animation-delay: .14s; }
+
+@keyframes riseUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text-2);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title i { color: var(--gold); }
+
+.card-badge {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--text-3);
+  background: var(--surface-3);
+  padding: 2px 8px; border-radius: 99px;
+}
+
+.card-body { padding: 16px 18px; }
+
+/* ── Info Rows ────────────────────────────── */
+.info-list { display: flex; flex-direction: column; }
+
+.info-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+
+.info-icon {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: var(--gold-glow);
+  border: 1px solid rgba(254,44,85,.2);
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+
+.info-label {
+  font-size: 10px; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .06em;
+  font-family: var(--font-display); font-weight: 600;
+}
+
+.info-value { font-size: 13px; color: var(--text-2); margin-top: 1px; }
+.info-value a { color: var(--gold); text-decoration: none; }
+.info-value a:hover { text-decoration: underline; }
+
+/* ── User List Items ──────────────────────── */
+.user-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  transition: var(--ease);
+}
+.user-item:last-child { border-bottom: none; }
+.user-item:hover { padding-left: 4px; }
+
+.user-thumb {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-3);
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 12px; color: var(--gold);
+  transition: border-color var(--ease);
+}
+.user-item:hover .user-thumb { border-color: var(--gold-dim); }
+.user-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.user-name  { font-size: 13px; color: var(--text-2); }
+.user-handle { font-size: 10px; color: var(--text-3); font-family: var(--font-mono); margin-top: 1px; }
+
+/* ══════════════════════════════════════════════
+   PRODUCTS GRID
+══════════════════════════════════════════════ */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: var(--ease);
+  position: relative;
+  animation: riseUp .4s ease both;
+}
+.product-card:nth-child(2) { animation-delay: .05s; }
+.product-card:nth-child(3) { animation-delay: .10s; }
+.product-card:nth-child(4) { animation-delay: .15s; }
+.product-card:nth-child(5) { animation-delay: .20s; }
+.product-card:nth-child(6) { animation-delay: .25s; }
+.product-card:nth-child(7) { animation-delay: .30s; }
+.product-card:nth-child(8) { animation-delay: .35s; }
+
+.product-card:hover {
+  border-color: var(--border-h);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.55), 0 0 20px rgba(254,44,85,.1);
+}
+
+.product-link { text-decoration: none; display: block; color: inherit; }
+
+/* ── Thumbnail ────────────────────────────── */
+.product-thumbnail {
+  position: relative;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.product-thumbnail img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .4s ease;
+}
+
+.product-card:hover .product-thumbnail img { transform: scale(1.06); }
+
+.product-thumb-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 32px;
+}
+
+/* ── Overlay Badges ───────────────────────── */
+.product-badges {
+  position: absolute; top: 8px; left: 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  z-index: 2;
+}
+
+.p-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em;
+  font-family: var(--font-display);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.p-badge-discount  { background: var(--gold);          color: #fff; }
+.p-badge-featured  { background: rgba(251,191,36,.9);  color: #1a1a1a; }
+.p-badge-verified  { background: rgba(34,197,94,.9);   color: #fff; }
+.p-badge-shipping  { background: rgba(59,130,246,.9);  color: #fff; }
+.p-badge-sold-out  { background: rgba(239,68,68,.9);   color: #fff; }
+.p-badge-low-stock { background: rgba(245,158,11,.9);  color: #fff; }
+.p-badge-condition { background: rgba(139,92,246,.85); color: #fff; }
+
+/* ── Price Badge ──────────────────────────── */
+.product-price-badge {
+  position: absolute; bottom: 8px; right: 8px;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 12px; font-weight: 800;
+  padding: 4px 9px; border-radius: 6px;
+  display: flex; flex-direction: column; align-items: flex-end;
+  line-height: 1.2;
+}
+
+.product-price-badge .price-original {
+  font-size: 9px;
+  font-weight: 400;
+  text-decoration: line-through;
+  opacity: .55;
+  color: var(--text-3);
+  line-height: 1;
+  margin-bottom: 1px;
+}
+
+/* ── Product Info Row ─────────────────────── */
+.product-info {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 12px 6px;
+}
+
+.seller-avatar {
+  position: relative; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-3);
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 13px; color: var(--gold);
+}
+
+.seller-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.seller-verified-badge {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--green);
+  border: 1.5px solid var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7px; color: #fff;
+}
+
+.product-meta { flex: 1; min-width: 0; }
+
+.product-title {
+  font-size: 13px; font-weight: 600; color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4; margin: 0;
+}
+
+.seller-name-label {
+  font-size: 11px; color: var(--text-3); margin-top: 3px;
+  font-family: var(--font-mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Product Stats Row ────────────────────── */
+.product-stats {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  padding: 0 12px 10px;
+  font-size: 10px; color: var(--text-3);
+  font-family: var(--font-display); font-weight: 600;
+  letter-spacing: .03em;
+}
+
+.stat-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.stat-item i { font-size: 9px; }
+.stat-sep { opacity: .35; flex-shrink: 0; }
+
+.stat-item.in-stock     { color: var(--green); }
+.stat-item.low-stock    { color: var(--amber); }
+.stat-item.out-of-stock { color: var(--red); }
+.stat-item.stat-rating  { color: var(--amber); }
+
+/* ── Empty State ──────────────────────────── */
+.empty {
+  text-align: center; padding: 32px 20px;
+  color: var(--text-3);
+}
+.empty-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--text-3);
+  margin: 0 auto 12px;
+}
+.empty p { font-size: 13px; }
+
+/* ── Main column ──────────────────────────── */
+main { min-width: 0; }
+
+/* ══════════════════════════════════════════════
+   MOBILE ORDER BAR
+══════════════════════════════════════════════ */
+.mob-order-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%;
+  display: flex;
+  z-index: 1500;
+  border-top: 1px solid var(--border);
+  background: rgba(9,9,9,.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.order-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+  transition: var(--ease);
+  cursor: pointer;
+}
+
+.order-btn:active { opacity: .8; transform: scale(.98); }
+
+.order-btn.whatsapp {
+  background: rgba(37,211,102,.1);
+  color: #25d366;
+  border-right: 1px solid var(--border);
+}
+.order-btn.whatsapp:hover { background: rgba(37,211,102,.2); }
+
+.order-btn.call {
+  background: rgba(59,130,246,.1);
+  color: var(--blue);
+}
+.order-btn.call:hover { background: rgba(59,130,246,.2); }
+
+.order-btn i { font-size: 18px; }
+
+body:has(.mob-order-bar) .page {
+  padding-bottom: calc(80px + 56px);
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .menu {
+        padding: 0.75rem 1rem;
+    }
+
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+
+    .menu-item span {
+        display: none;
+    }
+
+    .menu-item {
+        padding: 0.75rem;
+    }
+
+    .notification-badge {
+        top: -8px;
+        right: -8px;
+    }
+
+    .search-container {
+        padding: 1.5rem 1rem 1rem;
+    }
+
+    .discovery-container {
+        padding: 0 1rem 2rem;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}
+
+@media (min-width: 580px) {
+  .actions-col {
+    width: auto;
+    align-self: flex-start;
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 760px) {
+  .two-col {
+    grid-template-columns: minmax(260px, 300px) 1fr;
+    align-items: start;
+  }
+  main { overflow: hidden; }
+}
+
+@media (min-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .menu { padding: 0.75rem 1rem; }
+  .navbar-brand { font-size: 1.5rem; }
+  .logo-icon { width: 40px; height: 40px; font-size: 1.25rem; }
+  .menu-item span { display: none; }
+  .menu-item { padding: 0.75rem; }
+  .notification-badge { top: -8px; right: -8px; }
+}
+
+@media (max-width: 480px) {
+  .products-grid { grid-template-columns: 1fr; }
+  .product-thumbnail { aspect-ratio: 16/9; }
+}
+
+@media (max-width: 380px) {
+  .btn { padding: 8px 14px; font-size: 11px; }
+  .navbar-brand { font-size: 1.25rem; }
+  .logo-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+}
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+/* ── PRODUCTS GRID — 1 column on mobile ─────────────────── */
+@media (max-width: 760px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-thumbnail {
+    aspect-ratio: 16/9;
+  }
+}
+
+@media (min-width: 580px) {
+  .actions-col {
+    width: auto;
+    align-self: flex-start;
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 760px) {
+  .two-col {
+    grid-template-columns: minmax(260px, 300px) 1fr;
+    align-items: start;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu { padding: 0.75rem 1rem; }
+  .navbar-brand { font-size: 1.5rem; }
+  .logo-icon { width: 40px; height: 40px; font-size: 1.25rem; }
+  .menu-item span { display: none; }
+  .menu-item { padding: 0.75rem; }
+  .notification-badge { top: -8px; right: -8px; }
+}
+
+@media (max-width: 480px) {
+  products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .product-thumbnail {
+    aspect-ratio: 16/9;
+  }
+}
+
+@media (max-width: 380px) {
+  .btn { padding: 8px 14px; font-size: 11px; }
+}
+
+/* ── MAIN COLUMN SPACING ────────────────────────────────── */
+main { min-width: 0; }
+
+/* keep stat-sep from wrapping alone */
+.product-stats .stat-sep { flex-shrink: 0; }
+
+/* tighter grid on very wide screens so cards don't get huge */
+@media (min-width: 1024px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+
+/* on two-col layout, main needs overflow protection */
+@media (min-width: 760px) {
+  main { overflow: hidden; }
+}
+
+/* product card animation stagger */
+.product-card {
+  animation: riseUp .4s ease both;
+}
+.product-card:nth-child(2) { animation-delay: .05s; }
+.product-card:nth-child(3) { animation-delay: .10s; }
+.product-card:nth-child(4) { animation-delay: .15s; }
+.product-card:nth-child(5) { animation-delay: .20s; }
+.product-card:nth-child(6) { animation-delay: .25s; }
+.product-card:nth-child(7) { animation-delay: .30s; }
+.product-card:nth-child(8) { animation-delay: .35s; }
+
+
+/* ── MOBILE ORDER BAR ───────────────────────────────────── */
+.mob-order-bar {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%;
+  display: flex;
+  z-index: 1500;
+  border-top: 1px solid var(--border);
+  background: rgba(9,9,9,.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.order-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+  transition: var(--ease);
+  cursor: pointer;
+}
+
+.order-btn:active {
+  opacity: .8;
+  transform: scale(.98);
+}
+
+.order-btn.whatsapp {
+  background: rgba(37,211,102,.1);
+  color: #25d366;
+  border-right: 1px solid var(--border);
+}
+.order-btn.whatsapp:hover {
+  background: rgba(37,211,102,.2);
+}
+
+.order-btn.call {
+  background: rgba(59,130,246,.1);
+  color: var(--blue);
+}
+.order-btn.call:hover {
+  background: rgba(59,130,246,.2);
+}
+
+.order-btn i { font-size: 18px; }
+
+/* push page content above the bar */
+body:has(.mob-order-bar) .page {
+  padding-bottom: calc(80px + 56px);
+}
+
+/* ── TAB STATS ──────────────────────────────────────────── */
+.tab-stat {
+  cursor: pointer;
+  position: relative;
+  transition: background .2s;
+}
+.tab-stat::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold,#b8860b), #ff6b8a);
+  border-radius: 2px 2px 0 0;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.tab-stat.active { background: var(--surface-2); }
+.tab-stat.active::after { opacity: 1; }
+.tab-stat:hover:not(.active) { background: var(--surface-2); }
+
+/* ── TAB PANELS ─────────────────────────────────────────── */
+.tab-panel { display: none; animation: riseUp .3s ease both; }
+.tab-panel.active { display: block; }
+
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     SIDE DRAWER OVERLAY
+════════════════════════════════ -->
+<div id="drawerOverlay"></div>
+
+<!-- ═══════════════════════════════
+     SIDE DRAWER
+════════════════════════════════ -->
+<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
+    <div class="drawer-header">
+        <span class="drawer-brand">PIELAM</span>
+        <button id="drawerClose" aria-label="Close menu">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <nav class="drawer-nav">
+        <!-- Primary links -->
+        <a href="{% url 'ponno:home' %}" class="drawer-link">
+            <i class="fa-solid fa-house"></i>
+            Home
+        </a>
+        <a href="{% url 'ponno:discovery_engine' %}" class="drawer-link">
+            <i class="fa-solid fa-compass"></i>
+            Discover
+        </a>
+        <a href="{% url 'notify:notification' %}" class="drawer-link">
+            <i class="fa-solid fa-bell"></i>
+            Notifications
+        </a>
+        <a href="{% url 'customer:profile' %}" class="drawer-link">
+            <i class="fa-solid fa-circle-user"></i>
+            My Profile
+        </a>
+        <a href="#" class="drawer-link">
+            <i class="fa-solid fa-gear"></i>
+            Settings
+        </a>
+
+        <!-- Divider -->
+        <div class="drawer-divider"></div>
+
+        <!-- Secondary links (formerly footer links) -->
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-circle-info"></i>
+            About Us
+        </a>
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-shield-halved"></i>
+            Privacy Policy
+        </a>
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-file-contract"></i>
+            Terms of Service
+        </a>
+    </nav>
+</aside>
+
+<!-- ═══════════════════════════════
+     NAVIGATION BAR
+════════════════════════════════ -->
+<nav class="menu-top" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+        <div class="navbar-glow"></div>
+        <div class="menu">
+            <div class="logo-left">
+                <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+                <div class="logo-brand">
+                    <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
+                        <span class="navbar-brand">PIELAM</span>
+                    </a>
+                </div>
+            </div>
+            <div class="menu-links">
+                <a href="{% url 'ponno:home' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <a href="{% url 'notify:notification' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+                <a href="{% url 'customer:profile' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+// ── Tabs ─────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + target).classList.add('active');
+    });
+});
+
+// ── Image zoom ────────────────────────────
+const mainImg = document.getElementById('mainImg');
+if (mainImg) {
+    mainImg.addEventListener('click', () => mainImg.classList.toggle('zoomed'));
+}
+
+// ── Share button ──────────────────────────
+document.getElementById('shareBtn')?.addEventListener('click', async () => {
+    const shareData = {
+        title: "{{ product.product_name|escapejs }}",
+        text: "Check out this product on PIELAM!",
+        url: window.location.href
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(window.location.href);
+            const btn = document.getElementById('shareBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied!</span>';
+            btn.style.background = 'rgba(26,107,58,.9)';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        }
+    } catch(e) {}
+});
+
+// ── Side Drawer ───────────────────────────
+const drawer      = document.getElementById('sideDrawer');
+const overlay     = document.getElementById('drawerOverlay');
+const menuToggle  = document.getElementById('menuToggle');
+const drawerClose = document.getElementById('drawerClose');
+
+function openDrawer() {
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        drawer.style.transform = 'translateX(0)';
+    });
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    overlay.style.opacity = '0';
+    drawer.style.transform = 'translateX(-100%)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    document.body.style.overflow = '';
+}
+
+menuToggle.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+// Keyboard support for menu toggle
+menuToggle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
+});
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDrawer();
+});
+
+// ── Performance monitoring ────────────────
+if ('PerformanceObserver' in window) {
+    try {
+        const obs = new PerformanceObserver(list => {
+            for (const entry of list.getEntries()) {
+                console.log('LCP:', entry.startTime);
+            }
+        });
+        obs.observe({ entryTypes: ['largest-contentful-paint'] });
+    } catch(e) {}
+}
+</script>
+
+
+<!-- ══ COVER ═════════════════════════════════════════════════ -->
+<div class="cover">
+  {% if profile_info.profile_cover_photo %}
+    <img class="cover-img" src="{{ profile_info.profile_cover_photo.url }}" alt="Cover photo">
+  {% else %}
+    <div class="cover-gradient"></div>
+  {% endif %}
+</div>
+
+<!-- ══ PAGE BODY ═════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ── PROFILE CARD ────────────────────────────────────── -->
+  <div class="profile-card">
+
+    <!-- Avatar -->
+    <div class="avatar-col">
+      <div class="avatar-ring">
+        <div class="avatar-inner">
+          {% if profile_info.profile_photo %}
+            <img src="{{ profile_info.profile_photo.url }}" alt="{{ profile_info.profile_name }}">
+          {% else %}
+            <div class="avatar-initials">
+              {{ profile_info.profile_name|default:profile_user.email_or_phone|slice:":1"|upper }}
+            </div>
+          {% endif %}
+        </div>
+        {% if profile_user.is_active %}<div class="online-dot" title="Active"></div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="info-col">
+      <div class="profile-name">{{ profile_info.profile_name|default:profile_user.email_or_phone }}</div>
+
+      <div class="badges">
+        <span class="badge badge-role">
+          {% if profile_user.role == 'dealer' %}<i class="fas fa-store"></i>
+          {% elif profile_user.role == 'admin' %}<i class="fas fa-crown"></i>
+          {% elif profile_user.role == 'staff' %}<i class="fas fa-users-cog"></i>
+          {% else %}<i class="fas fa-user"></i>{% endif %}
+          {{ profile_user.get_role_display }}
+        </span>
+        {% if profile_info.is_profile_verified %}
+          <span class="badge badge-verified"><i class="fas fa-circle-check"></i> Verified</span>
+        {% endif %}
+        {% if profile_info.profile_city or profile_info.profile_country %}
+          <span class="badge badge-location">
+            <i class="fas fa-location-dot"></i>
+            {{ profile_info.profile_city }}{% if profile_info.profile_city and profile_info.profile_country %}, {% endif %}{{ profile_info.profile_country }}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-col">
+      {% if profile_user != current_user %}
+        {% if is_following %}
+          <button class="btn btn-danger" id="followBtn"
+            data-username="{{ profile_user.email_or_phone }}"
+            data-following="true">
+            <i class="fas fa-user-minus"></i> Unfollow
+          </button>
+        {% else %}
+          <button class="btn btn-primary" id="followBtn"
+            data-username="{{ profile_user.email_or_phone }}"
+            data-following="false">
+            <i class="fas fa-user-plus"></i> Follow
+          </button>
+        {% endif %}
+      {% endif %}
+        <button class="btn btn-ghost" onclick="shareProfile()">
+          <i class="fas fa-share-nodes"></i> Share
+        </button>
+      
+    </div>
+
+  </div><!-- /profile-card -->
+
+<!-- ── STATS / TAB BAR ─────────────────────────────────── -->
+<div class="stats-strip">
+  {% if profile_user.role == 'dealer' %}
+  <div class="stat tab-stat active" data-tab="products">
+    <div class="stat-n">{{ profile_user.products.count }}</div>
+    <div class="stat-l">Products</div>
+  </div>
+  {% endif %}
+
+  
+
+  <div class="stat tab-stat" data-tab="followers">
+    <div class="stat-n" id="followerCount">{{ follower_count }}</div>
+    <div class="stat-l">Followers</div>
+  </div>
+
+  <div class="stat tab-stat" data-tab="following">
+    <div class="stat-n">{{ following_count }}</div>
+    <div class="stat-l">Following</div>
+  </div>
+
+  <div class="stat tab-stat" data-tab="about">
+    <div class="stat-n"><i class="fas fa-user" style="font-size:18px;"></i></div>
+    <div class="stat-l">About</div>
+  </div>
+</div>
+
+<!-- ── TAB PANELS ──────────────────────────────────────── -->
+
+<!-- ══ PRODUCTS TAB ════════════════════════════════════════ -->
+{% if profile_user.role == 'dealer' %}
+<div class="tab-panel active" id="tab-products">
+
+  <div class="sec-head">
+    <span class="sec-title">Products</span>
+    <div class="sec-line"></div>
+    <span style="font-size:11px;color:var(--text-3);white-space:nowrap;font-family:var(--font-mono);">
+      {{ total_products }} listing{{ total_products|pluralize }}
+    </span>
+  </div>
+
+  <form method="get" id="filterForm"
+        style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+
+
+        {% if dealer_brands %}
+    <select name="brand" onchange="this.form.submit()"
+            style="background:var(--surface);border:1px solid var(--border);
+                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
+                   color:var(--text-2);font-family:var(--font-body);outline:none;cursor:pointer;">
+      <option value="">Brands</option>
+      {% for brand_id, brand_name in dealer_brands %}
+        <option value="{{ brand_id }}" {% if active_brand == brand_id|stringformat:"s" %}selected{% endif %}>
+          {{ brand_name }}
+        </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    
+
+    {% if dealer_categories %}
+    <select name="category" onchange="this.form.submit()"
+            style="background:var(--surface);border:1px solid var(--border);
+                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
+                   color:var(--text-2);font-family:var(--font-body);outline:none;cursor:pointer;">
+      <option value="">Categories</option>
+      {% for cat_id, cat_name in dealer_categories %}
+        <option value="{{ cat_id }}" {% if active_category == cat_id|stringformat:"s" %}selected{% endif %}>
+          {{ cat_name }}
+        </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+
+
+    <select name="sort" onchange="this.form.submit()"
+            style="background:var(--surface);border:1px solid var(--border);
+                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
+                   color:var(--text-2);font-family:var(--font-body);outline:none;cursor:pointer;margin-left:auto;">
+      <option value="newest"     {% if active_sort == 'newest'     %}selected{% endif %}>Newest</option>
+      <option value="oldest"     {% if active_sort == 'oldest'     %}selected{% endif %}>Oldest</option>
+      <option value="price_asc"  {% if active_sort == 'price_asc'  %}selected{% endif %}>Price ↑</option>
+      <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>Price ↓</option>
+      <option value="popular"    {% if active_sort == 'popular'    %}selected{% endif %}>Most Viewed</option>
+      <option value="top_rated"  {% if active_sort == 'top_rated'  %}selected{% endif %}>Top Rated</option>
+      <option value="best_sell"  {% if active_sort == 'best_sell'  %}selected{% endif %}>Best Selling</option>
+    </select>
+
+    <button type="submit"
+            style="background:var(--gold,#b8860b);color:#fff;border:none;
+                   border-radius:var(--r-sm);padding:8px 16px;font-size:12px;
+                   font-family:var(--font-display);font-weight:700;cursor:pointer;">
+      <i class="fas fa-search"></i>
+    </button>
+
+    {% if search_query or active_category or active_brand or active_sort != 'newest' or active_stock %}
+    <a href="?" style="font-size:11px;color:var(--text-3);white-space:nowrap;
+                       text-decoration:underline;padding:4px;">
+      <i class="fas fa-xmark"></i> Clear
+    </a>
+    {% endif %}
+  </form>
+
+  <div class="products-grid">
+    {% for product in products_page %}
+    <div class="product-card">
+      <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="product-link">
+
+        <div class="product-thumbnail">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.product_name }}" loading="lazy">
+          {% else %}
+            <div class="product-thumb-placeholder"><i class="fas fa-box"></i></div>
+          {% endif %}
+
+          <div class="product-badges">
+            {% if product.discount_percentage > 0 %}
+              <span class="p-badge p-badge-discount">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
+            {% endif %}
+            {% if product.is_featured %}
+              <span class="p-badge p-badge-featured"><i class="fa-solid fa-star"></i> Featured</span>
+            {% endif %}
+            {% if product.is_verified %}
+              <span class="p-badge p-badge-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
+            {% endif %}
+            {% if product.free_shipping %}
+              <span class="p-badge p-badge-shipping"><i class="fa-solid fa-truck"></i> Free Ship</span>
+            {% endif %}
+            {% if product.product_condition != 'new' %}
+              <span class="p-badge p-badge-condition">{{ product.get_product_condition_display }}</span>
+            {% endif %}
+            {% if product.stock == 0 %}
+              <span class="p-badge p-badge-sold-out">Out of Stock</span>
+            {% elif product.is_low_stock %}
+              <span class="p-badge p-badge-low-stock">Only {{ product.stock }} left</span>
+            {% endif %}
+          </div>
+
+          <span class="product-price-badge">
+            {% if product.discount_percentage > 0 and product.final_price %}
+              <span class="price-original">{{ product.currency }}{{ product.selling_price|floatformat:0 }}</span>
+              {{ product.currency }}{{ product.final_price|floatformat:0 }}
+            {% else %}
+              {{ product.currency }}{{ product.selling_price|floatformat:0 }}
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="product-info">
+          <div class="seller-avatar">
+            {% if profile_info.profile_photo %}
+              <img src="{{ profile_info.profile_photo.url }}" alt="{{ profile_info.profile_name }}">
+            {% else %}
+              {{ profile_info.profile_name|default:profile_user.email_or_phone|slice:":1"|upper }}
+            {% endif %}
+            {% if profile_info.is_profile_verified %}
+              <span class="seller-verified-badge"><i class="fa-solid fa-circle-check"></i></span>
+            {% endif %}
+          </div>
+          <div class="product-meta">
+            <h3 class="product-title">{{ product.product_name }}</h3>
+            <div class="seller-name-label">
+              {{ profile_info.profile_name|default:profile_user.email_or_phone }}
+            </div>
+          </div>
+        </div>
+
+        <div class="product-stats">
+          <span class="stat-item"><i class="fa-solid fa-eye"></i> {{ product.view_count }}</span>
+          {% if product.review_count > 0 %}
+            <span class="stat-sep">•</span>
+            <span class="stat-item stat-rating">
+              <i class="fa-solid fa-star"></i>
+              {{ product.rating_average|floatformat:1 }} ({{ product.review_count }})
+            </span>
+          {% endif %}
+          {% if product.total_sales > 0 %}
+            <span class="stat-sep">•</span>
+            <span class="stat-item"><i class="fa-solid fa-bag-shopping"></i> {{ product.total_sales }} sold</span>
+          {% endif %}
+          <span class="stat-sep">•</span>
+          <span class="stat-item
+            {% if product.stock == 0 %}out-of-stock
+            {% elif product.is_low_stock %}low-stock
+            {% else %}in-stock{% endif %}">
+            <i class="fa-solid fa-box"></i> {{ product.stock }}
+          </span>
+          {% if product.category %}
+            <span class="stat-sep">•</span>
+            <span class="stat-item">{{ product.category.category_name }}</span>
+          {% endif %}
+          {% if product.brand %}
+            <span class="stat-sep">•</span>
+            <span class="stat-item">{{ product.brand.brand_name }}</span>
+          {% endif %}
+        </div>
+
+      </a>
+    </div>
+    {% empty %}
+      <div class="card" style="grid-column:1/-1;margin-bottom:0;">
+        <div class="empty">
+          <div class="empty-icon"><i class="fas fa-box-open"></i></div>
+          {% if search_query or active_category or active_brand or active_stock %}
+            <p>No products match your filters.</p>
+            <a href="?" style="font-size:12px;color:var(--gold,#b8860b);margin-top:8px;display:inline-block;">Clear filters</a>
+          {% else %}
+            <p>No products listed yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if products_page.paginator.num_pages > 1 %}
+  <div style="display:flex;align-items:center;justify-content:center;
+              gap:6px;flex-wrap:wrap;margin:20px 0 8px;">
+    {% with base_params="q="|add:search_query|add:"&sort="|add:active_sort|add:"&category="|add:active_category|add:"&brand="|add:active_brand|add:"&stock="|add:active_stock %}
+    {% if products_page.has_previous %}
+      <a href="?{{ base_params }}&page={{ products_page.previous_page_number }}"
+         style="display:inline-flex;align-items:center;justify-content:center;
+                width:34px;height:34px;border-radius:var(--r-sm);
+                border:1px solid var(--border);background:var(--surface);
+                color:var(--text-2);font-size:13px;text-decoration:none;">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+    {% endif %}
+    {% for num in products_page.paginator.page_range %}
+      {% if products_page.number == num %}
+        <span style="display:inline-flex;align-items:center;justify-content:center;
+                     width:34px;height:34px;border-radius:var(--r-sm);
+                     background:var(--gold,#b8860b);color:#fff;
+                     font-size:13px;font-family:var(--font-display);font-weight:700;">
+          {{ num }}
+        </span>
+      {% elif num == 1 or num == products_page.paginator.num_pages or num >= products_page.number|add:"-2" and num <= products_page.number|add:"2" %}
+        <a href="?{{ base_params }}&page={{ num }}"
+           style="display:inline-flex;align-items:center;justify-content:center;
+                  width:34px;height:34px;border-radius:var(--r-sm);
+                  border:1px solid var(--border);background:var(--surface);
+                  color:var(--text-2);font-size:13px;text-decoration:none;">
+          {{ num }}
+        </a>
+      {% elif num == products_page.number|add:"-3" or num == products_page.number|add:"3" %}
+        <span style="color:var(--text-3);font-size:13px;padding:0 4px;">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if products_page.has_next %}
+      <a href="?{{ base_params }}&page={{ products_page.next_page_number }}"
+         style="display:inline-flex;align-items:center;justify-content:center;
+                width:34px;height:34px;border-radius:var(--r-sm);
+                border:1px solid var(--border);background:var(--surface);
+                color:var(--text-2);font-size:13px;text-decoration:none;">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+    {% endwith %}
+    <span style="font-size:11px;color:var(--text-3);margin-left:4px;
+                 font-family:var(--font-mono);white-space:nowrap;">
+      Page {{ products_page.number }} of {{ products_page.paginator.num_pages }}
+    </span>
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+<!-- /PRODUCTS TAB -->
+
+
+<!-- ══ FOLLOWERS TAB ════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-followers">
+  <div class="sec-head"><span class="sec-title">Followers</span><div class="sec-line"></div></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-users"></i> Followers</div>
+      <span class="card-badge">{{ follower_count }}</span>
+    </div>
+    <div class="card-body">
+      {% for u in profile_info.followers.select_related|slice:":20" %}
+        <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="user-item">
+          <div class="user-thumb">
+            {% if u.profileinfo.profile_photo %}
+              <img src="{{ u.profileinfo.profile_photo.url }}" alt="">
+            {% else %}
+              {{ u.email_or_phone|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="user-name">{{ u.profileinfo.profile_name|default:u.email_or_phone }}</div>
+            <div class="user-handle">{{ u.email_or_phone }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty">
+          <div class="empty-icon"><i class="fas fa-users"></i></div>
+          <p>No followers yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<!-- /FOLLOWERS TAB -->
+
+<!-- ══ FOLLOWING TAB ════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-following">
+  <div class="sec-head"><span class="sec-title">Following</span><div class="sec-line"></div></div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-user-check"></i> Following</div>
+      <span class="card-badge">{{ following_count }}</span>
+    </div>
+    <div class="card-body">
+      {% for u in profile_info.following.all|slice:":20" %}
+        <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="user-item">
+          <div class="user-thumb">
+            {% if u.profileinfo.profile_photo %}
+              <img src="{{ u.profileinfo.profile_photo.url }}" alt="">
+            {% else %}
+              {{ u.email_or_phone|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="user-name">{{ u.profileinfo.profile_name|default:u.email_or_phone }}</div>
+            <div class="user-handle">{{ u.email_or_phone }}</div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty">
+          <div class="empty-icon"><i class="fas fa-user-slash"></i></div>
+          <p>Not following anyone yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<!-- /FOLLOWING TAB -->
+
+<!-- ══ ABOUT TAB ════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-about">
+
+  {% if profile_info.profile_bio or profile_info.profile_tagline %}
+  <div class="sec-head"><span class="sec-title">Bio</span><div class="sec-line"></div></div>
+  <div class="bio-card">
+    {% if profile_info.profile_tagline %}
+      <div class="bio-tagline">{{ profile_info.profile_tagline }}</div>
+    {% endif %}
+    {% if profile_info.profile_bio %}
+      <div class="bio-text">{{ profile_info.profile_bio }}</div>
+    {% endif %}
+    <div class="meta-row">
+      <span class="meta-item">
+        <i class="fas fa-calendar"></i>
+        Joined {{ profile_user.date_joined|date:"M Y" }}
+      </span>
+      {% if profile_info.profile_language %}
+      <span class="meta-item">
+        <i class="fas fa-language"></i>
+        {{ profile_info.profile_language|upper }}
+      </span>
+      {% endif %}
+      {% if profile_info.business_website %}
+      <span class="meta-item">
+        <i class="fas fa-globe"></i>
+        <a href="{{ profile_info.business_website }}" target="_blank" rel="noopener">
+          {{ profile_info.business_website }}
+        </a>
+      </span>
+      {% endif %}
+    </div>
+    {% with pi=profile_info %}
+    {% if pi.social_facebook or pi.social_twitter or pi.social_instagram or pi.social_linkedin or pi.social_youtube or pi.social_tiktok %}
+    <div class="social-row">
+      {% if pi.social_facebook %}<a class="social-pill" href="{{ pi.social_facebook }}" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>{% endif %}
+      {% if pi.social_twitter  %}<a class="social-pill" href="{{ pi.social_twitter  }}" target="_blank"><i class="fab fa-x-twitter"></i> X</a>{% endif %}
+      {% if pi.social_instagram%}<a class="social-pill" href="{{ pi.social_instagram}}" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>{% endif %}
+      {% if pi.social_linkedin %}<a class="social-pill" href="{{ pi.social_linkedin }}" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>{% endif %}
+      {% if pi.social_youtube  %}<a class="social-pill" href="{{ pi.social_youtube  }}" target="_blank"><i class="fab fa-youtube"></i> YouTube</a>{% endif %}
+      {% if pi.social_tiktok   %}<a class="social-pill" href="{{ pi.social_tiktok   }}" target="_blank"><i class="fab fa-tiktok"></i> TikTok</a>{% endif %}
+    </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+  {% endif %}
+
+  <div class="sec-head"><span class="sec-title">Details</span><div class="sec-line"></div></div>
+  <div class="card">
+    <div class="card-body">
+      <div class="info-list">
+
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-eye"></i></div>
+          <div>
+            <div class="info-label">Profile views</div>
+            <div class="info-value">{{ profile_info.profile_views }}</div>
+          </div>
+        </div>
+
+        {% if profile_user.role == 'dealer' and profile_info.business_name %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-building"></i></div>
+          <div>
+            <div class="info-label">Business</div>
+            <div class="info-value">{{ profile_info.business_name }}</div>
+          </div>
+        </div>
+        {% if profile_info.business_type %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-tag"></i></div>
+          <div>
+            <div class="info-label">Type</div>
+            <div class="info-value">{{ profile_info.business_type }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% if profile_info.business_email %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-envelope"></i></div>
+          <div>
+            <div class="info-label">Business email</div>
+            <div class="info-value">{{ profile_info.business_email }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% if profile_info.business_phone %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-phone"></i></div>
+          <div>
+            <div class="info-label">Business phone</div>
+            <div class="info-value">{{ profile_info.business_phone }}</div>
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-id-badge"></i></div>
+          <div>
+            <div class="info-label">Profile type</div>
+            <div class="info-value">{{ profile_info.get_profile_type_display }}</div>
+          </div>
+        </div>
+
+        {% if profile_info.profile_gender %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-venus-mars"></i></div>
+          <div>
+            <div class="info-label">Gender</div>
+            <div class="info-value">{{ profile_info.get_profile_gender_display }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if profile_info.show_location and profile_info.location_display %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-location-dot"></i></div>
+          <div>
+            <div class="info-label">Location</div>
+            <div class="info-value">{{ profile_info.location_display }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if profile_info.show_email and profile_user.email %}
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-envelope"></i></div>
+          <div>
+            <div class="info-label">Email</div>
+            <div class="info-value">{{ profile_user.email }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="info-row">
+          <div class="info-icon"><i class="fas fa-calendar"></i></div>
+          <div>
+            <div class="info-label">Member since</div>
+            <div class="info-value">{{ profile_user.date_joined|date:"d M Y" }}</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  {% if profile_user.role == 'dealer' and profile_info.business_description %}
+  <div class="sec-head"><span class="sec-title">About the business</span><div class="sec-line"></div></div>
+  <div class="card">
+    <div class="card-body">
+      <p style="font-size:14px;color:var(--text-2);line-height:1.75;">
+        {{ profile_info.business_description }}
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+<!-- /ABOUT TAB -->
+
+</div><!-- /page -->
+
+
+<!-- ═══════════════════════════════
+     MOBILE FIXED ORDER BAR
+════════════════════════════════ -->
+{% if profile_user.role == 'dealer' %}
+{% with pi=profile_info %}
+{% if pi.social_whatsapp or pi.show_phone and pi.profile_phone %}
+<div class="mob-order-bar" id="mobBar">
+
+  {% if pi.social_whatsapp %}
+  <a href="https://wa.me/{{ pi.social_whatsapp }}?text=Hi,%20I%20found%20your%20profile%20on%20PIELAM"
+     target="_blank"
+     class="order-btn whatsapp"
+     rel="noopener noreferrer">
+    <i class="fa-brands fa-whatsapp"></i>
+    <span>WhatsApp</span>
+  </a>
+  {% endif %}
+
+  {% if pi.show_phone and pi.profile_phone %}
+  <a href="tel:{{ pi.profile_phone }}"
+     class="order-btn call">
+    <i class="fa-solid fa-phone"></i>
+    <span>Call</span>
+  </a>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endwith %}
+{% endif %}
+
+<!-- SCRIPTS -->
+<script>
+
+  // ── STAT TABS ─────────────────────────────────────────────
+  document.querySelectorAll('.tab-stat').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-stat').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = document.getElementById('tab-' + tab.dataset.tab);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+const getCsrf = () =>
+  document.cookie.split(';').map(c => c.trim())
+    .find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+ 
+function toast(msg, type = 'info') {
+  const icons = { success: 'circle-check', error: 'circle-xmark', info: 'circle-info' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<i class="fas fa-${icons[type] || 'circle-info'}"></i><span>${msg}</span>`;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 300); }, 3200);
+}
+ 
+// ── FOLLOW / UNFOLLOW ──────────────────────────────────────
+const followBtn = document.getElementById('followBtn');
+if (followBtn) {
+  followBtn.addEventListener('click', async () => {
+    const username  = followBtn.dataset.username;
+    const following = followBtn.dataset.following === 'true';
+ 
+    // Build URL — no encodeURIComponent so Django's str path matches correctly
+    const url = following
+      ? `/customer/unfollow/${username}/`
+      : `/customer/follow/${username}/`;
+ 
+    // Disable while request is in flight
+    followBtn.disabled = true;
+    followBtn.style.opacity = '0.6';
+ 
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCsrf(),
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+ 
+      if (!res.ok) {
+        // Surface HTTP errors (403 = not logged in, 404 = user not found, etc.)
+        const msg = res.status === 403
+          ? 'Please log in to follow users.'
+          : res.status === 404
+          ? 'User not found.'
+          : `Server error (${res.status}).`;
+        toast(msg, 'error');
+        return;
+      }
+ 
+      const data = await res.json();
+      const nowFollowing = data.following;
+ 
+      followBtn.dataset.following = nowFollowing ? 'true' : 'false';
+ 
+      if (nowFollowing) {
+        followBtn.className = 'btn btn-danger';
+        followBtn.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+        toast('You are now following this user.', 'success');
+      } else {
+        followBtn.className = 'btn btn-primary';
+        followBtn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+        toast('Unfollowed successfully.', 'info');
+      }
+ 
+      // Update follower count in stats strip
+      const countEl = document.getElementById('followerCount');
+      if (countEl && data.follower_count !== undefined) {
+        countEl.textContent = data.follower_count;
+      }
+ 
+    } catch (err) {
+      console.error('Follow request failed:', err);
+      toast('Network error. Please try again.', 'error');
+    } finally {
+      followBtn.disabled = false;
+      followBtn.style.opacity = '1';
+    }
+  });
+}
+ 
+// ── SHARE ──────────────────────────────────────────────────
+function shareProfile() {
+  const url = window.location.href;
+  if (navigator.share) {
+    navigator.share({
+      title: '{{ profile_info.profile_name|default:profile_user.email_or_phone }} — PIELAM',
+      url,
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url)
+      .then(() => toast('Profile link copied!', 'success'))
+      .catch(() => toast('Could not copy link.', 'error'));
+  }
+}
+</script>
+
+</body>
+</html>

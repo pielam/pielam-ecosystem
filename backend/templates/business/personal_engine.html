@@ -1,0 +1,1185 @@
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Engine - Media Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        /* ============================================================
+           DESIGN TOKENS
+        ============================================================ */
+        :root {
+            --ink-900: #14151a;
+            --ink-700: #3c4150;
+            --ink-500: #6b7080;
+            --ink-300: #aeb2bd;
+
+            --surface: #faf9f7;
+            --surface-card: #ffffff;
+            --surface-sunken: #f3f2ee;
+            --line: #e7e4de;
+
+            --accent: #5b4cf0;
+            --accent-soft: #edeafd;
+
+            --success: #18875f;
+            --success-soft: #e6f5ee;
+            --warning: #b9790a;
+            --warning-soft: #faf0dc;
+            --danger: #c8392f;
+            --danger-soft: #fbeae8;
+
+            --r-sm: 6px;
+            --r-md: 10px;
+            --r-lg: 16px;
+            --r-full: 999px;
+
+            --shadow-card: 0 1px 2px rgba(20,21,26,.04), 0 10px 24px -10px rgba(20,21,26,.12);
+            --shadow-drawer: -20px 0 60px -16px rgba(20,21,26,.28);
+
+            --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           TOP BAR
+        ============================================================ */
+        .top-bar {
+            background: rgba(255,255,255,.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,.1);
+        }
+        .logo-text {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ============================================================
+           LAYOUT
+        ============================================================ */
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        .engine-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .stat-card {
+            background: white;
+            border-radius: var(--r-lg);
+            padding: 22px 26px;
+            box-shadow: var(--shadow-card);
+            font-family: var(--font-body);
+            color: var(--ink-500);
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ink-900);
+            margin-top: 8px;
+            line-height: 1;
+        }
+
+        /* ============================================================
+           SERVICES GRID
+        ============================================================ */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 22px;
+        }
+        .no-services {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,.7);
+            font-size: 15px;
+        }
+
+        /* ============================================================
+           SERVICE CARD
+        ============================================================ */
+        .service-card {
+            position: relative;
+            background: var(--surface-card);
+            border: 1px solid var(--line);
+            border-radius: var(--r-lg);
+            padding: 20px 20px 18px 24px;
+            box-shadow: var(--shadow-card);
+            transition: transform .18s ease, box-shadow .18s ease;
+            font-family: var(--font-body);
+            color: var(--ink-900);
+        }
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 1px 2px rgba(20,21,26,.05), 0 18px 32px -14px rgba(20,21,26,.18);
+        }
+
+        /* coloured left rail */
+        .service-card__rail {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 4px;
+            border-radius: var(--r-lg) 0 0 var(--r-lg);
+            background: var(--ink-300);
+        }
+        .service-card__rail[data-type="education"]  { background: #8a5cf6; }
+        .service-card__rail[data-type="product"]    { background: #2f6fed; }
+        .service-card__rail[data-type="news"]       { background: #d6398e; }
+        .service-card__rail[data-type="location"]   { background: #0e9c8c; }
+        .service-card__rail[data-type="api"]        { background: #4839c9; }
+        .service-card__rail[data-type="person"]     { background: #e65100; }
+        .service-card__rail[data-type="business"]   { background: #18875f; }
+
+        .service-card__head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .service-card__identity {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        /* type icon */
+        .content-icon {
+            flex-shrink: 0;
+            width: 38px; height: 38px;
+            border-radius: var(--r-md);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            color: #fff;
+            background: var(--ink-300);
+        }
+        .content-icon.education { background: #8a5cf6; }
+        .content-icon.product   { background: #2f6fed; }
+        .content-icon.news      { background: #d6398e; }
+        .content-icon.location  { background: #0e9c8c; }
+        .content-icon.api       { background: #4839c9; }
+        .content-icon.person    { background: #e65100; }
+        .content-icon.business  { background: #18875f; }
+
+        .service-card__meta { min-width: 0; }
+        .service-card__name {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 16px;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .service-card__url {
+            display: block;
+            margin-top: 2px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--accent);
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .service-card__url:hover { text-decoration: underline; }
+
+        /* ============================================================
+           STATUS BADGE
+        ============================================================ */
+        .status-badge {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: var(--r-full);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            background: var(--surface-sunken);
+            color: var(--ink-500);
+        }
+        .status-badge::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .status-badge.success { background: var(--success-soft); color: var(--success); }
+        .status-badge.error   { background: var(--danger-soft);  color: var(--danger); }
+        .status-badge.pending { background: var(--warning-soft); color: var(--warning); }
+        .status-badge.pending::before { animation: beacon-pulse 1.4s ease-in-out infinite; }
+        @keyframes beacon-pulse { 0%,100%{opacity:1}50%{opacity:.35} }
+
+        /* ============================================================
+           CARD MEDIA BODY
+        ============================================================ */
+        .service-card__body { margin-bottom: 16px; }
+
+        /* OG thumbnail */
+        .og-thumbnail {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: var(--r-md);
+            display: block;
+            cursor: pointer;
+        }
+        .og-meta { margin-top: 10px; }
+        .og-title {
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--ink-900);
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .og-description {
+            font-size: 12px;
+            color: var(--ink-500);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .og-site {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--ink-300);
+            font-family: var(--font-mono);
+        }
+
+        /* image mini-grid */
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .media-grid img {
+            width: 100%; aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+        .media-grid img:hover { opacity: .8; }
+
+        /* video pill list */
+        .video-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .video-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px;
+            background: var(--surface-sunken);
+            border-radius: var(--r-md);
+            font-size: 12px;
+            color: var(--ink-700);
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .video-pill i { color: #2f6fed; flex-shrink: 0; }
+        .video-pill:hover { background: var(--line); }
+
+        /* no-data placeholder */
+        .card-pending {
+            padding: 20px 16px;
+            text-align: center;
+            color: var(--ink-300);
+            font-size: 13px;
+        }
+        .card-pending i { font-size: 24px; display: block; margin-bottom: 8px; }
+
+        .fetch-error {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 10px 12px;
+            background: var(--danger-soft);
+            color: var(--danger);
+            border-radius: var(--r-md);
+            font-size: 12px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
+        /* ============================================================
+           BUTTONS
+        ============================================================ */
+        .service-card__actions { display: flex; gap: 10px; }
+        .service-card__actions .btn { flex: 1; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border: none;
+            border-radius: var(--r-md);
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .15s, transform .15s;
+        }
+        .btn:active { transform: scale(.98); }
+        .btn-primary   { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #4d3fe0; }
+        .btn-secondary { background: var(--surface-sunken); color: var(--ink-700); }
+        .btn-secondary:hover { background: var(--line); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* loading spinner on button */
+        .btn.loading { pointer-events: none; opacity: .7; }
+        .btn.loading i { animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ============================================================
+           MODAL — slide-in drawer
+        ============================================================ */
+        .modal {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; justify-content: flex-end;
+            background: rgba(15,16,20,.45);
+            opacity: 0; pointer-events: none;
+            transition: opacity .25s ease;
+        }
+        .modal.active { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            width: min(660px, 100%);
+            height: 100%;
+            background: var(--surface-card);
+            box-shadow: var(--shadow-drawer);
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .32s cubic-bezier(.22,1,.36,1);
+        }
+        .modal.active .modal-content { transform: translateX(0); }
+
+        .modal-header {
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+        .modal-header h3 {
+            font-family: var(--font-display);
+            font-size: 18px; font-weight: 600;
+            color: var(--ink-900); margin: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .modal-close-btn {
+            flex-shrink: 0;
+            width: 34px; height: 34px;
+            border: none; border-radius: var(--r-full);
+            background: var(--surface-sunken);
+            color: var(--ink-700);
+            cursor: pointer; transition: background .15s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close-btn:hover { background: var(--line); }
+
+        .modal-body {
+            flex: 1; overflow-y: auto;
+            padding: 24px;
+            font-family: var(--font-body);
+            color: var(--ink-900);
+        }
+
+        /* ============================================================
+           DETAIL SECTIONS (drawer body)
+        ============================================================ */
+        .detail-section { margin-bottom: 0; }
+        .detail-section + .detail-section {
+            margin-top: 28px; padding-top: 24px;
+            border-top: 1px solid var(--line);
+        }
+
+        .detail-section-title {
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-display);
+            font-size: 14px; font-weight: 600;
+            color: var(--ink-900);
+            margin: 0 0 14px;
+        }
+        .detail-section-title i { color: var(--accent); font-size: 13px; }
+        .detail-section-title.error { color: var(--danger); }
+        .detail-section-title.error i { color: var(--danger); }
+        .detail-section-title.collapsible {
+            justify-content: space-between;
+            cursor: pointer; user-select: none;
+        }
+        .detail-section-title.collapsible .lgroup { display: flex; align-items: center; gap: 8px; }
+        .detail-section-title .chevron { font-size: 11px; color: var(--ink-300); }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+        .detail-item { display: flex; flex-direction: column; gap: 4px; }
+        .detail-item.full-width { grid-column: 1 / -1; }
+        .detail-label {
+            font-size: 11px; font-weight: 600;
+            letter-spacing: .04em; text-transform: uppercase;
+            color: var(--ink-500);
+        }
+        .detail-value { font-size: 14px; color: var(--ink-900); line-height: 1.5; }
+        .detail-link {
+            font-size: 14px; color: var(--accent);
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 5px;
+            word-break: break-all;
+        }
+        .detail-link:hover { text-decoration: underline; }
+
+        .error-box {
+            background: var(--danger-soft); color: var(--danger);
+            padding: 14px 16px; border-radius: var(--r-md);
+            font-size: 13px; line-height: 1.5;
+            font-family: var(--font-mono);
+        }
+
+        /* ============================================================
+           TABS (inside drawer)
+        ============================================================ */
+        .detail-tabs {
+            display: flex; gap: 2px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 18px;
+            overflow-x: auto;
+        }
+        .detail-tab {
+            flex-shrink: 0;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 14px;
+            border: none; background: none;
+            font-family: var(--font-body); font-size: 13px; font-weight: 500;
+            color: var(--ink-500);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: color .15s, border-color .15s;
+        }
+        .detail-tab:hover { color: var(--ink-900); }
+        .detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        .tab-badge {
+            padding: 1px 7px;
+            border-radius: var(--r-full);
+            background: var(--surface-sunken);
+            color: var(--ink-500);
+            font-family: var(--font-mono); font-size: 11px;
+        }
+        .detail-tab.active .tab-badge { background: var(--accent-soft); color: var(--accent); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .tab-empty {
+            padding: 24px 0; text-align: center;
+            color: var(--ink-500); font-size: 13px;
+        }
+
+        /* images tab */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .gallery-item { display: flex; flex-direction: column; gap: 4px; }
+        .gallery-image {
+            width: 100%; aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: var(--r-sm);
+            cursor: pointer;
+            transition: opacity .15s;
+            border: 2px solid var(--line);
+        }
+        .gallery-image:hover { opacity: .8; }
+        .gallery-caption {
+            font-size: 10px; color: var(--ink-500);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .image-lightbox {
+            margin-top: 16px;
+            border-radius: var(--r-md); overflow: hidden;
+        }
+        .image-lightbox img { width: 100%; display: block; }
+
+        /* videos tab */
+        .video-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px;
+            background: var(--surface-sunken);
+            border-radius: var(--r-md);
+            margin-bottom: 8px;
+        }
+        .video-item:last-child { margin-bottom: 0; }
+        .video-item i { color: #2f6fed; font-size: 18px; flex-shrink: 0; }
+        .video-item__body { min-width: 0; flex: 1; }
+        .video-item__url {
+            font-family: var(--font-mono); font-size: 12px;
+            color: var(--accent);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            text-decoration: none;
+            display: block;
+        }
+        .video-item__url:hover { text-decoration: underline; }
+        .video-item__type { font-size: 11px; color: var(--ink-300); margin-top: 2px; }
+
+        /* links tab */
+        .link-item {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 9px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 13px;
+        }
+        .link-item:last-child { border-bottom: none; }
+        .link-item i { color: var(--ink-300); margin-top: 2px; flex-shrink: 0; }
+        .link-item a {
+            color: var(--accent); text-decoration: none;
+            word-break: break-all; line-height: 1.4;
+        }
+        .link-item a:hover { text-decoration: underline; }
+        .link-text { font-size: 11px; color: var(--ink-500); margin-top: 2px; }
+
+        /* text tab */
+        .text-content {
+            background: var(--surface-sunken);
+            border-radius: var(--r-md);
+            padding: 16px;
+            font-size: 13.5px;
+            line-height: 1.7;
+            color: var(--ink-900);
+            max-height: 420px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* raw JSON */
+        .json-viewer {
+            background: var(--ink-900);
+            border-radius: var(--r-md);
+            padding: 16px;
+            overflow: auto;
+            max-height: 420px;
+        }
+        .json-viewer pre {
+            margin: 0;
+            font-family: var(--font-mono);
+            font-size: 12px; line-height: 1.6;
+            color: #d6e2ff;
+            white-space: pre-wrap; word-break: break-word;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 640px) {
+            .services-grid { grid-template-columns: 1fr; }
+            .modal-content { width: 100%; }
+            .detail-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+    
+    <header class="top-bar">
+        <div class="logo-text">PIELAM Engine</div>
+        <button class="btn btn-primary" onclick="refreshAllServices()">
+            <i class="fas fa-sync-alt"></i> Refresh All
+        </button>
+    </header>
+
+    <div class="container">
+        <div class="engine-stats">
+            <div class="stat-card">
+                Total Services
+                <div class="stat-value">{{ total_services }}</div>
+            </div>
+            <div class="stat-card">
+                Active Connections
+                <div class="stat-value" id="active-count">0</div>
+            </div>
+            <div class="stat-card">
+                Errors
+                <div class="stat-value" id="error-count">0</div>
+            </div>
+        </div>
+        <div id="services-container"></div>
+    </div>
+
+    <!-- Drawer modal -->
+    <div class="modal" id="mediaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close-btn" onclick="closeModal()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+<script>
+/*
+ * Data shape from ConnectedServiceSerializer:
+ * {
+ *   id, service_name, service_url, service_type, status, is_connected,
+ *   og_title, og_description, og_thumbnail, og_site_name, og_type,
+ *   extracted_images:  [{url, alt}, ...],
+ *   extracted_videos:  [{url, type}, ...],
+ *   extracted_links:   [{href, text}, ...],
+ *   extracted_text:    "...",
+ *   fetch_status:      "pending"|"success"|"error",
+ *   fetch_error:       null | "...",
+ *   last_fetch_time:   null | ISO string,
+ *   created_at, updated_at
+ * }
+ */
+const servicesData = {{ connected_services|safe }};
+const csrftoken = '{{ csrf_token }}';
+
+// -----------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------
+function escapeHtml(text) {
+    if (!text) return '';
+    const d = document.createElement('div');
+    d.textContent = String(text);
+    return d.innerHTML;
+}
+
+function formatTimeAgo(isoString) {
+    if (!isoString) return 'Never';
+    const diff = Math.floor((Date.now() - new Date(isoString)) / 1000);
+    if (diff < 60)   return 'Just now';
+    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+    return `${Math.floor(diff/86400)}d ago`;
+}
+
+function serviceTypeIcon(type) {
+    const map = {
+        education: 'fa-graduation-cap',
+        product:   'fa-box',
+        news:      'fa-newspaper',
+        location:  'fa-map-marker-alt',
+        api:       'fa-code',
+        person:    'fa-user',
+        business:  'fa-briefcase',
+    };
+    return `<i class="fas ${map[type] || 'fa-globe'}"></i>`;
+}
+
+// -----------------------------------------------------------------------
+// Render grid
+// -----------------------------------------------------------------------
+function renderServices() {
+    const container = document.getElementById('services-container');
+    const grid = document.createElement('div');
+    grid.className = 'services-grid';
+
+    if (!servicesData.length) {
+        grid.innerHTML = `<div class="no-services">
+            <i class="fas fa-plug" style="font-size:32px;margin-bottom:12px;display:block;"></i>
+            No connected services yet.
+        </div>`;
+    } else {
+        servicesData.forEach(s => grid.appendChild(buildCard(s)));
+    }
+
+    container.innerHTML = '';
+    container.appendChild(grid);
+    updateStats();
+}
+
+function buildCard(s) {
+    const card = document.createElement('div');
+    card.className = 'service-card';
+    card.id = `service-${s.id}`;
+
+    const type = s.service_type || 'unknown';
+    const hasFetched = s.fetch_status === 'success';
+
+    // ---- card body preview ----
+    let bodyHtml = '';
+
+    if (s.fetch_status === 'error') {
+        bodyHtml = `<div class="fetch-error">
+            <i class="fas fa-exclamation-circle"></i>
+            ${escapeHtml(s.fetch_error || 'Unknown error')}
+        </div>`;
+    } else if (!hasFetched) {
+        bodyHtml = `<div class="card-pending">
+            <i class="fas fa-cloud-download-alt"></i>
+            Not fetched yet — click Refresh to load.
+        </div>`;
+    } else {
+        // OG thumbnail
+        if (s.og_thumbnail) {
+            bodyHtml += `<img class="og-thumbnail"
+                src="${escapeHtml(s.og_thumbnail)}"
+                alt="${escapeHtml(s.og_title || s.service_name)}"
+                onclick="viewImage('${escapeHtml(s.og_thumbnail)}')"
+                onerror="this.style.display='none'" />`;
+        }
+
+        // OG title / description
+        if (s.og_title || s.og_description) {
+            bodyHtml += `<div class="og-meta">
+                ${s.og_title ? `<div class="og-title">${escapeHtml(s.og_title)}</div>` : ''}
+                ${s.og_description ? `<div class="og-description">${escapeHtml(s.og_description)}</div>` : ''}
+                ${s.og_site_name ? `<div class="og-site"><i class="fas fa-globe"></i>${escapeHtml(s.og_site_name)}</div>` : ''}
+            </div>`;
+        }
+
+        // Extra image mini-grid (skip og_thumbnail to avoid dupe, show up to 4)
+        const extraImages = (s.extracted_images || [])
+            .filter(img => img.url !== s.og_thumbnail)
+            .slice(0, 4);
+        if (extraImages.length > 0) {
+            bodyHtml += `<div class="media-grid">
+                ${extraImages.map(img =>
+                    `<img src="${escapeHtml(img.url)}"
+                          alt="${escapeHtml(img.alt || '')}"
+                          onclick="viewImage('${escapeHtml(img.url)}')"
+                          onerror="this.parentElement.removeChild(this)" />`
+                ).join('')}
+            </div>`;
+        }
+
+        // Video pills (up to 3)
+        const videos = (s.extracted_videos || []).slice(0, 3);
+        if (videos.length > 0) {
+            bodyHtml += `<div class="video-list">
+                ${videos.map(v =>
+                    `<a class="video-pill" href="${escapeHtml(v.url)}" target="_blank">
+                        <i class="fas fa-play-circle"></i>
+                        ${escapeHtml(v.url.length > 50 ? v.url.substring(0, 50) + '…' : v.url)}
+                    </a>`
+                ).join('')}
+            </div>`;
+        }
+
+        // Fallback: if nothing visual at all, show text snippet
+        if (!s.og_thumbnail && extraImages.length === 0 && videos.length === 0 && s.extracted_text) {
+            bodyHtml += `<div class="og-description" style="margin-top:8px;">
+                ${escapeHtml(s.extracted_text.substring(0, 200))}…
+            </div>`;
+        }
+    }
+
+    card.innerHTML = `
+        <span class="service-card__rail" data-type="${escapeHtml(type)}"></span>
+        <div class="service-card__head">
+            <div class="service-card__identity">
+                <div class="content-icon ${escapeHtml(type)}">${serviceTypeIcon(type)}</div>
+                <div class="service-card__meta">
+                    <div class="service-card__name">${escapeHtml(s.service_name)}</div>
+                    <a class="service-card__url" href="${escapeHtml(s.service_url)}" target="_blank">
+                        ${escapeHtml(s.service_url)}
+                    </a>
+                </div>
+            </div>
+            <span class="status-badge ${escapeHtml(s.fetch_status)}">${escapeHtml(s.fetch_status)}</span>
+        </div>
+        <div class="service-card__body">${bodyHtml}</div>
+        <div class="service-card__actions">
+            <button class="btn btn-primary" id="refresh-btn-${s.id}" onclick="refreshService(${s.id})">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="viewServiceDetails(${s.id})">
+                <i class="fas fa-eye"></i> Details
+            </button>
+        </div>
+    `;
+
+    return card;
+}
+
+// -----------------------------------------------------------------------
+// Stats
+// -----------------------------------------------------------------------
+function updateStats() {
+    const active = servicesData.filter(s => s.fetch_status === 'success').length;
+    const errors = servicesData.filter(s => s.fetch_status === 'error').length;
+    document.getElementById('active-count').textContent = active;
+    document.getElementById('error-count').textContent  = errors;
+}
+
+// -----------------------------------------------------------------------
+// Image lightbox (simple)
+// -----------------------------------------------------------------------
+function viewImage(url) {
+    const modal = document.getElementById('mediaModal');
+    document.getElementById('modalTitle').textContent = 'Image Preview';
+    document.getElementById('modalBody').innerHTML = `
+        <img src="${escapeHtml(url)}" style="width:100%;border-radius:var(--r-md);" />`;
+    modal.classList.add('active');
+}
+
+// -----------------------------------------------------------------------
+// Details drawer
+// -----------------------------------------------------------------------
+function viewServiceDetails(serviceId) {
+    const s = servicesData.find(x => x.id === serviceId);
+    if (!s) return;
+
+    document.getElementById('modalTitle').textContent = s.service_name;
+
+    const images  = s.extracted_images || [];
+    const videos  = s.extracted_videos || [];
+    const links   = s.extracted_links  || [];
+    const text    = s.extracted_text   || '';
+
+    // --- Basic info section ---
+    let html = `
+        <div class="detail-section">
+            <h4 class="detail-section-title"><i class="fas fa-info-circle"></i> Basic Information</h4>
+            <div class="detail-grid">
+                <div class="detail-item full-width">
+                    <span class="detail-label">URL</span>
+                    <a href="${escapeHtml(s.service_url)}" target="_blank" class="detail-link">
+                        ${escapeHtml(s.service_url)} <i class="fas fa-external-link-alt" style="font-size:11px;"></i>
+                    </a>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Service Type</span>
+                    <span class="detail-value" style="text-transform:capitalize;">${escapeHtml(s.service_type)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Visibility</span>
+                    <span class="detail-value" style="text-transform:capitalize;">${escapeHtml(s.status)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Fetch Status</span>
+                    <span class="status-badge ${escapeHtml(s.fetch_status)}">${escapeHtml(s.fetch_status)}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Last Fetched</span>
+                    <span class="detail-value">${formatTimeAgo(s.last_fetch_time)}</span>
+                </div>
+            </div>
+        </div>`;
+
+    // --- Error ---
+    if (s.fetch_error) {
+        html += `
+            <div class="detail-section">
+                <h4 class="detail-section-title error"><i class="fas fa-exclamation-triangle"></i> Error</h4>
+                <div class="error-box">${escapeHtml(s.fetch_error)}</div>
+            </div>`;
+    }
+
+    // --- OG / meta ---
+    if (s.og_title || s.og_description || s.og_thumbnail) {
+        html += `
+            <div class="detail-section">
+                <h4 class="detail-section-title"><i class="fas fa-share-alt"></i> Open Graph / Meta</h4>
+                ${s.og_thumbnail ? `
+                    <img src="${escapeHtml(s.og_thumbnail)}"
+                         style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--r-md);margin-bottom:14px;cursor:pointer;"
+                         onclick="viewImage('${escapeHtml(s.og_thumbnail)}')"
+                         onerror="this.style.display='none'" />` : ''}
+                <div class="detail-grid">
+                    ${s.og_title ? `<div class="detail-item full-width">
+                        <span class="detail-label">Title</span>
+                        <span class="detail-value">${escapeHtml(s.og_title)}</span>
+                    </div>` : ''}
+                    ${s.og_description ? `<div class="detail-item full-width">
+                        <span class="detail-label">Description</span>
+                        <span class="detail-value">${escapeHtml(s.og_description)}</span>
+                    </div>` : ''}
+                    ${s.og_site_name ? `<div class="detail-item">
+                        <span class="detail-label">Site Name</span>
+                        <span class="detail-value">${escapeHtml(s.og_site_name)}</span>
+                    </div>` : ''}
+                    ${s.og_type ? `<div class="detail-item">
+                        <span class="detail-label">OG Type</span>
+                        <span class="detail-value">${escapeHtml(s.og_type)}</span>
+                    </div>` : ''}
+                </div>
+            </div>`;
+    }
+
+    // --- Tabbed media section (only if fetched) ---
+    if (s.fetch_status === 'success') {
+        html += `
+            <div class="detail-section">
+                <h4 class="detail-section-title"><i class="fas fa-photo-video"></i> Extracted Content</h4>
+                <div class="detail-tabs">
+                    <button class="detail-tab active" onclick="switchTab(this,'tab-images-${s.id}')">
+                        <i class="fas fa-images"></i> Images
+                        <span class="tab-badge">${images.length}</span>
+                    </button>
+                    <button class="detail-tab" onclick="switchTab(this,'tab-videos-${s.id}')">
+                        <i class="fas fa-video"></i> Videos
+                        <span class="tab-badge">${videos.length}</span>
+                    </button>
+                    <button class="detail-tab" onclick="switchTab(this,'tab-links-${s.id}')">
+                        <i class="fas fa-link"></i> Links
+                        <span class="tab-badge">${links.length}</span>
+                    </button>
+                    <button class="detail-tab" onclick="switchTab(this,'tab-text-${s.id}')">
+                        <i class="fas fa-align-left"></i> Text
+                    </button>
+                </div>
+
+                <!-- Images -->
+                <div id="tab-images-${s.id}" class="tab-panel active">
+                    ${images.length ? `
+                        <div class="image-gallery" id="gallery-${s.id}">
+                            ${images.slice(0,24).map(img => `
+                                <div class="gallery-item">
+                                    <img class="gallery-image"
+                                         src="${escapeHtml(img.url)}"
+                                         alt="${escapeHtml(img.alt||'')}"
+                                         onclick="expandGalleryImage(this, '${escapeHtml(img.url)}')"
+                                         onerror="this.parentElement.style.display='none'" />
+                                    ${img.alt ? `<div class="gallery-caption" title="${escapeHtml(img.alt)}">${escapeHtml(img.alt.substring(0,28))}${img.alt.length>28?'…':''}</div>` : ''}
+                                </div>`).join('')}
+                        </div>
+                        ${images.length > 24 ? `<p style="margin-top:10px;font-size:12px;color:var(--ink-500);">+${images.length-24} more images</p>` : ''}
+                        <div id="lightbox-${s.id}" class="image-lightbox" style="display:none;"></div>
+                    ` : `<div class="tab-empty"><i class="fas fa-image"></i> No images extracted</div>`}
+                </div>
+
+                <!-- Videos -->
+                <div id="tab-videos-${s.id}" class="tab-panel">
+                    ${videos.length ? videos.map(v => `
+                        <div class="video-item">
+                            <i class="fas fa-play-circle"></i>
+                            <div class="video-item__body">
+                                <a class="video-item__url" href="${escapeHtml(v.url)}" target="_blank">
+                                    ${escapeHtml(v.url)}
+                                </a>
+                                <div class="video-item__type">${escapeHtml(v.type||'video')}</div>
+                            </div>
+                            <a href="${escapeHtml(v.url)}" target="_blank" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>`).join('')
+                    : `<div class="tab-empty"><i class="fas fa-video"></i> No videos extracted</div>`}
+                </div>
+
+                <!-- Links -->
+                <div id="tab-links-${s.id}" class="tab-panel">
+                    ${links.length ? `
+                        <div style="max-height:360px;overflow-y:auto;">
+                            ${links.slice(0,100).map(l => `
+                                <div class="link-item">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <div>
+                                        <a href="${escapeHtml(l.href)}" target="_blank">${escapeHtml(l.href)}</a>
+                                        ${l.text ? `<div class="link-text">${escapeHtml(l.text.substring(0,80))}${l.text.length>80?'…':''}</div>` : ''}
+                                    </div>
+                                </div>`).join('')}
+                            ${links.length > 100 ? `<p style="padding:10px 0;font-size:12px;color:var(--ink-500);">+${links.length-100} more links</p>` : ''}
+                        </div>
+                    ` : `<div class="tab-empty"><i class="fas fa-link"></i> No links extracted</div>`}
+                </div>
+
+                <!-- Text -->
+                <div id="tab-text-${s.id}" class="tab-panel">
+                    ${text
+                        ? `<div class="text-content">${escapeHtml(text)}</div>`
+                        : `<div class="tab-empty"><i class="fas fa-align-left"></i> No text extracted</div>`}
+                </div>
+            </div>`;
+    }
+
+    // --- Raw data (collapsible) ---
+    html += `
+        <div class="detail-section">
+            <h4 class="detail-section-title collapsible" onclick="toggleRaw('raw-${s.id}','rawchev-${s.id}')">
+                <span class="lgroup"><i class="fas fa-database"></i> Raw Data</span>
+                <i class="fas fa-chevron-down chevron" id="rawchev-${s.id}"></i>
+            </h4>
+            <div id="raw-${s.id}" style="display:none;">
+                <div class="json-viewer"><pre>${escapeHtml(JSON.stringify(s, null, 2))}</pre></div>
+            </div>
+        </div>`;
+
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('mediaModal').classList.add('active');
+}
+
+// -----------------------------------------------------------------------
+// Tab switching
+// -----------------------------------------------------------------------
+function switchTab(btn, panelId) {
+    // deactivate all sibling tabs
+    btn.closest('.detail-section').querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    btn.closest('.detail-section').querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+}
+
+// -----------------------------------------------------------------------
+// Gallery lightbox (inline expand)
+// -----------------------------------------------------------------------
+function expandGalleryImage(imgEl, url) {
+    // find sibling lightbox
+    const section = imgEl.closest('.tab-panel');
+    const lb = section.querySelector('[id^="lightbox-"]');
+    if (!lb) return;
+    if (lb.style.display !== 'none' && lb.dataset.src === url) {
+        lb.style.display = 'none';
+        lb.dataset.src = '';
+        return;
+    }
+    lb.innerHTML = `<img src="${escapeHtml(url)}" style="width:100%;border-radius:var(--r-md);display:block;" />`;
+    lb.style.display = 'block';
+    lb.dataset.src = url;
+    lb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// -----------------------------------------------------------------------
+// Collapsible raw
+// -----------------------------------------------------------------------
+function toggleRaw(contentId, chevId) {
+    const el  = document.getElementById(contentId);
+    const chev = document.getElementById(chevId);
+    const open = el.style.display === 'none';
+    el.style.display = open ? 'block' : 'none';
+    chev.className = `fas fa-chevron-${open ? 'up' : 'down'} chevron`;
+}
+
+// -----------------------------------------------------------------------
+// Modal close
+// -----------------------------------------------------------------------
+function closeModal() {
+    document.getElementById('mediaModal').classList.remove('active');
+}
+document.getElementById('mediaModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// -----------------------------------------------------------------------
+// Refresh single service
+// Tries Django view first; falls back to DRF ViewSet endpoint.
+// -----------------------------------------------------------------------
+
+// Set REFRESH_URL_TEMPLATE to whichever endpoint your urls.py exposes.
+// Django view  →  /api/services/{id}/refresh/
+// DRF ViewSet  →  /api/connected-services/{id}/fetch/
+const REFRESH_URL = (id) => `/api/connected-services/${id}/refresh/`;
+
+function refreshService(serviceId) {
+    const btn = document.getElementById(`refresh-btn-${serviceId}`);
+    if (btn) {
+        btn.classList.add('loading');
+        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refreshing…';
+    }
+
+    fetch(REFRESH_URL(serviceId), {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+    })
+    .then(async r => {
+        const text = await r.text();
+        if (!r.ok) {
+            // Server returned HTML error page (404/500) — surface a useful message
+            throw new Error(`Server returned ${r.status}. Check that the URL "${REFRESH_URL(serviceId)}" is registered in urls.py`);
+        }
+        try {
+            return JSON.parse(text);
+        } catch {
+            throw new Error(`Response was not JSON. Got: ${text.substring(0, 120)}`);
+        }
+    })
+    .then(updated => {
+        if (updated.success === false) throw new Error(updated.error || 'Refresh failed');
+
+        // Patch in-memory store
+        const idx = servicesData.findIndex(s => s.id === serviceId);
+        if (idx > -1) servicesData[idx] = updated;
+
+        // Hot-swap the card
+        const oldCard = document.getElementById(`service-${serviceId}`);
+        if (oldCard) oldCard.replaceWith(buildCard(updated));
+        updateStats();
+    })
+    .catch(err => {
+        console.error(`[Refresh #${serviceId}]`, err.message);
+        // Show the error inline on the card so user sees it without opening console
+        const card = document.getElementById(`service-${serviceId}`);
+        if (card) {
+            const existing = card.querySelector('.refresh-error');
+            if (existing) existing.remove();
+            const errDiv = document.createElement('div');
+            errDiv.className = 'fetch-error refresh-error';
+            errDiv.style.margin = '8px 0 0';
+            errDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escapeHtml(err.message)}`;
+            card.querySelector('.service-card__actions').before(errDiv);
+        }
+        if (btn) {
+            btn.classList.remove('loading');
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+        }
+    });
+}
+
+// -----------------------------------------------------------------------
+// Refresh all
+// -----------------------------------------------------------------------
+function refreshAllServices() {
+    servicesData.forEach(s => refreshService(s.id));
+}
+
+// -----------------------------------------------------------------------
+// Boot
+// -----------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', renderServices);
+</script>
+
+
+</body>
+</html>

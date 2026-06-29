@@ -1,0 +1,2 @@
+RewriteEngine On
+RewriteRule ^media/(.*)$ /home/pielamco/backend/media/$1 [L]

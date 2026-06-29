@@ -1,0 +1,605 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile_info.get_profile_name|default:user.email_or_phone }} — PIELAM Profile</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'personal/css/profile.css' %}">
+
+</head>
+<body>
+
+<!-- Top Navigation Bar -->
+<header class="top-bar">
+    <!-- Logo with Machine Icon -->
+    <a href="{% url 'engine' %}" class="icon">
+        <i class="fas fa-atom machine-icon"></i>
+        PIELAM
+    </a>
+
+    <div class="right-icons">
+        <!-- Use profile photo and name if profile_info is available, otherwise fallback to initials -->
+        {% if profile_info %}
+            <a href="{% url 'profile' %}" class="profile-active-wrapper-link" title="{{ request.user.email_or_phone }}">
+                <div class="profile-active-wrapper">
+                    {% if profile_info.get_profile_photo_url %}
+                        <img src="{{ profile_info.get_profile_photo_url }}" alt="Profile" class="profile-photo-small">
+                    {% else %}
+                        <div class="profile-initials-small">{{ profile_info.get_profile_name|slice:":1"|upper }}</div>
+                    {% endif %}
+                </div>
+            </a>
+        {% else %}
+            <!-- Fallback to initials if profile_info is not available, still link to profile -->
+            <a href="{% url 'profile' %}" class="profile-active-link" title="{{ user.email_or_phone }}">
+                <div class="profile-active">{{ user.email_or_phone|slice:":1"|upper }}</div>
+            </a>
+        {% endif %}
+        <!-- Notifications Badge -->
+        <a href="#" class="notifications-link">
+            <div class="badge notifications-badge">
+                <i class="fa-solid fa-bell"></i>
+                <!-- Example: Show notification count if available -->
+                {% if notification_count and notification_count > 0 %}
+                    <span class="notification-count">{{ notification_count }}</span>
+                {% endif %}
+            </div>
+        </a>
+        <!-- Dropdown Menu Trigger -->
+        <div class="dropdown-menu-trigger">
+            <div class="menu">⋮⋮⋮</div>
+            <!-- Dropdown Content -->
+            <div class="dropdown-menu-content">
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-user"></i> Account Center
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+                <a href="#" class="dropdown-item dropdown-item-logout">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+                <!-- Add other items here as needed -->
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-question-circle"></i> Help & Support
+                </a>
+                <a href="#" class="dropdown-item">
+                    <i class="fas fa-shield-alt"></i> Privacy Policy
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    
+    <!-- Primary Identity Card (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card profile-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px;">
+            <small>PRIMARY IDENTITY</small>
+            <h4> <i class="fas fa-user"></i> {{ user.email_or_phone }}</h4>
+            <p><i class="fa-solid fa-fingerprint"></i> UUID: {{ user.user_uuid|slice:":18" }}...</p>
+            
+            <p><i class="fa-solid fa-user-tag"></i> Role: {{ user.role|title }}</p>
+            
+        </div>
+    </section>
+
+    <!-- Identity & Trust Score Dashboard -->
+<section class="news">
+    <div class="news-card">
+        <div class="news-text">
+            <h3><i class="fa-solid fa-shield-alt"></i> Identity & Trust Score</h3>
+            <div class="trust-score-container">
+                <div class="trust-score-display">
+                    <span class="score-value">94</span>
+                    <span class="score-label">/ 100</span>
+                </div>
+                <div class="trust-indicators">
+                    <div class="indicator">
+                        <i class="fa-solid fa-check-circle" style="color: #34A853;"></i> Identity Verified
+                    </div>
+                    <div class="indicator">
+                        <i class="fa-solid fa-check-circle" style="color: #34A853;"></i> Two-Factor Auth
+                    </div>
+                    <div class="indicator">
+                        <i class="fa-solid fa-check-circle" style="color: #34A853;"></i> Biometric Backup
+                    </div>
+                    <div class="indicator">
+                        <i class="fa-solid fa-check-circle" style="color: #34A853;"></i> Device Recognition
+                    </div>
+                    <div class="indicator">
+                        <i class="fa-solid fa-clock" style="color: #f9ab00;"></i> Account Age: {{ user.created_at|timesince }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Connected Services & Integrations -->
+<section class="news">
+    <div class="news-card">
+        <div class="news-text">
+            <h3><i class="fa-solid fa-plug"></i> Connected Services</h3>
+            <div class="integrations-grid">
+                <div class="integration-item">
+                    <div class="integration-icon bg-blue">
+                        <i class="fab fa-google"></i>
+                    </div>
+                    <div class="integration-info">
+                        <h4>Profiles</h4>
+                        <p>Connected</p>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon bg-green">
+                        <i class="fab fa-dropbox"></i>
+                    </div>
+                    <div class="integration-info">
+                        <h4>Business</h4>
+                        <p>Connected</p>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon bg-red">
+                        <i class="fab fa-microsoft"></i>
+                    </div>
+                    <div class="integration-info">
+                        <h4>Links</h4>
+                        <p>Enabled</p>
+                    </div>
+                </div>
+                <div class="integration-item">
+                    <div class="integration-icon bg-purple">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div class="integration-info">
+                        <h4>Devices</h4>
+                        <p>Connected</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Security & Privacy Controls -->
+<section class="news">
+    <div class="news-card">
+        <div class="news-text">
+            <h3><i class="fa-solid fa-user-shield"></i> Security & Privacy</h3>
+            <div class="security-controls-grid">
+                <div class="control-item">
+                    <div class="control-header">
+                        <i class="fa-solid fa-lock"></i>
+                        <h4>Two-Factor Authentication</h4>
+                    </div>
+                    <div class="control-status">
+                        <span class="status-badge verified">Enabled</span>
+                        <a href="#">Manage</a>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <div class="control-header">
+                        <i class="fa-solid fa-key"></i>
+                        <h4>App Passwords</h4>
+                    </div>
+                    <div class="control-status">
+                        <span class="status-badge active">None Active</span>
+                        <a href="#">Create</a>
+                    </div>
+                </div>
+                <div class="control-item">
+                    <div class="control-header">
+                        <i class="fa-solid fa-eye"></i>
+                        <h4>Visibility Settings</h4>
+                    </div>
+                    <div class="control-status">
+                        <span class="status-badge verified">Limited</span>
+                        <a href="#">Edit</a>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity & Audit Trail -->
+<section class="news">
+    <div class="news-card">
+        <div class="news-text">
+            <h3><i class="fa-solid fa-clipboard-list"></i> Recent Activity</h3>
+            <div class="activity-log">
+                <div class="log-entry">
+                    <div class="entry-icon bg-success">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                    </div>
+                    <div class="entry-details">
+                        <h4>Successful Login</h4>
+                        <p>From: 192.168.1.100 | Browser: Chrome | Location: New York</p>
+                        <span class="entry-time">{{ user.last_login_at|date:"M d, Y H:i"|default:"Unknown" }}</span>
+                    </div>
+                </div>
+                <div class="log-entry">
+                    <div class="entry-icon bg-warning">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <div class="entry-details">
+                        <h4>Password Changed</h4>
+                        <p>Your password was updated.</p>
+                        <span class="entry-time">{{ user.last_password_change|date:"M d, Y H:i"|default:"Never" }}</span>
+                    </div>
+                </div>
+                <div class="log-entry">
+                    <div class="entry-icon bg-info">
+                        <i class="fa-solid fa-key"></i>
+                    </div>
+                    <div class="entry-details">
+                        <h4>JWT Keys Regenerated</h4>
+                        <p>New signing keys generated for enhanced security.</p>
+                        <span class="entry-time">{{ user.updated_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Account Overview (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-chart-pie"></i> Account Overview</h3>
+                <div class="info-grid">
+                    <div class="info-box">
+                        <small>Account Status</small>
+                        <p>
+                            {% if user.is_deleted %}
+                                <span class="account-status-deleted">🗑 Deleted</span>
+                            {% elif user.is_account_locked %}
+                                <span class="account-status-locked">🔒 Locked</span>
+                            {% elif user.is_active %}
+                                <span class="account-status-active">✓ Active</span>
+                            {% else %}
+                                <span class="account-status-inactive">⏸ Inactive</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <small>Identity Type</small>
+                        <p>
+                            {% if user.identity_type == 'email' %}
+                                📧 Email
+                            {% else %}
+                                📱 Phone
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <small>User Role</small>
+                        <p>{{ user.role|title }}</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <small>Timezone</small>
+                        <p>{{ user.user_timezone }}</p>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <!-- Verification Status (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-shield-halved"></i> Verification Status</h3>
+                <div class="verification-details">
+                    <div class="verification-row">
+                        <span><i class="fa-solid fa-shield-check"></i> Primary Identity ({{ user.identity_type|title }})</span>
+                        <span class="status-badge {% if user.is_email_user and user.is_email_verified or user.is_phone_user and user.is_phone_verified %}verified{% else %}unverified{% endif %}">
+                            {% if user.is_email_user and user.is_email_verified or user.is_phone_user and user.is_phone_verified %}✓ Verified{% else %}✗ Unverified{% endif %}
+                        </span>
+                    </div>
+                    {% if user.email_verified_at or user.phone_verified_at %}
+                    <div class="verification-row">
+                        <span class="verification-label">Verified On</span>
+                        <span>{{ user.email_verified_at|default:user.phone_verified_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="verification-row">
+                        <span><i class="fa-solid fa-envelope"></i> Email Verification</span>
+                        <span class="status-badge {% if user.is_email_verified %}verified{% else %}unverified{% endif %}">
+                            {% if user.is_email_verified %}✓ Verified{% else %}✗ Unverified{% endif %}
+                        </span>
+                    </div>
+                    <div class="verification-row">
+                        <span><i class="fa-solid fa-mobile"></i> Phone Verification</span>
+                        <span class="status-badge {% if user.is_phone_verified %}verified{% else %}unverified{% endif %}">
+                            {% if user.is_phone_verified %}✓ Verified{% else %}✗ Unverified{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Authorization & Permissions (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-user-shield"></i> Authorization & Permissions</h3>
+                <div class="info-grid">
+                    <div class="info-box">
+                        <small>User Role</small>
+                        <p>{{ user.role|title }}</p>
+                    </div>
+                    <div class="info-box">
+                        <small>Staff Access</small>
+                        <p>{{ user.is_staff|yesno:"Yes,No,N/A" }}</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <small>Groups</small>
+                        <p>
+                            {% if user.groups.all %}
+                                {% for group in user.groups.all %}
+                                    <span class="status-badge active">{{ group.name }}</span>
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <small>Custom Permissions</small>
+                        <p>{{ user.user_permissions.count|default:"0" }} permissions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security & Access Control (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-lock"></i> Security & Access Control</h3>
+                <div class="info-grid">
+                    <div class="info-box">
+                        <small>Failed Login Attempts</small>
+                        <p class="failed-attempts-count">
+                            {{ user.failed_login_attempts }}
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <small>Account Lock Status</small>
+                        <p>
+                            {% if user.is_account_locked %}
+                                <span class="account-lock-status-locked">🔒 Locked</span>
+                            {% else %}
+                                <span class="account-lock-status-unlocked">🔓 Unlocked</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if user.last_password_change %}
+                    <div class="info-box">
+                        <small>Last Password Change</small>
+                        <p class="date-display">{{ user.last_password_change|date:"M d, Y" }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="info-box">
+                        <small>Encryption Status</small>
+                        <p>
+                            {% if user.encryption_key %}
+                                <span class="encryption-enabled">🔐 Enabled</span>
+                            {% else %}
+                                <span class="encryption-disabled">⚠ Disabled</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="info-box">
+                        <small>JWT Keys</small>
+                        <p>
+                            {% if user.jwt_public_key %}
+                                <span class="keys-generated">✓ Generated</span>
+                            {% else %}
+                                <span class="keys-missing">✗ Missing</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if user.locked_until %}
+                    <div class="info-box">
+                        <small>Locked Until</small>
+                        <p class="date-display lock-until-display">{{ user.locked_until|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if user.lock_reason %}
+                <div class="lock-reason-container">
+                    <strong class="lock-reason-label">Lock Reason:</strong>
+                    <p class="lock-reason-text">{{ user.lock_reason }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Activity Timeline (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Activity Timeline</h3>
+                <div class="activity-details">
+                    <div class="activity-row">
+                        <span><i class="fa-solid fa-calendar-plus"></i> Account Created</span>
+                        <span>{{ user.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="activity-row">
+                        <span><i class="fa-solid fa-calendar-check"></i> Last Updated</span>
+                        <span>{{ user.updated_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="activity-row">
+                        <span><i class="fa-solid fa-right-to-bracket"></i> Last Login</span>
+                        <span>{{ user.last_login_at|date:"M d, Y H:i"|default:"Never" }}</span>
+                    </div>
+                    <div class="activity-row">
+                        <span><i class="fa-solid fa-chart-line"></i> Last Activity</span>
+                        <span>{{ user.last_activity_at|date:"M d, Y H:i"|default:"Never" }}</span>
+                    </div>
+                    {% if user.is_deleted %}
+                    <div class="activity-row activity-row-deleted">
+                        <span><i class="fa-solid fa-trash"></i> Deleted At</span>
+                        <span class="deleted-date-display">{{ user.deleted_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Encryption & Keys (from first template - uses User model data) -->
+    <section class="news">
+        <div class="news-card">
+            <div class="news-text">
+                <h3><i class="fa-solid fa-key"></i> Encryption & Security Keys</h3>
+                <div class="keys-details">
+                    <div class="key-row">
+                        <span><i class="fa-solid fa-shield"></i> User Encryption Key</span>
+                        <span>
+                            {% if user.encryption_key %}
+                                <span class="status-badge verified">✓ Generated</span>
+                            {% else %}
+                                <span class="status-badge unverified">✗ Not Set</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="key-row">
+                        <span><i class="fa-solid fa-lock"></i> JWT Public Key</span>
+                        <span>
+                            {% if user.jwt_public_key %}
+                                <span class="status-badge verified">✓ Active</span>
+                            {% else %}
+                                <span class="status-badge unverified">✗ Missing</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="key-row">
+                        <span><i class="fa-solid fa-key"></i> E2EE Public Key</span>
+                        <span>
+                            {% if user.public_key %}
+                                <span class="status-badge verified">✓ Set</span>
+                            {% else %}
+                                <span class="status-badge unverified">✗ Not Set</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="key-row">
+                        <span><i class="fa-solid fa-user-secret"></i> E2EE Private Key</span>
+                        <span>
+                            {% if user.private_key_encrypted %}
+                                <span class="status-badge verified">🔐 Encrypted</span>
+                            {% else %}
+                                <span class="status-badge unverified">✗ Not Set</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="security-notice">
+                    <p>
+                        <i class="fa-solid fa-info-circle"></i>
+                        <strong>Security Notice:</strong> All encryption keys are securely stored and encrypted.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- Footer (from first template - uses User model data) -->
+<footer>
+    <div class="footer-content">
+        <div>
+            <strong>Account Node:</strong>
+            <code class="uuid-code">{{ user.jwt_public_key|slice:":128" }}...</code>
+        </div>
+        <div>
+            <span class="secure-mode-badge">
+                <i class="fa-solid fa-shield"></i> Secure Mode: Active
+            </span>
+        </div>
+        
+    </div>
+
+    <!-- Company Info -->
+            <div class="footer-section">
+                <h4 class="footer-title">
+                    <i class="fas fa-atom"></i>
+                    PIELAM
+                </h4>
+                <p class="footer-desc">Enterprise-grade profile management system with end-to-end encryption and advanced security features.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link" aria-label="Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="GitHub">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="footer-section">
+                <h5 class="footer-heading">Quick Links</h5>
+                <ul class="footer-links">
+                    <li><a href="{% url 'engine' %}">Dashboard</a></li>
+                    <li><a href="#settings">Settings</a></li>
+                    <li><a href="#security">Security</a></li>
+                    <li><a href="#integrations">Integrations</a></li>
+                </ul>
+            </div>
+
+            <!-- Support -->
+            <div class="footer-section">
+                <h5 class="footer-heading">Support</h5>
+                <ul class="footer-links">
+                    <li><a href="#help">Help Center</a></li>
+                    <li><a href="#documentation">Documentation</a></li>
+                    <li><a href="#api">API Reference</a></li>
+                    <li><a href="#contact">Contact Us</a></li>
+                </ul>
+            </div>
+
+            <!-- Legal -->
+            <div class="footer-section">
+                <h5 class="footer-heading">Legal</h5>
+                <ul class="footer-links">
+                    <li><a href="#privacy">Privacy Policy</a></li>
+                    <li><a href="#terms">Terms of Service</a></li>
+                    <li><a href="#compliance">Compliance</a></li>
+                    <li><a href="#gdpr">GDPR</a></li>
+                </ul>
+            </div>
+        </div>
+
+</footer>
+
+</body>
+</html>

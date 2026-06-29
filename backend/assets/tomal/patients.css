@@ -1,0 +1,212 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+}
+
+body {
+    display: flex;
+    background: #f6f8fb;
+}
+
+/* --------------- Sidebar --------------- */
+.sidebar {
+    width: 240px;
+    background: #fff;
+    border-right: 1px solid #e5e8ef;
+    height: 100vh;
+    padding: 25px 20px;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 35px;
+}
+
+.menu {
+    list-style: none;
+}
+
+.menu li {
+    padding: 12px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.menu .active,
+.menu li:hover {
+    background: #eef3ff;
+    color: #3b5bff;
+}
+
+
+.active a{
+    text-decoration: none;
+   
+}
+
+/* --------------- Main Section --------------- */
+.main {
+    flex: 1;
+    padding: 20px 30px;
+}
+
+/* Topbar */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.topbar input {
+    width: 50%;
+    padding: 10px 14px;
+    border: 1px solid #d8dce5;
+    border-radius: 8px;
+    background: #f9fafc;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user img {
+    width: 40px;
+    border-radius: 50%;
+}
+
+/* --------------- Form Cards --------------- */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    border: 1px solid #e5e8ef;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+label {
+    font-size: 14px;
+    display: block;
+    margin-top: 16px;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d9e2ee;
+    background: #eaf6fa;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+textarea {
+    height: 90px;
+    resize: none;
+}
+
+/* Inline Row */
+.row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.col {
+    flex: 1;
+}
+
+.search-btn {
+    padding: 12px 15px;
+    border: none;
+    background: #fff;
+    border: 1px solid #d8e0ef;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Gender / Visit Type Radio */
+.gender {
+    display: flex;
+    gap: 18px;
+    margin-top: 8px;
+}
+
+.gender label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --------------- Test Section --------------- */
+.full {
+    margin-top: 10px;
+    padding-bottom: 30px;
+}
+
+.empty-box {
+    background: #eaf6fa;
+    border: 1px solid #d9e2ee;
+    border-radius: 8px;
+    padding: 14px;
+    color: #777;
+    margin-bottom: 12px;
+}
+
+.add-btn {
+    padding: 10px 15px;
+    background: #fff;
+    border: 1px solid #cdd7e6;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* --------------- Action Buttons --------------- */
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 20px;
+    padding-bottom: 40px;
+}
+
+.cancel {
+    padding: 10px 20px;
+    background: #fff;
+    border: 1px solid #dadfe7;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.submit {
+    padding: 10px 25px;
+    background: #01b8d6;
+    border: none;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}

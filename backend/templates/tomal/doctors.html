@@ -1,0 +1,205 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Dashboard</title>
+    <link rel="stylesheet" href="{% static 'tomal/dashboard.css'%}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">iHEDO</div>
+
+        <ul class="menu">
+            <li class="active">
+                <a href="{% url 'tomal:dashboard' %}">
+                    <i class="fa-solid fa-house"></i>
+                     Dashboard
+                </a>
+            </li>
+            
+            <li class="active">
+                <a href="{% url 'tomal:patients' %}">
+                    <i class="fa-solid fa-users"></i>
+                    Patients
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:appointments' %}">
+                    <i class="fa-solid fa-calendar"></i>
+                    Appointments
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:testandpackages' %}">
+                    <i class="fa-solid fa-vial"></i>
+                    Tests & Packages
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:samplecollection' %}">
+                    <i class="fa-solid fa-syringe"></i>
+                    Sample Collection
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:reports' %}">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:billing' %}">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    Billing
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:inventory' %}">
+                    <i class="fa-solid fa-cube"></i>
+                    Inventory
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:patients' %}">
+                    <i class="fa-solid fa-stethoscope"></i>
+                    Doctors
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:stuff' %}">
+                    <i class="fa-solid fa-user-tie"></i>
+                    Staff
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:analytics' %}">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    Analytics
+                </a>
+            </li>
+            
+            <li class="active">
+                <a href="{% url 'tomal:settings' %}">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <input type="text" placeholder="Search patients, tests, reports…">
+            <div class="user">
+                <img src="https://i.pravatar.cc/40" alt="">
+                <span>Abu Taha</span>
+            </div>
+        </header>
+
+
+        <!-- Stats Cards -->
+        <section class="stats">
+            <div class="card">
+                <h3>Total Patients Today</h3>
+                <h2>224</h2>
+                <p class="green">+12% from last period</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Appointments</h3>
+                <h2>10,386</h2>
+                <p class="red">-12% from last period</p>
+            </div>
+
+            <div class="card">
+                <h3>Tests Booked Today</h3>
+                <h2>500</h2>
+                <p class="green">+12% from last period</p>
+            </div>
+
+            <div class="card">
+                <h3>Pending Reports</h3>
+                <h2>25</h2>
+                <p class="red">+12% from last period</p>
+            </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="charts">
+            <div class="chart-card">Daily Test Volume (Chart Placeholder)</div>
+            <div class="chart-card">Popular Tests Breakdown (Chart Placeholder)</div>
+            <div class="chart-card">Department-wise Test Count (Chart Placeholder)</div>
+            <div class="chart-card">Monthly Revenue Trend (Chart Placeholder)</div>
+        </section>
+
+        <!-- Tables -->
+        <section class="tables">
+
+            <div class="table-card">
+                <h3>Recent Patient Registrations</h3>
+                <table>
+                    <tr>
+                        <th>ID</th><th>Name</th><th>Age/Gender</th><th>Time</th>
+                    </tr>
+                    <tr>
+                        <td>P001</td><td>Harry Smith</td><td>45/M</td><td>09:15 AM</td>
+                    </tr>
+                    <tr>
+                        <td>P002</td><td>Harry Smith</td><td>45/M</td><td>09:15 AM</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <h3>Tests in Progress</h3>
+                <table>
+                    <tr>
+                        <th>Test ID</th><th>Patient</th><th>Status</th>
+                    </tr>
+                    <tr>
+                        <td>T156</td><td>Smith</td><td class="tag blue">Sample Collected</td>
+                    </tr>
+                    <tr>
+                        <td>T157</td><td>Robert</td><td class="tag yellow">In Analysis</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <h3>Upcoming Appointments</h3>
+                <table>
+                    <tr><th>Name</th><th>Dept</th><th>Time</th></tr>
+                    <tr><td>John Doe</td><td>Radiology</td><td>02:00 PM</td></tr>
+                    <tr><td>Smith</td><td>Cardiology</td><td>02:00 PM</td></tr>
+                </table>
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

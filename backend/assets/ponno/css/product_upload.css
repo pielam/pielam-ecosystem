@@ -1,0 +1,881 @@
+/* ========================================
+   PIELAM Product Upload Page - Premium Design
+   Deep Ocean & Gold Theme
+   ======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Premium Color Palette - Deep Ocean & Gold Accents */
+    --primary-dark: #0a2540;
+    --primary-blue: #0d47a1;
+    --primary-light: #1976d2;
+    --accent-gold: #d4af37;
+    --accent-amber: #ffb300;
+    --success-emerald: #00b894;
+    --danger-crimson: #e74c3c;
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7fafc;
+    --bg-tertiary: #edf2f7;
+    --border-light: #e2e8f0;
+    --border-medium: #cbd5e0;
+    
+    /* Shadows */
+    --shadow-xs: 0 1px 3px rgba(10, 37, 64, 0.05);
+    --shadow-sm: 0 2px 6px rgba(10, 37, 64, 0.08);
+    --shadow-md: 0 4px 12px rgba(10, 37, 64, 0.12);
+    --shadow-lg: 0 10px 30px rgba(10, 37, 64, 0.15);
+    --shadow-xl: 0 20px 50px rgba(10, 37, 64, 0.2);
+    
+    /* Typography */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Outfit', sans-serif;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.25s ease;
+    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+}
+
+/* Subtle Background Pattern */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 25% 25%, rgba(13, 71, 161, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ========================================
+   NAVIGATION - MATCHING HOME.CSS
+======================================== */
+
+.menu-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    animation: navSlideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes navSlideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.navbar-container {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.navbar-glow {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(212, 175, 55, 0.15), 
+        transparent
+    );
+    animation: navGlow 4s infinite;
+}
+
+@keyframes navGlow {
+    0%, 100% { left: -100%; }
+    50% { left: 100%; }
+}
+
+.menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-dark);
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    transition: all var(--transition-slow);
+}
+
+.logo-section:hover .logo-icon {
+    transform: rotate(-10deg) scale(1.1);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+}
+
+.navbar-brand {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.button-class {
+    text-decoration: none;
+    transition: transform var(--transition-base);
+}
+
+.button-class:hover {
+    transform: translateY(-2px);
+}
+
+.menu-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.menu-item:hover::before {
+    opacity: 1;
+}
+
+.menu-item:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.menu-item i {
+    font-size: 1.15rem;
+    transition: transform var(--transition-base);
+}
+
+.menu-item:hover i {
+    transform: scale(1.2);
+}
+
+.menu-item.active {
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+    color: var(--primary-dark);
+    border-color: transparent;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.5);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--danger-crimson);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ========================================
+   MAIN LAYOUT
+======================================== */
+
+.profile {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 100px auto 4rem;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ========================================
+   LEFT SIDEBAR - DASHBOARD
+======================================== */
+
+.profile-left {
+    position: sticky;
+    top: 100px;
+}
+
+.vaipen-card-infos {
+    background: var(--bg-primary);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-slow);
+}
+
+.vaipen-card-infos:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+}
+
+.vaipen-card-infos h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    padding: 1.5rem;
+    margin: 0;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.vaipen-card-infos hr {
+    display: none;
+}
+
+.vaipen-card-info {
+    padding: 1.5rem;
+}
+
+.vaipen-card-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 2px solid var(--border-light);
+    transition: all var(--transition-base);
+}
+
+.vaipen-card-info-row:last-child {
+    margin-bottom: 0;
+}
+
+.vaipen-card-info-row:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary-light);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+}
+
+.vaipen-card-info-label {
+    flex: 1;
+}
+
+.vaipen-card-info-label p {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.vaipen-card-info-value {
+    flex-shrink: 0;
+}
+
+.vaipen-card-info-value p {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ========================================
+   MAIN CONTENT - UPLOAD FORM
+======================================== */
+
+.profile-middle {
+    flex: 1;
+}
+
+.profile-center {
+    background: var(--bg-primary);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-light);
+}
+
+/* Upload Header */
+.product-upload-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.product-upload-link::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(212,175,55,0.1)"/></svg>');
+    opacity: 0.3;
+}
+
+.product-upload-link i {
+    font-size: 3rem;
+    color: var(--accent-gold);
+    position: relative;
+    z-index: 1;
+    animation: uploadFloat 2s ease-in-out infinite;
+}
+
+@keyframes uploadFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.product-upload-link h1 {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: white;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   UPLOAD FORM
+======================================== */
+
+#product-upload-form {
+    margin-top: 2rem;
+}
+
+#product-upload-form form {
+    display: grid;
+    gap: 1.5rem;
+}
+
+#product-upload-form > form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Form Labels */
+#product-upload-form label {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#product-upload-form label::before {
+    content: '•';
+    color: var(--accent-gold);
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+/* Form Inputs */
+#product-upload-form input[type="text"],
+#product-upload-form input[type="number"],
+#product-upload-form select,
+#product-upload-form textarea {
+    padding: 0.875rem 1.25rem;
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: var(--font-body);
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    transition: all var(--transition-base);
+    outline: none;
+}
+
+#product-upload-form input[type="text"]:focus,
+#product-upload-form input[type="number"]:focus,
+#product-upload-form select:focus,
+#product-upload-form textarea:focus {
+    border-color: var(--primary-light);
+    background: var(--bg-primary);
+    box-shadow: 0 0 0 4px rgba(13, 71, 161, 0.1);
+    transform: translateY(-2px);
+}
+
+#product-upload-form input[type="text"]:hover,
+#product-upload-form input[type="number"]:hover,
+#product-upload-form select:hover,
+#product-upload-form textarea:hover {
+    border-color: var(--border-medium);
+}
+
+/* Textarea Specific */
+#product-upload-form textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+/* Select Dropdown */
+#product-upload-form select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234a5568' d='M6 8L0 2l1.5-1.5L6 5 10.5.5 12 2z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 12px;
+    padding-right: 3rem;
+}
+
+#product-upload-form select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%230d47a1' d='M6 8L0 2l1.5-1.5L6 5 10.5.5 12 2z'/%3E%3C/svg%3E");
+}
+
+/* File Input */
+#product-upload-form input[type="file"] {
+    padding: 1rem;
+    border: 2px dashed var(--border-light);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-size: 0.95rem;
+}
+
+#product-upload-form input[type="file"]::file-selector-button {
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-light) 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    margin-right: 1rem;
+    transition: all var(--transition-base);
+}
+
+#product-upload-form input[type="file"]::file-selector-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3);
+}
+
+#product-upload-form input[type="file"]:hover {
+    border-color: var(--primary-light);
+    background: var(--bg-primary);
+}
+
+#product-upload-form input[type="file"]:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(13, 71, 161, 0.1);
+}
+
+/* Number Input - Remove Spinners */
+#product-upload-form input[type="number"]::-webkit-inner-spin-button,
+#product-upload-form input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#product-upload-form input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Submit Button */
+#product-upload-form button[type="submit"] {
+    margin-top: 1rem;
+    padding: 1.125rem 2.5rem;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+    color: var(--primary-dark);
+    border: none;
+    border-radius: 12px;
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all var(--transition-slow);
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#product-upload-form button[type="submit"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.3) 100%);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+#product-upload-form button[type="submit"]:hover::before {
+    opacity: 1;
+}
+
+#product-upload-form button[type="submit"]:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 28px rgba(212, 175, 55, 0.6);
+}
+
+#product-upload-form button[type="submit"]:active {
+    transform: translateY(-2px);
+}
+
+/* Form Grid Layout for Better Organization */
+@media (min-width: 768px) {
+    #product-upload-form form {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* Full width fields */
+    #product-upload-form > form > div:nth-child(1), /* Product Name */
+    #product-upload-form > form > div:nth-child(4), /* Description */
+    #product-upload-form > form > div:nth-child(5), /* Image */
+    #product-upload-form > form > div:last-child {  /* Submit Button */
+        grid-column: 1 / -1;
+    }
+}
+
+/* ========================================
+   VALIDATION STATES
+======================================== */
+
+#product-upload-form input:required:invalid {
+    border-color: var(--border-light);
+}
+
+#product-upload-form input:required:valid {
+    border-color: var(--success-emerald);
+}
+
+#product-upload-form input:required:invalid:focus {
+    border-color: var(--danger-crimson);
+    box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1);
+}
+
+/* ========================================
+   HELPER TEXT / VALIDATION MESSAGES
+======================================== */
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid var(--danger-crimson);
+    border-radius: 8px;
+    color: var(--danger-crimson);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.error-message::before {
+    content: '⚠';
+    font-size: 1.25rem;
+}
+
+.success-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 184, 148, 0.1);
+    border: 1px solid var(--success-emerald);
+    border-radius: 8px;
+    color: var(--success-emerald);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.success-message::before {
+    content: '✓';
+    font-size: 1.25rem;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
+
+@media (max-width: 1024px) {
+    .profile {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-left {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .menu {
+        padding: 0.75rem 1rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+    
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.25rem;
+    }
+    
+    .menu-item span {
+        display: none;
+    }
+    
+    .menu-item {
+        padding: 0.75rem;
+    }
+    
+    .profile {
+        margin-top: 80px;
+        padding: 0 1rem;
+    }
+    
+    .profile-center {
+        padding: 1.5rem;
+    }
+    
+    .product-upload-link {
+        flex-direction: column;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .product-upload-link h1 {
+        font-size: 2rem;
+    }
+    
+    .product-upload-link i {
+        font-size: 2.5rem;
+    }
+    
+    #product-upload-form form {
+        grid-template-columns: 1fr;
+    }
+    
+    .vaipen-card-info-value p {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-upload-link h1 {
+        font-size: 1.5rem;
+    }
+    
+    #product-upload-form button[type="submit"] {
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+}
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.profile-center {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.vaipen-card-infos {
+    animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-gold) 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--primary-blue) 100%);
+}
+
+/* ========================================
+   LOADING STATE
+======================================== */
+
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border: 3px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   PRINT STYLES
+======================================== */
+
+@media print {
+    .menu-top,
+    .notification-badge {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    body::before {
+        display: none;
+    }
+    
+    .profile {
+        grid-template-columns: 1fr;
+        margin-top: 0;
+    }
+    
+    .profile-left {
+        display: none;
+    }
+}

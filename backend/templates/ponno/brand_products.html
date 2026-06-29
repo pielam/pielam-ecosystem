@@ -1,0 +1,2201 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title> Brand Profile | PIELAM</title>
+
+<style>
+
+/* ═══════════════════════════════════════════════
+       GLOBAL — Design Tokens, Reset, Base
+    ═══════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --r: 12px; 
+      --r-sm: 8px;   
+      --purple: #7c3aed; 
+      --shadow-xs: 0 1px 3px rgba(10,37,64,.05); 
+
+      --ink:        #0f0f0f;
+      --ink-2:      #3a3a3a;
+      --ink-3:      #6b6b6b;
+      --ink-4:      #9b9b9b;
+      --surface:    #ffffff;
+      --surface-2:  #f5f5f3;
+      --surface-3:  #eeede9;
+      --border:     #e4e3df;
+      --border-2:   #d0cfc9;
+      --accent:     #c8102e;
+      --accent-2:   #a00d24;
+      --gold:       #b8860b;
+      --gold-2:     #8b6508;
+      --green:      #1a6b3a;
+      --green-bg:   #edf7f1;
+      --warn:       #92400e;
+      --warn-bg:    #fffbeb;
+      --blue:       #1e3a8a;
+      --blue-light: #3b82f6;
+      --primary-dark:    #0a2540;
+      --primary-blue:    #0d47a1;
+      --primary-light:   #1976d2;
+      --accent-gold:     #d4af37;
+      --accent-amber:    #ffb300;
+      --success-emerald: #00b894;
+      --danger-crimson:  #e74c3c;
+      --text-primary:    #1a202c;
+      --text-secondary:  #4a5568;
+      --text-muted:      #718096;
+      --bg-primary:      #ffffff;
+      --bg-secondary:    #f7fafc;
+      --bg-tertiary:     #edf2f7;
+      --border-light:    #e2e8f0;
+      --border-medium:   #cbd5e0;
+      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body:    'Syne', sans-serif;
+      --f-mono:       'JetBrains Mono', monospace;
+      --f-display:    'Cormorant Garamond', serif;
+      --f-body:       'Syne', sans-serif;
+      --header-h:          64px;
+      --bg:       var(--bg-primary);
+      --nav-h:             64px;
+      --bottom-bar-height: 68px;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+      --ease:            cubic-bezier(.4,0,.2,1);
+      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: .15s ease;
+      --transition-base: .25s ease;
+      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+      --t-primary:   #0f0f0f;
+      --t-secondary: #3a3a3a;
+      --t-muted:     #6b6b6b;
+      --t-ghost:     #9b9b9b;
+      --rim:         #e4e3df;
+      --raised:      #f5f5f3;
+      --overlay:     #eeede9;
+      --abyss:       #0f0f0f;
+      --gold-pure:   #b8860b;
+      --gold-dim:    rgba(184,134,11,0.40);
+      --gold-trace:  rgba(184,134,11,0.08);
+      --gold-bright: #d4a017;
+      --emerald:  #1a6b3a;
+      --amber:    #92400e;
+      --ruby:     #c8102e;
+      --sapphire: #1e3a8a;
+
+      
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
+    body {
+      font-family: 'roboto';
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;  /* ← safe cross-browser fix */
+      padding-top:    var(--header-h);
+      padding-bottom: var(--bottom-bar-height);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+      pointer-events: none; 
+      z-index: 0;
+    }
+    a      { text-decoration:none; color:inherit; }
+    img    { max-width:100%; display:block; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    ::-webkit-scrollbar       { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
+    .hide-mobile { display:none; }
+@media (max-width: 768px) { :root { --header-h: 58px; } }
+@media (max-width: 480px) { :root { --header-h: 54px; } }
+@media (max-width: 360px) { :root { --header-h: 50px; } }
+@media (max-width: 320px) { :root { --header-h: 48px; } }
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .navbar-glow{display:none}
+  .avatar-glow-ring{animation:none}
+  .profile-cover:hover .cover-image{transform:none}
+  .profile-avatar-wrap:hover .profile-avatar{transform:none}
+}
+
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1) TOP NAVBAR  (Side Drawer + Sticky Header + Nav Links)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  /* ── Side Drawer ── */
+  #drawerOverlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.45); z-index:1999;
+    transition:opacity .3s var(--ease); opacity:0;
+  }
+  #sideDrawer {
+    position:fixed; top:0; left:0;
+    width:260px; height:100%;
+    background:linear-gradient(160deg,#0a2540 0%,#0d47a1 100%);
+    z-index:2000; transform:translateX(-100%);
+    transition:transform .35s var(--ease);
+    display:flex; flex-direction:column;
+    box-shadow:4px 0 32px rgba(0,0,0,.35);
+    overflow-y:auto; scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.2) transparent;
+  }
+  #sideDrawer::-webkit-scrollbar       { width:4px; }
+  #sideDrawer::-webkit-scrollbar-track { background:transparent; }
+  #sideDrawer::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:4px; }
+  .drawer-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 16px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+    position:sticky; top:0; background:#0a2540; z-index:1; flex-shrink:0;
+  }
+  .drawer-brand { font-family:var(--font-display); font-size:1.4rem; font-weight:900; color:#fff; letter-spacing:.5px; }
+  .drawer-brand a { color:inherit; text-decoration:none; display:flex; align-items:center; gap:.5rem; }
+  #drawerClose {
+    width:34px; height:34px; background:rgba(255,255,255,.1);
+    border:none; border-radius:8px; color:#fff; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background var(--transition-fast); flex-shrink:0;
+  }
+  #drawerClose:hover { background:rgba(255,255,255,.2); }
+  .drawer-nav { padding:18px 12px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .drawer-link {
+    display:flex; align-items:center; gap:12px; padding:13px 16px;
+    border-radius:10px; color:#fff; text-decoration:none;
+    font-weight:600; font-size:.95rem; transition:background var(--transition-fast);
+  }
+  .drawer-link:hover           { background:rgba(255,255,255,.12); }
+  .drawer-link i               { width:18px; text-align:center; opacity:.8; }
+  .drawer-divider              { height:1px; background:rgba(255,255,255,.12); margin:8px 4px; }
+  .drawer-link.secondary       { color:rgba(255,255,255,.7); font-weight:500; font-size:.88rem; }
+  .drawer-link.secondary:hover { background:rgba(255,255,255,.08); }
+  .drawer-link.secondary i     { opacity:.7; }
+
+  /* ── Sticky Header + Navbar ── */
+  .sticky-header {
+    position:fixed; top:0; left:0;
+    width:100%; z-index:1000;
+    display:flex; flex-direction:column;
+  }
+  .menu-top { width:100%; }
+  .navbar-container {
+    background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-blue) 100%);
+    position:relative; overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  .navbar-glow {
+    position:absolute; top:0; left:-100%;
+    width:200%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(212,175,55,0.15),transparent);
+    animation:navGlow 4s infinite; pointer-events:none;
+  }
+  @keyframes navGlow { 0%,100%{left:-100%} 50%{left:100%} }
+  .menu {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.875rem 1.5rem; max-width:1400px; margin:0 auto;
+    position:relative; z-index:1;
+  }
+  .logo-left      { display:flex; align-items:center; gap:0; }
+  .logo-brand     { margin-left:.5rem; }
+  .logo-container { display:flex; align-items:center; gap:.75rem; text-decoration:none; }
+  .logo-icon {
+    width:44px; height:44px;
+    background:linear-gradient(135deg,var(--accent-gold) 0%,var(--accent-amber) 100%);
+    border-radius:12px; display:flex; align-items:center; justify-content:center;
+    color:var(--primary-dark); font-size:1.35rem;
+    box-shadow:0 4px 12px rgba(212,175,55,.4);
+    transition:transform var(--transition-slow), box-shadow var(--transition-slow);
+    flex-shrink:0; cursor:pointer;
+  }
+  .logo-icon:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(212,175,55,.55); }
+  .navbar-brand { font-family:var(--font-display); font-size:1.75rem; font-weight:900; color:#fff; letter-spacing:.5px; }
+  .menu-links   { display:flex; align-items:center; gap:.5rem; }
+  .menu-item {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.625rem 1rem;
+    background:rgba(255,255,255,.1); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.15); border-radius:10px;
+    color:#fff; text-decoration:none; font-weight:600; font-size:.9rem;
+    transition:background var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+  }
+  .menu-item:hover  { background:rgba(255,255,255,.18); border-color:rgba(212,175,55,.4); transform:translateY(-2px); }
+  .menu-item.active {
+    background:linear-gradient(135deg,var(--accent-gold) 0%,var(--accent-amber) 100%);
+    color:var(--primary-dark); border-color:transparent;
+    box-shadow:0 4px 16px rgba(212,175,55,.5);
+  }
+
+  /* Navbar responsive */
+  @media (max-width:1024px) { .menu { padding:.75rem 1.25rem; } .navbar-brand { font-size:1.55rem; } }
+  @media (max-width:768px)  {  .menu{padding:.75rem 1rem;} .logo-icon{width:38px;height:38px;font-size:1.1rem;} .navbar-brand{font-size:1.4rem;} .menu-item span{display:none;} .menu-item{padding:8px 10px;} }
+  @media (max-width:600px)  {  .logo-icon{width:36px;height:36px;font-size:1rem;border-radius:10px;} .navbar-brand{font-size:1.25rem;} }
+  @media (max-width:480px)  {  .menu{padding:.6rem .875rem;} .logo-icon{width:34px;height:34px;font-size:.95rem;} .navbar-brand{font-size:1.15rem;letter-spacing:0;} .menu-item{padding:7px 8px;} .menu-links{gap:.3rem;} }
+  @media (max-width:360px)  {  .menu{padding:.5rem .625rem;} .logo-icon{width:30px;height:30px;font-size:.875rem;border-radius:8px;} .navbar-brand{font-size:1rem;} .menu-item{padding:6px 7px;} }
+  @media (max-width:320px)  {  .navbar-brand{font-size:.9rem;} .logo-icon{display:none;} .menu{padding:.5rem;} }
+</style>
+
+<!-- Drawer overlay -->
+<div id="drawerOverlay"></div>
+
+<!-- Side drawer -->
+<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
+  <div class="drawer-header">
+    <span class="drawer-brand">
+      <a href="#"><i class="fa-solid fa-gears"></i> Engine</a>
+    </span>
+    <button id="drawerClose" aria-label="Close menu">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+  <nav class="drawer-nav">
+    
+    
+    <a href="{% url 'ponno:brand_list' %}" class="drawer-link"><i class="fa-solid fa-tag"></i>Brand</a>
+    <a href="{% url 'ponno:category_list' %}" class="drawer-link"><i class="fa-solid fa-layer-group"></i>Category</a>
+    <a href="{% url 'ponno:sub_categories_for_category' %}" class="drawer-link"><i class="fa-solid fa-list-ul"></i>SubCategory</a>
+
+    <div class="drawer-divider"></div>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-circle-info"></i>About Us</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-shield-halved"></i>Privacy Policy</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-file-contract"></i>Terms of Service</a>
+
+    
+  </nav>
+</aside>
+
+<!-- Sticky header opens — wraps navbar + search -->
+<div class="sticky-header">
+
+  <nav class="menu-top" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+      <div class="navbar-glow"></div>
+      <div class="menu">
+        <div class="logo-left">
+          <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
+            <i class="fa-solid fa-bars"></i>
+          </div>
+          <div class="logo-brand">
+            <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
+              <span class="navbar-brand">pielam</span>
+            </a>
+          </div>
+        </div>
+        <div class="menu-links">
+          <a href="{% url 'ponno:home' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i><span>Home</span>
+          </a>
+          <a href="{% url 'notify:notification' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
+            <i class="fa-solid fa-bell"></i><span>Notifications</span>
+          </a>
+          <a href="{% url 'customer:profile' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fa-solid fa-circle-user"></i><span>Profile</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<script>
+  /* ── Drawer JS ── */
+  (function () {
+    const drawer      = document.getElementById('sideDrawer');
+    const overlay     = document.getElementById('drawerOverlay');
+    const drawerClose = document.getElementById('drawerClose');
+
+    function openDrawer() {
+      overlay.style.display = 'block';
+      requestAnimationFrame(() => { overlay.style.opacity='1'; drawer.style.transform='translateX(0)'; });
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      overlay.style.opacity = '0';
+      drawer.style.transform = 'translateX(-100%)';
+      setTimeout(() => { overlay.style.display='none'; }, 350);
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('menuToggle')?.addEventListener('click', openDrawer);
+      document.getElementById('menuToggle')?.addEventListener('keydown', e => {
+        if (e.key==='Enter'||e.key===' ') { e.preventDefault(); openDrawer(); }
+      });
+    });
+    drawerClose.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', e => { if (e.key==='Escape') closeDrawer(); });
+  })();
+</script>
+
+
+    <style>
+    /* ═══════════════════════════════════════════════
+       BRAND PRODUCTS PAGE — MASTER STYLESHEET
+    ═══════════════════════════════════════════════ */
+
+    /* ============================================================
+       BRAND HERO
+    ============================================================ */
+    .brand-hero {
+        position: relative;
+        background: var(--primary-dark);
+        overflow: hidden;
+        margin-top: 0;
+    }
+
+    .brand-hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255,255,255,0.012) 2px,
+                rgba(255,255,255,0.012) 4px
+            );
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .brand-hero::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 3px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            var(--accent-gold) 25%,
+            var(--accent-amber) 50%,
+            var(--accent-gold) 75%,
+            transparent 100%
+        );
+        z-index: 10;
+    }
+
+    .brand-banner {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        opacity: 0.35;
+        position: absolute;
+        inset: 0;
+        transition: opacity 0.4s ease;
+    }
+    .brand-hero:hover .brand-banner { opacity: 0.42; }
+
+    .brand-banner-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #0a2540 0%, #0d3b80 50%, #0a2540 100%);
+        font-size: 4rem;
+        color: rgba(212,175,55,0.15);
+        z-index: 0;
+    }
+
+    .brand-hero-content {
+        position: relative;
+        z-index: 5;
+        min-height: 300px;
+        display: flex;
+        align-items: flex-end;
+        padding: 2.5rem 2rem 0;
+        max-width: 1400px;
+        margin: 0 auto;
+        background: linear-gradient(
+            180deg,
+            transparent 0%,
+            rgba(10,37,64,0.5) 40%,
+            rgba(10,37,64,0.92) 100%
+        );
+    }
+
+    .brand-hero-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+        padding-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    .brand-logo-wrap {
+        width: 80px; height: 80px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 3px solid rgba(212,175,55,0.6);
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 8px 32px rgba(0,0,0,0.45);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-bottom: 0.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .brand-logo-wrap:hover {
+        transform: scale(1.04);
+        box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 12px 40px rgba(0,0,0,0.55);
+    }
+    .brand-logo-wrap img {
+        width: 100%; height: 100%;
+        object-fit: contain;
+        padding: 6px;
+        display: block;
+    }
+    .brand-logo-fallback {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: var(--primary-dark);
+        letter-spacing: 1px;
+        line-height: 1;
+    }
+
+    .brand-hero-name {
+        font-family: var(--font-display);
+        font-size: 2.4rem;
+        font-weight: 900;
+        color: #ffffff;
+        line-height: 1.1;
+        letter-spacing: -0.5px;
+        margin: 0;
+        text-shadow: 0 2px 16px rgba(0,0,0,0.5);
+    }
+
+    .brand-hero-tagline {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.65);
+        font-style: italic;
+        font-weight: 400;
+        letter-spacing: 0.2px;
+        margin: 0;
+    }
+
+    .brand-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 100px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+        transition: transform 0.2s ease;
+    }
+    .brand-badge:hover { transform: translateY(-1px); }
+    .badge-verified  { background: rgba(25,118,210,0.18); color: #90caf9; border-color: rgba(25,118,210,0.35); }
+    .badge-official  { background: rgba(212,175,55,0.18); color: #ffd970; border-color: rgba(212,175,55,0.4); }
+    .badge-trusted   { background: rgba(0,184,148,0.15);  color: #6ee7d0; border-color: rgba(0,184,148,0.3); }
+    .badge-featured  { background: rgba(255,179,0,0.15);  color: #ffd54f; border-color: rgba(255,179,0,0.35); }
+    .badge-trending  { background: rgba(231,76,60,0.15);  color: #ff8a80; border-color: rgba(231,76,60,0.3); }
+    .badge-exclusive { background: rgba(156,39,176,0.18); color: #e040fb; border-color: rgba(156,39,176,0.35); }
+
+    /* Stats bar */
+    .brand-hero-stats {
+        position: relative;
+        z-index: 5;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: rgba(255,255,255,0.04);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .hero-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        padding: 1.1rem 0.5rem;
+        position: relative;
+        cursor: default;
+        transition: background 0.2s ease;
+    }
+    .hero-stat + .hero-stat { border-left: 1px solid rgba(255,255,255,0.08); }
+    .hero-stat:hover { background: rgba(212,175,55,0.06); }
+    .hero-stat::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 20%; right: 20%;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent-gold), var(--accent-amber));
+        transform: scaleX(0);
+        transition: transform 0.25s ease;
+        border-radius: 2px 2px 0 0;
+    }
+    .hero-stat:hover::after { transform: scaleX(1); }
+
+    .hero-stat-value {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #ffffff;
+        line-height: 1;
+        background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-stat-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.45);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+
+    /* ============================================================
+       BRAND TABS
+    ============================================================ */
+    .brand-tabs-wrapper {
+        position: sticky;
+        top: var(--nav-h);
+        z-index: 100;
+        background: #ffffff;
+        border-bottom: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .brand-tabs-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: .25rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .brand-tabs-inner::-webkit-scrollbar { display: none; }
+
+    .brand-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .875rem 1.125rem;
+        white-space: nowrap;
+        font-size: .875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-family: var(--font-body);
+        transition: color .2s, border-color .2s;
+        flex-shrink: 0;
+    }
+    .brand-tab i { font-size: .8rem; }
+    .brand-tab:hover { color: var(--text-primary); }
+    .brand-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--accent-gold);
+    }
+
+    .brand-tab-count {
+        font-size: .72rem;
+        font-weight: 700;
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        padding: .1rem .4rem;
+        border-radius: 100px;
+        transition: background .2s, color .2s;
+    }
+    .brand-tab.active .brand-tab-count {
+        background: rgba(212,175,55,0.15);
+        color: var(--accent-gold);
+    }
+
+    /* Tab panels */
+    .brand-tab-panel { display: none; }
+    .brand-tab-panel.active { display: block; }
+
+    /* ============================================================
+       BRAND INFO PANELS (About / Social / Contact)
+    ============================================================ */
+    .brand-info-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 2.5rem;
+        background: #ffffff;
+    }
+
+    .brand-info-block {
+        max-width: 680px;
+    }
+
+    .info-block-title {
+        font-family: var(--ff-display);
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        margin-bottom: .875rem;
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+    .info-block-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--surface-3);
+    }
+
+    .brand-description {
+        font-size: .9rem;
+        color: var(--ink-soft);
+        line-height: 1.7;
+    }
+
+    .brand-story-toggle {
+        margin-top: .5rem;
+        font-size: .82rem;
+        color: var(--gold);
+        font-weight: 600;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        font-family: var(--ff-body);
+        display: flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    .brand-story-text {
+        display: none;
+        margin-top: .5rem;
+        font-size: .88rem;
+        color: var(--ink-soft);
+        line-height: 1.7;
+        border-left: 2px solid var(--gold-dim);
+        padding-left: .875rem;
+    }
+    .brand-story-text.open { display: block; }
+
+    .contact-list {
+        display: flex;
+        flex-direction: column;
+        gap: .625rem;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+        font-size: .875rem;
+        color: var(--ink-soft);
+        text-decoration: none;
+        transition: color .2s;
+    }
+    a.contact-item:hover { color: var(--gold); }
+
+    .contact-icon {
+        width: 30px; height: 30px;
+        border-radius: var(--r-sm);
+        background: var(--surface-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: .8rem;
+        color: var(--ink-muted);
+    }
+
+    .social-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .social-link {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .875rem;
+        border-radius: var(--r-full);
+        border: 1px solid var(--surface-3);
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: .8rem;
+        font-weight: 600;
+        transition: all .2s;
+        background: #ffffff;
+    }
+    .social-link:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+        background: var(--gold-dim);
+    }
+    .social-link i { font-size: .9rem; }
+
+    /* ============================================================
+       FILTER BAR
+    ============================================================ */
+    .filter-bar-wrapper {
+        background: #ffffff;
+        border-bottom: 1px solid var(--surface-3);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-bar-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 2.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .filter-bar-inner::-webkit-scrollbar { display: none; }
+
+    .filter-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: .375rem;
+        padding: .75rem 1rem;
+        white-space: nowrap;
+        font-size: .85rem;
+        font-weight: 600;
+        color: var(--ink-muted);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all .2s;
+        flex-shrink: 0;
+        font-family: var(--ff-body);
+        cursor: pointer;
+        background: none;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+    }
+    .filter-tab:hover { color: var(--ink); border-bottom-color: var(--surface-3); }
+    .filter-tab.active { color: var(--ink); border-bottom-color: var(--gold); }
+
+    .filter-tab-count {
+        font-size: .72rem;
+        font-weight: 700;
+        background: var(--surface-2);
+        color: var(--ink-muted);
+        padding: .1rem .4rem;
+        border-radius: var(--r-full);
+    }
+    .filter-tab.active .filter-tab-count {
+        background: var(--gold-dim);
+        color: var(--gold);
+    }
+
+    .filter-bar-sep { color: var(--surface-3); flex-shrink: 0; font-size: .75rem; }
+
+    /* ============================================================
+       SUBCATEGORY PILLS
+    ============================================================ */
+    .subcategory-pills-wrap {
+        background: #ffffff;
+        border-bottom: 1px solid var(--surface-3);
+        padding: .75rem 2.5rem;
+        display: flex;
+        gap: .5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+        max-width: 100%;
+    }
+    .subcategory-pills-wrap::-webkit-scrollbar { display: none; }
+
+    .sub-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .375rem .875rem;
+        border-radius: var(--r-full);
+        border: 1px solid var(--surface-3);
+        background: #ffffff;
+        color: var(--ink-soft);
+        font-size: .8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: all .18s;
+        flex-shrink: 0;
+        font-family: var(--ff-body);
+        cursor: pointer;
+    }
+    .sub-pill:hover { border-color: var(--gold); color: var(--gold); }
+    .sub-pill.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #ffffff;
+    }
+
+    /* ============================================================
+       TOOLBAR
+    ============================================================ */
+    .toolbar {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.25rem 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        background: #ffffff;
+    }
+
+    .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        flex-wrap: wrap;
+    }
+
+    .result-count { font-size: .875rem; color: var(--ink-muted); }
+    .result-count strong { color: var(--ink); font-weight: 700; }
+
+    .active-filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .7rem;
+        border-radius: var(--r-full);
+        background: var(--gold-dim);
+        border: 1px solid rgba(201,168,76,.3);
+        color: var(--gold);
+        font-size: .78rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .active-filter-chip i { font-size: .65rem; opacity: .7; }
+
+    .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+    }
+
+    .sort-select {
+        appearance: none;
+        padding: .45rem 2rem .45rem .875rem;
+        border-radius: var(--r-full);
+        border: 1px solid var(--surface-3);
+        background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right .75rem center;
+        font-family: var(--ff-body);
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        outline: none;
+        transition: border-color .2s;
+    }
+    .sort-select:focus { border-color: var(--gold); }
+
+    .toggle-btn {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .875rem;
+        border-radius: var(--r-full);
+        border: 1px solid var(--surface-3);
+        background: #ffffff;
+        font-family: var(--ff-body);
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition: all .18s;
+        text-decoration: none;
+    }
+    .toggle-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .toggle-btn.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #ffffff;
+    }
+    .toggle-btn i { font-size: .8rem; }
+
+    /* ============================================================
+       PRODUCT GRID
+    ============================================================ */
+    .products-section {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem 2.5rem 3rem;
+        background: #f7fafc;
+    }
+
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* ============================================================
+       PRODUCT CARD
+    ============================================================ */
+    .product-card {
+        background: #ffffff;
+        border-radius: var(--r-lg);
+        border: 1px solid var(--surface-3);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-2);
+    }
+
+    .product-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; flex: 1; align-items: stretch; width: 100%; }
+
+    .product-thumb {
+        position: relative;
+        height: 260px;
+        background: var(--surface-2);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .product-thumb img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform .3s ease;
+        display: block;
+    }
+    .product-card:hover .product-thumb img { transform: scale(1.06); }
+
+    .product-badges {
+        position: absolute;
+        top: .75rem; left: .75rem; right: .75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .375rem;
+        z-index: 2;
+    }
+
+    .p-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .25rem .6rem;
+        border-radius: var(--r-full);
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .3px;
+        backdrop-filter: blur(8px);
+    }
+    .p-badge i { font-size: .65rem; }
+    .p-badge-discount { background: rgba(192,57,43,.92); color: #fff; }
+    .p-badge-featured { background: rgba(201,168,76,.92); color: var(--ink); }
+    .p-badge-verified { background: rgba(45,122,95,.92);  color: #d4f7eb; }
+    .p-badge-shipping { background: rgba(26,82,151,.92);  color: #d6e8ff; }
+    .p-badge-trending { background: rgba(100,30,100,.92); color: #f0d6ff; }
+
+    .product-price-badge {
+        position: absolute;
+        bottom: .75rem; right: .75rem;
+        background: rgba(15,15,15,.92);
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        padding: .5rem 1rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        border-radius: var(--r-md);
+        box-shadow: var(--shadow-md);
+        z-index: 2;
+        font-family: var(--ff-display);
+    }
+    .product-price-badge .was {
+        font-size: .7rem;
+        color: rgba(255,255,255,.5);
+        text-decoration: line-through;
+        display: block;
+        margin-bottom: .1rem;
+        font-family: var(--ff-body);
+        font-weight: 400;
+    }
+
+    .product-info {
+        padding: .875rem 1rem .625rem;
+        flex: 1;
+        width: 100%;
+        background: #ffffff;
+    }
+
+    .product-meta { width: 100%; }
+
+    .product-title {
+        font-family: var(--ff-display);
+        font-weight: 700;
+        font-size: .95rem;
+        color: var(--ink);
+        line-height: 1.35;
+        margin-bottom: .2rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .product-card:hover .product-title { color: #1a4ed8; }
+
+    .product-name-sub {
+        font-size: .8rem;
+        color: var(--ink-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dealer-strip {
+        padding: .625rem .875rem;
+        border-top: 1px solid var(--surface-2);
+        display: flex;
+        align-items: center;
+        gap: .625rem;
+        background: var(--surface-2);
+        width: 100%;
+    }
+
+    .dealer-avatar {
+        position: relative;
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
+    .dealer-photo {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--surface-3);
+        object-fit: cover;
+        display: block;
+        transition: border-color .2s;
+    }
+    .dealer-avatar:hover .dealer-photo { border-color: var(--gold); }
+
+    .dealer-verified-dot {
+        position: absolute;
+        bottom: -1px; right: -1px;
+        width: 13px; height: 13px;
+        background: var(--emerald);
+        border-radius: 50%;
+        border: 2px solid #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .dealer-verified-dot i { font-size: .45rem; color: #ffffff; }
+
+    .dealer-info {
+        display: flex;
+        flex-direction: column;
+        gap: .2rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dealer-name {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+        text-decoration: none;
+        transition: color .2s;
+    }
+    a.dealer-name:hover { color: var(--gold); }
+
+    .dealer-stats {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .dealer-stat {
+        display: flex;
+        align-items: center;
+        gap: .2rem;
+        font-size: .7rem;
+        color: var(--ink-muted);
+    }
+    .dealer-stat i { font-size: .62rem; }
+
+    .product-stats-row {
+        padding: .5rem 1rem .75rem;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .375rem;
+        font-size: .75rem;
+        color: var(--ink-muted);
+        width: 100%;
+        background: #ffffff;
+    }
+
+    .ps-item { display: flex; align-items: center; gap: .2rem; }
+    .ps-item i { font-size: .7rem; }
+    .ps-sep { color: var(--surface-3); }
+
+    .stock-in  { color: var(--emerald); }
+    .stock-low { color: var(--amber); }
+    .stock-out { color: var(--crimson); }
+
+    .cat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .15rem .5rem;
+        border-radius: var(--r-full);
+        background: var(--surface-2);
+        font-size: .7rem;
+        color: var(--ink-muted);
+        font-weight: 600;
+    }
+    .cat-pill i { font-size: .62rem; }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty-state {
+        grid-column: 1/-1;
+        padding: 5rem 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        background: #ffffff;
+        border-radius: var(--r-lg);
+    }
+    .empty-icon  { font-size: 4rem; color: var(--surface-3); }
+    .empty-title { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+    .empty-text  { font-size: .9rem; color: var(--ink-muted); max-width: 400px; }
+
+    /* ============================================================
+       PAGINATION
+    ============================================================ */
+    .pagination-wrap {
+        max-width: 1400px;
+        margin: 2.5rem auto 0;
+        padding: 0 2.5rem;
+        display: flex;
+        justify-content: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+    }
+
+    .page-link {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .6rem 1.125rem;
+        border-radius: var(--r-md);
+        border: 1px solid var(--surface-3);
+        background: #ffffff;
+        color: var(--ink-soft);
+        text-decoration: none;
+        font-size: .85rem;
+        font-weight: 600;
+        transition: all .18s;
+        font-family: var(--ff-body);
+        cursor: pointer;
+    }
+    .page-link:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+        background: var(--gold-dim);
+    }
+    .page-link.active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: #ffffff;
+    }
+    .page-link i { font-size: .75rem; }
+
+    /* ============================================================
+       BOTTOM SORT BAR
+    ============================================================ */
+    .bottom-sort-bar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 950;
+        background: linear-gradient(135deg, var(--primary-dark) 0%, #0d3060 100%);
+        height: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-top: 1px solid rgba(255,255,255,.07);
+        box-shadow: 0 -4px 24px rgba(10,37,64,0.4);
+    }
+
+    .bottom-sort-bar::before {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 60%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212,175,55,0.6), transparent);
+        animation: barShimmer 4s ease-in-out infinite;
+        pointer-events: none;
+    }
+    @keyframes barShimmer {
+        0%   { left: -60%; opacity: 0; }
+        20%  { opacity: 1; }
+        80%  { opacity: 1; }
+        100% { left: 160%; opacity: 0; }
+    }
+
+    .bsb-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .15rem;
+        padding: .35rem .5rem;
+        border-radius: var(--r-md);
+        border: none;
+        background: transparent;
+        color: rgba(255,255,255,.5);
+        font-family: var(--ff-body);
+        font-size: .68rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .18s;
+        text-decoration: none;
+    }
+    .bsb-item i { font-size: 1rem; }
+    .bsb-item:hover,
+    .bsb-item.active { color: var(--accent-gold); }
+
+    /* ============================================================
+       SORT SHEET (mobile)
+    ============================================================ */
+    .sheet-backdrop {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(10,37,64,.5);
+        backdrop-filter: blur(4px);
+        z-index: 960;
+    }
+    .sheet-backdrop.open { display: block; }
+
+    .sort-sheet {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 970;
+        background: #ffffff;
+        border-radius: 20px 20px 0 0;
+        box-shadow: var(--shadow-xl);
+        transform: translateY(100%);
+        transition: transform .32s cubic-bezier(.4,0,.2,1);
+        padding-bottom: env(safe-area-inset-bottom, 1rem);
+    }
+    .sort-sheet.open { transform: translateY(0); }
+
+    .sheet-handle {
+        width: 40px; height: 4px;
+        background: var(--surface-3);
+        border-radius: 99px;
+        margin: .75rem auto .25rem;
+    }
+
+    .sheet-header {
+        padding: .75rem 1.25rem .5rem;
+        font-family: var(--ff-display);
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--ink);
+        border-bottom: 1px solid var(--surface-2);
+    }
+
+    .sort-option {
+        display: flex;
+        align-items: center;
+        gap: .875rem;
+        padding: .875rem 1.25rem;
+        font-family: var(--ff-body);
+        font-size: .9rem;
+        color: var(--ink-soft);
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background .15s;
+    }
+    .sort-option:hover { background: var(--surface-2); }
+    .sort-option.active { color: var(--ink); font-weight: 700; }
+    .sort-option i:first-child { width: 18px; color: var(--ink-muted); font-size: .85rem; }
+    .sort-option .check { margin-left: auto; color: var(--emerald); }
+
+    @media (min-width: 640px) {
+        .sort-sheet { left: 50%; right: auto; width: 420px; transform: translateX(-50%) translateY(100%); }
+        .sort-sheet.open { transform: translateX(-50%) translateY(0); }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 768px) {
+        .brand-banner { height: 220px; }
+        .brand-hero-content { min-height: 220px; padding: 1.5rem 1.25rem 0; }
+        .brand-hero-text { padding-bottom: 1.25rem; gap: 0.5rem; }
+        .brand-logo-wrap { width: 68px; height: 68px; border-radius: 14px; border-width: 2px; }
+        .brand-logo-fallback { font-size: 1.25rem; }
+        .brand-hero-name { font-size: 1.8rem; }
+        .brand-hero-tagline { font-size: 0.82rem; }
+        .brand-badge { font-size: 0.68rem; padding: 0.25rem 0.6rem; }
+        .hero-stat-value { font-size: 1.35rem; }
+        .hero-stat { padding: 0.9rem 0.25rem; }
+
+        .brand-tabs-inner { padding: 0 1rem; }
+        .brand-tab { padding: .75rem .75rem; font-size: .82rem; }
+        .brand-info-inner { padding: 1.5rem 1.25rem; }
+
+        .filter-bar-inner { padding: 0 1rem; }
+        .subcategory-pills-wrap { padding: .625rem 1rem; }
+        .toolbar { padding: .875rem 1rem; }
+        .products-section { padding: 1rem 1rem 3rem; }
+        .product-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+        .pagination-wrap { padding: 0 1rem; }
+
+        
+    }
+
+    @media (max-width: 480px) {
+        .brand-banner { height: 180px; }
+        .brand-hero-content { min-height: 180px; padding: 1.25rem 1rem 0; }
+        .brand-hero-text { padding-bottom: 1rem; gap: 0.4rem; }
+        .brand-logo-wrap { width: 58px; height: 58px; border-radius: 12px; }
+        .brand-logo-fallback { font-size: 1.1rem; }
+        .brand-hero-name { font-size: 1.5rem; letter-spacing: -0.3px; }
+        .brand-hero-tagline { font-size: 0.78rem; }
+        .brand-badges { gap: 0.35rem; }
+        .brand-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+        .brand-hero-stats { grid-template-columns: repeat(2, 1fr); }
+        .hero-stat:nth-child(3) { border-left: none; }
+        .hero-stat:nth-child(3),
+        .hero-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,0.08); }
+        .hero-stat-value { font-size: 1.25rem; }
+        .hero-stat-label { font-size: 0.64rem; }
+        .hero-stat { padding: 0.875rem 0.5rem; }
+
+        .brand-tab span:not(.brand-tab-count) { display: none; }
+        .brand-tab i { font-size: 1rem; }
+        .brand-tab { padding: .75rem .875rem; }
+
+        .product-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+        .product-thumb { height: 180px; }
+        .product-info { padding: .625rem .75rem .5rem; }
+        .dealer-photo { width: 30px; height: 30px; }
+        .product-title { font-size: .85rem; }
+        .product-stats-row { padding: .375rem .75rem .625rem; gap: .25rem; font-size: .7rem; }
+        .dealer-strip { padding: .4rem .75rem; }
+    }
+
+    @media (max-width: 360px) {
+        .brand-hero-name { font-size: 1.3rem; }
+        .brand-logo-wrap { width: 52px; height: 52px; border-radius: 10px; }
+        .hero-stat-value { font-size: 1.1rem; }
+    }
+
+    @media print {
+        
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    mark.hl { background: #fef3c7; color: #92400e; padding: 0 2px; border-radius: 3px; }
+    </style>
+
+
+<!-- ═══════════════════════════════════
+     BRAND HERO
+═══════════════════════════════════ -->
+<section class="brand-hero">
+
+    {% if brand_data.banner_url and 'default-brand-banner' not in brand_data.banner_url %}
+        <img class="brand-banner" src="{{ brand_data.banner_url }}" alt="{{ brand_data.brand_name }} banner"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="brand-banner-placeholder" style="display:none;">
+            <i class="fa-solid fa-image"></i>
+        </div>
+    {% else %}
+        <div class="brand-banner-placeholder">
+            <i class="fa-solid fa-building-columns"></i>
+        </div>
+    {% endif %}
+
+    <div class="brand-hero-content">
+        <div class="brand-hero-text">
+
+            <div class="brand-logo-wrap">
+                {% if brand_data.logo_url and 'default-brand-logo' not in brand_data.logo_url %}
+                    <img src="{{ brand_data.logo_url }}" alt="{{ brand_data.brand_name }} logo"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <span class="brand-logo-fallback" style="display:none;">
+                        {{ brand_data.brand_name|slice:":2"|upper }}
+                    </span>
+                {% else %}
+                    <span class="brand-logo-fallback">{{ brand_data.brand_name|slice:":2"|upper }}</span>
+                {% endif %}
+            </div>
+
+            <h1 class="brand-hero-name">{{ brand_data.brand_name }}</h1>
+
+            {% if brand_data.brand_tagline %}
+            <p class="brand-hero-tagline">"{{ brand_data.brand_tagline }}"</p>
+            {% endif %}
+
+            <div class="brand-badges">
+                {% if brand_data.is_verified %}
+                <span class="brand-badge badge-verified">
+                    <i class="fa-solid fa-circle-check"></i> Verified
+                </span>
+                {% endif %}
+                {% if brand_data.is_official %}
+                <span class="brand-badge badge-official">
+                    <i class="fa-solid fa-star"></i> Official
+                </span>
+                {% endif %}
+                {% if brand_data.is_trusted %}
+                <span class="brand-badge badge-trusted">
+                    <i class="fa-solid fa-shield-halved"></i> Trusted
+                </span>
+                {% endif %}
+                {% if brand_data.is_featured %}
+                <span class="brand-badge badge-featured">
+                    <i class="fa-solid fa-bolt"></i> Featured
+                </span>
+                {% endif %}
+                {% if brand_data.is_trending %}
+                <span class="brand-badge badge-trending">
+                    <i class="fa-solid fa-fire"></i> Trending
+                </span>
+                {% endif %}
+                {% if brand_data.is_exclusive %}
+                <span class="brand-badge badge-exclusive">
+                    <i class="fa-solid fa-gem"></i> Exclusive
+                </span>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="brand-hero-stats">
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ brand_data.total_products }}</span>
+            <span class="hero-stat-label">Products</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ brand_categories|length }}</span>
+            <span class="hero-stat-label">Categories</span>
+        </div>
+        
+        <div class="hero-stat">
+            <span class="hero-stat-value">{{ brand_data.view_count }}</span>
+            <span class="hero-stat-label">Views</span>
+        </div>
+    </div>
+
+</section>
+
+
+<!-- ═══════════════════════════════════
+     BRAND TABS NAV
+═══════════════════════════════════ -->
+<div class="brand-tabs-wrapper">
+    <div class="brand-tabs-inner">
+
+        <button class="brand-tab active" data-tab="products">
+            <i class="fa-solid fa-box-archive"></i>
+            <span>Products</span>
+            <span class="brand-tab-count">{{ brand_data.total_products }}</span>
+        </button>
+
+        
+
+        {% if brand_data.social_facebook or brand_data.social_instagram or brand_data.social_twitter or brand_data.social_linkedin or brand_data.social_youtube %}
+        <button class="brand-tab" data-tab="social">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>Social</span>
+        </button>
+        {% endif %}
+
+        {% if brand_data.brand_email or brand_data.brand_phone or brand_data.brand_website or brand_data.support_email or brand_data.support_phone %}
+        <button class="brand-tab" data-tab="contact">
+            <i class="fa-solid fa-address-card"></i>
+            <span>Contact</span>
+        </button>
+        {% endif %}
+
+        {% if brand_data.brand_description or brand_data.country_of_origin or brand_data.headquarters or brand_data.age_in_years or brand_data.brand_story %}
+        <button class="brand-tab" data-tab="about">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>About</span>
+        </button>
+        {% endif %}
+
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════
+     TAB PANELS
+═══════════════════════════════════ -->
+
+<!-- ── PRODUCTS TAB ── -->
+<div class="brand-tab-panel active" id="brand-tab-products">
+
+    <!-- CATEGORY FILTER BAR -->
+    {% if brand_categories %}
+    <div class="filter-bar-wrapper">
+        <div class="filter-bar-inner">
+
+            <a href="?{% if sort_by != 'newest' %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=true&{% endif %}"
+               class="filter-tab {% if not active_category_slug %}active{% endif %}">
+                All
+                <span class="filter-tab-count">{{ brand_data.total_products }}</span>
+            </a>
+
+            <span class="filter-bar-sep">|</span>
+
+            {% for cat in brand_categories %}
+            <a href="?category={{ cat.category_slug }}{% if sort_by != 'newest' %}&sort={{ sort_by }}{% endif %}{% if in_stock_only %}&in_stock=true{% endif %}"
+               class="filter-tab {% if active_category_slug == cat.category_slug %}active{% endif %}">
+                {{ cat.category_name }}
+                <span class="filter-tab-count">{{ cat.product_count }}</span>
+            </a>
+            {% endfor %}
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SUBCATEGORY PILLS -->
+    {% if brand_sub_categories %}
+    <div class="subcategory-pills-wrap">
+
+        <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}{% if sort_by != 'newest' %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=true&{% endif %}"
+           class="sub-pill {% if not active_sub_slug %}active{% endif %}">
+            <i class="fa-solid fa-layer-group"></i> All Subcategories
+        </a>
+
+        {% for sub in brand_sub_categories %}
+        {% if not active_category_slug or sub.category__category_slug == active_category_slug %}
+        <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}sub={{ sub.sub_category_slug }}{% if sort_by != 'newest' %}&sort={{ sort_by }}{% endif %}{% if in_stock_only %}&in_stock=true{% endif %}"
+           class="sub-pill {% if active_sub_slug == sub.sub_category_slug %}active{% endif %}">
+            {{ sub.sub_category_name }}
+            <span style="opacity:.6;font-size:.68rem;">({{ sub.product_count }})</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+
+    </div>
+    {% endif %}
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+
+        <div class="toolbar-left">
+            <p class="result-count">
+                <strong>{{ total_count }}</strong> product{{ total_count|pluralize }} found
+            </p>
+
+            {% if active_category %}
+            <a href="?{% if sort_by != 'newest' %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=true{% endif %}"
+               class="active-filter-chip">
+                <i class="fa-solid fa-folder"></i>
+                {{ active_category.category_name }}
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+
+            {% if active_sub %}
+            <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}{% if sort_by != 'newest' %}sort={{ sort_by }}&{% endif %}{% if in_stock_only %}in_stock=true{% endif %}"
+               class="active-filter-chip">
+                <i class="fa-solid fa-list-ul"></i>
+                {{ active_sub.sub_category_name }}
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+
+            {% if in_stock_only %}
+            <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}{% if active_sub_slug %}sub={{ active_sub_slug }}&{% endif %}{% if sort_by != 'newest' %}sort={{ sort_by }}{% endif %}"
+               class="active-filter-chip">
+                <i class="fa-solid fa-box"></i> In Stock Only
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+        </div>
+
+        <div class="toolbar-right">
+
+            <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}{% if active_sub_slug %}sub={{ active_sub_slug }}&{% endif %}sort={{ sort_by }}{% if not in_stock_only %}&in_stock=true{% endif %}"
+               class="toggle-btn {% if in_stock_only %}active{% endif %}">
+                <i class="fa-solid fa-box-open"></i>
+                In Stock
+            </a>
+
+            <select class="sort-select" onchange="applySort(this.value)">
+                {% for opt in sort_options %}
+                <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>
+                    {{ opt.label }}
+                </option>
+                {% endfor %}
+            </select>
+
+        </div>
+    </div>
+
+    <!-- PRODUCT GRID -->
+    <section class="products-section">
+        <div class="product-grid">
+
+            {% for product in products %}
+            <article class="product-card">
+                <a href="{% url 'ponno:product_detail' product.slug %}" class="product-link">
+
+                    <div class="product-thumb">
+                        <img src="{{ product.image }}"
+                             alt="{{ product.title|default:product.product_name }}"
+                             loading="lazy"
+                             onerror="this.src='/static/defaults/default-product.png'">
+
+                        <div class="product-badges">
+                            {% if product.discount_badge %}
+                            <span class="p-badge p-badge-discount">
+                                <i class="fa-solid fa-percent"></i> {{ product.discount_badge }}
+                            </span>
+                            {% endif %}
+                            {% if product.is_featured %}
+                            <span class="p-badge p-badge-featured">
+                                <i class="fa-solid fa-star"></i> Featured
+                            </span>
+                            {% endif %}
+                            {% if product.is_verified %}
+                            <span class="p-badge p-badge-verified">
+                                <i class="fa-solid fa-circle-check"></i> Verified
+                            </span>
+                            {% endif %}
+                            {% if product.is_trending %}
+                            <span class="p-badge p-badge-trending">
+                                <i class="fa-solid fa-fire"></i> Trending
+                            </span>
+                            {% endif %}
+                            {% if product.free_shipping %}
+                            <span class="p-badge p-badge-shipping">
+                                <i class="fa-solid fa-truck"></i> Free Ship
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="product-price-badge">
+                            {% if product.on_sale %}
+                            <span class="was">{{ product.selling_price }}</span>
+                            {% endif %}
+                            {{ product.final_price }}
+                        </div>
+                    </div>
+
+                    <div class="product-info">
+                        <div class="product-meta">
+                            <h3 class="product-title">
+                                {{ product.title|default:product.product_name }}
+                            </h3>
+                            {% if product.product_name and product.title and product.title != product.product_name %}
+                            <p class="product-name-sub">{{ product.product_name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+
+                <div class="dealer-strip">
+                    <img class="dealer-photo"
+                         src="{{ product.dealer_photo }}"
+                         alt="{{ product.dealer_name }}"
+                         onerror="this.src='/static/defaults/default-profile-picture.png'">
+
+                    {% if product.dealer_verified %}
+                    <span class="dealer-verified-dot">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                    {% endif %}
+
+                    <div class="dealer-info">
+                        {% if product.dealer_username %}
+                        <a href="{% url 'customer:profile_view' username=product.dealer_username %}" class="dealer-name">
+                            {{ product.dealer_name }}
+                        </a>
+                        {% else %}
+                        <span class="dealer-name">{{ product.dealer_name }}</span>
+                        {% endif %}
+                        <div class="dealer-stats">
+                            <span class="dealer-stat" title="Products">
+                                <i class="fa-solid fa-box-archive"></i>
+                                {{ product.dealer_product_count }}
+                            </span>
+                            <span class="dealer-stat" title="Followers">
+                                <i class="fa-solid fa-user-group"></i>
+                                {{ product.dealer_follower_count }}
+                            </span>
+                            <span class="dealer-stat" title="Profile views">
+                                <i class="fa-solid fa-eye"></i>
+                                {{ product.dealer_profile_views }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-stats-row">
+
+                    <span class="ps-item {% if product.stock_class == 'in-stock' %}stock-in{% elif product.stock_class == 'low-stock' %}stock-low{% else %}stock-out{% endif %}">
+                        <i class="fa-solid fa-circle" style="font-size:.45rem;"></i>
+                        {% if product.stock_badge %}{{ product.stock_badge }}{% else %}{{ product.stock_count }} in stock{% endif %}
+                    </span>
+
+                    <span class="ps-sep">·</span>
+
+                    <span class="ps-item">
+                        <i class="fa-regular fa-eye"></i> {{ product.views }}
+                    </span>
+
+                    {% if product.rating > 0 %}
+                    <span class="ps-sep">·</span>
+                    <span class="ps-item">
+                        <i class="fa-solid fa-star" style="color:#f59e0b;"></i>
+                        {{ product.rating }} ({{ product.review_count }})
+                    </span>
+                    {% endif %}
+
+                    {% if product.total_sales > 0 %}
+                    <span class="ps-sep">·</span>
+                    <span class="ps-item">
+                        <i class="fa-solid fa-bag-shopping"></i> {{ product.total_sales }} sold
+                    </span>
+                    {% endif %}
+
+                    {% if product.sub_category %}
+                    <span class="ps-sep">·</span>
+                    <span class="cat-pill">
+                        <i class="fa-solid fa-list-ul"></i> {{ product.sub_category }}
+                    </span>
+                    {% elif product.category %}
+                    <span class="ps-sep">·</span>
+                    <span class="cat-pill">
+                        <i class="fa-solid fa-folder"></i> {{ product.category }}
+                    </span>
+                    {% endif %}
+
+                </div>
+
+            </article>
+
+            {% empty %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+                <h3 class="empty-title">No products found</h3>
+                <p class="empty-text">
+                    No products match your current filters.
+                    <a href="{% url 'ponno:brand_products' brand_slug=brand.brand_slug %}"
+                       style="color:var(--accent-gold);font-weight:700;">Clear all filters</a>
+                </p>
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination-wrap" aria-label="Product pages">
+
+            {% if page_obj.has_previous %}
+            <a class="page-link"
+               href="?page={{ page_obj.previous_page_number }}{% if active_category_slug %}&category={{ active_category_slug }}{% endif %}{% if active_sub_slug %}&sub={{ active_sub_slug }}{% endif %}{% if sort_by != 'newest' %}&sort={{ sort_by }}{% endif %}{% if in_stock_only %}&in_stock=true{% endif %}">
+                <i class="fa-solid fa-chevron-left"></i> Prev
+            </a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="page-link active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a class="page-link"
+                   href="?page={{ num }}{% if active_category_slug %}&category={{ active_category_slug }}{% endif %}{% if active_sub_slug %}&sub={{ active_sub_slug }}{% endif %}{% if sort_by != 'newest' %}&sort={{ sort_by }}{% endif %}{% if in_stock_only %}&in_stock=true{% endif %}">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a class="page-link"
+               href="?page={{ page_obj.next_page_number }}{% if active_category_slug %}&category={{ active_category_slug }}{% endif %}{% if active_sub_slug %}&sub={{ active_sub_slug }}{% endif %}{% if sort_by != 'newest' %}&sort={{ sort_by }}{% endif %}{% if in_stock_only %}&in_stock=true{% endif %}">
+                Next <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            {% endif %}
+
+        </nav>
+        {% endif %}
+
+    </section>
+
+</div><!-- /#brand-tab-products -->
+
+
+<!-- ── ABOUT TAB ── -->
+<div class="brand-tab-panel" id="brand-tab-about">
+    <div class="brand-info-inner">
+        <div class="brand-info-block">
+
+            {% if brand_data.brand_description %}
+            <p class="info-block-title"><i class="fa-solid fa-circle-info"></i> About</p>
+            <p class="brand-description">{{ brand_data.brand_description }}</p>
+
+            {% if brand_data.brand_story %}
+            <button class="brand-story-toggle" onclick="toggleStory(this)">
+                <i class="fa-solid fa-book-open"></i> Read Brand Story
+                <i class="fa-solid fa-chevron-down" style="font-size:.65rem;"></i>
+            </button>
+            <p class="brand-story-text">{{ brand_data.brand_story }}</p>
+            {% endif %}
+
+            {% if brand_data.country_of_origin or brand_data.headquarters or brand_data.age_in_years %}
+            <div style="margin-top:.875rem; display:flex; gap:.5rem; flex-wrap:wrap;">
+                {% if brand_data.country_of_origin %}
+                <span class="cat-pill"><i class="fa-solid fa-location-dot"></i> {{ brand_data.country_of_origin }}</span>
+                {% endif %}
+                {% if brand_data.headquarters %}
+                <span class="cat-pill"><i class="fa-solid fa-building"></i> {{ brand_data.headquarters }}</span>
+                {% endif %}
+                {% if brand_data.age_in_years %}
+                <span class="cat-pill"><i class="fa-regular fa-clock"></i> {{ brand_data.age_in_years }}yrs</span>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
+
+        </div>
+    </div>
+</div><!-- /#brand-tab-about -->
+
+
+<!-- ── SOCIAL TAB ── -->
+<div class="brand-tab-panel" id="brand-tab-social">
+    <div class="brand-info-inner">
+        <div class="brand-info-block">
+            <p class="info-block-title"><i class="fa-solid fa-share-nodes"></i> Social Media</p>
+            <div class="social-links">
+                {% if brand_data.social_facebook %}
+                <a href="{{ brand_data.social_facebook }}" target="_blank" rel="noopener" class="social-link">
+                    <i class="fa-brands fa-facebook-f"></i> Facebook
+                </a>
+                {% endif %}
+                {% if brand_data.social_instagram %}
+                <a href="{{ brand_data.social_instagram }}" target="_blank" rel="noopener" class="social-link">
+                    <i class="fa-brands fa-instagram"></i> Instagram
+                </a>
+                {% endif %}
+                {% if brand_data.social_twitter %}
+                <a href="{{ brand_data.social_twitter }}" target="_blank" rel="noopener" class="social-link">
+                    <i class="fa-brands fa-x-twitter"></i> X / Twitter
+                </a>
+                {% endif %}
+                {% if brand_data.social_linkedin %}
+                <a href="{{ brand_data.social_linkedin }}" target="_blank" rel="noopener" class="social-link">
+                    <i class="fa-brands fa-linkedin-in"></i> LinkedIn
+                </a>
+                {% endif %}
+                {% if brand_data.social_youtube %}
+                <a href="{{ brand_data.social_youtube }}" target="_blank" rel="noopener" class="social-link">
+                    <i class="fa-brands fa-youtube"></i> YouTube
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div><!-- /#brand-tab-social -->
+
+
+<!-- ── CONTACT TAB ── -->
+<div class="brand-tab-panel" id="brand-tab-contact">
+    <div class="brand-info-inner">
+        <div class="brand-info-block">
+            <p class="info-block-title"><i class="fa-solid fa-address-card"></i> Contact</p>
+            <div class="contact-list">
+                {% if brand_data.brand_website %}
+                <a href="{{ brand_data.brand_website }}" target="_blank" rel="noopener" class="contact-item">
+                    <span class="contact-icon"><i class="fa-solid fa-globe"></i></span>
+                    {{ brand_data.brand_website|truncatechars:40 }}
+                </a>
+                {% endif %}
+                {% if brand_data.brand_email %}
+                <a href="mailto:{{ brand_data.brand_email }}" class="contact-item">
+                    <span class="contact-icon"><i class="fa-solid fa-envelope"></i></span>
+                    {{ brand_data.brand_email }}
+                </a>
+                {% endif %}
+                {% if brand_data.brand_phone %}
+                <a href="tel:{{ brand_data.brand_phone }}" class="contact-item">
+                    <span class="contact-icon"><i class="fa-solid fa-phone"></i></span>
+                    {{ brand_data.brand_phone }}
+                </a>
+                {% endif %}
+                {% if brand_data.support_email %}
+                <a href="mailto:{{ brand_data.support_email }}" class="contact-item">
+                    <span class="contact-icon"><i class="fa-solid fa-headset"></i></span>
+                    {{ brand_data.support_email }}
+                </a>
+                {% endif %}
+                {% if brand_data.support_phone %}
+                <a href="tel:{{ brand_data.support_phone }}" class="contact-item">
+                    <span class="contact-icon"><i class="fa-solid fa-phone-volume"></i></span>
+                    {{ brand_data.support_phone }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div><!-- /#brand-tab-contact -->
+
+
+<!-- ═══════════════════════════════════
+     BOTTOM BAR
+═══════════════════════════════════ -->
+<div class="bottom-sort-bar">
+
+    <a href="{% url 'ponno:discovery_engine' %}" class="bsb-item">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back</span>
+    </a>
+
+    <a href="?{% if active_category_slug %}category={{ active_category_slug }}&{% endif %}{% if active_sub_slug %}sub={{ active_sub_slug }}&{% endif %}{% if sort_by != 'newest' %}sort={{ sort_by }}&{% endif %}{% if not in_stock_only %}in_stock=true{% endif %}"
+       class="bsb-item {% if in_stock_only %}active{% endif %}">
+        <i class="fa-solid fa-box-open"></i>
+        <span>In Stock</span>
+    </a>
+
+    <button class="bsb-item" onclick="openSortSheet()">
+        <i class="fa-solid fa-arrow-up-wide-short"></i>
+        <span>Sort</span>
+    </button>
+
+    {% if brand_data.brand_email %}
+    <a href="mailto:{{ brand_data.brand_email }}" class="bsb-item">
+        <i class="fa-solid fa-envelope"></i>
+        <span>Contact</span>
+    </a>
+    {% endif %}
+
+    {% if brand_data.brand_website %}
+    <a href="{{ brand_data.brand_website }}" target="_blank" rel="noopener" class="bsb-item">
+        <i class="fa-solid fa-globe"></i>
+        <span>Website</span>
+    </a>
+    {% endif %}
+
+</div>
+
+
+<!-- ═══════════════════════════════════
+     SORT SHEET (mobile)
+═══════════════════════════════════ -->
+<div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSortSheet()"></div>
+
+<div class="sort-sheet" id="sortSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">Sort Products</div>
+
+    {% for opt in sort_options %}
+    <button class="sort-option {% if opt.active %}active{% endif %}"
+            onclick="applySort('{{ opt.value }}')">
+        {% if opt.value == 'newest' %}      <i class="fa-solid fa-clock-rotate-left"></i>
+        {% elif opt.value == 'popular' %}   <i class="fa-solid fa-fire"></i>
+        {% elif opt.value == 'price_low' %} <i class="fa-solid fa-arrow-down-1-9"></i>
+        {% elif opt.value == 'price_high' %}<i class="fa-solid fa-arrow-up-9-1"></i>
+        {% elif opt.value == 'rating' %}    <i class="fa-solid fa-star"></i>
+        {% elif opt.value == 'discount' %}  <i class="fa-solid fa-percent"></i>
+        {% elif opt.value == 'name_az' %}   <i class="fa-solid fa-arrow-down-a-z"></i>
+        {% endif %}
+        {{ opt.label }}
+        {% if opt.active %}<i class="fa-solid fa-check check"></i>{% endif %}
+    </button>
+    {% endfor %}
+</div>
+
+
+<!-- ═══════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════ -->
+<script>
+
+// ── Side Drawer ───────────────────────────
+const drawer      = document.getElementById('sideDrawer');
+const overlay     = document.getElementById('drawerOverlay');
+const menuToggle  = document.getElementById('menuToggle');
+const drawerClose = document.getElementById('drawerClose');
+
+function openDrawer() {
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        drawer.style.transform = 'translateX(0)';
+    });
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    overlay.style.opacity = '0';
+    drawer.style.transform = 'translateX(-100%)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    document.body.style.overflow = '';
+}
+
+menuToggle.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+menuToggle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeDrawer(); closeSortSheet(); }
+});
+
+// ── Brand Tabs ────────────────────────────
+document.querySelectorAll('.brand-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        document.querySelectorAll('.brand-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.brand-tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('brand-tab-' + target).classList.add('active');
+    });
+});
+
+// ── Sort ──────────────────────────────────
+function applySort(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', value);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function openSortSheet() {
+    document.getElementById('sortSheet').classList.add('open');
+    document.getElementById('sheetBackdrop').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSortSheet() {
+    document.getElementById('sortSheet').classList.remove('open');
+    document.getElementById('sheetBackdrop').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// ── Brand Story toggle ────────────────────
+function toggleStory(btn) {
+    const story = btn.nextElementSibling;
+    story.classList.toggle('open');
+    const icon = btn.querySelector('.fa-chevron-down');
+    icon.style.transform = story.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// ── Back to top ───────────────────────────
+const btt = document.createElement('button');
+btt.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+btt.style.cssText = `
+    position:fixed;
+    bottom:calc(var(--bar-h) + env(safe-area-inset-bottom,0px) + 1rem);
+    right:1.25rem; width:42px; height:42px; border-radius:50%;
+    background:var(--primary-blue); color:white; border:none;
+    cursor:pointer; display:none; align-items:center; justify-content:center;
+    font-size:1rem; box-shadow:0 4px 16px rgba(13,71,161,0.4); z-index:940;
+    transition:all .2s;
+`;
+document.body.appendChild(btt);
+btt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+btt.addEventListener('mouseenter', () => { btt.style.background = 'var(--primary-dark)'; btt.style.transform = 'translateY(-3px)'; });
+btt.addEventListener('mouseleave', () => { btt.style.background = 'var(--primary-blue)'; btt.style.transform = ''; });
+window.addEventListener('scroll', () => {
+    btt.style.display = window.scrollY > 400 ? 'flex' : 'none';
+}, { passive: true });
+
+// ── Performance monitoring ────────────────
+if ('PerformanceObserver' in window) {
+    try {
+        const obs = new PerformanceObserver(list => {
+            for (const entry of list.getEntries()) {
+                console.log('LCP:', entry.startTime);
+            }
+        });
+        obs.observe({ entryTypes: ['largest-contentful-paint'] });
+    } catch(e) {}
+}
+
+</script>
+
+
+
+</body>
+</html>

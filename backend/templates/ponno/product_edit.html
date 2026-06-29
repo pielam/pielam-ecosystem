@@ -1,0 +1,2853 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-role="{{ role }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit · {{ product.product_name }} — PIELAM</title>
+
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    
+    /* ============================================================
+       DESIGN SYSTEM TOKENS
+    ============================================================ */
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --ink:          #0f0f0f;
+        --ink-2:        #3a3a3a;
+        --ink-3:        #6b6b6b;
+        --ink-4:        #9b9b9b;
+        --surface:      #ffffff;
+        --surface-2:    #f5f5f3;
+        --surface-3:    #eeede9;
+        --border:       #e4e3df;
+        --border-2:     #d0cfc9;
+        --accent:       #c8102e;
+        --accent-2:     #a00d24;
+        --gold:         #b8860b;
+        --gold-2:       #8b6508;
+        --green:        #1a6b3a;
+        --green-bg:     #edf7f1;
+        --warn:         #92400e;
+        --warn-bg:      #fffbeb;
+        --blue:         #1e3a8a;
+        --blue-light:   #3b82f6;
+
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --primary-light:    #1976d2;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-secondary:     #f7fafc;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
+        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
+        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
+        --font-display: 'DM Serif Display', 'Playfair Display', serif;
+        --font-body:    'DM Sans', 'Outfit', sans-serif;
+
+        --nav-h:    64px;
+        --r-sm:     8px;
+        --r-md:     14px;
+        --r-lg:     20px;
+        --r-xl:     28px;
+        --ease:     cubic-bezier(.4,0,.2,1);
+        --transition-fast: .15s ease;
+        --transition-base: .25s ease;
+        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+        --bottom-bar-height: 68px;
+
+        --sidebar-w:    240px;
+
+--r:            8px;
+--r-lg:         14px;
+--r-xl:         20px;
+
+--muted:        #9b9b9b;
+--text:         #0f0f0f;
+--text-2:       #3a3a3a;
+
+--red:          #ef4444;
+--amber:        #f59e0b;
+--green:        #16a34a;
+
+--border-h:     #b0afab;
+
+--font-display: 'Syne', sans-serif;
+--font-mono:    'DM Mono', monospace;
+
+--role-color:   #0d47a1;
+
+--surface:      #ffffff;
+--surface-2:    #f5f5f3;
+--surface-3:    #eeede9;
+--border:       #e4e3df;
+
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+        padding-bottom: var(--bottom-bar-height);
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    #loader {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 9999;
+  transition: opacity .4s ease, visibility .4s ease;
+}
+#loader.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#toast-wrap {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--r-lg);
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: #fff;
+  background: var(--primary-dark);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: var(--shadow-lg);
+  animation: slideInR .25s ease both;
+  pointer-events: auto;
+  min-width: 220px;
+  max-width: 340px;
+}
+.toast.leaving { animation: slideOutR .3s ease forwards; }
+.toast.success { background: #16a34a; }
+.toast.error   { background: #ef4444; }
+.toast.info    { background: var(--primary-blue); }
+.toast i       { flex-shrink: 0; }
+
+.page-wrap {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  gap: 0;
+  min-height: calc(100vh - var(--nav-h));
+  margin-top: var(--nav-h);
+  position: relative;
+  z-index: 1;
+}
+
+.edit-sidebar {
+  position: sticky;
+  top: var(--nav-h);
+  align-self: start;
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+}
+.sidebar-section      { padding: 0 16px; margin-bottom: 6px; }
+.sidebar-label {
+  font-size: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r);
+  font-size: 13px;
+  color: var(--text-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.sidebar-link i       { width: 14px; text-align: center; color: var(--muted); font-size: 12px; }
+.sidebar-link:hover,
+.sidebar-link.active  { background: rgba(245,158,11,.08); color: var(--text); }
+.sidebar-link.active i { color: var(--role-color); }
+.sidebar-divider      { height: 1px; background: var(--border); margin: 10px 16px; }
+
+.sidebar-product-thumb {
+  margin: 0 16px 20px;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.sidebar-product-thumb img    { width: 100%; height: 100%; object-fit: cover; }
+.thumb-placeholder-sm {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; color: var(--muted);
+}
+.sidebar-product-name {
+  padding: 0 16px 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-product-sku {
+  padding: 0 16px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.edit-main {
+  padding: 32px;
+  max-width: 860px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  animation: fadeUp .4s ease both;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text);
+}
+.page-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-family: var(--font-mono);
+}
+.page-actions    { display: flex; gap: 8px; flex-shrink: 0; }
+
+.errors-banner {
+  background: rgba(239,68,68,.07);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: var(--r-lg);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  animation: fadeUp .3s ease both;
+}
+.errors-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+.errors-banner ul { padding-left: 18px; }
+.errors-banner li { font-size: 12px; color: var(--text-2); margin-bottom: 2px; }
+
+.form-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+  animation: fadeUp .45s ease both;
+  scroll-margin-top: 72px;
+}
+.form-section:nth-child(2) { animation-delay: .06s; }
+.form-section:nth-child(3) { animation-delay: .12s; }
+.form-section:nth-child(4) { animation-delay: .18s; }
+.form-section:nth-child(5) { animation-delay: .24s; }
+.form-section:nth-child(6) { animation-delay: .30s; }
+
+.form-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.section-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--role-color) 12%, transparent);
+  color: var(--role-color);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-2);
+}
+.section-desc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.form-section-body { padding: 20px; }
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.field-full        { grid-column: 1 / -1; }
+
+.field             { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.field-label .req  { color: var(--red); }
+.field-hint        { font-size: 10px; color: var(--muted); margin-top: -2px; }
+
+.field-input,
+.field-select,
+.field-textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 9px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+.field-input:focus,
+.field-select:focus,
+.field-textarea:focus {
+  border-color: var(--role-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-color) 12%, transparent);
+  background: var(--surface-3);
+}
+.field-input::placeholder,
+.field-textarea::placeholder { color: var(--muted); }
+.field-input.mono  { font-family: var(--font-mono); font-size: 12px; }
+.field-select option { background: var(--surface-2); }
+.field-textarea    { resize: vertical; min-height: 90px; line-height: 1.7; }
+.field-textarea.tall { min-height: 140px; }
+
+.input-wrap {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.input-wrap:focus-within {
+  border-color: var(--role-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-color) 12%, transparent);
+}
+.input-affix {
+  padding: 0 10px;
+  display: flex; align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(255,255,255,.03);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.input-affix.suffix { border-right: none; border-left: 1px solid var(--border); }
+.input-wrap .field-input { border: none; border-radius: 0; background: transparent; flex: 1; }
+.input-wrap .field-input:focus { box-shadow: none; }
+
+.toggle-group  { display: flex; flex-direction: column; gap: 10px; }
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  gap: 12px;
+}
+.toggle-info   { flex: 1; min-width: 0; }
+.toggle-label  { font-size: 13px; color: var(--text); font-weight: 500; }
+.toggle-sub    { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.toggle {
+  position: relative; flex-shrink: 0;
+  width: 38px; height: 22px;
+}
+.toggle input  { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle-slider {
+  background: color-mix(in srgb, var(--role-color) 20%, transparent);
+  border-color: var(--role-color);
+}
+.toggle input:checked + .toggle-slider::before {
+  transform: translate(16px, -50%);
+  background: var(--role-color);
+}
+
+.avatar-upload-wrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 4px 0 8px;
+}
+.avatar-preview {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+.avatar-preview img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  color: var(--muted);
+}
+.avatar-actions { display: flex; flex-direction: column; gap: 8px; }
+.avatar-actions p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.image-drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.image-drop-zone:hover,
+.image-drop-zone.drag-over {
+  border-color: var(--role-color);
+  background: color-mix(in srgb, var(--role-color) 4%, transparent);
+}
+.image-drop-zone i   { font-size: 22px; color: var(--muted); margin-bottom: 8px; display: block; }
+.image-drop-zone p   { font-size: 12px; color: var(--text-2); }
+.image-drop-zone span { font-size: 11px; color: var(--muted); }
+.image-drop-zone input[type="file"] { display: none; }
+
+.btn-choose {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 12px; color: var(--text-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: border-color .2s, color .2s;
+}
+.btn-choose:hover { border-color: var(--border-h); color: var(--text); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--r);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .03em;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  transition: opacity .2s, transform .1s;
+}
+.btn:active       { transform: scale(.97); }
+.btn-primary      { background: var(--role-color); color: #fff; }
+.btn-primary:hover { opacity: .85; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.btn-ghost:hover  { border-color: var(--border-h); color: var(--text); background: rgba(255,255,255,.03); }
+.btn-danger       { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); color: var(--red); }
+.btn-danger:hover { background: rgba(239,68,68,.16); }
+.btn-sm           { padding: 6px 14px; font-size: 11px; }
+
+.form-footer {
+  position: sticky; bottom: 0;
+  background: rgba(7,7,13,.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  z-index: 50;
+}
+.form-footer-left {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.form-footer-right { display: flex; gap: 8px; }
+.unsaved-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  display: none;
+}
+.unsaved-dot.show { display: inline-block; }
+
+.danger-zone {
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 20px;
+  animation: fadeUp .45s .48s ease both;
+}
+.danger-zone-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(239,68,68,.15);
+  background: rgba(239,68,68,.04);
+  display: flex; align-items: center; gap: 10px;
+}
+.danger-zone-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--red);
+}
+.danger-zone-body { padding: 20px; }
+.danger-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 0;
+  border-bottom: 1px solid rgba(239,68,68,.08);
+}
+.danger-row:last-child { border-bottom: none; padding-bottom: 0; }
+.danger-info-label { font-size: 13px; color: var(--text); font-weight: 500; }
+.danger-info-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(7,7,13,.75);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: none; align-items: center; justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 28px;
+  width: 380px; max-width: calc(100vw - 32px);
+  animation: fadeUp .3s ease;
+}
+.modal-icon        { font-size: 28px; color: var(--red); margin-bottom: 12px; }
+.modal-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.modal-body        { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 20px; }
+.modal-actions     { display: flex; gap: 8px; justify-content: flex-end; }
+
+@keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes slideInR  { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideOutR { from { opacity:1; } to { opacity:0; transform:translateX(16px); } }
+
+@media (max-width: 900px) {
+  .page-wrap         { grid-template-columns: 1fr; }
+  .edit-sidebar      { display: none; }
+  .edit-main         { padding: 20px 16px 100px; }
+  .field-grid        { grid-template-columns: 1fr; }
+  .field-grid.cols-3,
+  .field-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  .avatar-upload-wrap { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 480px) {
+  .field-grid.cols-3,
+  .field-grid.cols-4 { grid-template-columns: 1fr; }
+  .form-footer       { padding: 12px 16px; }
+  .avatar-preview    { width: 72px; height: 72px; }
+}
+
+    /* ============================================================
+       SIDE DRAWER
+    ============================================================ */
+    #drawerOverlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 1999;
+        transition: opacity .3s;
+        opacity: 0;
+    }
+
+    #sideDrawer {
+        position: fixed;
+        top: 0; left: 0;
+        width: 260px; height: 100%;
+        background: linear-gradient(160deg, #0a2540 0%, #0d47a1 100%);
+        z-index: 2000;
+        transform: translateX(-100%);
+        transition: transform .35s cubic-bezier(.4,0,.2,1);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 4px 0 32px rgba(0,0,0,.35);
+        overflow-y: auto;
+    }
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px 16px;
+        border-bottom: 1px solid rgba(255,255,255,.12);
+        position: sticky;
+        top: 0;
+        background: #0a2540;
+        z-index: 1;
+    }
+
+    .drawer-brand {
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: .5px;
+    }
+
+    #drawerClose {
+        width: 34px; height: 34px;
+        background: rgba(255,255,255,.1);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .2s;
+    }
+    #drawerClose:hover { background: rgba(255,255,255,.2); }
+
+    .drawer-nav {
+        padding: 18px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .drawer-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 16px;
+        border-radius: 10px;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: .95rem;
+        transition: background .2s;
+    }
+    .drawer-link:hover { background: rgba(255,255,255,.12); }
+    .drawer-link i { width: 18px; text-align: center; opacity: .8; }
+
+    .drawer-divider {
+        height: 1px;
+        background: rgba(255,255,255,.12);
+        margin: 8px 4px;
+    }
+
+    .drawer-link.secondary {
+        color: rgba(255,255,255,.7);
+        font-weight: 500;
+        font-size: .88rem;
+    }
+    .drawer-link.secondary:hover { background: rgba(255,255,255,.08); }
+    .drawer-link.secondary i { opacity: .7; }
+
+    /* ============================================================
+       NAVBAR
+    ============================================================ */
+    .menu-top {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    .navbar-container {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .navbar-glow {
+        position: absolute;
+        top: 0; left: -100%;
+        width: 200%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
+        animation: navGlow 4s infinite;
+    }
+
+    @keyframes navGlow {
+        0%, 100% { left: -100%; }
+        50% { left: 100%; }
+    }
+
+    .menu {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.875rem 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+    }
+
+    .logo-section { display: flex; align-items: center; }
+
+    .logo-left {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .logo-brand {
+        margin-left: 0.5rem;
+    }
+
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+    }
+
+    .logo-icon {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-dark);
+        font-size: 1.35rem;
+        box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+        transition: all var(--transition-slow);
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+    .logo-icon:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(212,175,55,0.55);
+    }
+
+    .navbar-brand {
+        font-family: var(--font-display);
+        font-size: 1.75rem;
+        font-weight: 900;
+        color: #ffffff;
+        letter-spacing: 0.5px;
+    }
+
+    .menu-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all var(--transition-base);
+    }
+    .menu-item:hover {
+        background: rgba(255,255,255,0.18);
+        border-color: rgba(212,175,55,0.4);
+        transform: translateY(-2px);
+    }
+    .menu-item.active {
+        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+        color: var(--primary-dark);
+        border-color: transparent;
+        box-shadow: 0 4px 16px rgba(212,175,55,0.5);
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (max-width: 1024px) {
+        .product-grid { grid-template-columns: 1fr; gap: 28px; }
+        .product-title { font-size: 1.7rem; }
+    }
+
+    @media (max-width: 768px) {
+        :root { --nav-h: 56px; }
+        .product-detail-wrapper { padding: 16px 14px 100px; }
+        .product-container { padding: 20px; border-radius: var(--r-lg); }
+        .product-title { font-size: 1.5rem; }
+        
+        .original-price {  font-size: 1.2rem; }
+        .offer-price { font-size: 1.8rem; }
+        .order-section { display: none; }
+        .mob-order-bar { display: flex; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .related-products-section, .dealer-products-section { padding: 20px; }
+        .tab-panel { padding: 20px 0 0; }
+        .dealer-header { flex-direction: column; text-align: center; }
+        .dealer-stats { grid-template-columns: 1fr; }
+        .dealer-details-grid { grid-template-columns: 1fr; }
+        .contact-buttons { grid-template-columns: 1fr; }
+        .menu-item span { display: none; }
+        .menu-item { padding: 8px 10px; }
+        .menu { padding: 0.75rem 1rem; }
+        .navbar-brand { font-size: 1.4rem; }
+        .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .product-container { padding: 14px; }
+        .product-title { font-size: 1.3rem; }
+        .trust-row { gap: 5px; }
+        .trust-item span { font-size: .65rem; }
+        .products-grid { grid-template-columns: repeat(2,1fr); }
+        .spec-row { grid-template-columns: 40% 60%; }
+    }
+
+    @media print {
+        .menu-top, .mob-order-bar { display: none !important; }
+        body { padding-bottom: 0; background: white; }
+        body::before { display: none; }
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+
+    /* ── LAYOUT ── */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+      position: relative; z-index: 1;
+    }
+
+    /* ── SIDEBAR NAV ── */
+    .edit-sidebar {
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+    }
+    .sidebar-section {
+      padding: 0 16px;
+      margin-bottom: 6px;
+    }
+    .sidebar-label {
+      font-size: 10px; font-family: var(--font-display);
+      font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 4px 8px; margin-bottom: 4px;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: var(--r);
+      font-size: 13px; color: var(--text-2);
+      text-decoration: none; cursor: pointer;
+      transition: background .15s, color .15s;
+      border: none; background: transparent; width: 100%; text-align: left;
+    }
+    .sidebar-link i { width: 14px; text-align: center; color: var(--muted); font-size: 12px; }
+    .sidebar-link:hover,
+    .sidebar-link.active { background: rgba(245,158,11,.08); color: var(--text); }
+    .sidebar-link.active i { color: var(--role-color); }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 10px 16px; }
+
+    /* product thumb in sidebar */
+    .sidebar-product-thumb {
+      margin: 0 16px 20px;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .sidebar-product-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .thumb-placeholder-sm {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; color: var(--muted);
+    }
+    .sidebar-product-name {
+      padding: 0 16px 4px;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 12px; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sidebar-product-sku {
+      padding: 0 16px 16px;
+      font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .edit-main {
+      padding: 32px;
+      max-width: 860px;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 28px; gap: 16px;
+      animation: fadeUp .4s ease both;
+    }
+    .page-title {
+      font-family: var(--font-display); font-weight: 800; font-size: 22px;
+      color: var(--text);
+    }
+    .page-subtitle {
+      font-size: 12px; color: var(--muted); margin-top: 3px;
+      font-family: var(--font-mono);
+    }
+    .page-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ── ERRORS BANNER ── */
+    .errors-banner {
+      background: rgba(239,68,68,.07);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: var(--r-lg);
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      animation: fadeUp .3s ease both;
+    }
+    .errors-banner-title {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 12px; color: var(--red); margin-bottom: 8px;
+    }
+    .errors-banner ul { padding-left: 18px; }
+    .errors-banner li { font-size: 12px; color: var(--text-2); margin-bottom: 2px; }
+
+    /* ── SECTION CARD ── */
+    .form-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      margin-bottom: 20px;
+      animation: fadeUp .45s ease both;
+      scroll-margin-top: 72px;
+    }
+    .form-section:nth-child(2) { animation-delay: .06s; }
+    .form-section:nth-child(3) { animation-delay: .12s; }
+    .form-section:nth-child(4) { animation-delay: .18s; }
+    .form-section:nth-child(5) { animation-delay: .24s; }
+    .form-section:nth-child(6) { animation-delay: .30s; }
+    .form-section:nth-child(7) { animation-delay: .36s; }
+    .form-section:nth-child(8) { animation-delay: .42s; }
+
+    .form-section-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+    .section-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: color-mix(in srgb, var(--role-color) 12%, transparent);
+      color: var(--role-color);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .section-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 12px; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-2);
+    }
+    .section-desc {
+      font-size: 11px; color: var(--muted); margin-left: auto;
+    }
+    .form-section-body { padding: 20px; }
+
+    /* ── FORM GRID ── */
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .field-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .field-full { grid-column: 1 / -1; }
+
+    /* ── FIELD ── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label {
+      font-size: 11px; font-weight: 500;
+      color: var(--text-2);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .field-label .req { color: var(--red); }
+    .field-hint { font-size: 10px; color: var(--muted); margin-top: -2px; }
+
+    .field-input,
+    .field-select,
+    .field-textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      padding: 9px 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      -webkit-appearance: none;
+    }
+    .field-input:focus,
+    .field-select:focus,
+    .field-textarea:focus {
+      border-color: var(--role-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-color) 12%, transparent);
+      background: var(--surface-3);
+    }
+    .field-input::placeholder,
+    .field-textarea::placeholder { color: var(--muted); }
+    .field-input.mono { font-family: var(--font-mono); font-size: 12px; }
+    .field-select option { background: var(--surface-2); }
+    .field-textarea { resize: vertical; min-height: 90px; line-height: 1.7; }
+    .field-textarea.tall { min-height: 140px; }
+
+    /* prefix/suffix inputs */
+    .input-wrap {
+      display: flex; align-items: stretch;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap:focus-within {
+      border-color: var(--role-color);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-color) 12%, transparent);
+    }
+    .input-affix {
+      padding: 0 10px;
+      display: flex; align-items: center;
+      font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+      background: rgba(255,255,255,.03);
+      border-right: 1px solid var(--border);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .input-affix.suffix { border-right: none; border-left: 1px solid var(--border); }
+    .input-wrap .field-input {
+      border: none; border-radius: 0;
+      background: transparent; flex: 1;
+    }
+    .input-wrap .field-input:focus { box-shadow: none; }
+
+    /* ── TOGGLE SWITCH ── */
+    .toggle-group { display: flex; flex-direction: column; gap: 10px; }
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      gap: 12px;
+    }
+    .toggle-info { flex: 1; min-width: 0; }
+    .toggle-label {
+      font-size: 13px; color: var(--text); font-weight: 500;
+    }
+    .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .toggle {
+      position: relative; flex-shrink: 0;
+      width: 38px; height: 22px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute; left: 2px; top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--muted);
+      transition: transform .2s, background .2s;
+    }
+    .toggle input:checked + .toggle-slider {
+      background: color-mix(in srgb, var(--role-color) 20%, transparent);
+      border-color: var(--role-color);
+    }
+    .toggle input:checked + .toggle-slider::before {
+      transform: translate(16px, -50%);
+      background: var(--role-color);
+    }
+
+    /* ── IMAGE UPLOAD ── */
+    .image-upload-wrap {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .image-preview {
+      aspect-ratio: 4/3;
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .image-preview img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+    }
+    .image-preview-placeholder {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 6px; color: var(--muted); font-size: 11px;
+    }
+    .image-preview-placeholder i { font-size: 24px; opacity: .4; }
+    .image-drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .image-drop-zone:hover,
+    .image-drop-zone.drag-over {
+      border-color: var(--role-color);
+      background: color-mix(in srgb, var(--role-color) 4%, transparent);
+    }
+    .image-drop-zone i { font-size: 22px; color: var(--muted); margin-bottom: 8px; display: block; }
+    .image-drop-zone p { font-size: 12px; color: var(--text-2); }
+    .image-drop-zone span { font-size: 11px; color: var(--muted); }
+    .image-drop-zone input[type="file"] { display: none; }
+    .btn-choose {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-top: 10px; padding: 6px 14px;
+      background: var(--surface-3); border: 1px solid var(--border);
+      border-radius: var(--r); font-size: 12px; color: var(--text-2);
+      cursor: pointer; font-family: var(--font-body);
+      transition: border-color .2s, color .2s;
+    }
+    .btn-choose:hover { border-color: var(--border-h); color: var(--text); }
+
+    /* ── SPEC BUILDER ── */
+    .spec-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .spec-row {
+      display: grid; grid-template-columns: 1fr 1fr 32px;
+      gap: 8px; align-items: center;
+    }
+    .spec-row .field-input { font-size: 12px; }
+    .btn-remove-spec {
+      width: 32px; height: 32px;
+      border: 1px solid rgba(239,68,68,.2);
+      background: rgba(239,68,68,.06);
+      border-radius: var(--r); color: var(--red);
+      cursor: pointer; font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .btn-remove-spec:hover { background: rgba(239,68,68,.12); }
+
+    /* ── PRICE CALCULATOR ── */
+    .price-preview {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 14px 18px;
+      margin-top: 16px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .price-preview-item { text-align: center; }
+    .price-preview-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .price-preview-value {
+      font-family: var(--font-display); font-size: 18px; font-weight: 800;
+      color: var(--role-color); line-height: 1; margin-top: 3px;
+    }
+    .price-preview-value.strike { text-decoration: line-through; color: var(--muted); font-size: 14px; }
+    .price-preview-value.green { color: var(--green); }
+    .price-preview-value.red   { color: var(--red); }
+    .price-preview-sep { color: var(--border-h); font-size: 18px; }
+
+    /* ── STOCK BADGE ── */
+    .stock-indicator {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 100px;
+      font-size: 11px; font-family: var(--font-display); font-weight: 700;
+    }
+    .stock-ok   { background: rgba(46,204,113,.1);  border: 1px solid rgba(46,204,113,.2);  color: var(--green); }
+    .stock-low  { background: rgba(245,158,11,.1);  border: 1px solid rgba(245,158,11,.2);  color: var(--amber); }
+    .stock-out  { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.2);   color: var(--red); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: var(--r);
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 12px; letter-spacing: .03em;
+      cursor: pointer; text-decoration: none; border: none;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--role-color); color: #000; }
+    .btn-primary:hover { opacity: .85; }
+    .btn-ghost {
+      background: transparent; border: 1px solid var(--border); color: var(--text-2);
+    }
+    .btn-ghost:hover { border-color: var(--border-h); color: var(--text); background: rgba(255,255,255,.03); }
+    .btn-danger { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.2); color: var(--red); }
+    .btn-danger:hover { background: rgba(239,68,68,.16); }
+    .btn-sm { padding: 6px 14px; font-size: 11px; }
+    .btn-add-spec {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--r);
+      border: 1px dashed var(--border); background: transparent;
+      color: var(--text-2); font-size: 12px; cursor: pointer;
+      transition: border-color .2s, color .2s;
+      font-family: var(--font-body);
+    }
+    .btn-add-spec:hover { border-color: var(--role-color); color: var(--role-color); }
+
+    /* ── FOOTER BAR ── */
+    .form-footer {
+      position: sticky; bottom: 0;
+      background: rgba(7,7,13,.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; z-index: 50;
+    }
+    .form-footer-left { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .form-footer-right { display: flex; gap: 8px; }
+    .unsaved-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); display: none; }
+    .unsaved-dot.show { display: inline-block; }
+
+    /* ── DANGER ZONE ── */
+    .danger-zone {
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: var(--r-lg);
+      overflow: hidden; margin-bottom: 20px;
+      animation: fadeUp .45s .48s ease both;
+    }
+    .danger-zone-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(239,68,68,.15);
+      background: rgba(239,68,68,.04);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .danger-zone-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 12px; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--red);
+    }
+    .danger-zone-body { padding: 20px; }
+    .danger-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 12px 0;
+      border-bottom: 1px solid rgba(239,68,68,.08);
+    }
+    .danger-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .danger-info-label { font-size: 13px; color: var(--text); font-weight: 500; }
+    .danger-info-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── CONFIRM MODAL ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(7,7,13,.75);
+      backdrop-filter: blur(6px);
+      z-index: 500;
+      display: none; align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 28px;
+      width: 380px; max-width: calc(100vw - 32px);
+      animation: fadeUp .3s ease;
+    }
+    .modal-icon { font-size: 28px; color: var(--red); margin-bottom: 12px; }
+    .modal-title {
+      font-family: var(--font-display); font-weight: 800;
+      font-size: 17px; color: var(--text); margin-bottom: 8px;
+    }
+    .modal-body { font-size: 13px; color: var(--text-2); line-height: 1.7; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin    { to { transform: rotate(360deg); } }
+    @keyframes slideInR  { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes slideOutR { from { opacity:1; } to { opacity:0; transform:translateX(16px); } }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .edit-sidebar { display: none; }
+      .edit-main { padding: 20px 16px 100px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field-grid.cols-3,
+      .field-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+      .image-upload-wrap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .field-grid.cols-3,
+      .field-grid.cols-4 { grid-template-columns: 1fr; }
+      .price-preview { gap: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     SIDE DRAWER OVERLAY
+════════════════════════════════ -->
+<div id="drawerOverlay"></div>
+
+<!-- ═══════════════════════════════
+     SIDE DRAWER
+════════════════════════════════ -->
+<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
+    <div class="drawer-header">
+        <span class="drawer-brand">PIELAM</span>
+        <button id="drawerClose" aria-label="Close menu">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <nav class="drawer-nav">
+        <!-- Primary links -->
+        <a href="{% url 'ponno:home' %}" class="drawer-link">
+            <i class="fa-solid fa-house"></i>
+            Home
+        </a>
+        <a href="{% url 'ponno:discovery_engine' %}" class="drawer-link">
+            <i class="fa-solid fa-compass"></i>
+            Discover
+        </a>
+        <a href="{% url 'notify:notification' %}" class="drawer-link">
+            <i class="fa-solid fa-bell"></i>
+            Notifications
+        </a>
+        <a href="{% url 'customer:profile' %}" class="drawer-link">
+            <i class="fa-solid fa-circle-user"></i>
+            My Profile
+        </a>
+        <a href="#" class="drawer-link">
+            <i class="fa-solid fa-gear"></i>
+            Settings
+        </a>
+
+        <!-- Divider -->
+        <div class="drawer-divider"></div>
+
+        <!-- Secondary links (formerly footer links) -->
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-circle-info"></i>
+            About Us
+        </a>
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-shield-halved"></i>
+            Privacy Policy
+        </a>
+        <a href="#" class="drawer-link secondary">
+            <i class="fa-solid fa-file-contract"></i>
+            Terms of Service
+        </a>
+    </nav>
+</aside>
+
+<!-- ═══════════════════════════════
+     NAVIGATION BAR
+════════════════════════════════ -->
+<nav class="menu-top" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+        <div class="navbar-glow"></div>
+        <div class="menu">
+            <div class="logo-left">
+                <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
+                    <i class="fa-solid fa-bars"></i>
+                </div>
+                <div class="logo-brand">
+                    <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
+                        <span class="navbar-brand">PIELAM</span>
+                    </a>
+                </div>
+            </div>
+            <div class="menu-links">
+                <a href="{% url 'ponno:home' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <a href="{% url 'notify:notification' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+                <a href="{% url 'customer:profile' %}"
+                   class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fa-solid fa-circle-user"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+// ── Tabs ─────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + target).classList.add('active');
+    });
+});
+
+// ── Image zoom ────────────────────────────
+const mainImg = document.getElementById('mainImg');
+if (mainImg) {
+    mainImg.addEventListener('click', () => mainImg.classList.toggle('zoomed'));
+}
+
+// ── Share button ──────────────────────────
+document.getElementById('shareBtn')?.addEventListener('click', async () => {
+    const shareData = {
+        title: "{{ product.product_name|escapejs }}",
+        text: "Check out this product on PIELAM!",
+        url: window.location.href
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(window.location.href);
+            const btn = document.getElementById('shareBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied!</span>';
+            btn.style.background = 'rgba(26,107,58,.9)';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        }
+    } catch(e) {}
+});
+
+// ── Side Drawer ───────────────────────────
+const drawer      = document.getElementById('sideDrawer');
+const overlay     = document.getElementById('drawerOverlay');
+const menuToggle  = document.getElementById('menuToggle');
+const drawerClose = document.getElementById('drawerClose');
+
+function openDrawer() {
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        drawer.style.transform = 'translateX(0)';
+    });
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    overlay.style.opacity = '0';
+    drawer.style.transform = 'translateX(-100%)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    document.body.style.overflow = '';
+}
+
+menuToggle.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+// Keyboard support for menu toggle
+menuToggle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
+});
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDrawer();
+});
+
+// ── Performance monitoring ────────────────
+if ('PerformanceObserver' in window) {
+    try {
+        const obs = new PerformanceObserver(list => {
+            for (const entry of list.getEntries()) {
+                console.log('LCP:', entry.startTime);
+            }
+        });
+        obs.observe({ entryTypes: ['largest-contentful-paint'] });
+    } catch(e) {}
+}
+</script>
+
+
+<!-- ══ PAGE LAYOUT ══════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────────── -->
+  <aside class="edit-sidebar">
+    <!-- Product thumb -->
+    <div class="sidebar-product-thumb" id="sidebarThumb">
+      {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.product_name }}" id="sidebarImg">
+      {% else %}
+        <div class="thumb-placeholder-sm"><i class="fas fa-box"></i></div>
+      {% endif %}
+    </div>
+    <div class="sidebar-product-name">{{ product.product_name }}</div>
+    <div class="sidebar-product-sku">{{ product.sku|default:"No SKU" }}</div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Sections</div>
+      <button class="sidebar-link active" onclick="scrollTo('sec-identity')">
+        <i class="fas fa-id-badge"></i> Identity
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-media')">
+        <i class="fas fa-image"></i> Media
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-description')">
+        <i class="fas fa-align-left"></i> Description
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-pricing')">
+        <i class="fas fa-tag"></i> Pricing
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-inventory')">
+        <i class="fas fa-boxes-stacked"></i> Inventory
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-shipping')">
+        <i class="fas fa-truck"></i> Shipping
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-status')">
+        <i class="fas fa-toggle-on"></i> Status & Flags
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-specs')">
+        <i class="fas fa-sliders"></i> Specifications
+      </button>
+      <button class="sidebar-link" onclick="scrollTo('sec-seo')">
+        <i class="fas fa-magnifying-glass"></i> SEO
+      </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick stats</div>
+      <div style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--muted);">Views</span>
+          <span style="color:var(--text);font-family:var(--font-mono);">{{ product.view_count }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--muted);">Sales</span>
+          <span style="color:var(--text);font-family:var(--font-mono);">{{ product.total_sales }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--muted);">Rating</span>
+          <span style="color:var(--amber);font-family:var(--font-mono);">{{ product.rating_average|floatformat:1 }} ★</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--muted);">Revenue</span>
+          <span style="color:var(--green);font-family:var(--font-mono);">{{ product.currency }}{{ product.revenue_generated|floatformat:0 }}</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN FORM ─────────────────────────────────────────────── -->
+  <div class="edit-main">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Edit Product</div>
+        <div class="page-subtitle">{{ product.product_id }}</div>
+      </div>
+      <div class="page-actions">
+        <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="btn btn-ghost btn-sm">
+          <i class="fas fa-eye"></i> Preview
+        </a>
+      </div>
+    </div>
+
+    <!-- Errors -->
+    {% if errors %}
+    <div class="errors-banner">
+      <div class="errors-banner-title"><i class="fas fa-circle-xmark"></i> Please fix the errors below</div>
+      <ul>
+        {% for field, msgs in errors.items %}
+          {% for msg in msgs %}
+            <li>{% if field != "__all__" %}<strong>{{ field }}:</strong> {% endif %}{{ msg }}</li>
+          {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+<form method="post" enctype="multipart/form-data" id="editForm" novalidate>
+      {% csrf_token %}
+
+      <!-- ══ 1. IDENTITY ══════════════════════════════════════════ -->
+      <div class="form-section" id="sec-identity">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-id-badge"></i></div>
+          <div class="section-title">Identity</div>
+          <div class="section-desc">Core product identifiers</div>
+        </div>
+        <div class="form-section-body">
+          <div class="field-grid">
+
+            <div class="field field-full">
+              <label class="field-label">
+                Product Title
+                <span style="color:var(--muted);font-weight:400;">(optional)</span>
+              </label>
+              <input class="field-input" type="text" name="product_title"
+                value="{{ product.product_title|default:'' }}"
+                placeholder="Longer display title for listings">
+              <div class="field-hint">Shown in featured banners; falls back to Product Model if empty.</div>
+            </div>
+
+            <div class="field field-full">
+              <label class="field-label">Product Model <span class="req">*</span></label>
+              <input class="field-input" type="text" name="product_name"
+                value="{{ product.product_name }}" required
+                placeholder="e.g. Wireless Noise-Cancelling Headphones">
+            </div>
+
+            <div class="field">
+              <label class="field-label">SKU</label>
+              <input class="field-input mono" type="text" name="sku"
+                value="{{ product.sku|default:'' }}" placeholder="Auto-generated if blank">
+              <div class="field-hint">Stock Keeping Unit — must be unique.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Barcode</label>
+              <input class="field-input mono" type="text" name="barcode"
+                value="{{ product.barcode|default:'' }}" placeholder="EAN / UPC">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Brand</label>
+              <select class="field-select" name="brand">
+                <option value="">— No brand —</option>
+                {% for b in brands %}
+                  <option value="{{ b.pk }}" {% if product.brand_id == b.pk %}selected{% endif %}>
+                    {{ b.brand_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Category</label>
+              <select class="field-select" name="category" id="categorySelect">
+                <option value="">— No category —</option>
+                {% for c in categories %}
+                  <option value="{{ c.pk }}" {% if product.category_id == c.pk %}selected{% endif %}>
+                    {{ c.category_name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Sub-Category</label>
+              <select class="field-select" name="sub_category" id="subCategorySelect">
+                <option value="">— No sub-category —</option>
+                {% for sc in sub_categories %}
+                  <option value="{{ sc.pk }}"
+                    {% if product.sub_category_id == sc.pk %}selected{% endif %}>
+                    {{ sc.sub_category_name }}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="field-hint" id="subCatHint">
+                {% if not product.category_id %}Select a category first.{% endif %}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Condition</label>
+              <select class="field-select" name="product_condition">
+                {% for val, label in condition_choices %}
+                  <option value="{{ val }}"
+                    {% if product.product_condition == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Currency</label>
+              <select class="field-select" name="currency" id="currencySelect">
+                {% with cur=product.currency %}
+                <option value="BDT" {% if cur == "BDT" %}selected{% endif %}>BDT – Taka</option>
+                <option value="USD" {% if cur == "USD" %}selected{% endif %}>USD – US Dollar</option>
+                <option value="EUR" {% if cur == "EUR" %}selected{% endif %}>EUR – Euro</option>
+                <option value="GBP" {% if cur == "GBP" %}selected{% endif %}>GBP – Pound</option>
+                <option value="INR" {% if cur == "INR" %}selected{% endif %}>INR – Rupee</option>
+                <option value="AED" {% if cur == "AED" %}selected{% endif %}>AED – Dirham</option>
+                <option value="SAR" {% if cur == "SAR" %}selected{% endif %}>SAR – Riyal</option>
+                <option value="MYR" {% if cur == "MYR" %}selected{% endif %}>MYR – Ringgit</option>
+                <option value="SGD" {% if cur == "SGD" %}selected{% endif %}>SGD – S$</option>
+                <option value="JPY" {% if cur == "JPY" %}selected{% endif %}>JPY – Yen</option>
+                <option value="CNY" {% if cur == "CNY" %}selected{% endif %}>CNY – Yuan</option>
+                <option value="CAD" {% if cur == "CAD" %}selected{% endif %}>CAD – C$</option>
+                <option value="AUD" {% if cur == "AUD" %}selected{% endif %}>AUD – A$</option>
+                {% endwith %}
+              </select>
+            </div>
+
+            {% if is_privileged %}
+            <!-- ── Dealer reassignment (admin / staff only) ── -->
+            <div class="field field-full"
+                 style="border:1px solid rgba(239,68,68,.2);border-radius:var(--r-lg);padding:14px 16px;background:rgba(239,68,68,.03);">
+              <label class="field-label" style="color:var(--red);">
+                <i class="fas fa-user-tie" style="margin-right:4px;"></i>
+                Reassign Dealer
+                <span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:6px;">admin only</span>
+              </label>
+              <input class="field-input mono" type="text" name="dealer"
+                value="{{ product.dealer_id }}"
+                placeholder="Dealer user PK">
+              <div class="field-hint">Enter the primary key of the new dealer. Must have role = dealer.</div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 2. MEDIA ════════════════════════════════════════════ -->
+      <div class="form-section" id="sec-media">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-image"></i></div>
+          <div class="section-title">Media</div>
+          <div class="section-desc">Main image &amp; video</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="field" style="margin-bottom:16px;">
+            <label class="field-label">Main Image</label>
+            <div class="image-upload-wrap">
+              <div class="image-preview" id="imgPreview">
+                {% if product.image %}
+                  <img src="{{ product.image.url }}" id="previewImg" alt="">
+                {% else %}
+                  <div class="image-preview-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>No image</span>
+                  </div>
+                {% endif %}
+              </div>
+              <div>
+                <label class="image-drop-zone" id="dropZone" for="imageInput">
+                  <i class="fas fa-cloud-arrow-up"></i>
+                  <p>Drag &amp; drop or click to upload</p>
+                  <span>PNG, JPG, WEBP — max 5 MB</span>
+                  <input type="file" id="imageInput" name="image" accept="image/*">
+                </label>
+                <div style="margin-top:8px;font-size:11px;color:var(--muted);">
+                  {% if product.image %}
+                    Current: <span style="font-family:var(--font-mono);">{{ product.image.name }}</span>
+                  {% else %}
+                    No image uploaded yet.
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Video URL</label>
+            <div class="input-wrap">
+              <span class="input-affix"><i class="fas fa-play"></i></span>
+              <input class="field-input" type="url" name="video_url"
+                value="{{ product.video_url|default:'' }}"
+                placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="field-hint">YouTube, Vimeo, or direct MP4 link.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 3. DESCRIPTION ══════════════════════════════════════ -->
+      <div class="form-section" id="sec-description">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-align-left"></i></div>
+          <div class="section-title">Description</div>
+          <div class="section-desc">Buyer-facing copy</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="field" style="margin-bottom:16px;">
+            <label class="field-label">Short Description</label>
+            <textarea class="field-textarea" name="short_description"
+              maxlength="500"
+              placeholder="One-liner shown in product cards and search results…">{{ product.short_description|default:'' }}</textarea>
+            <div class="field-hint">Max 500 characters.</div>
+          </div>
+
+          <div class="field" style="margin-bottom:16px;">
+            <label class="field-label">Full Description</label>
+            <textarea class="field-textarea tall" name="description"
+              maxlength="5000"
+              placeholder="Detailed product description, markdown supported…">{{ product.description|default:'' }}</textarea>
+          </div>
+
+          <div class="field" style="margin-bottom:16px;">
+            <label class="field-label">Key Features</label>
+            <!-- reads from context var populated by view from metadata["features"] -->
+            <textarea class="field-textarea" name="features"
+              maxlength="2000"
+              placeholder="• Feature one&#10;• Feature two&#10;• Feature three">{{ features|default:'' }}</textarea>
+            <div class="field-hint">One feature per line. Displayed as a bullet list on the product page.</div>
+          </div>
+
+          <div class="field" style="margin-bottom:16px;">
+            <label class="field-label">Warranty Information</label>
+            <textarea class="field-textarea" name="warrenty_info"
+              maxlength="2000"
+              placeholder="e.g. 1-year manufacturer warranty. Covers manufacturing defects…">{{ product.warrenty_info|default:'' }}</textarea>
+            <div class="field-hint">Displayed on the product page's warranty tab.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 4. DELIVERY ═════════════════════════════════════════ -->
+      <div class="form-section" id="sec-delivery">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-truck-fast"></i></div>
+          <div class="section-title">Delivery</div>
+          <div class="section-desc">Shipping timeframes &amp; notes</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="field-grid cols-3" style="margin-bottom:16px;">
+            <div class="field">
+              <label class="field-label">Standard Delivery (days)</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="delivery_days"
+                  min="0"
+                  value="{{ product.delivery_info.delivery_days|default:'' }}"
+                  placeholder="3">
+                <span class="input-affix suffix">days</span>
+              </div>
+              <div class="field-hint">Estimated working days for standard delivery.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Express Delivery (days)</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="express_days"
+                  min="0"
+                  value="{{ product.delivery_info.express_days|default:'' }}"
+                  placeholder="1">
+                <span class="input-affix suffix">days</span>
+              </div>
+              <div class="field-hint">Leave blank if express is not available.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Delivery Areas</label>
+              <input class="field-input" type="text" name="delivery_areas"
+                value="{{ product.delivery_info.delivery_areas|default:'' }}"
+                placeholder="e.g. Dhaka, Chittagong, nationwide">
+              <div class="field-hint">Where this product ships to.</div>
+            </div>
+          </div>
+
+          <div class="field-grid" style="margin-bottom:16px;">
+            <div class="field">
+              <label class="field-label">Standard Delivery Note</label>
+              <textarea class="field-textarea" name="delivery_note"
+                maxlength="300"
+                placeholder="e.g. Delivered Mon–Sat. Order before 3 PM for next-day dispatch.">{{ product.delivery_info.delivery_note|default:'' }}</textarea>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Express Delivery Note</label>
+              <textarea class="field-textarea" name="express_note"
+                maxlength="300"
+                placeholder="e.g. Same-day delivery available in Dhaka only.">{{ product.delivery_info.express_note|default:'' }}</textarea>
+            </div>
+          </div>
+
+          <div class="toggle-group">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Express Delivery Available</div>
+                <div class="toggle-sub">Show express delivery option to buyers at checkout.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="express_available"
+                  {% if product.delivery_info.express_available %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 5. PRICING ══════════════════════════════════════════ -->
+      <div class="form-section" id="sec-pricing">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-tag"></i></div>
+          <div class="section-title">Pricing</div>
+          <div class="section-desc">Live calculator below</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label class="field-label">Brand Price (MRP)</label>
+              <div class="input-wrap">
+                <span class="input-affix currencyPfx">{{ product.currency }}</span>
+                <input class="field-input" type="number" name="brand_price" id="fBrandPrice"
+                  min="0" step="0.01"
+                  value="{{ product.brand_price|default:'' }}"
+                  placeholder="0.00">
+              </div>
+              <div class="field-hint">Manufacturer's recommended price.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Buying Price <span class="req">*</span></label>
+              <div class="input-wrap">
+                <span class="input-affix currencyPfx">{{ product.currency }}</span>
+                <input class="field-input" type="number" name="buying_price" id="fBuyingPrice"
+                  min="0.01" step="0.01" required
+                  value="{{ product.buying_price }}">
+              </div>
+              <div class="field-hint">Your cost price (not shown to buyers).</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Selling Price <span class="req">*</span></label>
+              <div class="input-wrap">
+                <span class="input-affix currencyPfx">{{ product.currency }}</span>
+                <input class="field-input" type="number" name="selling_price" id="fSellingPrice"
+                  min="0.01" step="0.01" required
+                  value="{{ product.selling_price }}">
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Discount %</label>
+              <div class="input-wrap">
+                <input class="field-input" type="number" name="discount_percentage" id="fDiscount"
+                  min="0" max="100" step="0.01"
+                  value="{{ product.discount_percentage }}">
+                <span class="input-affix suffix">%</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Tax Rate %</label>
+              <div class="input-wrap">
+                <input class="field-input" type="number" name="tax_rate" id="fTax"
+                  min="0" max="100" step="0.01"
+                  value="{{ product.tax_rate }}">
+                <span class="input-affix suffix">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live price preview -->
+          <div class="price-preview" id="pricePreview">
+            <div class="price-preview-item">
+              <div class="price-preview-label">Selling Price</div>
+              <div class="price-preview-value{% if product.is_on_sale %} strike{% endif %}"
+                   id="ppSelling">
+                {{ product.currency }}{{ product.selling_price|floatformat:2 }}
+              </div>
+            </div>
+            <div class="price-preview-sep">→</div>
+            <div class="price-preview-item">
+              <div class="price-preview-label">Final Price</div>
+              <div class="price-preview-value" id="ppFinal">
+                {{ product.currency }}{{ product.final_price|floatformat:2 }}
+              </div>
+            </div>
+            <div class="price-preview-sep">·</div>
+            <div class="price-preview-item">
+              <div class="price-preview-label">Profit / unit</div>
+              <div class="price-preview-value {% if profit >= 0 %}green{% else %}red{% endif %}"
+                   id="ppProfit">
+                {{ product.currency }}{{ profit|floatformat:2 }}
+              </div>
+            </div>
+            <div class="price-preview-sep">·</div>
+            <div class="price-preview-item">
+              <div class="price-preview-label">With Tax</div>
+              <div class="price-preview-value" id="ppTax">
+                {{ product.currency }}{{ product.get_price_with_tax|floatformat:2 }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 6. INVENTORY ════════════════════════════════════════ -->
+      <div class="form-section" id="sec-inventory">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-boxes-stacked"></i></div>
+          <div class="section-title">Inventory</div>
+          <div class="section-desc">Stock &amp; order limits</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="field-grid cols-3" style="margin-bottom:16px;">
+            <div class="field">
+              <label class="field-label">Stock Quantity</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="stock" id="fStock"
+                  min="0" value="{{ product.stock }}">
+                <span class="input-affix suffix">units</span>
+              </div>
+              <div style="margin-top:6px;">
+                <span class="stock-indicator
+                  {% if product.stock == 0 %}stock-out
+                  {% elif product.is_low_stock %}stock-low
+                  {% else %}stock-ok{% endif %}" id="stockBadge">
+                  <i class="fas fa-circle" style="font-size:6px;"></i>
+                  {% if product.stock == 0 %}Out of stock
+                  {% elif product.is_low_stock %}Low stock
+                  {% else %}In stock{% endif %}
+                </span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Low Stock Threshold</label>
+              <input class="field-input mono" type="number" name="low_stock_threshold"
+                min="0" value="{{ product.low_stock_threshold }}">
+              <div class="field-hint">Alert fires below this quantity.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Stock Status</label>
+              <select class="field-select" name="stock_status">
+                {% for val, label in stock_status_choices %}
+                  <option value="{{ val }}"
+                    {% if product.stock_status == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="field-hint">Auto-updated on save if Track Inventory is on.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Min Order Qty</label>
+              <input class="field-input mono" type="number" name="min_order_quantity"
+                min="1" value="{{ product.min_order_quantity }}">
+            </div>
+
+            <div class="field">
+              <label class="field-label">Max Order Qty</label>
+              <input class="field-input mono" type="number" name="max_order_quantity"
+                min="1" value="{{ product.max_order_quantity|default:'' }}"
+                placeholder="No limit">
+            </div>
+          </div>
+
+          <div class="toggle-group">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Track Inventory</div>
+                <div class="toggle-sub">Automatically update stock status based on quantity.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="track_inventory"
+                  {% if product.track_inventory %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Allow Backorder</div>
+                <div class="toggle-sub">Let buyers purchase even when stock hits zero.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="allow_backorder"
+                  {% if product.allow_backorder %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 7. SHIPPING ═════════════════════════════════════════ -->
+      <div class="form-section" id="sec-shipping">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-truck"></i></div>
+          <div class="section-title">Shipping</div>
+          <div class="section-desc">Dimensions &amp; costs</div>
+        </div>
+        <div class="form-section-body">
+
+          <div class="toggle-group" style="margin-bottom:16px;">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Free Shipping</div>
+                <div class="toggle-sub">Display a "Free shipping" badge; buyers pay nothing extra.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="free_shipping" id="fFreeShipping"
+                  {% if product.free_shipping %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field-grid cols-4" style="margin-bottom:16px;">
+            <div class="field">
+              <label class="field-label">Weight</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="weight"
+                  min="0" step="0.01"
+                  value="{{ product.weight|default:'' }}" placeholder="0.00">
+                <span class="input-affix suffix">kg</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Length</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="length"
+                  min="0" step="0.1"
+                  value="{{ product.length|default:'' }}" placeholder="0.0">
+                <span class="input-affix suffix">cm</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Width</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="width"
+                  min="0" step="0.1"
+                  value="{{ product.width|default:'' }}" placeholder="0.0">
+                <span class="input-affix suffix">cm</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Height</label>
+              <div class="input-wrap">
+                <input class="field-input mono" type="number" name="height"
+                  min="0" step="0.1"
+                  value="{{ product.height|default:'' }}" placeholder="0.0">
+                <span class="input-affix suffix">cm</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field" style="max-width:260px;" id="shippingCostField">
+            <label class="field-label">Flat Shipping Cost</label>
+            <div class="input-wrap">
+              <span class="input-affix currencyPfx">{{ product.currency }}</span>
+              <input class="field-input mono" type="number" name="shipping_cost"
+                min="0" step="0.01"
+                value="{{ product.shipping_cost|default:'' }}" placeholder="0.00">
+            </div>
+            <div class="field-hint">Leave blank to calculate at checkout.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ 8. STATUS & FLAGS ════════════════════════════════════ -->
+      <div class="form-section" id="sec-status">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-toggle-on"></i></div>
+          <div class="section-title">Status &amp; Flags</div>
+          <div class="section-desc">Visibility &amp; merchandising</div>
+        </div>
+        <div class="form-section-body">
+          <div class="toggle-group">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Active</div>
+                <div class="toggle-sub">Product is publicly visible to all buyers.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_active"
+                  {% if product.is_active %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Featured</div>
+                <div class="toggle-sub">Highlighted on homepage and featured sections.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_featured"
+                  {% if product.is_featured %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Trending</div>
+                <div class="toggle-sub">Appears in "Trending Now" collections.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_trending"
+                  {% if product.is_trending %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            {% if is_privileged %}
+            <!-- ── Admin-only verified badge ── -->
+            <div class="toggle-row"
+                 style="border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.03);">
+              <div class="toggle-info">
+                <div class="toggle-label" style="color:var(--red);">
+                  <i class="fas fa-shield-check" style="margin-right:4px;"></i>
+                  Verified
+                  <span style="font-size:10px;font-weight:400;color:var(--muted);margin-left:6px;">admin only</span>
+                </div>
+                <div class="toggle-sub">Grant the verified badge. Visible on the product listing.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_verified"
+                  {% if product.is_verified %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            {% else %}
+            <!-- Read-only verified state for dealers -->
+            <div class="toggle-row" style="opacity:.6;pointer-events:none;">
+              <div class="toggle-info">
+                <div class="toggle-label">
+                  <i class="fas fa-shield-check" style="margin-right:4px;"></i>
+                  Verified
+                </div>
+                <div class="toggle-sub">Set by administrators only.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" disabled {% if product.is_verified %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ 9. SPECIFICATIONS ════════════════════════════════════ -->
+      <div class="form-section" id="sec-specs">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-sliders"></i></div>
+          <div class="section-title">Specifications</div>
+          <div class="section-desc">Key–value technical data</div>
+        </div>
+        <div class="form-section-body">
+          <div class="spec-rows" id="specRows">
+            <!-- read from context var `specifications` (dict from metadata["specifications"]) -->
+            {% for key, val in specifications.items %}
+            <div class="spec-row">
+              <input class="field-input" type="text"
+                placeholder="Key (e.g. Color)" value="{{ key }}" data-spec-key>
+              <input class="field-input" type="text"
+                placeholder="Value (e.g. Matte Black)" value="{{ val }}" data-spec-val>
+              <button type="button" class="btn-remove-spec" onclick="removeSpec(this)">
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn-add-spec" onclick="addSpec()">
+            <i class="fas fa-plus"></i> Add specification
+          </button>
+          <!-- Serialised by JS on submit -->
+          <input type="hidden" name="specifications" id="specificationsInput">
+        </div>
+      </div>
+
+      <!-- ══ 10. SEO ══════════════════════════════════════════════ -->
+      <div class="form-section" id="sec-seo">
+        <div class="form-section-head">
+          <div class="section-icon"><i class="fas fa-magnifying-glass"></i></div>
+          <div class="section-title">SEO</div>
+          <div class="section-desc">Search engine metadata</div>
+        </div>
+        <div class="form-section-body">
+          <div class="field-grid">
+
+            <div class="field field-full">
+              <label class="field-label">Meta Title</label>
+              <input class="field-input" type="text" name="meta_title"
+                maxlength="60"
+                value="{{ product.meta_title|default:'' }}"
+                placeholder="60-character page title for Google">
+              <div class="field-hint" id="metaTitleCount">
+                {{ product.meta_title|default:''|length }}/60 characters
+              </div>
+            </div>
+
+            <div class="field field-full">
+              <label class="field-label">Meta Description</label>
+              <textarea class="field-textarea" name="meta_description"
+                maxlength="160"
+                placeholder="160-character summary shown in search results…">{{ product.meta_description|default:'' }}</textarea>
+              <div class="field-hint" id="metaDescCount">
+                {{ product.meta_description|default:''|length }}/160 characters
+              </div>
+            </div>
+
+            <div class="field field-full">
+              <label class="field-label">Meta Keywords</label>
+              <input class="field-input" type="text" name="meta_keywords"
+                maxlength="255"
+                value="{{ product.meta_keywords|default:'' }}"
+                placeholder="headphones, wireless, noise-cancelling, sony">
+              <div class="field-hint">
+                Comma-separated. Useful for internal search filtering.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </form><!-- end #editForm -->
+
+    <!-- ══ SUBCATEGORY AJAX ════════════════════════════════════════
+         Swap sub-category options when the category select changes.
+         Requires sub_categories_for_category view at:
+           GET /products/sub-categories/?category=<pk>
+    ═══════════════════════════════════════════════════════════════ -->
+    <script>
+    (function () {
+      const catSelect  = document.getElementById('categorySelect');
+      const subSelect  = document.getElementById('subCategorySelect');
+      const subHint    = document.getElementById('subCatHint');
+      const AJAX_URL   = '{% url "ponno:sub_categories_for_category" %}';
+      const CURRENT_SC = "{{ product.sub_category_id|default:'' }}";
+
+      async function loadSubCategories(categoryPk, selectValue) {
+        subSelect.disabled = true;
+        subHint.textContent = 'Loading…';
+
+        if (!categoryPk) {
+          subSelect.innerHTML = '<option value="">— No sub-category —</option>';
+          subHint.textContent  = 'Select a category first.';
+          subSelect.disabled   = false;
+          return;
+        }
+
+        try {
+          const res  = await fetch(`${AJAX_URL}?category=${categoryPk}`);
+          const list = await res.json();   // [{pk, sub_category_name}, …]
+
+          let html = '<option value="">— No sub-category —</option>';
+          list.forEach(sc => {
+            const sel = String(sc.pk) === String(selectValue) ? ' selected' : '';
+            html += `<option value="${sc.pk}"${sel}>${sc.sub_category_name}</option>`;
+          });
+
+          subSelect.innerHTML  = html;
+          subHint.textContent  = list.length ? '' : 'No sub-categories for this category.';
+        } catch (e) {
+          subHint.textContent = 'Failed to load sub-categories.';
+        } finally {
+          subSelect.disabled = false;
+        }
+      }
+
+      // On page load — keep existing selection if category hasn't changed
+      catSelect.addEventListener('change', function () {
+        loadSubCategories(this.value, '');   // clear sub selection on change
+      });
+
+      // On initial render the sub-categories are already server-rendered,
+      // so no AJAX needed — only wire up future changes.
+    })();
+    </script>
+
+    <!-- Currency prefix sync (replace old id-based approach) -->
+    <script>
+    document.getElementById('currencySelect')?.addEventListener('change', function () {
+      document.querySelectorAll('.currencyPfx').forEach(el => {
+        el.textContent = this.value;
+      });
+      // Also re-run the price calculator so display updates instantly
+      if (typeof calcPrices === 'function') calcPrices();
+    });
+
+    // Initialise shipping cost field visibility
+    (function () {
+      const freeShip = document.getElementById('fFreeShipping');
+      const costField = document.getElementById('shippingCostField');
+      function syncShipping() {
+        costField.style.display = freeShip.checked ? 'none' : 'block';
+      }
+      freeShip.addEventListener('change', syncShipping);
+      syncShipping(); // run on load
+    })();
+    </script>
+
+    <!-- ══ DANGER ZONE ════════════════════════════════════════ -->
+<div class="danger-zone">
+  <div class="danger-zone-head">
+    <i class="fas fa-triangle-exclamation" style="color:var(--red);"></i>
+    <div class="danger-zone-title">Danger Zone</div>
+  </div>
+  <div class="danger-zone-body">
+
+    {% if product.is_active %}
+    <div class="danger-row">
+      <div>
+        <div class="danger-info-label">Deactivate product</div>
+        <div class="danger-info-sub">Hide from buyers without deleting. Reversible.</div>
+      </div>
+      <button class="btn btn-sm"
+        style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:var(--amber);"
+        onclick="openModal('deactivateModal')">
+        <i class="fas fa-eye-slash"></i> Deactivate
+      </button>
+    </div>
+    {% else %}
+    <div class="danger-row">
+      <div>
+        <div class="danger-info-label">Reactivate product</div>
+        <div class="danger-info-sub">Make this product visible to buyers again.</div>
+      </div>
+      <button class="btn btn-sm"
+        style="background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.2);color:var(--green);"
+        onclick="openModal('reactivateModal')">
+        <i class="fas fa-eye"></i> Reactivate
+      </button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- ══ DEACTIVATE MODAL ══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="deactivateModal">
+  <div class="modal">
+    <div class="modal-icon"><i class="fas fa-eye-slash"></i></div>
+    <div class="modal-title">Deactivate Product?</div>
+    <div class="modal-body">
+      This will hide <strong>{{ product.product_name }}</strong> from all buyers.
+      You can reactivate it anytime from this page.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('deactivateModal')">
+        Cancel
+      </button>
+      <button class="btn btn-sm"
+        style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:var(--amber);"
+        onclick="toggleActive(false)">
+        <i class="fas fa-eye-slash"></i> Yes, Deactivate
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REACTIVATE MODAL ══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="reactivateModal">
+  <div class="modal">
+    <div class="modal-icon" style="color:var(--green);"><i class="fas fa-eye"></i></div>
+    <div class="modal-title">Reactivate Product?</div>
+    <div class="modal-body">
+      <strong>{{ product.product_name }}</strong> will become visible to buyers again.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('reactivateModal')">
+        Cancel
+      </button>
+      <button class="btn btn-sm"
+        style="background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.2);color:var(--green);"
+        onclick="toggleActive(true)">
+        <i class="fas fa-eye"></i> Yes, Reactivate
+      </button>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /.edit-main -->
+</div><!-- /.page-wrap -->
+
+<!-- ══ STICKY FOOTER ══════════════════════════════════════════ -->
+<div class="form-footer">
+  <div class="form-footer-left">
+    <span class="unsaved-dot" id="unsavedDot"></span>
+    <span id="footerStatus">Last saved: {{ product.updated_at|date:"d M Y, H:i" }}</span>
+  </div>
+  <div class="form-footer-right">
+    <a href="{% url 'business_profile' %}" class="btn btn-ghost">
+      <i class="fas fa-arrow-left"></i> Cancel
+    </a>
+    <button type="submit" form="editForm" class="btn btn-primary" id="saveBtn">
+      <i class="fas fa-floppy-disk"></i> Save Changes
+    </button>
+  </div>
+</div>
+
+<!-- ══ SCRIPTS ════════════════════════════════════════════════ -->
+<script>
+  /* ── loader ── */
+  window.addEventListener('load', () => document.getElementById('loader').classList.add('done'));
+
+  /* ── toast ── */
+  function toast(msg, type = 'info') {
+    const icons = { success: 'circle-check', error: 'circle-xmark', info: 'circle-info' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<i class="fas fa-${icons[type]||'circle-info'}"></i><span>${msg}</span>`;
+    document.getElementById('toast-wrap').appendChild(el);
+    setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 300); }, 3200);
+  }
+
+  /* ── modals ── */
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-backdrop').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  /* ── sidebar scroll ── */
+  function scrollTo(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  /* ── unsaved indicator ── */
+  const form = document.getElementById('editForm');
+  const unsavedDot = document.getElementById('unsavedDot');
+  const footerStatus = document.getElementById('footerStatus');
+  form.addEventListener('change', () => {
+    unsavedDot.classList.add('show');
+    footerStatus.textContent = 'Unsaved changes';
+  });
+  form.addEventListener('input', () => {
+    unsavedDot.classList.add('show');
+    footerStatus.textContent = 'Unsaved changes';
+  });
+
+  /* ── image upload preview ── */
+  const imageInput = document.getElementById('imageInput');
+  const dropZone   = document.getElementById('dropZone');
+
+  imageInput.addEventListener('change', () => handleFile(imageInput.files[0]));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      imageInput.files = dt.files;
+      handleFile(file);
+    }
+  });
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) { toast('Please upload an image file.', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast('Image must be under 5 MB.', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('imgPreview');
+      preview.innerHTML = `<img src="${e.target.result}" id="previewImg" alt="">`;
+      const sidebarImg = document.getElementById('sidebarImg');
+      if (sidebarImg) sidebarImg.src = e.target.result;
+      else {
+        document.getElementById('sidebarThumb').innerHTML =
+          `<img src="${e.target.result}" id="sidebarImg" alt="">`;
+      }
+    };
+    reader.readAsDataURL(file);
+    toast(`Image selected: ${file.name}`, 'info');
+  }
+
+  /* ── free shipping toggle ── */
+  document.getElementById('fFreeShipping').addEventListener('change', function() {
+    const costField = document.getElementById('shippingCostField');
+    costField.style.display = this.checked ? 'none' : 'block';
+    costField.style.maxWidth = '240px';
+  });
+
+  /* ── price calculator ── */
+  const currency = () => document.querySelector('[name="currency"]').value || '{{ product.currency }}';
+  function calcPrices() {
+    const selling  = parseFloat(document.getElementById('fSellingPrice').value) || 0;
+    const buying   = parseFloat(document.getElementById('fBuyingPrice').value)  || 0;
+    const discount = parseFloat(document.getElementById('fDiscount').value)     || 0;
+    const tax      = parseFloat(document.getElementById('fTax').value)           || 0;
+
+    const final   = selling - (selling * discount / 100);
+    const withTax = final + (final * tax / 100);
+    const profit  = final - buying;
+    const cur = currency();
+
+    document.getElementById('ppSelling').textContent = `${cur}${selling.toFixed(2)}`;
+    document.getElementById('ppFinal').textContent   = `${cur}${final.toFixed(2)}`;
+    document.getElementById('ppTax').textContent     = `${cur}${withTax.toFixed(2)}`;
+
+    const ppProfit = document.getElementById('ppProfit');
+    ppProfit.textContent = `${cur}${profit.toFixed(2)}`;
+    ppProfit.className = `price-preview-value ${profit >= 0 ? 'green' : 'red'}`;
+
+    // strike on selling only if discount > 0
+    document.getElementById('ppSelling').className =
+      `price-preview-value${discount > 0 ? ' strike' : ''}`;
+
+    // update currency prefixes
+    ['currencyPfx1','currencyPfx2','currencyPfx3'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = cur;
+    });
+  }
+  ['fSellingPrice','fBuyingPrice','fDiscount','fTax'].forEach(id =>
+    document.getElementById(id)?.addEventListener('input', calcPrices)
+  );
+  document.querySelector('[name="currency"]').addEventListener('change', calcPrices);
+
+  /* ── stock badge ── */
+  document.getElementById('fStock').addEventListener('input', function() {
+    const qty = parseInt(this.value) || 0;
+    const badge = document.getElementById('stockBadge');
+    const threshold = parseInt(document.querySelector('[name="low_stock_threshold"]').value) || 10;
+    if (qty === 0) {
+      badge.className = 'stock-indicator stock-out';
+      badge.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> Out of stock';
+    } else if (qty <= threshold) {
+      badge.className = 'stock-indicator stock-low';
+      badge.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> Low stock';
+    } else {
+      badge.className = 'stock-indicator stock-ok';
+      badge.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> In stock';
+    }
+  });
+
+  /* ── specification builder ── */
+  function addSpec() {
+    const row = document.createElement('div');
+    row.className = 'spec-row';
+    row.innerHTML = `
+      <input class="field-input" type="text" placeholder="Key (e.g. Color)" data-spec-key>
+      <input class="field-input" type="text" placeholder="Value (e.g. Matte Black)" data-spec-val>
+      <button type="button" class="btn-remove-spec" onclick="removeSpec(this)">
+        <i class="fas fa-xmark"></i>
+      </button>`;
+    document.getElementById('specRows').appendChild(row);
+    row.querySelector('[data-spec-key]').focus();
+  }
+  function removeSpec(btn) { btn.closest('.spec-row').remove(); }
+
+  function serializeSpecs() {
+    const obj = {};
+    document.querySelectorAll('.spec-row').forEach(row => {
+      const k = row.querySelector('[data-spec-key]').value.trim();
+      const v = row.querySelector('[data-spec-val]').value.trim();
+      if (k) obj[k] = v;
+    });
+    document.getElementById('specificationsInput').value = JSON.stringify(obj);
+  }
+
+  /* ── SEO character counters ── */
+  function charCounter(inputSel, counterId, max) {
+    const el = document.querySelector(inputSel);
+    const counter = document.getElementById(counterId);
+    if (!el || !counter) return;
+    el.addEventListener('input', () => {
+      const len = el.value.length;
+      counter.textContent = `${len}/${max} characters`;
+      counter.style.color = len > max * 0.9 ? 'var(--amber)' : 'var(--muted)';
+    });
+  }
+  charCounter('[name="meta_title"]',       'metaTitleCount', 60);
+  charCounter('[name="meta_description"]', 'metaDescCount',  160);
+
+  /* ── form submit ── */
+  document.getElementById('editForm').addEventListener('submit', function(e) {
+    serializeSpecs();
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    saveBtn.disabled = true;
+  });
+
+  /* ── deactivate via toggle ── */
+  function toggleActive(state) {
+    const checkbox = document.querySelector('[name="is_active"]');
+    if (checkbox) checkbox.checked = state;
+    closeModal('deactivateModal');
+    form.requestSubmit();
+  }
+
+  /* ── page load ── */
+  calcPrices();
+</script>
+</body>
+</html>

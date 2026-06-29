@@ -1,0 +1,3601 @@
+{% include "base.html" %}
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>{{ profile_info.profile_name|default:user.email_or_phone }} — Profile | PIELAM</title>
+
+<style>
+
+/* ═══════════════════════════════════════════════
+       GLOBAL — Design Tokens, Reset, Base
+    ═══════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --r: 12px; 
+      --r-sm: 8px;   
+      --purple: #7c3aed; 
+      --shadow-xs: 0 1px 3px rgba(10,37,64,.05); 
+
+      --ink:        #0f0f0f;
+      --ink-2:      #3a3a3a;
+      --ink-3:      #6b6b6b;
+      --ink-4:      #9b9b9b;
+      --surface:    #ffffff;
+      --surface-2:  #f5f5f3;
+      --surface-3:  #eeede9;
+      --border:     #e4e3df;
+      --border-2:   #d0cfc9;
+      --accent:     #c8102e;
+      --accent-2:   #a00d24;
+      --gold:       #b8860b;
+      --gold-2:     #8b6508;
+      --green:      #1a6b3a;
+      --green-bg:   #edf7f1;
+      --warn:       #92400e;
+      --warn-bg:    #fffbeb;
+      --blue:       #1e3a8a;
+      --blue-light: #3b82f6;
+      --primary-dark:    #0a2540;
+      --primary-blue:    #0d47a1;
+      --primary-light:   #1976d2;
+      --accent-gold:     #d4af37;
+      --accent-amber:    #ffb300;
+      --success-emerald: #00b894;
+      --danger-crimson:  #e74c3c;
+      --text-primary:    #1a202c;
+      --text-secondary:  #4a5568;
+      --text-muted:      #718096;
+      --bg-primary:      #ffffff;
+      --bg-secondary:    #f7fafc;
+      --bg-tertiary:     #edf2f7;
+      --border-light:    #e2e8f0;
+      --border-medium:   #cbd5e0;
+      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body:    'Syne', sans-serif;
+      --f-mono:       'JetBrains Mono', monospace;
+      --f-display:    'Cormorant Garamond', serif;
+      --f-body:       'Syne', sans-serif;
+      --header-h:          64px;
+      --bg:       var(--bg-primary);
+      --nav-h:             64px;
+      --bottom-bar-height: 68px;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+      --ease:            cubic-bezier(.4,0,.2,1);
+      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: .15s ease;
+      --transition-base: .25s ease;
+      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+      --t-primary:   #0f0f0f;
+      --t-secondary: #3a3a3a;
+      --t-muted:     #6b6b6b;
+      --t-ghost:     #9b9b9b;
+      --rim:         #e4e3df;
+      --raised:      #f5f5f3;
+      --overlay:     #eeede9;
+      --abyss:       #0f0f0f;
+      --gold-pure:   #b8860b;
+      --gold-dim:    rgba(184,134,11,0.40);
+      --gold-trace:  rgba(184,134,11,0.08);
+      --gold-bright: #d4a017;
+      --emerald:  #1a6b3a;
+      --amber:    #92400e;
+      --ruby:     #c8102e;
+      --sapphire: #1e3a8a;
+
+      
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
+    body {
+      font-family: 'roboto';
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;  /* ← safe cross-browser fix */
+
+      padding-bottom: var(--bottom-bar-height);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+      pointer-events: none; 
+      z-index: 0;
+    }
+    a      { text-decoration:none; color:inherit; }
+    img    { max-width:100%; display:block; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    ::-webkit-scrollbar       { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
+    .hide-mobile { display:none; }
+@media (max-width: 768px) { :root { --header-h: 58px; } }
+@media (max-width: 480px) { :root { --header-h: 54px; } }
+@media (max-width: 360px) { :root { --header-h: 50px; } }
+@media (max-width: 320px) { :root { --header-h: 48px; } }
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .navbar-glow{display:none}
+  .avatar-glow-ring{animation:none}
+  .profile-cover:hover .cover-image{transform:none}
+  .profile-avatar-wrap:hover .profile-avatar{transform:none}
+}
+
+
+</style>
+
+</head>
+
+<body>
+
+
+<style>
+
+/* ═══ PROFILE COVER ═══ */
+.profile-cover {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  margin-top: 0rem;
+  background-color: #1a1a2e;
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;        /* fills container, crops if needed */
+  object-position: center;
+  display: block;
+}
+
+/* ── button group ── */
+.profile-cover .cover-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.40);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.profile-cover .cover-edit-btn:hover {
+  background: rgba(0, 0, 0, 0.60);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.profile-cover .cover-edit-btn:active {
+  transform: scale(0.97);
+}
+
+/* icon size */
+.profile-cover .cover-edit-btn i {
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ── position all buttons bottom-right ── */
+.profile-cover .cover-edit-btn:nth-child(n+2) {
+  position: absolute;
+}
+
+/* "Edit cover" — bottom-right */
+.profile-cover .cover-edit-btn:nth-child(2) {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+}
+
+/* "Edit" — top-right */
+.profile-cover .cover-edit-btn:nth-child(3) {
+  top: 16px;
+  right: 130px;
+}
+
+/* "Settings" — top-right edge */
+.profile-cover .cover-edit-btn:nth-child(4) {
+  top: 16px;
+  right: 16px;
+}
+
+/* ════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+════════════════════════════════════ */
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .profile-cover {
+    height: 260px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-cover {
+    height: auto;           /* height follows image */
+    min-height: 160px;
+    margin-top: 0rem;
+  }
+
+  .profile-cover .cover-edit-btn span {
+    display: none;
+
+  }
+
+  .profile-cover .cover-edit-btn {
+    padding: 8px 10px;
+    gap: 0;
+  }
+
+  /* Edit & Settings — stacked column, top-right */
+  .profile-cover .cover-edit-btn:nth-child(3) {
+    top: 10px;
+    right: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    top: 52px;
+    right: 10px;
+  }
+
+  /* Edit cover — bottom-right */
+  .profile-cover .cover-edit-btn:nth-child(2) {
+    bottom: 10px;
+    right: 10px;
+    top: unset;
+  }
+
+  .cover-image {
+    height: auto;
+    object-fit: contain;
+    max-height: 280px;
+  }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .profile-cover {
+    margin-top: 2.85rem;
+    min-height: 130px;
+  }
+
+  .profile-cover .cover-edit-btn {
+    padding: 7px 9px;
+    font-size: 13px;
+  }
+/* Edit cover — bottom-right */
+  .profile-cover .cover-edit-btn:nth-child(2) {
+    bottom: 10px;
+    right: 10px;
+    top: unset;
+  }
+
+  /* Edit & Settings — stacked column, top-right */
+  .profile-cover .cover-edit-btn:nth-child(3),
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    right: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(3) {
+    top: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    top: 52px; /* button height (~34px) + 8px gap */
+  }
+
+  .cover-image {
+    max-height: 220px;
+  }
+}
+
+</style>
+
+      <div class="profile-cover">
+        <img src="{{ profile_info.profile_cover_photo }}"
+     alt="Cover photo" class="cover-image" loading="lazy">
+        <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
+          <i class="fa-solid fa-camera"></i><span>Cover Photo</span>
+        </a>
+        <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
+              <i class="fa-solid fa-user-pen"></i><span>Edit</span>
+            </a>
+            <a href="{% url 'customer:profile_settings' %}" class="cover-edit-btn">
+              <i class="fa-solid fa-gear"></i><span>Settings</span>
+            </a>
+      </div>
+{# ═══ COVER ═══ #}
+
+
+
+<style>
+  
+/* ═══ IDENTITY SECTION ═══ */
+.profile-identity-section {
+  background: #fff;
+  padding: 0 24px 20px;
+  border-top: 3px solid #fff; /* clean cut-off line */
+  box-shadow: 0 -1px 0 #e5e7eb; /* subtle separator */
+}
+
+
+.profile-identity-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: -28px; /* less overlap, avatar still peeks over */
+}
+
+/* ═══ AVATAR ═══ */
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+
+.profile-avatar {
+  width: 102px;
+  height: 102px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 4px solid #fff; /* thicker = clearer separation */
+  background-color: #e5e7eb;
+}
+
+/* Camera edit button */
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1a6fa3;
+  color: #fff;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.avatar-edit-btn:hover {
+  background: #155a8a;
+}
+
+
+/* ═══ NAME + PILLS ═══ */
+.profile-identity-main {
+  flex: 1;
+  min-width: 0; /* prevents overflow on small screens */
+  padding-bottom: 6px;
+}
+
+.profile-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-fullname {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Verified checkmark badge */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1a6fa3;
+  color: #fff;
+  font-size: 10px;
+}
+
+
+/* ═══ PILLS ROW ═══ */
+.profile-pills-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.profile-pills-row::-webkit-scrollbar { display: none; }
+
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.profile-pill i {
+  font-size: 13px;
+}
+
+.pill-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.pill-gray {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.pill-amber {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+
+/* ── Tablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  .profile-identity-section { padding: 0 16px 16px; }
+  .profile-identity-row { margin-top: -22px; }
+  .profile-avatar { border-width: 3px; }
+  .profile-fullname { font-size: 18px; }
+  .profile-pill { font-size: 11px; padding: 3px 10px; }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .profile-identity-section { padding: 0 12px 14px; }
+  .profile-identity-row { margin-top: -18px; }
+  .profile-avatar { width: 82px; height: 82px; }
+  .profile-fullname { font-size: 16px; }
+  .profile-pill { font-size: 10px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
+}
+
+</style>
+
+    {# ═══ IDENTITY ROW ═══ #}
+    <div class="profile-identity-section">
+      <div class="profile-identity-row">
+
+        {# Avatar #}
+        <div class="profile-avatar-wrap">
+          {% if profile_info.is_profile_verified %}
+            <div class="avatar-glow-ring"></div>
+          {% else %}
+            <div class="avatar-glow-ring simple"></div>
+          {% endif %}
+          <img src="{{ profile_info.profile_photo }}"
+     alt="{{ profile_info.profile_name|default:'Profile Photo' }}"
+     class="profile-avatar" loading="lazy">
+          <a href="{% url 'customer:edit_profile' %}" class="avatar-edit-btn" title="Change photo">
+            <i class="fa-solid fa-camera"></i>
+          </a>
+        </div>
+
+        {# Name + Actions #}
+        <div class="profile-identity-main">
+          <div class="profile-name-block">
+            <h1 class="profile-fullname">
+              {{ profile_info.profile_name|default:user.email_or_phone }}
+              {% if profile_info.is_profile_verified %}
+                <span class="verified-badge" title="Verified">
+                  <i class="fa-solid fa-check"></i>
+                </span>
+              {% endif %}
+            </h1>
+            <div class="profile-pills-row">
+              <span class="profile-pill pill-blue">
+                {{ followers_count }} Followers
+              </span>
+              <span class="profile-pill pill-gray">
+                {{ followings_count }} Following
+              </span>
+              
+              {% if avg_rating_received > 0 %}
+              <span class="profile-pill pill-amber">
+                {{ avg_rating_received }} Rating
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+          
+        </div>
+
+      </div>
+{# /.profile-identity-section #}
+
+
+
+<style>
+
+/* ═══ PROFILE ACTIONS ═══ */
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.profile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, color 0.2s ease,
+              border-color 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.profile-action-btn i {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profile-action-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Ghost variant ── */
+.profile-action-btn--ghost {
+  background: transparent;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.profile-action-btn--ghost:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+@media (max-width: 768px) {
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* two buttons — 50% each */
+  .profile-action-btn {
+    flex: 0 0 calc(50% - 4px);
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  /* one button (non-dealer) — full width */
+  .profile-action-btn:only-child {
+    flex: 0 0 100%;
+  }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* two buttons — 50% each */
+  .profile-action-btn {
+    flex: 0 0 calc(50% - 4px);
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  /* one button (non-dealer) — full width */
+  .profile-action-btn:only-child {
+    flex: 0 0 100%;
+  }
+}
+
+</style>
+
+<div class="profile-actions">
+
+  {% if user.role == 'dealer' %}
+  <a href="{% url 'business_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fa-solid fa-building"></i>
+    <span>Business</span>
+  </a>
+  {% endif %}
+
+  <a href="{% url 'service_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fas fa-spider"></i>
+    <span>Engine</span>
+  </a>
+
+</div>
+
+
+<style>
+
+  /* ═══ BANNER STRIP ═══ */
+.banner-strip {
+  width: 100%;
+  padding: 12px 24px 16px;
+}
+
+.promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #fff8e7;
+  border: 1.5px solid #f5c842;
+  border-radius: 12px;
+}
+
+/* ── Icon box ── */
+.promo-banner-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f59e0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+/* ── Text block ── */
+.promo-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-banner-text h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 3px;
+  line-height: 1.3;
+}
+
+.promo-banner-text p {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── CTA button ── */
+.promo-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #f59e0b;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.promo-banner-btn:hover {
+  background: #d97706;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.promo-banner-btn:active {
+  transform: scale(0.97);
+}
+
+.promo-banner-btn i {
+  font-size: 13px;
+  line-height: 1;
+}
+
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+
+/* ── Tablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  .banner-strip {
+    padding: 10px 16px 14px;
+  }
+
+  .promo-banner {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .promo-banner-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  .promo-banner-text h4 {
+    font-size: 13px;
+  }
+
+  .promo-banner-text p {
+    font-size: 11px;
+  }
+
+  .promo-banner-btn {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .banner-strip {
+    padding: 8px 12px 12px;
+  }
+
+  .promo-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  /* icon + text stay side by side on mobile */
+  .promo-banner-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  /* wrap icon and text together */
+  .promo-banner-icon,
+  .promo-banner-text {
+    display: inline-flex;
+  }
+
+  .promo-banner-icon ~ .promo-banner-text {
+    flex: 1;
+  }
+
+  /* pull icon + text into their own row */
+  .promo-banner::before {
+    content: '';
+    display: none;
+  }
+
+  /* button goes full width on mobile */
+  .promo-banner-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+
+</style>
+
+<!-- ═══ PROMO BANNER STRIP ═══ -->
+<div class="banner-strip">
+  {% if user.role != 'dealer' %}
+  <div class="promo-banner">
+    <div class="promo-banner-icon">
+      <i class="fa-solid fa-building-circle-check"></i>
+    </div>
+    <div class="promo-banner-text">
+      <h4>Unlock Your Business Profile</h4>
+      <p>List products, access analytics, and reach thousands of buyers.</p>
+    </div>
+    <a href="{% url 'create_business_profile' %}" class="promo-banner-btn">
+      <i class="fa-solid fa-rocket"></i><span>Get Started</span>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+
+<style>
+
+  /* ═══ COMPLETION STRIP ═══ */
+.completion-strip {
+  width: 100%;
+  padding: 6px 24px 16px;
+}
+
+.completion-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1.5px solid #e4e3df;
+  border-radius: 12px;
+}
+
+
+/* ── Circle ── */
+.completion-circle {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.completion-circle svg {
+  transform: rotate(-90deg);
+}
+
+.completion-circle-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 4;
+}
+
+.completion-circle-fill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke: url(#completionGrad);
+  transition: stroke-dashoffset 0.9s cubic-bezier(.4, 0, .2, 1);
+}
+
+.completion-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+
+/* ── Info block ── */
+.completion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.completion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 6px;
+}
+
+.completion-bar-track {
+  height: 6px;
+  background: #e4e3df;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.completion-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1877f2, #8b5cf6);
+  transition: width 0.8s cubic-bezier(.4, 0, .2, 1);
+}
+
+.completion-tip {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+
+/* ── Divider ── */
+.section-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0 24px;
+}
+
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+
+/* ── Tablet (≤ 768px) ── */
+@media (max-width: 768px) {
+  .completion-strip {
+    padding: 6px 12px 12px;
+  }
+
+  .completion-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .completion-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-circle svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-pct {
+    font-size: 10px;
+  }
+
+  .section-divider {
+    margin: 0 12px;
+  }
+}
+
+/* ── Mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .completion-strip {
+    padding: 6px 12px 12px;
+  }
+
+  .completion-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .completion-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-circle svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-pct {
+    font-size: 10px;
+  }
+
+  .section-divider {
+    margin: 0 12px;
+  }
+}
+
+
+</style>
+<!-- ═══ PROFILE COMPLETION BAR ═══ -->
+<div class="completion-strip">
+  <div class="completion-card">
+
+    <div class="completion-circle">
+      <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="completionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   style="stop-color:#1877f2"/>
+            <stop offset="100%" style="stop-color:#8b5cf6"/>
+          </linearGradient>
+        </defs>
+        <circle class="completion-circle-bg"   cx="26" cy="26" r="22"/>
+        <circle class="completion-circle-fill"
+                cx="26" cy="26" r="22"
+                stroke-dasharray="138.23"
+                stroke-dashoffset="138.23"
+                data-pct="{{ profile_completion }}"
+                id="completionCircle"/>
+      </svg>
+      <span class="completion-pct">{{ profile_completion }}%</span>
+    </div>
+
+    <div class="completion-info">
+      <div class="completion-label">Profile Completion</div>
+      <div class="completion-bar-track">
+        <div class="completion-bar-fill"
+             style="width: 0%"
+             id="completionBar"
+             data-w="{{ profile_completion }}%">
+        </div>
+      </div>
+      <div class="completion-tip">
+        {% if profile_completion < 100 %}
+          Complete your profile to build trust with buyers.
+        {% else %}
+          Your profile is 100% complete — great work!
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+
+<script>
+function animateCompletionCircle() {
+  const circle = document.getElementById('completionCircle');
+  const bar    = document.getElementById('completionBar');
+  if (!circle) return;
+
+  const pct          = parseFloat(circle.dataset.pct) || 0;
+  const radius       = 22;
+  const circumference = 2 * Math.PI * radius;
+  const offset       = circumference - (pct / 100) * circumference;
+
+  /* Hide entire strip + divider when 100% complete */
+  if (pct >= 100) {
+    const strip   = document.querySelector('.completion-strip');
+    const divider = document.querySelector('.section-divider');
+    if (strip)   strip.style.display   = 'none';
+    if (divider) divider.style.display = 'none';
+    return;
+  }
+
+  setTimeout(() => {
+    circle.style.strokeDashoffset = offset;
+    if (bar) bar.style.width = bar.dataset.w || (pct + '%');
+  }, 200);
+}
+</script>
+
+<style>
+
+  /* ═══ PROFILE TAB BAR ═══ */
+.profile-tabs-bar {
+  position: sticky;
+  top: var(--header-h); /* ← instead of hardcoded 64px */
+  z-index: 100;
+  background: #fff;
+  border-radius: 1rem;
+  font-family: 'roboto';
+  border: 1px solid #8b6a00;
+  box-shadow: 0 2px 8px rgba(13, 15, 26, .06);
+}
+
+.profile-tabs-inner {
+  width: 100%;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.profile-tabs-inner::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px clamp(10px, 2.5vw, 16px);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  color: #718096;
+  font-weight: 600;
+  font-size: .86rem;
+  cursor: pointer;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color .2s, border-color .2s, background .2s;
+  border-radius: 8px 8px 0 0;
+  letter-spacing: .01em;
+}
+
+.tab-btn:hover {
+  background: #f0f2f5;
+  color: #4a5568;
+}
+
+.tab-btn.active {
+  color: #1e3a8a;
+  border-bottom-color: #1e3a8a;
+  font-weight: 700;
+}
+
+.tab-btn i {
+  font-size: .8rem;
+  opacity: .8;
+}
+
+.tab-btn.active i { opacity: 1; }
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border-radius: 10px;
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.tab-btn.active .tab-count {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+
+/* ════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════ */
+
+/* ── 1400px+ ── */
+@media (min-width: 1400px) {
+  .profile-tabs-inner { padding: 0 3rem; }
+  .tab-btn { font-size: .9rem; }
+}
+
+/* ── 1024px ── */
+@media (max-width: 1024px) {
+  .profile-tabs-inner { padding: 0 1.5rem; }
+}
+
+/* ── 768px ── */
+@media (max-width: 768px) {
+  .profile-tabs-inner { padding: 0 1rem; }
+  .tab-btn {
+    padding: 12px clamp(8px, 2vw, 14px);
+    font-size: .82rem;
+  }
+}
+
+/* ── 640px ── */
+@media (max-width: 640px) {
+  .profile-tabs-inner { padding: 0 .875rem; }
+  .tab-btn {
+    padding: 11px clamp(7px, 2vw, 12px);
+    font-size: .8rem;
+    gap: 5px;
+  }
+  .tab-btn i { font-size: .72rem; }
+  .tab-count {
+    min-width: 16px;
+    height: 16px;
+    font-size: .6rem;
+    padding: 0 4px;
+  }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .profile-tabs-inner { padding: 0 .75rem; }
+  .tab-btn {
+    padding: 10px 9px;
+    font-size: .75rem;
+    gap: 4px;
+  }
+
+  /* hide text labels — icons only */
+  .tab-btn span:not(.tab-count) { display: none; }
+}
+
+/* ── 360px ── */
+@media (max-width: 360px) {
+  .profile-tabs-inner { padding: 0 .625rem; }
+  .tab-btn {
+    padding: 9px 7px;
+    font-size: .7rem;
+    gap: 3px;
+  }
+  .tab-btn i { font-size: .65rem; }
+  .tab-count {
+    min-width: 14px;
+    height: 14px;
+    font-size: .55rem;
+  }
+}
+
+/* ── 320px ── */
+@media (max-width: 320px) {
+  .profile-tabs-inner { padding: 0 .5rem; }
+  .tab-btn { padding: 8px 6px; font-size: .65rem; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .tab-btn { transition: none; }
+}
+
+/* ── High contrast ── */
+@media (forced-colors: active) {
+  .tab-btn.active {
+    border-bottom-color: Highlight;
+    color: Highlight;
+  }
+  .tab-count { border: 1px solid ButtonText; }
+}
+
+
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB BAR 
+═══════════════════════════════════════════════════════════════ -->
+<div class="profile-tabs-bar">
+  <nav class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
+
+    <button class="tab-btn active" data-tab="products"
+            role="tab" aria-selected="true" aria-controls="tab-products">
+      <i class="fa-solid fa-box"></i> Products
+      
+    </button>
+
+    <button class="tab-btn" data-tab="activity"
+            role="tab" aria-selected="false" aria-controls="tab-activity">
+      <i class="fas fa-spider"></i> Engine
+    </button>
+
+    <button class="tab-btn" data-tab="following"
+            role="tab" aria-selected="false" aria-controls="tab-following">
+      <i class="fa-solid fa-user-group"></i> Following
+      
+    </button>
+
+    <button class="tab-btn" data-tab="info"
+            role="tab" aria-selected="false" aria-controls="tab-info">
+      <i class="fa-solid fa-circle-info"></i> About
+    </button>
+
+  </nav>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TWO-COLUMN LAYOUT — open tag only (closed in part 3)
+═══════════════════════════════════════════════════════════════ -->
+<div class="profile-content">
+
+
+  <!-- ── MAIN PANEL ── -->
+  <main class="fb-main">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: PRODUCTS
+═══════════════════════════════════════════════════════════════ -->
+<style>
+/* ═══ UPGRADED PRODUCT CARD ═══ */
+.product-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 16px 18px 20px;
+}
+
+/* ── Card shell ── */
+.pcard {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e4e3df;
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+  position: relative;
+}
+
+.pcard:hover {
+  box-shadow: 0 8px 24px rgba(10,37,64,.14);
+  transform: translateY(-4px);
+  border-color: #1e3a8a;
+}
+
+/* ── Thumb ── */
+.pcard-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f5f5f3;
+  overflow: hidden;
+}
+
+.pcard-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease;
+}
+
+.pcard:hover .pcard-thumb img {
+  transform: scale(1.07);
+}
+
+/* ── Quick View overlay ── */
+.pcard-quickview {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #d4af37;
+  color: #1a1a2e;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(212,175,55,.4);
+}
+
+.pcard:hover .pcard-quickview {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Wishlist heart (top-right) ── */
+.pcard-wish {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,.92);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  color: #9ca3af;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+  transition: color .2s, background .2s;
+  cursor: pointer;
+}
+
+.pcard-wish:hover,
+.pcard-wish.active { color: #ef4444; background: #fff; }
+
+/* ── Wishlist count (below heart) ── */
+.pcard-wish-count {
+  position: absolute;
+  top: 46px;
+  right: 10px;
+  font-size: .6rem;
+  font-weight: 700;
+  color: #718096;
+  text-align: center;
+  z-index: 2;
+  line-height: 1;
+}
+
+/* ── Views badge (bottom-left) ── */
+.pcard-views {
+  position: absolute;
+  bottom: 52px;
+  left: 10px;
+  background: rgba(10,15,35,.65);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+/* ── Sale badge (top-left) ── */
+.pcard-sale {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 5px;
+  z-index: 2;
+  letter-spacing: .3px;
+}
+
+/* ── Stock badge (top-left, below sale) ── */
+.pcard-stock {
+  position: absolute;
+  top: 36px;
+  left: 10px;
+  font-size: .6rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 5px;
+  z-index: 2;
+}
+.pcard-stock.out { background: #dc2626; color: #fff; }
+.pcard-stock.low { background: #ea580c; color: #fff; }
+
+/* ── Body ── */
+.pcard-body {
+  padding: 12px 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+/* product_title — big bold name */
+.pcard-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* product_name — model/SKU in blue */
+.pcard-model {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Stars ── */
+.pcard-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .72rem;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.pcard-stars i { font-size: .68rem; }
+
+.pcard-stars .review-count {
+  color: #718096;
+  font-weight: 500;
+}
+
+/* ── Price box ── */
+.pcard-price-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.pcard-price-col {
+  background: #f8f9ff;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pcard-price-col:last-child { background: #f0fdf4; }
+
+.pcard-price-label {
+  font-size: .57rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #718096;
+}
+
+.pcard-price-val {
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.pcard-price-col:first-child .pcard-price-val {
+  color: #dc2626;
+  text-decoration: line-through;
+}
+
+.pcard-price-col:last-child .pcard-price-val {
+  color: #15803d;
+}
+
+/* ── Tags row ── */
+.pcard-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.pcard-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.pcard-tag.brand {
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+}
+
+.pcard-tag.category {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.pcard-tag.subcategory {
+  background: #fdf4ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+/* ── Time label ── */
+.pcard-time {
+  font-size: .6rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+/* ════════ RESPONSIVE ════════ */
+@media (max-width: 1024px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px 14px 16px;
+  }
+  .pcard-title { font-size: .82rem; }
+  .pcard-price-val { font-size: .78rem; }
+}
+
+@media (max-width: 480px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px 10px 12px;
+  }
+  .pcard-body { padding: 9px 10px 11px; gap: 3px; }
+  .pcard-title { font-size: .76rem; }
+  .pcard-model { font-size: .68rem; }
+  .pcard-price-val { font-size: .74rem; }
+  .pcard-price-label { font-size: .52rem; }
+  .pcard-price-col { padding: 5px 7px; }
+  .pcard-tag { font-size: .55rem; padding: 2px 5px; }
+}
+
+@media (max-width: 360px) {
+  .product-grid-v2 { gap: 6px; padding: 8px 8px 10px; }
+  .pcard-body { padding: 8px 8px 9px; }
+  .pcard-title { font-size: .7rem; }
+  .pcard-price-val { font-size: .7rem; }
+}
+
+@media (max-width: 320px) {
+  .product-grid-v2 { gap: 5px; padding: 7px 7px 9px; }
+  .pcard-title { font-size: .65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard, .pcard-thumb img, .pcard-quickview { transition: none; }
+  .pcard:hover { transform: none; }
+  .pcard:hover .pcard-thumb img { transform: none; }
+  .pcard:hover .pcard-quickview { opacity: 0; }
+}
+</style>
+
+<div class="tab-panel active" id="tab-products" role="tabpanel">
+  <div class="card">
+    <div class="section-head">
+      <h2 class="card-title">Recently Viewed</h2>
+      {% if recently_viewed %}
+      <span style="font-size:.78rem;color:var(--text-muted);font-weight:600">
+        {{ recently_viewed|length }} product{{ recently_viewed|length|pluralize }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if recently_viewed %}
+    <div class="product-grid-v2">
+      {% for pv in recently_viewed %}
+      <a href="{% url 'ponno:product_detail' slug=pv.product.slug %}" class="pcard">
+
+        <!-- ── Thumbnail ── -->
+        <div class="pcard-thumb">
+          <img src="{{ pv.product.image_url }}"
+               alt="{{ pv.product.product_name }}" loading="lazy">
+
+          <!-- Sale badge -->
+          {% if pv.product.is_on_sale %}
+          <span class="pcard-sale">-{{ pv.product.discount_percentage|floatformat:0 }}%</span>
+          {% endif %}
+
+          <!-- Stock badge -->
+          {% if pv.product.stock_status == 'out_of_stock' %}
+            <span class="pcard-stock out">Out</span>
+          {% elif pv.product.stock_status == 'low_stock' %}
+            <span class="pcard-stock low">Low</span>
+          {% endif %}
+
+          <!-- Wishlist heart -->
+          <div class="pcard-wish" title="Wishlist">
+            <i class="fa-{% if pv.product.wishlist_count > 0 %}solid{% else %}regular{% endif %} fa-heart"></i>
+          </div>
+          {% if pv.product.wishlist_count > 0 %}
+          <span class="pcard-wish-count">{{ pv.product.wishlist_count }}</span>
+          {% endif %}
+
+          <!-- Views badge -->
+          <span class="pcard-views">
+            <i class="fa-solid fa-eye"></i> {{ pv.view_count }}
+          </span>
+
+          <!-- Quick View -->
+          <span class="pcard-quickview">
+            <i class="fa-solid fa-eye"></i> Quick View
+          </span>
+        </div>
+
+        <!-- ── Body ── -->
+        <div class="pcard-body">
+
+          <!-- Product title (full name) -->
+          {% if pv.product.product_title %}
+          <p class="pcard-title">{{ pv.product.product_title }}</p>
+          {% else %}
+          <p class="pcard-title">{{ pv.product.product_name }}</p>
+          {% endif %}
+
+          <!-- Product name (model/SKU) -->
+          {% if pv.product.product_title %}
+          <span class="pcard-model">{{ pv.product.product_name }}</span>
+          {% endif %}
+
+          <!-- Stars -->
+          {% if pv.product.rating_average > 0 %}
+          <div class="pcard-stars">
+            {% with avg=pv.product.rating_average|floatformat:0|add:"0" %}
+              {% for i in "12345" %}
+                {% if forloop.counter <= avg %}
+                  <i class="fa-solid fa-star"></i>
+                {% else %}
+                  <i class="fa-regular fa-star" style="color:#d1d5db"></i>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+            <span>{{ pv.product.rating_average }}</span>
+            {% if pv.product.review_count > 0 %}
+            <span class="review-count">({{ pv.product.review_count }})</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Price box -->
+          <div class="pcard-price-box">
+            <div class="pcard-price-col">
+              <span class="pcard-price-label">Brand Price</span>
+              <span class="pcard-price-val">
+                {% if pv.product.brand_price %}
+                  {{ pv.product.brand_price|floatformat:0 }} Tk
+                {% else %}
+                  {{ pv.product.selling_price|floatformat:0 }} Tk
+                {% endif %}
+              </span>
+            </div>
+            <div class="pcard-price-col">
+              <span class="pcard-price-label">Selling Price</span>
+              <span class="pcard-price-val">
+                {{ pv.product.final_price|default:pv.product.selling_price|floatformat:0 }} Tk
+              </span>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="pcard-tags">
+            {% if pv.product.brand %}
+            <span class="pcard-tag brand">
+              <i class="fa-solid fa-registered" style="font-size:.5rem"></i>
+              {{ pv.product.brand.brand_name }}
+            </span>
+            {% endif %}
+            {% if pv.product.category %}
+            <span class="pcard-tag category">
+              <i class="fa-solid fa-tag" style="font-size:.5rem"></i>
+              {{ pv.product.category.category_name }}
+            </span>
+            {% endif %}
+            {% if pv.product.sub_category %}
+            <span class="pcard-tag subcategory">
+              <i class="fa-solid fa-list-ul" style="font-size:.5rem"></i>
+              {{ pv.product.sub_category.sub_category_name }}
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Time -->
+          <span class="pcard-time">
+            <i class="fa-regular fa-clock"></i>
+            {{ pv.viewed_at|timesince }} ago
+          </span>
+
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fa-solid fa-binoculars"></i></div>
+      <h3 class="empty-title">Nothing browsed yet</h3>
+      <p class="empty-text">Products you view will appear here for quick re-access.</p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /#tab-products -->
+
+<style>
+.engine-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.engine-filters{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
+.engine-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:12px;border:1px solid var(--border-color, #e5e7eb);cursor:pointer;background:var(--surface-2, #f9fafb);color:var(--text-secondary, #6b7280);white-space:nowrap;transition:all .15s}
+.engine-filter-btn.active{background:#fff;color:var(--text-primary, #111827);border-color:var(--border-color-strong, #9ca3af);font-weight:500}
+.engine-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-all{background:var(--text-secondary, #9ca3af)}
+.dot-success{background:#3B6D11}
+.dot-error{background:#A32D2D}
+.dot-pending{background:#854F0B}
+.engine-view-toggle{display:flex;border:1px solid var(--border-color, #e5e7eb);border-radius:8px;overflow:hidden}
+.engine-vbtn{padding:5px 9px;cursor:pointer;background:var(--surface-2, #f9fafb);color:var(--text-secondary, #6b7280);border:none;display:flex;align-items:center;transition:all .15s}
+.engine-vbtn.active{background:#fff;color:var(--text-primary, #111827)}
+.engine-count-label{font-size:12px;color:var(--text-secondary, #6b7280);margin-left:auto;white-space:nowrap}
+
+.engine-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.engine-media-card{border:1px solid var(--border-color, #e5e7eb);border-radius:12px;overflow:hidden;background:#fff;text-decoration:none;display:flex;flex-direction:column;transition:border-color .15s}
+.engine-media-card:hover{border-color:var(--border-color-strong, #9ca3af)}
+.engine-media-thumb{position:relative;aspect-ratio:16/10;background:var(--surface-2, #f3f4f6);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.engine-media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.engine-thumb-fb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary, #9ca3af);font-size:28px}
+.engine-status-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;border:2px solid #fff}
+.engine-status-dot.dot-success{background:#3B6D11}
+.engine-status-dot.dot-error{background:#A32D2D}
+.engine-status-dot.dot-pending{background:#854F0B}
+.engine-type-pill{position:absolute;top:8px;left:8px;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;text-transform:capitalize}
+.pill-education{background:#E6F1FB;color:#0C447C}
+.pill-product{background:#E1F5EE;color:#085041}
+.pill-news{background:#FAEEDA;color:#633806}
+.pill-api{background:#EEEDFE;color:#3C3489}
+.pill-business{background:#FAECE7;color:#712B13}
+.pill-location{background:#EAF3DE;color:#27500A}
+.pill-person{background:#FBEAF0;color:#72243E}
+.engine-fetch-time{position:absolute;bottom:7px;right:7px;font-size:10px;background:rgba(0,0,0,.5);color:#fff;padding:2px 6px;border-radius:10px;display:flex;align-items:center;gap:3px}
+.engine-media-body{padding:10px 12px 12px}
+.engine-media-title{font-size:13px;font-weight:500;color:var(--text-primary, #111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:4px}
+.engine-media-desc{font-size:12px;color:var(--text-secondary, #6b7280);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:6px}
+.engine-alt-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary, #6b7280);background:var(--surface-2, #f3f4f6);padding:2px 7px;border-radius:10px;margin-bottom:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.engine-divider{height:1px;background:var(--border-color, #f3f4f6);margin:8px 0}
+.engine-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary, #6b7280);margin-bottom:4px}
+.engine-src-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.engine-src-domain{font-size:11px;color:var(--text-secondary, #6b7280);display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.engine-fetch-label{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap}
+.fl-success{background:#EAF3DE;color:#27500A}
+.fl-error{background:#FCEBEB;color:#791F1F}
+.fl-pending{background:#FAEEDA;color:#633806}
+
+/* list view overrides */
+.engine-list-view .engine-media-grid{grid-template-columns:1fr;gap:6px}
+.engine-list-view .engine-media-card{flex-direction:row}
+.engine-list-view .engine-media-thumb{width:88px;flex-shrink:0;aspect-ratio:unset;border-radius:0}
+.engine-list-view .engine-media-desc{display:none}
+.engine-list-view .engine-divider{display:none}
+
+.engine-empty-state,.engine-empty-filtered{display:flex;flex-direction:column;align-items:center;padding:48px 24px;text-align:center}
+.engine-empty-icon{width:48px;height:48px;border-radius:50%;background:var(--surface-2, #f3f4f6);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary, #9ca3af);margin-bottom:14px}
+.engine-empty-title{font-size:15px;font-weight:500;color:var(--text-primary, #111827);margin-bottom:6px}
+.engine-empty-text{font-size:13px;color:var(--text-secondary, #6b7280);max-width:280px;line-height:1.5}
+</style>
+
+
+
+<div class="tab-panel" id="tab-activity" role="tabpanel">
+  <div class="card">
+
+    {% if extracted_images %}
+
+    {# ── Toolbar ── #}
+    <div class="engine-toolbar">
+      <div class="engine-filters">
+        <button class="engine-filter-btn active" data-filter="all"
+                onclick="engineSetFilter('all')">
+          <span class="engine-dot dot-all"></span>All
+        </button>
+        <button class="engine-filter-btn" data-filter="success"
+                onclick="engineSetFilter('success')">
+          <span class="engine-dot dot-success"></span>Fetched
+        </button>
+        <button class="engine-filter-btn" data-filter="error"
+                onclick="engineSetFilter('error')">
+          <span class="engine-dot dot-error"></span>Error
+        </button>
+        <button class="engine-filter-btn" data-filter="pending"
+                onclick="engineSetFilter('pending')">
+          <span class="engine-dot dot-pending"></span>Pending
+        </button>
+      </div>
+
+      <div class="engine-view-toggle">
+        <button class="engine-vbtn active" id="engine-vbtn-grid"
+                onclick="engineSetView('grid')" aria-label="Grid view">
+          <i class="fa-solid fa-grip"></i>
+        </button>
+        <button class="engine-vbtn" id="engine-vbtn-list"
+                onclick="engineSetView('list')" aria-label="List view">
+          <i class="fa-solid fa-list"></i>
+        </button>
+      </div>
+
+      <span class="engine-count-label" id="engine-count-label">
+        {{ extracted_images|length }} image{{ extracted_images|length|pluralize }}
+      </span>
+    </div>
+
+    {# ── Grid ── #}
+    <div class="engine-media-grid" id="engine-media-grid">
+      {% for item in extracted_images %}
+      <a href="{{ item.source_url }}"
+         target="_blank" rel="noopener"
+         class="engine-media-card"
+         data-status="{{ item.fetch_status|default:'pending' }}"
+         data-type="{{ item.service_type|default:'' }}">
+
+        {# Thumbnail #}
+        <div class="engine-media-thumb">
+          {% if item.file_url %}
+          <img src="{{ item.file_url }}"
+               alt="{{ item.alt|default:item.title|default:'Image' }}"
+               loading="lazy"
+               onerror="this.style.display='none';
+                        this.nextElementSibling.style.display='flex'">
+          <span class="engine-thumb-fb" style="display:none">
+            <i class="fa-solid fa-image"></i>
+          </span>
+          {% else %}
+          <span class="engine-thumb-fb">
+            <i class="fa-solid fa-image"></i>
+          </span>
+          {% endif %}
+
+          {# Status dot #}
+          <span class="engine-status-dot
+            {% if item.fetch_status == 'success' %}dot-success
+            {% elif item.fetch_status == 'error' %}dot-error
+            {% else %}dot-pending{% endif %}"
+            title="Fetch status: {{ item.fetch_status|default:'pending' }}">
+          </span>
+
+          {# Service type pill #}
+          {% if item.service_type %}
+          <span class="engine-type-pill pill-{{ item.service_type }}">
+            {{ item.service_type }}
+          </span>
+          {% endif %}
+
+          {# Fetch time #}
+          {% if item.last_fetch_time %}
+          <span class="engine-fetch-time">
+            <i class="fa-regular fa-clock"></i>
+            {{ item.last_fetch_time|timesince }} ago
+          </span>
+          {% endif %}
+        </div>
+
+        {# Body #}
+        <div class="engine-media-body">
+          <div class="engine-media-body-main">
+
+            <p class="engine-media-title">
+              {{ item.title|default:"Untitled"|truncatechars:60 }}
+            </p>
+
+            {% if item.og_description %}
+            <p class="engine-media-desc">
+              {{ item.og_description|truncatechars:100 }}
+            </p>
+            {% endif %}
+
+            {% if item.alt %}
+            <span class="engine-alt-tag">
+              <i class="fa-solid fa-tag"></i>
+              {{ item.alt|truncatechars:40 }}
+            </span>
+            {% endif %}
+
+            <div class="engine-divider"></div>
+
+            {% if item.service_name %}
+            <div class="engine-svc-row">
+              <i class="fa-solid fa-plug"></i>
+              {{ item.service_name|truncatechars:28 }}
+            </div>
+            {% endif %}
+
+            <div class="engine-src-row">
+              <span class="engine-src-domain">
+                <i class="fa-solid fa-globe"></i>
+                {{ item.source_domain|default:item.source_url|truncatechars:22 }}
+              </span>
+              <span class="engine-fetch-label
+                {% if item.fetch_status == 'success' %}fl-success
+                {% elif item.fetch_status == 'error' %}fl-error
+                {% else %}fl-pending{% endif %}">
+                {{ item.fetch_status|default:"pending" }}
+              </span>
+            </div>
+
+          </div>{# /.engine-media-body-main #}
+        </div>{# /.engine-media-body #}
+
+      </a>
+      {% endfor %}
+    </div>{# /#engine-media-grid #}
+
+    {# Empty state shown by JS when all cards are filtered out #}
+    <div class="engine-empty-filtered" id="engine-empty-filtered"
+         style="display:none">
+      <div class="engine-empty-icon"><i class="fa-solid fa-filter"></i></div>
+      <p class="engine-empty-title">No images match this filter</p>
+      <p class="engine-empty-text">
+        Try a different status or check your connected services.
+      </p>
+    </div>
+
+    {% else %}
+
+    {# Data-empty state (no connected services have images yet) #}
+    <div class="engine-empty-state">
+      <div class="engine-empty-icon"><i class="fa-solid fa-image"></i></div>
+      <h3 class="engine-empty-title">No images extracted yet</h3>
+      <p class="engine-empty-text">
+        Images from your connected services will appear here once they've been fetched.
+      </p>
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>{# /#tab-activity #}
+
+
+{# ── CSS ── add to your stylesheet or <style> block #}
+
+
+{# ── JS ── #}
+<script>
+(function(){
+  var currentFilter = 'all';
+
+  window.engineSetFilter = function(f){
+    currentFilter = f;
+    document.querySelectorAll('.engine-filter-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.filter === f);
+    });
+    applyFilter();
+  };
+
+  window.engineSetView = function(v){
+    var wrap = document.getElementById('engine-media-grid').parentElement;
+    wrap.classList.toggle('engine-list-view', v === 'list');
+    document.getElementById('engine-vbtn-grid').classList.toggle('active', v === 'grid');
+    document.getElementById('engine-vbtn-list').classList.toggle('active', v === 'list');
+    applyFilter();
+  };
+
+  function applyFilter(){
+    var cards   = document.querySelectorAll('#engine-media-grid .engine-media-card');
+    var visible = 0;
+    cards.forEach(function(c){
+      var show = currentFilter === 'all' || c.dataset.status === currentFilter;
+      c.style.display = show ? '' : 'none';
+      if(show) visible++;
+    });
+    var lbl = document.getElementById('engine-count-label');
+    if(lbl) lbl.textContent = visible + ' image' + (visible === 1 ? '' : 's');
+    var empty = document.getElementById('engine-empty-filtered');
+    var grid  = document.getElementById('engine-media-grid');
+    if(empty){
+      empty.style.display = visible === 0 ? 'flex' : 'none';
+      grid.style.display  = visible === 0 ? 'none'  : '';
+    }
+  }
+})();
+</script>
+
+<style>
+  /* ═══ FOLLOWING TAB ═══ */
+  .following-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    padding: 16px 18px 20px;
+  }
+
+  .following-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    padding: 16px 8px 12px;
+    border-radius: 14px;
+    border: 1.5px solid #e4e3df;
+    background: #f0f2f5;
+    transition: all .2s cubic-bezier(.34, 1.56, .64, 1);
+    overflow: hidden;
+  }
+
+  .following-card:hover {
+    background: #fff;
+    border-color: #1e3a8a;
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(10, 37, 64, .13);
+  }
+
+  /* ── Avatar wrap ── */
+  .following-avatar-wrap {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    flex-shrink: 0;
+  }
+
+  .following-ring {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+  }
+
+  .following-avatar {
+    position: relative;
+    z-index: 1;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2.5px solid #fff;
+    background: #e4e3df;
+    display: block;
+  }
+
+  /* ── Verified badge ── */
+  .following-verified-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .6rem;
+    color: #1e3a8a;
+    box-shadow: 0 0 0 1.5px #fff;
+  }
+
+  /* ── Info block ── */
+  .following-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .following-name {
+    font-size: .74rem;
+    font-weight: 700;
+    color: #2d3748;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    line-height: 1.3;
+  }
+
+  .following-card:hover .following-name { color: #1e3a8a; }
+
+  .following-handle {
+    font-size: .65rem;
+    color: #9ca3af;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  /* ── Profile type badge ── */
+  .following-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: .6rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    margin-top: 2px;
+  }
+
+  .following-type-personal     { background: #f5f3ff; color: #7c3aed; }
+  .following-type-business     { background: #eff6ff; color: #2563eb; }
+  .following-type-professional { background: #f0fdf4; color: #16a34a; }
+  .following-type-public_figure { background: #fefce8; color: #ca8a04; }
+
+  /* ══ RESPONSIVE ══ */
+  @media (min-width: 1400px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+  }
+  @media (max-width: 1024px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  }
+  @media (max-width: 768px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 9px; padding: 12px 14px 16px; }
+  }
+  @media (max-width: 640px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; padding: 10px 12px; }
+    .following-avatar-wrap, .following-avatar { width: 50px; height: 50px; }
+    .following-name { font-size: .68rem; }
+    .following-card { padding: 12px 6px 10px; }
+  }
+  @media (max-width: 480px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 7px; padding: 9px 10px; }
+    .following-avatar-wrap, .following-avatar { width: 46px; height: 46px; }
+    .following-name { font-size: .64rem; }
+    .following-handle, .following-type-badge { display: none; }
+  }
+  @media (max-width: 360px) {
+    .following-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
+    .following-avatar-wrap, .following-avatar { width: 42px; height: 42px; }
+  }
+  @media (max-width: 320px) {
+    .following-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 8px; }
+    .following-avatar-wrap, .following-avatar { width: 38px; height: 38px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .following-card { transition: none; }
+    .following-card:hover { transform: none; }
+  }
+  @media (forced-colors: active) {
+    .following-card { border-color: ButtonText; }
+    .following-ring { background: Highlight; }
+  }
+
+  /* ═══ FOLLOWING TAB — product-grade card ═══ */
+.following-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+  padding: 16px 18px 20px;
+}
+
+.following-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  border-radius: 14px;
+  border: 1px solid #e4e3df;
+  background: #fff;
+  overflow: hidden;
+  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+}
+
+.following-card:hover {
+  border-color: #1e3a8a;
+  box-shadow: 0 8px 20px rgba(10, 37, 64, .12);
+  transform: translateY(-3px);
+}
+
+/* ── Cover strip behind avatar ── */
+.following-cover {
+  height: 56px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+}
+.following-cover-admin     { background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+.following-cover-dealer    { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+.following-cover-staff     { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+.following-cover-moderator { background: linear-gradient(135deg, #fefce8, #fef9c3); }
+.following-cover-customer  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+
+/* ── Avatar (overlaps cover) ── */
+.following-avatar-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  margin: -32px auto 0;
+  flex-shrink: 0;
+}
+
+.following-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+}
+
+.following-avatar {
+  position: relative;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  background: #e4e3df;
+  display: block;
+}
+
+.following-verified-badge {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  z-index: 2;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: #1e3a8a;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* ── Info block ── */
+.following-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 12px 12px;
+  text-align: center;
+}
+
+.following-name {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #1a202c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  line-height: 1.3;
+}
+
+.following-card:hover .following-name { color: #1e3a8a; }
+
+.following-handle {
+  font-size: .72rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.following-meta-line {
+  font-size: .68rem;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.following-meta-line i { font-size: .62rem; opacity: .75; }
+
+.following-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.following-role-pill,
+.following-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.following-role-admin     { background: #fef2f2; color: #b91c1c; }
+.following-role-dealer    { background: #eff6ff; color: #1d4ed8; }
+.following-role-staff     { background: #f5f3ff; color: #6d28d9; }
+.following-role-moderator { background: #fefce8; color: #a16207; }
+.following-role-customer  { background: #f0fdf4; color: #15803d; }
+
+.following-status-active    { background: #f0fdf4; color: #15803d; }
+.following-status-suspended { background: #fef2f2; color: #b91c1c; }
+.following-status-locked    { background: #fffbeb; color: #92400e; }
+.following-status-pending   { background: #eff6ff; color: #1d4ed8; }
+.following-status-inactive  { background: #f3f4f6; color: #4b5563; }
+
+/* ── Footer action ── */
+.following-action-row {
+  border-top: 1px solid #f0f0ee;
+  padding: 8px 12px;
+}
+
+.following-following-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  padding: 5px 0;
+  border-radius: 8px;
+  background: #eff6ff;
+  transition: background .15s ease;
+}
+
+.following-card:hover .following-following-btn {
+  background: #dbeafe;
+}
+
+/* ══ RESPONSIVE ══ */
+@media (min-width: 1400px) {
+  .following-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+}
+@media (max-width: 1024px) {
+  .following-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+@media (max-width: 768px) {
+  .following-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 12px 14px 16px; }
+}
+@media (max-width: 640px) {
+  .following-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
+  .following-avatar-wrap, .following-avatar { width: 54px; height: 54px; }
+  .following-name { font-size: .8rem; }
+}
+@media (max-width: 480px) {
+  .following-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 9px 10px; }
+  .following-avatar-wrap, .following-avatar { width: 48px; height: 48px; }
+  .following-meta-line, .following-handle { display: none; }
+  .following-name { font-size: .76rem; }
+  .following-badges-row { flex-direction: column; gap: 4px; }
+}
+@media (max-width: 360px) {
+  .following-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+  .following-avatar-wrap, .following-avatar { width: 44px; height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .following-card { transition: none; }
+  .following-card:hover { transform: none; }
+}
+@media (forced-colors: active) {
+  .following-card { border-color: ButtonText; }
+  .following-ring { background: Highlight; }
+}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: FOLLOWING
+═══════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: FOLLOWING
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-following" role="tabpanel">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        Following
+        <span style="font-size:.78rem;color:var(--text-muted);font-weight:600;margin-left:6px">
+          {{ followings_count }}
+        </span>
+      </h2>
+    </div>
+
+    {% if following_profiles %}
+    <div class="following-grid">
+      {% for profile in following_profiles %}
+        {% if profile.user__email_or_phone %}
+        <a href="{% url 'customer:profile_view' username=profile.user__email_or_phone %}"
+           class="following-card"
+           title="{{ profile.profile_name|default:profile.user__email_or_phone }}">
+
+          <!-- Cover strip -->
+          <div class="following-cover following-cover-{{ profile.user__role }}"></div>
+
+          <!-- Avatar (overlapping cover) -->
+          <div class="following-avatar-wrap">
+            {% if profile.is_profile_verified %}
+            <div class="following-ring"></div>
+            {% endif %}
+            <img src="{{ profile.profile_photo_url }}"
+                 alt="{{ profile.profile_name|default:profile.user__email_or_phone }}"
+                 class="following-avatar" loading="lazy">
+            {% if profile.is_profile_verified %}
+            <span class="following-verified-badge" title="Verified">
+              <i class="fa-solid fa-circle-check"></i>
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Info -->
+          <div class="following-info">
+            <span class="following-name">
+              {{ profile.profile_name|default:profile.user__email_or_phone|truncatechars:16 }}
+            </span>
+
+            {% if profile.profile_name_slug %}
+            <span class="following-handle">
+              @{{ profile.profile_name_slug|truncatechars:16 }}
+            </span>
+            {% endif %}
+
+            {% if profile.business_name %}
+            <span class="following-meta-line">
+              <i class="fa-solid fa-building"></i>
+              {{ profile.business_name|truncatechars:18 }}
+            </span>
+            {% endif %}
+
+            {% if profile.location_display %}
+            <span class="following-meta-line">
+              <i class="fa-solid fa-location-dot"></i>
+              {{ profile.location_display|truncatechars:20 }}
+            </span>
+            {% endif %}
+
+            <div class="following-badges-row">
+              <span class="following-role-pill following-role-{{ profile.user__role }}">
+                {% if profile.user__role == 'admin' %}
+                  <i class="fa-solid fa-shield-halved"></i> Admin
+                {% elif profile.user__role == 'dealer' %}
+                  <i class="fa-solid fa-briefcase"></i> Dealer
+                {% elif profile.user__role == 'staff' %}
+                  <i class="fa-solid fa-user-tie"></i> Staff
+                {% elif profile.user__role == 'moderator' %}
+                  <i class="fa-solid fa-star"></i> Moderator
+                {% else %}
+                  <i class="fa-solid fa-user"></i> Customer
+                {% endif %}
+              </span>
+
+              <span class="following-status-pill following-status-{{ profile.user__account_status }}">
+                {% if profile.user__account_status == 'active' %}
+                  <i class="fa-solid fa-circle"></i> Active
+                {% elif profile.user__account_status == 'suspended' %}
+                  <i class="fa-solid fa-ban"></i> Suspended
+                {% elif profile.user__account_status == 'locked' %}
+                  <i class="fa-solid fa-lock"></i> Locked
+                {% elif profile.user__account_status == 'pending' %}
+                  <i class="fa-solid fa-hourglass"></i> Pending
+                {% else %}
+                  <i class="fa-solid fa-circle-pause"></i> Inactive
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <!-- Action footer -->
+          <div class="following-action-row">
+            <span class="following-following-btn">
+              <i class="fa-solid fa-user-check"></i> Following
+            </span>
+          </div>
+
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fa-solid fa-user-plus"></i></div>
+      <h3 class="empty-title">Not Following Anyone</h3>
+      <p class="empty-text">Discover profiles and follow them to see their updates here.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div><!-- /#tab-following -->
+
+
+<style>
+
+
+  /* ═══ ABOUT TAB ═══ */
+  .info-blocks-wrap {
+    padding: 4px 18px 16px;
+  }
+
+  .info-section-title {
+    font-size: .7rem;
+    font-weight: 800;
+    color: #1e3a8a;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 14px 0 6px;
+    border-bottom: 2px solid #eff6ff;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .info-section-title i { font-size: .8rem; }
+
+  .info-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+    transition: all .15s;
+  }
+
+  .info-block:last-child { border-bottom: none; }
+
+  .info-block-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: #f0f2f5;
+    border: 1px solid #e4e3df;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e3a8a;
+    font-size: .95rem;
+    margin-top: 2px;
+    transition: all .2s;
+  }
+
+  .info-block:hover .info-block-icon {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .info-block-details { flex: 1; min-width: 0; }
+
+  .info-block-label {
+    font-size: .68rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin: 0 0 3px;
+  }
+
+  .info-block-value {
+    font-size: .9rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .info-block-value a { color: #1e3a8a; text-decoration: none; }
+  .info-block-value a:hover { text-decoration: underline; }
+
+  /* badges */
+  .info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+  .info-badge-green  { background: #f0fdf4; color: #16a34a; }
+  .info-badge-red    { background: #fef2f2; color: #dc2626; }
+  .info-badge-blue   { background: #eff6ff; color: #2563eb; }
+  .info-badge-amber  { background: #fefce8; color: #ca8a04; }
+  .info-badge-purple { background: #f5f3ff; color: #7c3aed; }
+  .info-badge-gray   { background: #f3f4f6; color: #6b7280; }
+
+  /* social row */
+  .social-links-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .social-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid #e4e3df;
+    background: #f8fafc;
+    color: #374151;
+    transition: all .15s;
+  }
+  .social-link-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+
+  /* progress bar */
+  .completion-bar-wrap {
+    margin-top: 5px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    height: 7px;
+    overflow: hidden;
+  }
+  .completion-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #1e3a8a, #7c3aed);
+    transition: width .4s ease;
+  }
+  .completion-label {
+    font-size: .7rem;
+    color: #718096;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* ══ RESPONSIVE ══ */
+  @media (min-width: 1400px) {
+    .info-blocks-wrap { padding: 6px 22px 18px; }
+    .info-block-icon  { width: 44px; height: 44px; font-size: 1rem; }
+    .info-block-value { font-size: .95rem; }
+    .info-block       { gap: 15px; padding: 14px 0; }
+  }
+  @media (max-width: 768px) {
+    .info-blocks-wrap { padding: 4px 14px 14px; }
+    .info-block       { gap: 11px; padding: 11px 0; }
+    .info-block-icon  { width: 38px; height: 38px; font-size: .88rem; }
+    .info-block-value { font-size: .88rem; }
+  }
+  @media (max-width: 640px) {
+    .info-blocks-wrap { padding: 4px 12px 12px; }
+    .info-block-icon  { width: 36px; height: 36px; }
+    .info-block-value { font-size: .85rem; }
+  }
+  @media (max-width: 480px) {
+    .info-blocks-wrap { padding: 2px 10px 10px; }
+    .info-block-icon  { width: 34px; height: 34px; font-size: .8rem; }
+    .info-block-value { font-size: .82rem; }
+  }
+  @media (max-width: 360px) {
+    .info-blocks-wrap { padding: 2px 8px 8px; }
+    .info-block-icon  { width: 30px; height: 30px; font-size: .75rem; }
+    .info-block-value { font-size: .78rem; }
+  }
+  @media (max-width: 320px) {
+    .info-block-icon  { width: 28px; height: 28px; font-size: .7rem; }
+    .info-block-value { font-size: .75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .info-block, .info-block-icon, .completion-bar-fill { transition: none; }
+  }
+  @media (forced-colors: active) {
+    .info-block-icon { border-color: ButtonText; }
+    .info-block      { border-bottom-color: ButtonText; }
+  }
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: ABOUT
+═══════════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-info" role="tabpanel">
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">About</h2></div>
+    <div class="info-blocks-wrap">
+
+
+      <!-- ══════════════════════════════
+           SECTION: PROFILE
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-id-card"></i> Profile</p>
+
+      <!-- Profile completion -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-circle-half-stroke"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Profile Completion</p>
+          <p class="info-block-value">{{ profile_completion }}%</p>
+          <div class="completion-bar-wrap">
+            <div class="completion-bar-fill" style="width:{{ profile_completion }}%"></div>
+          </div>
+          <span class="completion-label">
+            {% if profile_completion == 100 %}Profile is complete!
+            {% elif profile_completion >= 70 %}Almost there — fill in the remaining fields.
+            {% else %}Complete your profile to build trust with buyers.
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Account type -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-user-tag"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Account Type</p>
+          <p class="info-block-value">{{ profile_info.get_profile_type_display|default:"—" }}</p>
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Role</p>
+          <p class="info-block-value">{{ user.get_role_display }}</p>
+        </div>
+      </div>
+
+      <!-- Verification status -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Verification</p>
+          <p class="info-block-value">
+            {% if profile_info.is_profile_verified %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Verified</span>
+              {% if profile_info.verified_at %}
+                &nbsp;<span style="font-size:.78rem;color:#718096;font-weight:500">
+                  since {{ profile_info.verified_at|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-clock"></i> Not Verified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Verification level -->
+      {% if profile_info.verification_level and profile_info.verification_level != 'none' %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-medal"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Verification Level</p>
+          <p class="info-block-value">
+            {% if profile_info.verification_level == 'email' %}
+              <span class="info-badge info-badge-blue"><i class="fa-solid fa-envelope"></i> Email Verified</span>
+            {% elif profile_info.verification_level == 'phone' %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-phone"></i> Phone Verified</span>
+            {% elif profile_info.verification_level == 'id' %}
+              <span class="info-badge info-badge-purple"><i class="fa-solid fa-id-badge"></i> ID Verified</span>
+            {% elif profile_info.verification_level == 'business' %}
+              <span class="info-badge info-badge-amber"><i class="fa-solid fa-briefcase"></i> Business Verified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Tagline -->
+      {% if profile_info.profile_tagline %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-quote-left"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Tagline</p>
+          <p class="info-block-value">{{ profile_info.profile_tagline }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Engagement score -->
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#7c3aed"><i class="fa-solid fa-bolt"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Engagement Score</p>
+          <p class="info-block-value">{{ engagement_score }}</p>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════
+           SECTION: PERSONAL
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-person"></i> Personal</p>
+
+      {% if profile_info.profile_gender %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-venus-mars"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Gender</p>
+          <p class="info-block-value">{{ profile_info.get_profile_gender_display }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.show_dob and profile_info.profile_dob %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Date of Birth</p>
+          <p class="info-block-value">{{ profile_info.profile_dob|date:"M d, Y" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.profile_language %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-language"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Language</p>
+          <p class="info-block-value">{{ profile_info.profile_language }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- ══════════════════════════════
+           SECTION: ACCOUNT
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-lock"></i> Account</p>
+
+      <!-- Account status -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-toggle-on"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Account Status</p>
+          <p class="info-block-value">
+            {% if user.account_status == 'active' %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-circle"></i> Active</span>
+            {% elif user.account_status == 'suspended' %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-ban"></i> Suspended</span>
+            {% elif user.account_status == 'locked' %}
+              <span class="info-badge info-badge-amber"><i class="fa-solid fa-lock"></i> Locked</span>
+            {% elif user.account_status == 'pending' %}
+              <span class="info-badge info-badge-blue"><i class="fa-solid fa-hourglass"></i> Pending Verification</span>
+            {% else %}
+              <span class="info-badge info-badge-gray">{{ user.account_status|capfirst }}</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Email verification -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-envelope"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Email</p>
+          <p class="info-block-value">
+            {{ user.email|default:"—" }}
+            {% if user.email_verified %}
+              <span class="info-badge info-badge-green" style="margin-left:6px"><i class="fa-solid fa-check"></i> Verified</span>
+            {% else %}
+              <span class="info-badge info-badge-red" style="margin-left:6px"><i class="fa-solid fa-xmark"></i> Unverified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Phone verification -->
+      {% if user.phone %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-phone"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Phone</p>
+          <p class="info-block-value">
+            {{ user.phone }}
+            {% if user.phone_verified %}
+              <span class="info-badge info-badge-green" style="margin-left:6px"><i class="fa-solid fa-check"></i> Verified</span>
+            {% else %}
+              <span class="info-badge info-badge-red" style="margin-left:6px"><i class="fa-solid fa-xmark"></i> Unverified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- MFA -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-key"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Two-Factor Authentication</p>
+          <p class="info-block-value">
+            {% if user.mfa_enabled %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-shield-check"></i> Enabled</span>
+              {% if user.mfa_method %}
+                &nbsp;<span style="font-size:.78rem;color:#718096;font-weight:500">({{ user.mfa_method|upper }})</span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-shield"></i> Disabled</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Country / currency -->
+      {% if user.country %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-flag"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Country</p>
+          <p class="info-block-value">{{ user.country }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-coins"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Currency</p>
+          <p class="info-block-value">{{ user.currency }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Timezone</p>
+          <p class="info-block-value">{{ user.timezone }}</p>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════
+           SECTION: LOCATION
+      ══════════════════════════════ -->
+      {% if profile_info.show_location and profile_info.location_display %}
+      <p class="info-section-title"><i class="fa-solid fa-location-dot"></i> Location</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-map-pin"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Location</p>
+          <p class="info-block-value">{{ profile_info.location_display }}</p>
+        </div>
+      </div>
+
+      {% if profile_info.profile_address %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-house"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Address</p>
+          <p class="info-block-value">{{ profile_info.profile_address }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.profile_postal_code %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-mailbox"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Postal Code</p>
+          <p class="info-block-value">{{ profile_info.profile_postal_code }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+
+      <!-- ══════════════════════════════
+           SECTION: BUSINESS
+      ══════════════════════════════ -->
+      {% if profile_info.profile_type == 'business' or profile_info.profile_type == 'professional' %}
+      <p class="info-section-title"><i class="fa-solid fa-briefcase"></i> Business</p>
+
+      {% if profile_info.business_name %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-building"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Business Name</p>
+          <p class="info-block-value">{{ profile_info.business_name }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_type %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-industry"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Business Type</p>
+          <p class="info-block-value">{{ profile_info.business_type }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_registration %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-file-certificate"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Registration No.</p>
+          <p class="info-block-value">{{ profile_info.business_registration }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_tax_id %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-receipt"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Tax ID</p>
+          <p class="info-block-value">{{ profile_info.business_tax_id }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_email %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Business Email</p>
+          <p class="info-block-value">
+            <a href="mailto:{{ profile_info.business_email }}">{{ profile_info.business_email }}</a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_phone %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-phone-office"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Business Phone</p>
+          <p class="info-block-value">
+            <a href="tel:{{ profile_info.business_phone }}">{{ profile_info.business_phone }}</a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_website %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-globe"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Website</p>
+          <p class="info-block-value">
+            <a href="{{ profile_info.business_website }}" target="_blank" rel="noopener">
+              {{ profile_info.business_website }}
+            </a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.business_description %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-align-left"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Description</p>
+          <p class="info-block-value" style="font-weight:500;color:#374151">
+            {{ profile_info.business_description }}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+
+      <!-- ══════════════════════════════
+           SECTION: SOCIAL MEDIA
+      ══════════════════════════════ -->
+      {% if profile_info.social_facebook or profile_info.social_twitter or profile_info.social_instagram or profile_info.social_linkedin or profile_info.social_youtube or profile_info.social_tiktok or profile_info.social_whatsapp %}
+      <p class="info-section-title"><i class="fa-solid fa-share-nodes"></i> Social Media</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-link"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Links</p>
+          <div class="social-links-row">
+            {% if profile_info.social_facebook %}
+            <a href="{{ profile_info.social_facebook }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-facebook" style="color:#1877f2"></i> Facebook
+            </a>
+            {% endif %}
+            {% if profile_info.social_twitter %}
+            <a href="{{ profile_info.social_twitter }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-x-twitter"></i> X / Twitter
+            </a>
+            {% endif %}
+            {% if profile_info.social_instagram %}
+            <a href="{{ profile_info.social_instagram }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-instagram" style="color:#e1306c"></i> Instagram
+            </a>
+            {% endif %}
+            {% if profile_info.social_linkedin %}
+            <a href="{{ profile_info.social_linkedin }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-linkedin" style="color:#0a66c2"></i> LinkedIn
+            </a>
+            {% endif %}
+            {% if profile_info.social_youtube %}
+            <a href="{{ profile_info.social_youtube }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube
+            </a>
+            {% endif %}
+            {% if profile_info.social_tiktok %}
+            <a href="{{ profile_info.social_tiktok }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-tiktok"></i> TikTok
+            </a>
+            {% endif %}
+            {% if profile_info.social_whatsapp %}
+            <a href="https://wa.me/{{ profile_info.social_whatsapp }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-whatsapp" style="color:#25d366"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- ══════════════════════════════
+           SECTION: SELLER STATS
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-chart-line"></i> Seller Stats</p>
+
+      {% if ratings_received_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-star"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Seller Rating</p>
+          <p class="info-block-value">
+            {{ avg_rating_received }}★
+            <span style="font-size:.78rem;color:#718096;font-weight:500">
+              from {{ ratings_received_count }} review{{ ratings_received_count|pluralize }}
+            </span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Products Listed</p>
+          <p class="info-block-value">
+            {{ products_listed_count }}
+            <span style="font-size:.78rem;color:#718096;font-weight:500">
+              ({{ active_products_count }} active)
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {% if featured_products_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-certificate"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Featured Products</p>
+          <p class="info-block-value">{{ featured_products_count }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-eye"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Total Product Views</p>
+          <p class="info-block-value">{{ total_product_views }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-tag"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Brands</p>
+          <p class="info-block-value">{{ brands_count }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Categories</p>
+          <p class="info-block-value">{{ categories_count }}</p>
+        </div>
+      </div>
+
+      {% if out_of_stock_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#dc2626"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Out of Stock</p>
+          <p class="info-block-value">
+            <span class="info-badge info-badge-red">{{ out_of_stock_count }} product{{ out_of_stock_count|pluralize }}</span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if low_stock_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Low Stock</p>
+          <p class="info-block-value">
+            <span class="info-badge info-badge-amber">{{ low_stock_count }} product{{ low_stock_count|pluralize }}</span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- ══════════════════════════════
+           SECTION: GDPR / PRIVACY
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-user-shield"></i> Privacy & Consent</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-file-contract"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Terms Accepted</p>
+          <p class="info-block-value">
+            {% if user.terms_accepted %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Yes</span>
+              {% if user.terms_accepted_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.terms_accepted_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> No</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-lock-open"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Privacy Policy Accepted</p>
+          <p class="info-block-value">
+            {% if user.privacy_accepted %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Yes</span>
+              {% if user.privacy_accepted_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.privacy_accepted_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> No</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-bullhorn"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Marketing Consent</p>
+          <p class="info-block-value">
+            {% if user.marketing_consent %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Opted In</span>
+              {% if user.marketing_consent_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.marketing_consent_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-xmark"></i> Opted Out</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-database"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Data Processing Consent</p>
+          <p class="info-block-value">
+            {% if user.data_processing_consent %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Granted</span>
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> Revoked</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+
+      <!-- ══════════════════════════════
+           SECTION: TIMESTAMPS
+      ══════════════════════════════ -->
+      <p class="info-section-title"><i class="fa-solid fa-clock"></i> Timeline</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Member Since</p>
+          <p class="info-block-value">{{ user.date_joined|date:"M d, Y" }}</p>
+        </div>
+      </div>
+
+      {% if user.last_login %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-right-to-bracket"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Last Login</p>
+          <p class="info-block-value">{{ user.last_login|date:"M d, Y · H:i" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if user.password_changed_at %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-key"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Password Last Changed</p>
+          <p class="info-block-value">{{ user.password_changed_at|date:"M d, Y" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-rotate"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Profile Last Updated</p>
+          <p class="info-block-value">{{ profile_info.profile_updated_time|date:"M d, Y · H:i" }}</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /#tab-info -->
+</main>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     15) PAGE SCRIPTS
+═══════════════════════════════════════════════════════════════ -->
+<script>
+
+/* ── Tab Switching ── */
+const tabBtns    = document.querySelectorAll('.tab-btn');
+const tabPanels  = document.querySelectorAll('.tab-panel');
+const bottomBtns = document.querySelectorAll('.bottom-bar-btn[data-tab]');
+
+/* ── Entry-animation observer ──
+   Declared at top level (not inside DOMContentLoaded) so switchTab()
+   can also reach it to release cards from observation once a tab
+   reveals them. */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity   = '1';
+      e.target.style.transform = 'translateY(0)';
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+function switchTab(targetId) {
+  tabBtns.forEach(b => {
+    const isActive = b.dataset.tab === targetId;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  tabPanels.forEach(p => {
+    p.classList.toggle('active', p.id === `tab-${targetId}`);
+  });
+
+  // Force any cards in the newly active panel to be visible right away.
+  // They may have been assigned opacity:0 + observer.observe() at page
+  // load while their panel was hidden (display:none), and a tab switch
+  // alone doesn't trigger a new IntersectionObserver check — only a
+  // scroll/resize event does. Without this, content stays invisible
+  // until the user happens to scroll.
+  const activePanel = document.getElementById(`tab-${targetId}`);
+  if (activePanel) {
+    activePanel.querySelectorAll('.card').forEach(card => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+      observer.unobserve(card);
+    });
+  }
+
+  bottomBtns.forEach(b => {
+    b.classList.toggle('active-tab-btn', b.dataset.tab === targetId);
+  });
+  const activeBtn = document.querySelector(`.tab-btn[data-tab="${targetId}"]`);
+  if (activeBtn) {
+    activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+  if (targetId === 'activity') animateDeviceBars();
+}
+
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+bottomBtns.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+
+
+
+/* ── Device Bars ── */
+function animateDeviceBars() {
+  ['devDesktop', 'devMobile'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const w = el.dataset.w || '0%';
+    el.style.width = '0%';
+    setTimeout(() => { el.style.width = w; }, 100 + i * 80);
+  });
+}
+
+
+/* ── Engagement Bar ── */
+function animateEngBar() {
+  const el = document.getElementById('engBarFill');
+  if (!el) return;
+  const w = el.dataset.w || '0%';
+  setTimeout(() => { el.style.width = w; }, 300);
+}
+
+
+/* ── Entry Animations ── */
+document.addEventListener('DOMContentLoaded', () => {
+
+  animateCompletionCircle();
+  animateEngBar();
+
+  const initialActive = document.querySelector('.tab-btn.active');
+  if (initialActive) {
+    initialActive.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' });
+  }
+
+  document.querySelectorAll('.pov-stat, .s-stat, .a-stat').forEach((el, i) => {
+    el.style.opacity   = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      el.style.transition = 'opacity .35s ease, transform .35s ease';
+      el.style.opacity    = '1';
+      el.style.transform  = 'translateY(0)';
+    }, 80 + i * 40);
+  });
+
+  // NEW — skip cards already in the viewport
+  document.querySelectorAll('.card').forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+    if (alreadyVisible) {
+      // already in view — show immediately, no animation
+      card.style.opacity   = '1';
+      card.style.transform = 'translateY(0)';
+    } else {
+      // below the fold — animate on scroll
+      card.style.opacity    = '0';
+      card.style.transform  = 'translateY(12px)';
+      card.style.transition = 'opacity .4s ease, transform .4s ease';
+      observer.observe(card);
+    }
+  });
+
+  
+});
+
+</script>
+
+</body>
+</html>

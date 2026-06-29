@@ -1,0 +1,790 @@
+{% include "base.html" %}
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'customer/css/profile_edit.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+    <title>Edit Profile — {{ profile_info.profile_name|default:user.email_or_phone }} | PIELAM</title>
+
+    
+    <style>
+    /* ============================================================
+       DESIGN SYSTEM TOKENS
+    ============================================================ */
+    *, *::before, *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --ink:          #0f0f0f;
+        --ink-2:        #3a3a3a;
+        --ink-3:        #6b6b6b;
+        --ink-4:        #9b9b9b;
+        --surface:      #ffffff;
+        --surface-2:    #f5f5f3;
+        --surface-3:    #eeede9;
+        --border:       #e4e3df;
+        --border-2:     #d0cfc9;
+        --accent:       #c8102e;
+        --accent-2:     #a00d24;
+        --gold:         #b8860b;
+        --gold-2:       #8b6508;
+        --green:        #1a6b3a;
+        --green-bg:     #edf7f1;
+        --warn:         #92400e;
+        --warn-bg:      #fffbeb;
+        --blue:         #1e3a8a;
+        --blue-light:   #3b82f6;
+
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --primary-light:    #1976d2;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-secondary:     #f7fafc;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
+        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
+        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
+        --font-display: 'DM Serif Display', 'Playfair Display', serif;
+        --font-body:    'DM Sans', 'Outfit', sans-serif;
+
+        --nav-h:    64px;
+        --r-sm:     8px;
+        --r-md:     14px;
+        --r-lg:     20px;
+        --r-xl:     28px;
+        --ease:     cubic-bezier(.4,0,.2,1);
+        --transition-fast: .15s ease;
+        --transition-base: .25s ease;
+        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
+        --bottom-bar-height: 68px;
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+        font-family: var(--font-body);
+        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+        color: var(--ink);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: clip;
+        padding-bottom: var(--bottom-bar-height);
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    
+
+    @media (max-width: 768px) {
+        :root { --nav-h: 56px; }
+        .product-detail-wrapper { padding: 16px 14px 100px; }
+        .product-container { padding: 20px; border-radius: var(--r-lg); }
+        .product-title { font-size: 1.5rem; }
+        
+        .original-price {  font-size: 1.2rem; }
+        .offer-price { font-size: 1.8rem; }
+        .order-section { display: none; }
+        .mob-order-bar { display: flex; }
+        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .related-products-section, .dealer-products-section { padding: 20px; }
+        .tab-panel { padding: 20px 0 0; }
+        .dealer-header { flex-direction: column; text-align: center; }
+        .dealer-stats { grid-template-columns: 1fr; }
+        .dealer-details-grid { grid-template-columns: 1fr; }
+        .contact-buttons { grid-template-columns: 1fr; }
+    
+    }
+
+    @media (max-width: 480px) {
+        .product-container { padding: 14px; }
+        .product-title { font-size: 1.3rem; }
+        .trust-row { gap: 5px; }
+        .trust-item span { font-size: .65rem; }
+        .products-grid { grid-template-columns: repeat(2,1fr); }
+        .spec-row { grid-template-columns: 40% 60%; }
+    }
+
+    @media print {
+    
+        body { padding-bottom: 0; background: white; }
+        body::before { display: none; }
+        .product-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+        </style>
+        
+</head>
+
+<body>
+  
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-container">
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <div class="header-text">
+                <h1 class="page-title">
+                    <span class="title-accent">Edit</span> Profile
+                </h1>
+                <p class="page-subtitle">Update your personal information and settings</p>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+
+<!-- Main Content -->
+<div class="profile-content">
+    <div class="content-container">
+
+        
+
+        <!-- Main Form Area -->
+        <main class="main-content" role="main">
+
+            <!-- Django Messages -->
+            {% if messages %}
+            <section class="messages-section">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <div class="alert-icon">
+                        {% if message.tags == 'success' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info"></i>
+                        {% endif %}
+                    </div>
+                    <div class="alert-content"><p>{{ message }}</p></div>
+                    <button class="alert-close" onclick="this.parentElement.style.display='none'" aria-label="Dismiss">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data" class="edit-form" novalidate>
+                {% csrf_token %}
+
+                <!-- ================================================
+                     SECTION 1 — PHOTOS
+                ================================================ -->
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Profile</span> Photos
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <!-- Profile Photo -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    <i class="fa-solid fa-image"></i>
+                                    Profile Photo
+                                </label>
+                                {% if profile_info.profile_photo %}
+                                <div class="image-preview-container">
+                                    <div class="image-preview">
+                                        <img src="{{ profile_info.get_profile_photo_url }}"
+                                             alt="Current Profile Photo"
+                                             class="preview-image profile-photo-preview">
+                                        <div class="image-overlay"><i class="fa-solid fa-eye"></i></div>
+                                    </div>
+                                    <div class="image-info">
+                                        <p class="image-label">Current Profile Photo</p>
+                                        <p class="image-hint">Upload a new image to replace</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="file-input-wrapper">
+                                    <input type="file" name="profile_photo" id="profile_photo" accept="image/*" class="file-input">
+                                    <label for="profile_photo" class="file-input-label">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Choose Profile Photo</span>
+                                    </label>
+                                </div>
+                                <span class="form-hint">Recommended: Square image, at least 400×400px</span>
+                            </div>
+
+                            <!-- Cover Photo -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    <i class="fa-solid fa-panorama"></i>
+                                    Cover Photo
+                                </label>
+                                {% if profile_info.profile_cover_photo %}
+                                <div class="image-preview-container">
+                                    <div class="image-preview cover">
+                                        <img src="{{ profile_info.get_profile_cover_photo_url }}"
+                                             alt="Current Cover Photo"
+                                             class="preview-image cover-photo-preview">
+                                        <div class="image-overlay"><i class="fa-solid fa-eye"></i></div>
+                                    </div>
+                                    <div class="image-info">
+                                        <p class="image-label">Current Cover Photo</p>
+                                        <p class="image-hint">Upload a new image to replace</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="file-input-wrapper">
+                                    <input type="file" name="profile_cover_photo" id="profile_cover_photo" accept="image/*" class="file-input">
+                                    <label for="profile_cover_photo" class="file-input-label">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Choose Cover Photo</span>
+                                    </label>
+                                </div>
+                                <span class="form-hint">Recommended: Wide image, at least 1200×400px</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================
+                     SECTION 2 — BASIC INFO
+                ================================================ -->
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Basic</span> Information
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <!-- Profile Name -->
+                            <div class="form-group">
+                                <label for="profile_name" class="form-label">
+                                    <i class="fa-solid fa-user"></i>
+                                    Display Name <span class="required">*</span>
+                                </label>
+                                <input type="text" name="profile_name" id="profile_name"
+                                       value="{{ profile_info.profile_name|default:'' }}"
+                                       class="form-input" required
+                                       placeholder="Your public display name">
+                            </div>
+
+                            <!-- Tagline -->
+                            <div class="form-group">
+                                <label for="profile_tagline" class="form-label">
+                                    <i class="fa-solid fa-quote-left"></i>
+                                    Tagline
+                                </label>
+                                <input type="text" name="profile_tagline" id="profile_tagline"
+                                       value="{{ profile_info.profile_tagline|default:'' }}"
+                                       class="form-input"
+                                       placeholder="A short headline about you">
+                                <span class="form-hint">Max 100 characters</span>
+                            </div>
+
+                            <!-- Bio -->
+                            <div class="form-group full-width">
+                                <label for="profile_bio" class="form-label">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    Bio
+                                </label>
+                                <textarea name="profile_bio" id="profile_bio" rows="4"
+                                          class="form-textarea"
+                                          placeholder="Tell the community about yourself...">{{ profile_info.profile_bio|default:'' }}</textarea>
+                                <span class="form-hint">Max 500 characters</span>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="form-group">
+                                <label for="profile_gender" class="form-label">
+                                    <i class="fa-solid fa-venus-mars"></i>
+                                    Gender
+                                </label>
+                                <select name="profile_gender" id="profile_gender" class="form-select">
+                                    <option value="">— Select —</option>
+                                    {% for value, label in gender_choices %}
+                                        <option value="{{ value }}" {% if profile_info.profile_gender == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Date of Birth -->
+                            <div class="form-group">
+                                <label for="profile_dob" class="form-label">
+                                    <i class="fa-solid fa-calendar-days"></i>
+                                    Date of Birth
+                                </label>
+                                <input type="date" name="profile_dob" id="profile_dob"
+                                       value="{{ profile_info.profile_dob|date:'Y-m-d'|default:'' }}"
+                                       class="form-input">
+                            </div>
+
+                            <!-- Language -->
+                            <div class="form-group">
+                                <label for="profile_language" class="form-label">
+                                    <i class="fa-solid fa-language"></i>
+                                    Language
+                                </label>
+                                <select name="profile_language" id="profile_language" class="form-select">
+                                    <option value="">— Select —</option>
+                                    {% for value, label in language_choices %}
+                                        <option value="{{ value }}" {% if profile_info.profile_language == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="form-group">
+                                <label for="profile_phone" class="form-label">
+                                    <i class="fa-solid fa-phone"></i>
+                                    Phone Number
+                                </label>
+                                <input type="tel" name="profile_phone" id="profile_phone"
+                                       value="{{ profile_info.profile_phone|default:'' }}"
+                                       class="form-input"
+                                       placeholder="+1 234 567 8900">
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================
+                     SECTION 3 — LOCATION
+                ================================================ -->
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Location</span> & Address
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <div class="form-group">
+                                <label for="profile_country" class="form-label">
+                                    <i class="fa-solid fa-flag"></i>
+                                    Country <span class="form-hint-inline">(ISO code, e.g. US)</span>
+                                </label>
+                                <input type="text" name="profile_country" id="profile_country"
+                                       value="{{ profile_info.profile_country|default:'' }}"
+                                       class="form-input" maxlength="2"
+                                       placeholder="US">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile_state" class="form-label">
+                                    <i class="fa-solid fa-map"></i>
+                                    State / Province
+                                </label>
+                                <input type="text" name="profile_state" id="profile_state"
+                                       value="{{ profile_info.profile_state|default:'' }}"
+                                       class="form-input"
+                                       placeholder="California">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile_city" class="form-label">
+                                    <i class="fa-solid fa-city"></i>
+                                    City
+                                </label>
+                                <input type="text" name="profile_city" id="profile_city"
+                                       value="{{ profile_info.profile_city|default:'' }}"
+                                       class="form-input"
+                                       placeholder="Los Angeles">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile_postal_code" class="form-label">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    Postal Code
+                                </label>
+                                <input type="text" name="profile_postal_code" id="profile_postal_code"
+                                       value="{{ profile_info.profile_postal_code|default:'' }}"
+                                       class="form-input"
+                                       placeholder="90001">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="profile_address" class="form-label">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                    Full Address
+                                </label>
+                                <textarea name="profile_address" id="profile_address" rows="3"
+                                          class="form-textarea"
+                                          placeholder="Street address...">{{ profile_info.profile_address|default:'' }}</textarea>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================
+                     SECTION 4 — BUSINESS INFO (dealers only)
+                ================================================ -->
+                {% if profile_info.is_business or user.is_dealer %}
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Business</span> Information
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <div class="form-group">
+                                <label for="business_name" class="form-label">
+                                    <i class="fa-solid fa-building"></i>
+                                    Business Name
+                                </label>
+                                <input type="text" name="business_name" id="business_name"
+                                       value="{{ profile_info.business_name|default:'' }}"
+                                       class="form-input"
+                                       placeholder="Acme Electronics Ltd.">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_type" class="form-label">
+                                    <i class="fa-solid fa-industry"></i>
+                                    Business Type
+                                </label>
+                                <input type="text" name="business_type" id="business_type"
+                                       value="{{ profile_info.business_type|default:'' }}"
+                                       class="form-input"
+                                       placeholder="Retail, Wholesale, etc.">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_email" class="form-label">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    Business Email
+                                </label>
+                                <input type="email" name="business_email" id="business_email"
+                                       value="{{ profile_info.business_email|default:'' }}"
+                                       class="form-input"
+                                       placeholder="contact@business.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_phone" class="form-label">
+                                    <i class="fa-solid fa-phone"></i>
+                                    Business Phone
+                                </label>
+                                <input type="tel" name="business_phone" id="business_phone"
+                                       value="{{ profile_info.business_phone|default:'' }}"
+                                       class="form-input"
+                                       placeholder="+1 234 567 8900">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="business_website" class="form-label">
+                                    <i class="fa-solid fa-globe"></i>
+                                    Website
+                                </label>
+                                <input type="url" name="business_website" id="business_website"
+                                       value="{{ profile_info.business_website|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://www.yourbusiness.com">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="business_description" class="form-label">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    Business Description
+                                </label>
+                                <textarea name="business_description" id="business_description" rows="4"
+                                          class="form-textarea"
+                                          placeholder="Describe your business and services...">{{ profile_info.business_description|default:'' }}</textarea>
+                                <span class="form-hint">Max 1000 characters</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+
+                <!-- ================================================
+                     SECTION 5 — SOCIAL LINKS
+                ================================================ -->
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Social</span> Links
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <div class="form-group">
+                                <label for="social_facebook" class="form-label">
+                                    <i class="fa-brands fa-facebook"></i>
+                                    Facebook
+                                </label>
+                                <input type="url" name="social_facebook" id="social_facebook"
+                                       value="{{ profile_info.social_facebook|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://facebook.com/yourpage">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_twitter" class="form-label">
+                                    <i class="fa-brands fa-x-twitter"></i>
+                                    Twitter / X
+                                </label>
+                                <input type="url" name="social_twitter" id="social_twitter"
+                                       value="{{ profile_info.social_twitter|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://x.com/yourhandle">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_instagram" class="form-label">
+                                    <i class="fa-brands fa-instagram"></i>
+                                    Instagram
+                                </label>
+                                <input type="url" name="social_instagram" id="social_instagram"
+                                       value="{{ profile_info.social_instagram|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://instagram.com/yourhandle">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_linkedin" class="form-label">
+                                    <i class="fa-brands fa-linkedin"></i>
+                                    LinkedIn
+                                </label>
+                                <input type="url" name="social_linkedin" id="social_linkedin"
+                                       value="{{ profile_info.social_linkedin|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://linkedin.com/in/yourprofile">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_youtube" class="form-label">
+                                    <i class="fa-brands fa-youtube"></i>
+                                    YouTube
+                                </label>
+                                <input type="url" name="social_youtube" id="social_youtube"
+                                       value="{{ profile_info.social_youtube|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://youtube.com/@yourchannel">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_tiktok" class="form-label">
+                                    <i class="fa-brands fa-tiktok"></i>
+                                    TikTok
+                                </label>
+                                <input type="url" name="social_tiktok" id="social_tiktok"
+                                       value="{{ profile_info.social_tiktok|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://tiktok.com/@yourhandle">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="social_whatsapp" class="form-label">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    WhatsApp
+                                </label>
+                                <input type="tel" name="social_whatsapp" id="social_whatsapp"
+                                       value="{{ profile_info.social_whatsapp|default:'' }}"
+                                       class="form-input"
+                                       placeholder="+1 234 567 8900">
+                                <span class="form-hint">International format with country code</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================
+                     SECTION 6 — PRIVACY SETTINGS
+                ================================================ -->
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Privacy</span> Settings
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="toggle-grid">
+
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">Show Email</span>
+                                        <span class="toggle-hint">Display your email on public profile</span>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="show_email" {% if profile_info.show_email %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">Show Phone</span>
+                                        <span class="toggle-hint">Display your phone number publicly</span>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="show_phone" {% if profile_info.show_phone %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">Show Date of Birth</span>
+                                        <span class="toggle-hint">Display your DOB on your profile</span>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="show_dob" {% if profile_info.show_dob %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">Show Age</span>
+                                        <span class="toggle-hint">Display your age on your profile</span>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="show_age" {% if profile_info.show_age %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">Show Location</span>
+                                        <span class="toggle-hint">Display your city and country publicly</span>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" name="show_location" {% if profile_info.show_location %}checked{% endif %}>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================================================
+                     FORM ACTIONS
+                ================================================ -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Changes</span>
+                    </button>
+                    <a href="{% url 'customer:profile' %}" class="btn-secondary">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Cancel</span>
+                    </a>
+                </div>
+
+            </form>
+        </main>
+
+    </div>
+</div>
+
+
+
+<script>
+    // Back to Top
+    const backToTop = document.querySelector('.back-to-top');
+    window.addEventListener('scroll', () => {
+        backToTop.style.display = window.pageYOffset > 300 ? 'flex' : 'none';
+    });
+    backToTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Live image preview helper
+    function previewImage(inputId, previewClass) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.addEventListener('change', function () {
+            if (!this.files || !this.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const preview = document.querySelector(previewClass);
+                if (preview) preview.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        });
+    }
+
+    previewImage('profile_photo', '.profile-photo-preview');
+    previewImage('profile_cover_photo', '.cover-photo-preview');
+
+    // Live character counter for bio and tagline
+    function charCounter(inputId, max) {
+        const el = document.getElementById(inputId);
+        if (!el) return;
+        const hint = el.nextElementSibling;
+        el.addEventListener('input', () => {
+            const remaining = max - el.value.length;
+            if (hint) hint.textContent = `${el.value.length} / ${max} characters`;
+            el.style.borderColor = remaining < 20 ? 'var(--danger-crimson)' : '';
+        });
+    }
+
+    charCounter('profile_bio', 500);
+    charCounter('profile_tagline', 100);
+    charCounter('business_description', 1000);
+</script>
+
+</body>
+</html>

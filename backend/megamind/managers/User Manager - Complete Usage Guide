@@ -1,0 +1,597 @@
+# # User Manager - Complete Usage Guide
+
+# ## Overview
+
+# The `UserManager` provides a comprehensive API for managing users with powerful filtering, creation, and bulk operations.
+
+# ## Basic Usage
+
+# ```python
+# from django.contrib.auth import get_user_model
+
+# User = get_user_model()
+# ```
+
+# ---
+
+# ## User Creation
+
+# ### Create Regular User
+
+# ```python
+# # Create user with email
+# user = User.objects.create_user(
+#     email_or_phone='user@example.com',
+#     password='securepass123'
+# )
+
+# # Create user with phone
+# user = User.objects.create_user(
+#     email_or_phone='+12025551234',
+#     password='securepass123'
+# )
+
+# # Create user with additional fields
+# user = User.objects.create_user(
+#     email_or_phone='user@example.com',
+#     password='securepass123',
+#     user_timezone='America/New_York'
+# )
+# ```
+
+# ### Create Superuser
+
+# ```python
+# # Create admin user
+# admin = User.objects.create_superuser(
+#     email_or_phone='admin@example.com',
+#     password='adminpass123'
+# )
+
+# # Automatically sets:
+# # - is_staff=True
+# # - is_superuser=True
+# # - role='admin'
+# ```
+
+# ---
+
+# ## Filtering Methods
+
+# ### Active/Inactive Users
+
+# ```python
+# # Get all active users
+# active_users = User.objects.active()
+
+# # Get inactive users
+# inactive_users = User.objects.inactive()
+
+# # Get non-deleted users (regardless of active status)
+# all_users = User.objects.not_deleted()
+
+# # Get deleted users
+# deleted_users = User.objects.deleted()
+# ```
+
+# ### Verification Status
+
+# ```python
+# # Get verified users
+# verified = User.objects.verified()
+
+# # Get unverified users
+# unverified = User.objects.unverified()
+
+# # Get verified email users
+# verified_emails = User.objects.email_users().verified()
+# ```
+
+# ### By Role
+
+# ```python
+# # Get admin users
+# admins = User.objects.admins()
+
+# # Get regular users
+# regulars = User.objects.regular_users()
+
+# # Get by specific role
+# role_users = User.objects.by_role('admin')
+# ```
+
+# ### Account Lock Status
+
+# ```python
+# # Get currently locked accounts
+# locked = User.objects.locked()
+
+# # Get unlocked accounts
+# unlocked = User.objects.unlocked()
+
+# # Get active, unlocked users
+# active_unlocked = User.objects.active().unlocked()
+# ```
+
+# ### By Identity Type
+
+# ```python
+# # Get users who registered with email
+# email_users = User.objects.email_users()
+
+# # Get users who registered with phone
+# phone_users = User.objects.phone_users()
+# ```
+
+# ### By Date
+
+# ```python
+# from datetime import datetime, timedelta
+# from django.utils import timezone
+
+# # Users created in last 30 days
+# recent = User.objects.created_after(
+#     timezone.now() - timedelta(days=30)
+# )
+
+# # Users created before a date
+# old_users = User.objects.created_before(
+#     datetime(2024, 1, 1)
+# )
+
+# # Users who logged in recently
+# active_users = User.objects.last_login_after(
+#     timezone.now() - timedelta(days=7)
+# )
+
+# # Users inactive for 90 days
+# inactive = User.objects.inactive_for_days(90)
+# ```
+
+# ---
+
+# ## User Lookup
+
+# ### Find Specific Users
+
+# ```python
+# # Get user by email
+# user = User.objects.get_by_email('user@example.com')
+
+# # Get user by phone
+# user = User.objects.get_by_phone('+12025551234')
+
+# # Get user by email or phone (primary identifier)
+# user = User.objects.get_by_email_or_phone('user@example.com')
+
+# # Check if user exists
+# exists = User.objects.exists_by_email_or_phone('user@example.com')
+# if exists:
+#     print("User already registered")
+# ```
+
+# ---
+
+# ## Chain Filtering
+
+# ```python
+# # Combine multiple filters
+# active_verified_admins = (
+#     User.objects
+#     .active()
+#     .verified()
+#     .admins()
+# )
+
+# # Active email users created in last month
+# recent_email_users = (
+#     User.objects
+#     .active()
+#     .email_users()
+#     .created_after(timezone.now() - timedelta(days=30))
+# )
+
+# # Unverified users older than 7 days
+# old_unverified = (
+#     User.objects
+#     .unverified()
+#     .created_before(timezone.now() - timedelta(days=7))
+# )
+# ```
+
+# ---
+
+# ## Bulk Operations
+
+# ### Bulk Activate/Deactivate
+
+# ```python
+# # Activate multiple users
+# user_ids = [uuid1, uuid2, uuid3]
+# count = User.objects.bulk_activate(user_ids)
+# print(f"Activated {count} users")
+
+# # Deactivate multiple users
+# count = User.objects.bulk_deactivate(user_ids)
+# print(f"Deactivated {count} users")
+# ```
+
+# ### Bulk Soft Delete
+
+# ```python
+# # Soft delete multiple users
+# user_ids = [uuid1, uuid2, uuid3]
+# count = User.objects.bulk_soft_delete(
+#     user_ids, 
+#     reason="Terms of service violation"
+# )
+# print(f"Deleted {count} users")
+# ```
+
+# ### Bulk Restore
+
+# ```python
+# # Restore soft-deleted users
+# count = User.objects.bulk_restore(user_ids)
+# print(f"Restored {count} users")
+# ```
+
+# ---
+
+# ## Statistics
+
+# ### Count by Role
+
+# ```python
+# stats = User.objects.count_by_role()
+# # Output: {'admin': 5, 'user': 195}
+
+# print(f"Admins: {stats.get('admin', 0)}")
+# print(f"Users: {stats.get('user', 0)}")
+# ```
+
+# ### Count by Identity Type
+
+# ```python
+# stats = User.objects.count_by_identity_type()
+# # Output: {'email': 150, 'phone': 50}
+
+# print(f"Email users: {stats.get('email', 0)}")
+# print(f"Phone users: {stats.get('phone', 0)}")
+# ```
+
+# ### Registration Statistics
+
+# ```python
+# # Get registration stats for last 30 days
+# stats = User.objects.registration_stats(days=30)
+
+# print(f"Total registrations: {stats['total']}")
+# print("Registrations by date:")
+# for item in stats['by_date']:
+#     print(f"  {item['date']}: {item['count']}")
+# ```
+
+# ### Verification Rate
+
+# ```python
+# stats = User.objects.verification_rate()
+
+# print(f"Total users: {stats['total']}")
+# print(f"Verified: {stats['verified']}")
+# print(f"Unverified: {stats['unverified']}")
+# print(f"Verification rate: {stats['rate']:.2f}%")
+# ```
+
+# ---
+
+# ## Cleanup Operations
+
+# ### Cleanup Unverified Users
+
+# ```python
+# # Soft delete unverified users older than 30 days
+# count = User.objects.cleanup_unverified(days=30)
+# print(f"Cleaned up {count} unverified users")
+# ```
+
+# ### Cleanup Inactive Users
+
+# ```python
+# # Soft delete users inactive for 1 year
+# count = User.objects.cleanup_inactive(days=365)
+# print(f"Cleaned up {count} inactive users")
+# ```
+
+# ### Permanently Delete Soft-Deleted Users
+
+# ```python
+# # WARNING: Irreversible!
+# # Permanently delete users soft-deleted 90+ days ago
+# count = User.objects.permanently_delete_soft_deleted(days=90)
+# print(f"Permanently deleted {count} users")
+# ```
+
+# ---
+
+# ## Real-World Examples
+
+# ### User Registration Flow
+
+# ```python
+# def register_user(identifier, password):
+#     """Register a new user"""
+    
+#     # Check if user already exists
+#     if User.objects.exists_by_email_or_phone(identifier):
+#         raise ValueError("User already exists")
+    
+#     # Create user
+#     user = User.objects.create_user(
+#         email_or_phone=identifier,
+#         password=password
+#     )
+    
+#     # Send verification
+#     if user.is_email_user:
+#         send_email_verification(user)
+#     else:
+#         send_sms_verification(user)
+    
+#     return user
+# ```
+
+# ### Admin Dashboard Stats
+
+# ```python
+# def get_dashboard_stats():
+#     """Get statistics for admin dashboard"""
+    
+#     return {
+#         'total_users': User.objects.count(),
+#         'active_users': User.objects.active().count(),
+#         'new_users_today': User.objects.created_after(
+#             timezone.now().replace(hour=0, minute=0, second=0)
+#         ).count(),
+#         'verification_rate': User.objects.verification_rate()['rate'],
+#         'locked_accounts': User.objects.locked().count(),
+#         'by_role': User.objects.count_by_role(),
+#         'by_identity': User.objects.count_by_identity_type(),
+#     }
+# ```
+
+# ### Batch User Management
+
+# ```python
+# def deactivate_inactive_users(days=90):
+#     """Deactivate users who haven't logged in for N days"""
+    
+#     inactive_users = User.objects.inactive_for_days(days).active()
+#     user_ids = list(inactive_users.values_list('user_uuid', flat=True))
+    
+#     if user_ids:
+#         count = User.objects.bulk_deactivate(user_ids)
+        
+#         # Notify users
+#         for user in inactive_users:
+#             send_deactivation_email(user)
+        
+#         return count
+    
+#     return 0
+# ```
+
+# ### Find Users for Email Campaign
+
+# ```python
+# def get_campaign_targets():
+#     """Get users for email campaign"""
+    
+#     # Active, verified email users who logged in recently
+#     targets = (
+#         User.objects
+#         .active()
+#         .verified()
+#         .email_users()
+#         .last_login_after(timezone.now() - timedelta(days=30))
+#     )
+    
+#     return targets
+# ```
+
+# ### User Retention Analysis
+
+# ```python
+# def analyze_user_retention():
+#     """Analyze user retention metrics"""
+    
+#     now = timezone.now()
+    
+#     # Users created in the last 30 days
+#     new_users = User.objects.created_after(now - timedelta(days=30))
+    
+#     # Of those, how many are still active?
+#     active_new = new_users.filter(last_activity_at__isnull=False)
+    
+#     retention_rate = (
+#         active_new.count() / new_users.count() * 100 
+#         if new_users.count() > 0 else 0
+#     )
+    
+#     return {
+#         'new_users': new_users.count(),
+#         'active_new_users': active_new.count(),
+#         'retention_rate': retention_rate,
+#         'churned': new_users.count() - active_new.count()
+#     }
+# ```
+
+# ### Scheduled Cleanup Task
+
+# ```python
+# from django.core.management.base import BaseCommand
+
+# class Command(BaseCommand):
+#     help = 'Clean up old unverified and inactive users'
+
+#     def handle(self, *args, **options):
+#         # Clean up unverified users older than 30 days
+#         unverified_count = User.objects.cleanup_unverified(days=30)
+#         self.stdout.write(
+#             f"Cleaned up {unverified_count} unverified users"
+#         )
+        
+#         # Clean up inactive users older than 1 year
+#         inactive_count = User.objects.cleanup_inactive(days=365)
+#         self.stdout.write(
+#             f"Cleaned up {inactive_count} inactive users"
+#         )
+        
+#         # Permanently delete users soft-deleted 90+ days ago
+#         permanent_count = User.objects.permanently_delete_soft_deleted(
+#             days=90
+#         )
+#         self.stdout.write(
+#             f"Permanently deleted {permanent_count} users"
+#         )
+# ```
+
+# ---
+
+# ## Admin Integration
+
+# ### Django Admin
+
+# ```python
+# # admin.py
+# from django.contrib import admin
+# from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+# from django.contrib.auth import get_user_model
+
+# User = get_user_model()
+
+# @admin.register(User)
+# class UserAdmin(BaseUserAdmin):
+#     list_display = [
+#         'email_or_phone', 
+#         'identity_type', 
+#         'role', 
+#         'is_active',
+#         'is_deleted',
+#         'created_at'
+#     ]
+    
+#     list_filter = [
+#         'identity_type',
+#         'role',
+#         'is_active',
+#         'is_deleted',
+#         'is_email_verified',
+#         'is_phone_verified',
+#     ]
+    
+#     search_fields = ['email_or_phone', 'email', 'phone']
+    
+#     fieldsets = (
+#         ('Identity', {
+#             'fields': ('email_or_phone', 'identity_type')
+#         }),
+#         ('Contact', {
+#             'fields': (
+#                 'email', 'is_email_verified', 
+#                 'phone', 'is_phone_verified'
+#             )
+#         }),
+#         ('Permissions', {
+#             'fields': ('role', 'is_active', 'is_staff', 'is_superuser')
+#         }),
+#         ('Security', {
+#             'fields': (
+#                 'failed_login_attempts', 
+#                 'locked_until', 
+#                 'lock_reason'
+#             )
+#         }),
+#         ('Deletion', {
+#             'fields': ('is_deleted', 'deleted_at', 'deletion_reason')
+#         }),
+#     )
+    
+#     def get_queryset(self, request):
+#         # Show all users including deleted ones in admin
+#         return User.objects.all()
+# ```
+
+# ---
+
+# ## Testing
+
+# ```python
+# from django.test import TestCase
+# from django.contrib.auth import get_user_model
+
+# User = get_user_model()
+
+# class UserManagerTestCase(TestCase):
+    
+#     def setUp(self):
+#         # Create test users
+#         self.user1 = User.objects.create_user(
+#             email_or_phone='test1@example.com',
+#             password='pass123'
+#         )
+#         self.user2 = User.objects.create_user(
+#             email_or_phone='+12025551234',
+#             password='pass123'
+#         )
+    
+#     def test_active_filter(self):
+#         active = User.objects.active()
+#         self.assertEqual(active.count(), 2)
+    
+#     def test_email_users_filter(self):
+#         email_users = User.objects.email_users()
+#         self.assertEqual(email_users.count(), 1)
+    
+#     def test_phone_users_filter(self):
+#         phone_users = User.objects.phone_users()
+#         self.assertEqual(phone_users.count(), 1)
+# ```
+
+# ---
+
+# ## Best Practices
+
+# 1. **Always use manager methods** instead of raw queries
+# 2. **Chain filters** for complex queries
+# 3. **Use bulk operations** for performance
+# 4. **Run cleanup tasks** regularly via cron/celery
+# 5. **Monitor statistics** for insights
+# 6. **Soft delete first**, permanently delete later
+# 7. **Test thoroughly** before bulk operations
+
+# ---
+
+# ## Performance Tips
+
+# ```python
+# # ✅ Good: Use select_related for foreign keys
+# users = User.objects.active().select_related('profile')
+
+# # ✅ Good: Use prefetch_related for many-to-many
+# users = User.objects.active().prefetch_related('groups')
+
+# # ✅ Good: Use only() for specific fields
+# users = User.objects.active().only('email_or_phone', 'role')
+
+# # ✅ Good: Use values() for dictionaries
+# user_data = User.objects.active().values('email_or_phone', 'created_at')
+
+# # ❌ Avoid: N+1 queries
+# for user in User.objects.all():
+#     print(user.groups.all())  # Queries in loop!
+
+# # ✅ Better: Prefetch
+# for user in User.objects.prefetch_related('groups'):
+#     print(user.groups.all())  # No extra queries
+# ```

@@ -1,0 +1,2138 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <title>{% if query %}{{ query }} — {% endif %}Home</title>
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       GLOBAL — Design Tokens, Reset, Base
+    ═══════════════════════════════════════════════ */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
+
+    :root {
+      --ink:        #0f0f0f;
+      --ink-2:      #3a3a3a;
+      --ink-3:      #6b6b6b;
+      --ink-4:      #9b9b9b;
+      --surface:    #ffffff;
+      --surface-2:  #f5f5f3;
+      --surface-3:  #eeede9;
+      --border:     #e4e3df;
+      --border-2:   #d0cfc9;
+      --accent:     #c8102e;
+      --accent-2:   #a00d24;
+      --gold:       #b8860b;
+      --gold-2:     #8b6508;
+      --green:      #1a6b3a;
+      --green-bg:   #edf7f1;
+      --warn:       #92400e;
+      --warn-bg:    #fffbeb;
+      --blue:       #1e3a8a;
+      --blue-light: #3b82f6;
+      --primary-dark:    #0a2540;
+      --primary-blue:    #0d47a1;
+      --primary-light:   #1976d2;
+      --accent-gold:     #d4af37;
+      --accent-amber:    #ffb300;
+      --success-emerald: #00b894;
+      --danger-crimson:  #e74c3c;
+      --text-primary:    #1a202c;
+      --text-secondary:  #4a5568;
+      --text-muted:      #718096;
+      --bg-primary:      #ffffff;
+      --bg-secondary:    #f7fafc;
+      --bg-tertiary:     #edf2f7;
+      --border-light:    #e2e8f0;
+      --border-medium:   #cbd5e0;
+      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body:    'Syne', sans-serif;
+      --f-mono:       'JetBrains Mono', monospace;
+      --f-display:    'Cormorant Garamond', serif;
+      --f-body:       'Syne', sans-serif;
+      --header-h:          124px;
+      --nav-h:             64px;
+      --bottom-bar-height: 68px;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+      --ease:            cubic-bezier(.4,0,.2,1);
+      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: .15s ease;
+      --transition-base: .25s ease;
+      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+      --t-primary:   #0f0f0f;
+      --t-secondary: #3a3a3a;
+      --t-muted:     #6b6b6b;
+      --t-ghost:     #9b9b9b;
+      --rim:         #e4e3df;
+      --raised:      #f5f5f3;
+      --overlay:     #eeede9;
+      --abyss:       #0f0f0f;
+      --gold-pure:   #b8860b;
+      --gold-dim:    rgba(184,134,11,0.40);
+      --gold-trace:  rgba(184,134,11,0.08);
+      --gold-bright: #d4a017;
+      --emerald:  #1a6b3a;
+      --amber:    #92400e;
+      --ruby:     #c8102e;
+      --sapphire: #1e3a8a;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
+    body {
+      font-family: 'roboto';
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: clip;
+      padding-top:    var(--header-h);
+      padding-bottom: var(--bottom-bar-height);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    a      { text-decoration:none; color:inherit; }
+    img    { max-width:100%; display:block; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    ::-webkit-scrollbar       { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
+    .hide-mobile { display:none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration:0.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:0.01ms !important;
+        scroll-behavior:auto !important;
+      }
+      .navbar-glow { display:none; }
+    }
+  </style>
+</head>
+
+<body>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1) TOP NAVBAR  (Side Drawer + Sticky Header + Nav Links)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  /* ── Side Drawer ── */
+  #drawerOverlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.45); z-index:1999;
+    transition:opacity .3s var(--ease); opacity:0;
+  }
+  #sideDrawer {
+    position:fixed; top:0; left:0;
+    width:260px; height:100%;
+    background:linear-gradient(160deg,#0a2540 0%,#0d47a1 100%);
+    z-index:2000; transform:translateX(-100%);
+    transition:transform .35s var(--ease);
+    display:flex; flex-direction:column;
+    box-shadow:4px 0 32px rgba(0,0,0,.35);
+    overflow-y:auto; scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.2) transparent;
+  }
+  #sideDrawer::-webkit-scrollbar       { width:4px; }
+  #sideDrawer::-webkit-scrollbar-track { background:transparent; }
+  #sideDrawer::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:4px; }
+  .drawer-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 16px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+    position:sticky; top:0; background:#0a2540; z-index:1; flex-shrink:0;
+  }
+  .drawer-brand { font-family:var(--font-display); font-size:1.4rem; font-weight:900; color:#fff; letter-spacing:.5px; }
+  .drawer-brand a { color:inherit; text-decoration:none; display:flex; align-items:center; gap:.5rem; }
+  #drawerClose {
+    width:34px; height:34px; background:rgba(255,255,255,.1);
+    border:none; border-radius:8px; color:#fff; font-size:1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background var(--transition-fast); flex-shrink:0;
+  }
+  #drawerClose:hover { background:rgba(255,255,255,.2); }
+  .drawer-nav { padding:18px 12px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .drawer-link {
+    display:flex; align-items:center; gap:12px; padding:13px 16px;
+    border-radius:10px; color:#fff; text-decoration:none;
+    font-weight:600; font-size:.95rem; transition:background var(--transition-fast);
+  }
+  .drawer-link:hover           { background:rgba(255,255,255,.12); }
+  .drawer-link i               { width:18px; text-align:center; opacity:.8; }
+  .drawer-divider              { height:1px; background:rgba(255,255,255,.12); margin:8px 4px; }
+  .drawer-link.secondary       { color:rgba(255,255,255,.7); font-weight:500; font-size:.88rem; }
+  .drawer-link.secondary:hover { background:rgba(255,255,255,.08); }
+  .drawer-link.secondary i     { opacity:.7; }
+
+  /* ── Sticky Header + Navbar ── */
+  .sticky-header {
+    position:fixed; top:0; left:0;
+    width:100%; z-index:1000;
+    display:flex; flex-direction:column;
+  }
+  .menu-top { width:100%; }
+  .navbar-container {
+    background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary-blue) 100%);
+    position:relative; overflow:hidden; box-shadow:var(--shadow-lg);
+  }
+  .navbar-glow {
+    position:absolute; top:0; left:-100%;
+    width:200%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(212,175,55,0.15),transparent);
+    animation:navGlow 4s infinite; pointer-events:none;
+  }
+  @keyframes navGlow { 0%,100%{left:-100%} 50%{left:100%} }
+  .menu {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:.875rem 1.5rem; max-width:1400px; margin:0 auto;
+    position:relative; z-index:1;
+  }
+  .logo-left      { display:flex; align-items:center; gap:0; }
+  .logo-brand     { margin-left:.5rem; }
+  .logo-container { display:flex; align-items:center; gap:.75rem; text-decoration:none; }
+  .logo-icon {
+    width:44px; height:44px;
+    background:linear-gradient(135deg,var(--accent-gold) 0%,var(--accent-amber) 100%);
+    border-radius:12px; display:flex; align-items:center; justify-content:center;
+    color:var(--primary-dark); font-size:1.35rem;
+    box-shadow:0 4px 12px rgba(212,175,55,.4);
+    transition:transform var(--transition-slow), box-shadow var(--transition-slow);
+    flex-shrink:0; cursor:pointer;
+  }
+  .logo-icon:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(212,175,55,.55); }
+  .navbar-brand { font-family:var(--font-display); font-size:1.75rem; font-weight:900; color:#fff; letter-spacing:.5px; }
+  .menu-links   { display:flex; align-items:center; gap:.5rem; }
+  .menu-item {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.625rem 1rem;
+    background:rgba(255,255,255,.1); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.15); border-radius:10px;
+    color:#fff; text-decoration:none; font-weight:600; font-size:.9rem;
+    transition:background var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
+  }
+  .menu-item:hover  { background:rgba(255,255,255,.18); border-color:rgba(212,175,55,.4); transform:translateY(-2px); }
+  .menu-item.active {
+    background:linear-gradient(135deg,var(--accent-gold) 0%,var(--accent-amber) 100%);
+    color:var(--primary-dark); border-color:transparent;
+    box-shadow:0 4px 16px rgba(212,175,55,.5);
+  }
+
+  /* Navbar responsive */
+  @media (max-width:1024px) { .menu { padding:.75rem 1.25rem; } .navbar-brand { font-size:1.55rem; } }
+  @media (max-width:768px)  { :root{--header-h:110px;} .menu{padding:.75rem 1rem;} .logo-icon{width:38px;height:38px;font-size:1.1rem;} .navbar-brand{font-size:1.4rem;} .menu-item span{display:none;} .menu-item{padding:8px 10px;} }
+  @media (max-width:600px)  { :root{--header-h:108px;} .logo-icon{width:36px;height:36px;font-size:1rem;border-radius:10px;} .navbar-brand{font-size:1.25rem;} }
+  @media (max-width:480px)  { :root{--header-h:104px;} .menu{padding:.6rem .875rem;} .logo-icon{width:34px;height:34px;font-size:.95rem;} .navbar-brand{font-size:1.15rem;letter-spacing:0;} .menu-item{padding:7px 8px;} .menu-links{gap:.3rem;} }
+  @media (max-width:360px)  { :root{--header-h:100px;} .menu{padding:.5rem .625rem;} .logo-icon{width:30px;height:30px;font-size:.875rem;border-radius:8px;} .navbar-brand{font-size:1rem;} .menu-item{padding:6px 7px;} }
+  @media (max-width:320px)  { :root{--header-h:96px;} .navbar-brand{font-size:.9rem;} .logo-icon{display:none;} .menu{padding:.5rem;} }
+</style>
+
+<!-- Drawer overlay -->
+<div id="drawerOverlay"></div>
+
+<!-- Side drawer -->
+<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
+  <div class="drawer-header">
+    <span class="drawer-brand">
+      <a href="#"><i class="fa-solid fa-gears"></i> Engine</a>
+    </span>
+    <button id="drawerClose" aria-label="Close menu">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+  <nav class="drawer-nav">
+    
+    
+    <a href="{% url 'ponno:brand_list' %}" class="drawer-link"><i class="fa-solid fa-tag"></i>Brand</a>
+    <a href="{% url 'ponno:category_list' %}" class="drawer-link"><i class="fa-solid fa-layer-group"></i>Category</a>
+    <a href="{% url 'ponno:sub_categories_for_category' %}" class="drawer-link"><i class="fa-solid fa-list-ul"></i>SubCategory</a>
+
+    <div class="drawer-divider"></div>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-circle-info"></i>About Us</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-shield-halved"></i>Privacy Policy</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-file-contract"></i>Terms of Service</a>
+
+    
+  </nav>
+</aside>
+
+<!-- Sticky header opens — wraps navbar + search -->
+<div class="sticky-header">
+
+  <nav class="menu-top" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+      <div class="navbar-glow"></div>
+      <div class="menu">
+        <div class="logo-left">
+          <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
+            <i class="fa-solid fa-bars"></i>
+          </div>
+          <div class="logo-brand">
+            <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
+              <span class="navbar-brand">pielam</span>
+            </a>
+          </div>
+        </div>
+        <div class="menu-links">
+          <a href="{% url 'ponno:home' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="fa-solid fa-house"></i><span>Home</span>
+          </a>
+          <a href="{% url 'notify:notification' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
+            <i class="fa-solid fa-bell"></i><span>Notifications</span>
+          </a>
+          <a href="{% url 'customer:profile' %}"
+             class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+            <i class="fa-solid fa-circle-user"></i><span>Profile</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+<script>
+  /* ── Drawer JS ── */
+  (function () {
+    const drawer      = document.getElementById('sideDrawer');
+    const overlay     = document.getElementById('drawerOverlay');
+    const drawerClose = document.getElementById('drawerClose');
+
+    function openDrawer() {
+      overlay.style.display = 'block';
+      requestAnimationFrame(() => { overlay.style.opacity='1'; drawer.style.transform='translateX(0)'; });
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDrawer() {
+      overlay.style.opacity = '0';
+      drawer.style.transform = 'translateX(-100%)';
+      setTimeout(() => { overlay.style.display='none'; }, 350);
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('menuToggle')?.addEventListener('click', openDrawer);
+      document.getElementById('menuToggle')?.addEventListener('keydown', e => {
+        if (e.key==='Enter'||e.key===' ') { e.preventDefault(); openDrawer(); }
+      });
+    });
+    drawerClose.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', e => { if (e.key==='Escape') closeDrawer(); });
+  })();
+</script>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     2) SEARCH BAR + LIVE DROPDOWN
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  /* FIX-10 (search bar): removed hard-coded `padding: 0.5rem 15rem`
+     which broke layout on narrower screens. Now uses responsive
+     padding consistent with the rest of the page. */
+  .search-section {
+    width:100%; padding: 0.5rem 1.5rem;
+    background: white;
+    display: flex;
+    justify-content: center;
+  }
+  .search-wrap {
+    max-width:900px;
+    width: 100%;
+    background:#fff;
+    border:1px solid blue;
+    border-radius:12px; display:flex;
+    align-items:stretch;
+    overflow:hidden;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  .search-wrap:focus-within {
+    border-color:var(--accent-gold);
+  }
+  .search-input {
+    flex:1;
+    background:transparent;
+    border:none; outline:none;
+    font-family: 'roboto';
+    font-size:.95rem; color:#1a202c;
+    padding:.75rem 1rem; letter-spacing:.3px; min-width:0;
+  }
+  .search-input::placeholder { color:#a0aec0; }
+  .search-clear-btn {
+    display:none; align-items:center; justify-content:center;
+    border:none; background:transparent; color:#a0aec0;
+    padding:0 .75rem; cursor:pointer; font-size:.85rem;
+    transition:color var(--transition-fast); flex-shrink:0;
+  }
+  .search-clear-btn:hover { color:#e94560; }
+  .search-submit {
+    border:none; cursor:pointer;
+    background: whitesmoke;
+    color: black;
+    padding:0 1.75rem;
+    font-family:var(--font-body); font-size:.85rem; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase;
+    transition:background .2s, color .2s; flex-shrink:0;
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .search-submit:hover  { background:linear-gradient(135deg,#0d47a1 0%,#1976d2 100%); color:#ffb300; }
+  .search-submit:active { transform:scale(.98); }
+
+  /* Dropdown */
+  .search-dropdown {
+    position:fixed; z-index:2000;
+    top:var(--header-h); left:50%; transform:translateX(-50%);
+    width:min(860px,calc(100vw - 2.5rem));
+    background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+    max-height:420px; overflow-y:auto; display:none;
+    box-shadow:0 16px 48px rgba(10,37,64,.15);
+    scrollbar-width:thin; scrollbar-color:var(--border-2) transparent;
+  }
+  .search-dropdown.open { display:block; animation:dropIn .2s ease; }
+  @keyframes dropIn {
+    from { opacity:0; transform:translateX(-50%) translateY(-8px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+  .search-result-item {
+    display:flex; align-items:center; gap:1rem; padding:.875rem 1.25rem;
+    text-decoration:none; color:inherit; border-bottom:1px solid #f0f0f0;
+    transition:background .15s;
+  }
+  .search-result-item:hover      { background:#f7fafc; }
+  .search-result-item:last-child { border-bottom:none; }
+  .sri-img   { width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid #e2e8f0; flex-shrink:0; }
+  .sri-info  { flex:1; min-width:0; }
+  .sri-name  { font-weight:600; font-size:.9rem; color:#1a202c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sri-meta  { font-size:.78rem; color:#718096; margin-top:.1rem; }
+  .sri-price { font-size:.85rem; color:#0d47a1; font-weight:700; flex-shrink:0; }
+  .search-empty, .search-loader {
+    display:flex; flex-direction:column; align-items:center;
+    gap:.75rem; padding:2rem; color:#718096;
+  }
+  .spinner {
+    width:32px; height:32px;
+    border:2px solid #e2e8f0; border-top-color:#0d47a1;
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Search responsive */
+  @media (max-width:1024px) { .search-section{padding:.45rem 1.25rem;} }
+  @media (max-width:768px)  { .search-section{padding:.4rem 1rem;} .search-submit span{display:none;} }
+  @media (max-width:600px)  { .search-section{padding:.35rem .75rem;} .search-input{font-size:.875rem;padding:.625rem .875rem;} .search-submit{padding:0 1rem;font-size:.75rem;letter-spacing:1px;} }
+  @media (max-width:480px)  { .search-section{padding:.3rem .625rem;} .search-input{font-size:.825rem;padding:.5rem .75rem;} .search-submit{padding:0 .875rem;letter-spacing:.8px;} .search-dropdown{width:calc(100vw - 1.25rem);} .sri-img{width:40px;height:40px;} }
+  @media (max-width:360px)  { .search-section{padding:.25rem .5rem;} .search-input{font-size:.8rem;padding:.45rem .625rem;} .search-submit{padding:0 .75rem;} }
+  @media (max-width:320px)  { .search-section{padding:.2rem .375rem;} .search-input{font-size:.75rem;padding:.4rem .5rem;} .search-submit{padding:0 .625rem;letter-spacing:0;} }
+</style>
+
+  <div class="search-section">
+    <form method="GET" action="{% url 'ponno:discovery_engine' %}" class="search-wrap">
+      <input type="text" id="q" name="q" value="{{ query }}"
+             class="search-input"
+             placeholder="Search products, brands, categories..."
+             autocomplete="off" aria-label="Search products">
+      <button type="button" class="search-clear-btn" id="srchClear" aria-label="Clear">
+        <i class="fa-solid fa-times"></i>
+      </button>
+      <button type="submit" class="search-submit" aria-label="Submit search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+      </button>
+    </form>
+  </div>
+
+</div><!-- /sticky-header -->
+
+<div id="srchDrop" class="search-dropdown" role="listbox" aria-label="Search suggestions"></div>
+
+<script>
+  /* ── Search dropdown JS ── */
+  (function () {
+    const inp  = document.getElementById('q');
+    const clr  = document.getElementById('srchClear');
+    const drop = document.getElementById('srchDrop');
+    let timer;
+
+    function show() { drop.classList.add('open'); }
+    function hide() { drop.classList.remove('open'); }
+
+    inp.addEventListener('input', function () {
+      clr.style.display = this.value ? 'flex' : 'none';
+      clearTimeout(timer);
+      if (!this.value.trim()) { hide(); return; }
+      drop.innerHTML = '<div class="search-loader"><div class="spinner"></div></div>';
+      show();
+      timer = setTimeout(() => doSearch(this.value.trim()), 300);
+    });
+
+    clr.addEventListener('click', () => { inp.value=''; clr.style.display='none'; hide(); inp.focus(); });
+
+    function doSearch(q) {
+      fetch('/ajax/search/?q=' + encodeURIComponent(q))
+        .then(r => r.json())
+        .then(data => {
+          if (!data.length) {
+            drop.innerHTML = '<div class="search-empty"><i class="fa-solid fa-box-open"></i><span>No products found</span></div>';
+            return;
+          }
+          drop.innerHTML = data.map(p => `
+            <a class="search-result-item" href="/product/${p.slug}/">
+              <img class="sri-img" src="${p.image}" alt="${p.name}" onerror="this.src='/static/defaults/default-product.png'">
+              <div class="sri-info">
+                <div class="sri-name">${p.name}</div>
+                <div class="sri-meta">${p.category} · ${p.brand}</div>
+              </div>
+              <span class="sri-price">${p.selling_price} Tk</span>
+            </a>`).join('');
+        })
+        .catch(() => {
+          drop.innerHTML = '<div class="search-empty"><i class="fa-solid fa-circle-exclamation"></i><span>Error fetching results</span></div>';
+        });
+    }
+
+    let ki = -1;
+    inp.addEventListener('keydown', e => {
+      const items = drop.querySelectorAll('.search-result-item');
+      if      (e.key==='ArrowDown') { e.preventDefault(); ki=Math.min(ki+1,items.length-1); items[ki]?.focus(); }
+      else if (e.key==='ArrowUp')   { e.preventDefault(); ki=Math.max(ki-1,-1); ki===-1?inp.focus():items[ki]?.focus(); }
+      else if (e.key==='Escape')    { hide(); inp.focus(); ki=-1; }
+    });
+    document.addEventListener('click', e => { if (!drop.contains(e.target) && e.target!==inp) hide(); });
+  })();
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     3) FEED FILTER TABS  (All / Trending / New / Sale / …)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  .discovery-wrap {
+    position:relative;
+    z-index:5;
+    max-width:1800px;
+    margin:0.2rem auto 0;
+    padding:0 0.25rem 2rem;
+    width:100%;
+  }
+  .feed-filter-bar {
+    display:flex; align-items:center; gap:.5rem;
+    padding:.875rem 3rem;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(12px);
+    overflow-x:auto;
+    scrollbar-width:none;
+    position:sticky;
+    top:0; z-index:100;
+    margin:0 -1.25rem 1.5rem; width:calc(100% + 2.5rem);
+  }
+  .feed-filter-bar::-webkit-scrollbar { display:none; }
+  .filter-tab {
+    flex-shrink:0; display:inline-flex; align-items:center; gap:.4rem;
+    padding:.5rem 1.1rem; border-radius:50px; font-size:.82rem; font-weight:700;
+    border:1.5px solid transparent; background:var(--bg-tertiary); color:var(--text-secondary);
+    text-decoration:none; transition:all .2s ease; white-space:nowrap; letter-spacing:.1px;
+  }
+  .filter-tab i { font-size:.78rem; }
+  .filter-tab:hover { transform:translateY(-1px); }
+  .filter-tab.active               { background:linear-gradient(135deg,var(--primary-blue),var(--primary-light)); color:#fff; box-shadow:0 4px 14px rgba(13,71,161,.3); }
+  .filter-tab.tab-trending.active  { background:linear-gradient(135deg,#e74c3c,#c0392b); box-shadow:0 4px 14px rgba(231,76,60,.3); }
+  .filter-tab.tab-new.active       { background:linear-gradient(135deg,#00b894,#00a381); box-shadow:0 4px 14px rgba(0,184,148,.3); }
+  .filter-tab.tab-sale.active      { background:linear-gradient(135deg,var(--accent-gold),var(--accent-amber)); color:var(--primary-dark); box-shadow:0 4px 14px rgba(212,175,55,.3); }
+  .filter-tab.tab-featured.active  { background:linear-gradient(135deg,#7c3aed,#6d28d9); box-shadow:0 4px 14px rgba(124,58,237,.3); }
+  .filter-tab.tab-verified.active  { background:linear-gradient(135deg,#0891b2,#0e7490); box-shadow:0 4px 14px rgba(8,145,178,.3); }
+  .filter-tab.tab-instock.active   { background:linear-gradient(135deg,#16a34a,#15803d); box-shadow:0 4px 14px rgba(22,163,74,.3); }
+
+  /* Feed tabs responsive */
+  @media (max-width:1400px) { .discovery-wrap{max-width:100%;padding:0 1.5rem 4rem;} }
+  @media (max-width:768px) {
+    .discovery-wrap {
+      margin-top: -0.5rem;
+      padding: 0 0 4rem;
+    }
+    .feed-filter-bar {
+      padding: .5rem .75rem;
+      gap: 0;
+      margin: 0 0 0.5rem;
+      width: 100%;
+      justify-content: space-between;
+    }
+    .filter-tab {
+      flex: 1;
+      justify-content: center;
+      padding: .45rem .25rem;
+      font-size: .7rem;
+    }
+    /* FIX-10: single canonical rule for hiding text on mobile.
+       Removed the duplicate rule that was also in the 480px block,
+       which caused specificity confusion. */
+    .filter-tab span { display: none; }
+    .filter-tab i { font-size: 1rem; }
+  }
+  @media (max-width:600px)  { .feed-filter-bar{gap:.35rem;padding:.55rem .875rem;} .filter-tab{padding:.4rem .75rem;font-size:.76rem;} }
+  /* FIX-10: removed duplicate `.filter-tab span { display:none }` that was
+     here at 480px — it is already handled by the 768px rule above. */
+  @media (max-width:480px)  { .feed-filter-bar{padding:.5rem .875rem;gap:.35rem;} .filter-tab{padding:.5rem .75rem;} .filter-tab i{font-size:.9rem;} }
+  @media (max-width:360px)  { .filter-tab{padding:.45rem .6rem;} .filter-tab i{font-size:.85rem;} }
+  @media (max-width:320px)  { .filter-tab{flex:1 1 calc(25% - .3rem);padding:.3rem .25rem;font-size:.6rem;} .filter-tab i{display:inline;font-size:.75rem;} }
+</style>
+
+<main class="discovery-wrap">
+
+  <div class="feed-filter-bar" role="navigation" aria-label="Feed filters">
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter="
+       class="filter-tab {% if active_filter_type == 'all' %}active{% endif %}">
+      <i class="fa-solid fa-layer-group"></i><span>All</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=trending"
+       class="filter-tab tab-trending {% if active_filter_type == 'trending' %}active{% endif %}">
+      <i class="fa-solid fa-fire"></i><span>Trending</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=new"
+       class="filter-tab tab-new {% if active_filter_type == 'new' %}active{% endif %}">
+      <i class="fa-solid fa-bolt"></i><span>New</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=sale"
+       class="filter-tab tab-sale {% if active_filter_type == 'sale' %}active{% endif %}">
+      <i class="fa-solid fa-tag"></i><span>On Sale</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=featured"
+       class="filter-tab tab-featured {% if active_filter_type == 'featured' %}active{% endif %}">
+      <i class="fa-solid fa-crown"></i><span>Featured</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=verified"
+       class="filter-tab tab-verified {% if active_filter_type == 'verified' %}active{% endif %}">
+      <i class="fa-solid fa-circle-check"></i><span>Verified</span>
+    </a>
+    <a href="?{% if query %}q={{ query|urlencode }}&{% endif %}filter=instock"
+       class="filter-tab tab-instock {% if active_filter_type == 'instock' %}active{% endif %}">
+      <i class="fa-solid fa-boxes-stacked"></i><span>In Stock</span>
+    </a>
+  </div>
+  <!-- No JS needed — all tabs are plain links -->
+<!-- ═══════════════════════════════════════════════════════════════
+     4) FILTER CHIPS + SLIDE PANELS  (Brand / Category / SubCategory / Sort)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  .results-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:0.2rem; flex-wrap:wrap; gap:0.5rem;
+  }
+  .filter-chips {
+    display:flex; gap:.4rem; align-items:center;
+    flex-wrap:nowrap; width:100%; overflow:visible;
+  }
+  .filter-chip {
+    display:flex; align-items:center; justify-content:center; gap:.3rem;
+    padding:.3rem .5rem; border-radius:999px;
+    font-size:0.68rem; font-weight:600; letter-spacing:.4px; text-transform:uppercase;
+    border:1.5px solid var(--rim); color:var(--t-secondary); background:#fff;
+    transition:all .2s; cursor:pointer; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;
+  }
+  .filter-chip:hover  { border-color:var(--gold-pure); color:var(--gold-pure); background:var(--gold-trace); }
+  .filter-chip.active { border-color:var(--gold-pure); color:var(--gold-pure); background:var(--gold-trace); }
+  .filter-chip i      { font-size:.6rem; flex-shrink:0; }
+
+  @media (max-width:768px)  { .results-header { margin-bottom:1.25rem; } }
+  @media (max-width:480px)  { .filter-chips { gap:.3rem; } .filter-chip { font-size:.58rem; padding:.25rem .4rem; } }
+  @media (max-width:360px)  { .filter-chip .fa-chevron-down { display:none; } .filter-chip span { display:none; } .filter-chip { padding:.28rem .4rem; } }
+
+  /* ── Slide panels ── */
+  .panel {
+    position:fixed;
+    bottom:0; left:0; right:0; z-index:900;
+    background:#ffffff;
+    color:#1a202c;
+    border-radius:16px 16px 0 0;
+    border-top:3px solid #0d47a1;
+    box-shadow:0 -8px 32px rgba(0,0,0,.25);
+    transform:translateY(100%);
+    transition:transform .35s var(--ease-out-expo);
+    max-height:88vh; display:flex; flex-direction:column;
+  }
+
+  .panel-handle { width:36px; height:4px; background:#cbd5e0; border-radius:2px; margin:.875rem auto 0; flex-shrink:0; }
+
+  .panel-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:.875rem 1.25rem .75rem; border-bottom:2px solid #e2e8f0; flex-shrink:0;
+    background:#f7fafc;
+  }
+  .panel-title-text {
+    font-family:var(--f-display); font-size:1.25rem; font-style:italic;
+    color:#0d47a1; display:flex; align-items:center; gap:.5rem; font-weight:700;
+  }
+  .panel-title-text i { font-style:normal; font-size:.9rem; color:#d4af37; }
+  .panel-x {
+    width:30px; height:30px; border:none; background:#e2e8f0;
+    border-radius:50%; cursor:pointer; display:flex; align-items:center;
+    justify-content:center; color:#4a5568; font-size:.8rem; transition:all .15s;
+  }
+  .panel-x:hover { background:#cbd5e0; color:#1a202c; }
+
+  .panel-search {
+    display:flex; align-items:center; gap:.625rem;
+    padding:.625rem 1.25rem; border-bottom:1px solid #e2e8f0; flex-shrink:0;
+    background:#fff;
+  }
+  .panel-search i { color:#718096; font-size:.85rem; }
+  .panel-search input {
+    flex:1; border:none; outline:none; background:transparent;
+    font-family:var(--f-body); font-size:.9rem; color:#1a202c;
+  }
+  .panel-search input::placeholder { color:#a0aec0; }
+
+  .panel-body {
+    overflow-y:auto; flex:1;
+    padding:.375rem 0 calc(.5rem + env(safe-area-inset-bottom, 0px));
+    scrollbar-width:thin; scrollbar-color:#cbd5e0 transparent;
+    background:#fff;
+  }
+
+  .panel-item {
+    display:flex; align-items:center; gap:.875rem; width:100%;
+    padding:.8rem 1.25rem; border:none; background:transparent;
+    color:#2d3748; font-family:var(--f-body);
+    font-size:.9rem; font-weight:500; text-align:left;
+    cursor:pointer; transition:background .15s;
+    position:relative; z-index:901;
+    border-bottom:1px solid #f7fafc;
+  }
+  .panel-item:hover               { background:#ebf8ff; color:#0d47a1; }
+  .panel-item.selected            { background:#ebf4ff; color:#0d47a1; border-left:3px solid #0d47a1; }
+  .panel-item.selected .pi-check  { opacity:1; }
+  .panel-item.search-hidden       { display:none !important; }
+  .panel-item.sync-hidden         { display:none !important; }
+
+  .pi-icon {
+    width:36px; height:36px; border-radius:8px; background:#edf2f7;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.8rem; color:#4a5568; flex-shrink:0; overflow:hidden;
+    border:1px solid #e2e8f0;
+  }
+  .pi-icon img  { width:100%; height:100%; object-fit:contain; }
+  .pi-text      { flex:1; min-width:0; }
+  .pi-name      { font-weight:700; font-size:.875rem; color:#1a202c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pi-parent    { font-size:.72rem; color:#718096; margin-top:.15rem; }
+  .pi-count     { font-family:var(--f-mono); font-size:.68rem; color:#4a5568; background:#edf2f7; padding:.2rem .6rem; border-radius:999px; flex-shrink:0; font-weight:700; border:1px solid #e2e8f0; }
+  .pi-check     { font-size:.8rem; color:#0d47a1; opacity:0; flex-shrink:0; transition:opacity .15s; }
+  .pi-any .pi-icon   { background:#fffbeb; border-color:#d4af37; }
+  .pi-any .pi-icon i { color:#d4af37; }
+  .pi-any .pi-name   { color:#92400e; }
+
+  .sort-btn {
+    display:flex; align-items:center; gap:.875rem; width:100%;
+    padding:.875rem 1.25rem; border:none; background:transparent;
+    color:#2d3748; font-family:var(--f-body);
+    font-size:.9rem; font-weight:500; text-align:left;
+    cursor:pointer; transition:background .15s;
+    position:relative; z-index:901;
+    border-bottom:1px solid #f7fafc;
+  }
+  .sort-btn i:first-child        { width:22px; color:#718096; font-size:.9rem; }
+  .sort-btn:hover                { background:#ebf8ff; color:#0d47a1; }
+  .sort-btn:hover i:first-child  { color:#0d47a1; }
+  .sort-btn.active               { font-weight:700; color:#0d47a1; background:#ebf4ff; border-left:3px solid #0d47a1; }
+  .sort-btn.active i:first-child { color:#0d47a1; }
+  .sort-check { margin-left:auto; color:#16a34a !important; font-size:.85rem; }
+
+  /* Panels responsive */
+ /* Panels responsive */
+
+  /* Desktop — centered, max width */
+  @media (min-width:769px) {
+    .panel { left:50%; right:auto; width:520px; transform:translateX(-50%) translateY(100%); border-radius:16px 16px 0 0; }
+    .panel.open { transform:translateX(-50%) translateY(0); }
+  }
+
+  /* Tablet */
+  @media (max-width:768px) {
+    .panel { left:50%; right:auto; width:480px; transform:translateX(-50%) translateY(100%); }
+    .panel.open { transform:translateX(-50%) translateY(0); }
+  }
+
+  /* Large mobile */
+  @media (max-width:600px) {
+    .panel { left:0; right:0; width:100%; transform:translateY(100%); border-radius:14px 14px 0 0; }
+    .panel.open { transform:translateY(0); }
+  }
+
+  /* Small mobile */
+  @media (max-width:480px) {
+    .panel { border-radius:12px 12px 0 0; }
+    .panel-item { padding:.7rem 1rem; font-size:.85rem; }
+    .pi-icon { width:32px; height:32px; }
+    .sort-btn { padding:.75rem 1rem; font-size:.85rem; }
+    .panel-head { padding:.75rem 1rem .625rem; }
+    .panel-search { padding:.5rem 1rem; }
+  }
+
+  /* Very small mobile */
+  @media (max-width:360px) {
+    .panel { border-radius:10px 10px 0 0; }
+    .panel-item { padding:.6rem .875rem; font-size:.8rem; }
+    .pi-icon { width:28px; height:28px; font-size:.7rem; }
+    .pi-name { font-size:.8rem; }
+    .pi-count { font-size:.6rem; padding:.15rem .4rem; }
+    .sort-btn { padding:.65rem .875rem; font-size:.8rem; }
+    .panel-head { padding:.625rem .875rem; }
+    .panel-search { padding:.45rem .875rem; }
+    .panel-title-text { font-size:1.05rem; }
+    .panel-x { width:26px; height:26px; font-size:.7rem; }
+  }
+
+
+</style>
+
+<!-- ── Brand panel ── -->
+<div class="panel" id="brandPanel" role="dialog" aria-modal="true" aria-label="Select Brand" hidden>
+  {{ brand_category_map|json_script:"brandCatMapData" }}
+  {{ brand_subcategory_map|json_script:"brandSubCatMapData" }}
+  <div class="panel-handle" aria-hidden="true"></div>
+  <div class="panel-head">
+    <span class="panel-title-text"><i class="fa-solid fa-tag"></i>Brand</span>
+    <button class="panel-x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="panel-search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" placeholder="Search brands…" data-sp="brand" autocomplete="off" aria-label="Filter brands">
+  </div>
+  <div class="panel-body" id="bBody" role="listbox">
+    <button class="panel-item pi-any" data-type="brand" data-value="" data-label="All Brands" role="option" aria-selected="false">
+      <span class="pi-icon"><i class="fa-solid fa-asterisk"></i></span>
+      <div class="pi-text"><div class="pi-name">Any Brand</div></div>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% for brand in all_brands %}
+    <button class="panel-item" data-type="brand" data-value="{{ brand.brand_slug }}" data-label="{{ brand.brand_name }}" role="option" aria-selected="false">
+      <span class="pi-icon">
+        {% if brand.brand_logo_url %}
+          <img src="{{ brand.brand_logo_url }}" alt="{{ brand.brand_name }}" loading="lazy" onerror="this.style.display='none'">
+        {% else %}
+          {{ brand.brand_name|slice:":2"|upper }}
+        {% endif %}
+      </span>
+      <div class="pi-text"><div class="pi-name">{{ brand.brand_name }}</div></div>
+      <span class="pi-count">{{ brand.product_count }}</span>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Category panel ── -->
+<div class="panel" id="categoryPanel" role="dialog" aria-modal="true" aria-label="Select Category" hidden>
+  <div class="panel-handle" aria-hidden="true"></div>
+  <div class="panel-head">
+    <span class="panel-title-text"><i class="fa-solid fa-layer-group"></i>Category</span>
+    <button class="panel-x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="panel-search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" placeholder="Search categories…" data-sp="category" autocomplete="off" aria-label="Filter categories">
+  </div>
+  <div class="panel-body" id="cBody" role="listbox">
+    <button class="panel-item pi-any" data-type="category" data-value="" data-label="All Categories" role="option" aria-selected="false">
+      <span class="pi-icon"><i class="fa-solid fa-asterisk"></i></span>
+      <div class="pi-text"><div class="pi-name">Any Category</div></div>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% for cat in all_categories %}
+    <button class="panel-item" data-type="category" data-value="{{ cat.category_slug }}" data-label="{{ cat.category_name }}" role="option" aria-selected="false">
+      <span class="pi-icon"><i class="fa-solid fa-folder" style="color:var(--gold-pure);"></i></span>
+      <div class="pi-text"><div class="pi-name">{{ cat.category_name }}</div></div>
+      <span class="pi-count">{{ cat.product_count }}</span>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── SubCategory panel ── -->
+<div class="panel" id="subCategoryPanel" role="dialog" aria-modal="true" aria-label="Select SubCategory" hidden>
+  <div class="panel-handle" aria-hidden="true"></div>
+  <div class="panel-head">
+    <span class="panel-title-text"><i class="fa-solid fa-list-ul"></i>SubCategory</span>
+    <button class="panel-x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="panel-search">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" placeholder="Search subcategories…" data-sp="subCategory" autocomplete="off" aria-label="Filter subcategories">
+  </div>
+  <div class="panel-body" id="sBody" role="listbox">
+    <button class="panel-item pi-any" data-type="subCategory" data-value="" data-label="All SubCategories" role="option" aria-selected="false">
+      <span class="pi-icon"><i class="fa-solid fa-asterisk"></i></span>
+      <div class="pi-text"><div class="pi-name">Any SubCategory</div></div>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% for sub in all_sub_categories %}
+    <button class="panel-item" data-type="subCategory" data-value="{{ sub.sub_category_slug }}" data-label="{{ sub.sub_category_name }}" data-parent="{{ sub.category__category_slug }}" role="option" aria-selected="false">
+      <span class="pi-icon"><i class="fa-solid fa-list-ul" style="color:var(--emerald);font-size:.7rem;"></i></span>
+      <div class="pi-text">
+        <div class="pi-name">{{ sub.sub_category_name }}</div>
+        <div class="pi-parent">{{ sub.category__category_name }}</div>
+      </div>
+      <span class="pi-count">{{ sub.product_count }}</span>
+      <i class="fa-solid fa-check pi-check"></i>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Sort panel ── -->
+<div class="panel" id="sortPanel" role="dialog" aria-modal="true" aria-label="Sort products" hidden>
+  <div class="panel-handle" aria-hidden="true"></div>
+  <div class="panel-head">
+    <span class="panel-title-text"><i class="fa-solid fa-arrow-up-wide-short"></i>Sort By</span>
+    <button class="panel-x" data-close aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="panel-body" role="listbox">
+    {% for opt in sort_options %}
+    <button class="sort-btn {% if opt.active %}active{% endif %}" data-sort="{{ opt.value }}" role="option" aria-selected="{{ opt.active|yesno:'true,false' }}">
+      {% if opt.value == 'newest'       %}<i class="fa-solid fa-clock-rotate-left"></i>
+      {% elif opt.value == 'popular'    %}<i class="fa-solid fa-fire"></i>
+      {% elif opt.value == 'price_low'  %}<i class="fa-solid fa-arrow-down-1-9"></i>
+      {% elif opt.value == 'price_high' %}<i class="fa-solid fa-arrow-up-9-1"></i>
+      {% elif opt.value == 'rating'     %}<i class="fa-solid fa-star"></i>
+      {% elif opt.value == 'discount'   %}<i class="fa-solid fa-percent"></i>
+      {% elif opt.value == 'name_az'    %}<i class="fa-solid fa-arrow-down-a-z"></i>
+      {% endif %}
+      {{ opt.label }}
+      {% if opt.active %}<i class="fa-solid fa-check sort-check"></i>{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Filter chips bar ── -->
+<div class="results-header">
+  <div class="filter-chips">
+    <button class="filter-chip" id="fpBrand" data-panel="brand" aria-haspopup="dialog" aria-expanded="false">
+      <i class="fa-solid fa-tag"></i>
+      <span id="fpBrandLbl">Brand</span>
+      <i class="fa-solid fa-chevron-down" style="font-size:.6rem;opacity:.5;"></i>
+    </button>
+    <button class="filter-chip" id="fpCat" data-panel="category" aria-haspopup="dialog" aria-expanded="false">
+      <i class="fa-solid fa-layer-group"></i>
+      <span id="fpCatLbl">Category</span>
+      <i class="fa-solid fa-chevron-down" style="font-size:.6rem;opacity:.5;"></i>
+    </button>
+    <button class="filter-chip" id="fpSub" data-panel="subCategory" aria-haspopup="dialog" aria-expanded="false">
+      <i class="fa-solid fa-list-ul"></i>
+      <span id="fpSubLbl">SubCategory</span>
+      <i class="fa-solid fa-chevron-down" style="font-size:.6rem;opacity:.5;"></i>
+    </button>
+    <button class="filter-chip" id="fpSort" data-panel="sort" aria-haspopup="dialog" aria-expanded="false">
+      <i class="fa-solid fa-arrow-up-wide-short"></i>
+      <span id="fpSortLbl">Sort</span>
+      <i class="fa-solid fa-chevron-down" style="font-size:.6rem;opacity:.5;"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ── Data from Django ── */
+  const BRAND_CAT_MAP    = JSON.parse(document.getElementById('brandCatMapData').textContent);
+  const BRAND_SUBCAT_MAP = JSON.parse(document.getElementById('brandSubCatMapData').textContent);
+
+  /* ── Active filter from Django (server-rendered truth) ── */
+  const ACTIVE_FILTER_TYPE = '{{ active_filter_type }}';
+  const ACTIVE_FILTER_SLUG = '{{ current_filter }}';
+
+  /* ── Backdrop — z-index 810, BELOW panel (900) so it never intercepts clicks ── */
+const backdrop = document.createElement('div');
+  backdrop.style.cssText = [
+    'display:none',
+    'position:fixed',
+    'inset:0',
+    'z-index:810',
+    
+    'pointer-events:none',
+  ].join(';');
+  document.body.appendChild(backdrop);
+
+  /* ── State ── */
+  const st = {
+    openPanel:   null,
+    brand:       '',
+    category:    '',
+    subCategory: '',
+    sort:        '{{ sort_by }}',
+  };
+
+  /* ── Chip config ── */
+  const CHIPS = {
+    brand:       { btnId:'fpBrand',  lblId:'fpBrandLbl',  def:'Brand'       },
+    category:    { btnId:'fpCat',    lblId:'fpCatLbl',    def:'Category'    },
+    subCategory: { btnId:'fpSub',    lblId:'fpSubLbl',    def:'SubCategory' },
+    sort:        { btnId:'fpSort',   lblId:'fpSortLbl',   def:'Sort'        },
+  };
+
+  /* ── Body mapping ── */
+  const BODIES = { brand:'bBody', category:'cBody', subCategory:'sBody' };
+
+  function chipEl(type)  { return document.getElementById(CHIPS[type].btnId); }
+  function chipLbl(type) { return document.getElementById(CHIPS[type].lblId); }
+
+  function setChipActive(type, isActive) {
+    chipEl(type)?.classList.toggle('active', isActive);
+  }
+  function setChipLabel(type, text) {
+    const el = chipLbl(type);
+    if (el) el.textContent = text || CHIPS[type].def;
+  }
+  function setChipExpanded(type, val) {
+    chipEl(type)?.setAttribute('aria-expanded', val ? 'true' : 'false');
+  }
+
+  /* ── Panel open / close ── */
+  function openPanel(name) {
+    if (st.openPanel === name) { closePanel(); return; }
+    if (st.openPanel)          _doClose(st.openPanel, false);
+
+    const panel = document.getElementById(name + 'Panel');
+    if (!panel) return;
+
+    panel.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('open')));
+
+    backdrop.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    st.openPanel = name;
+    setChipExpanded(name, true);
+
+    if (name === 'category')    syncCatVis();
+    if (name === 'subCategory') syncSubVis();
+
+    const inp = panel.querySelector('input[data-sp]');
+    if (inp) {
+      inp.value = '';
+      filterItems(name === 'subCategory' ? 'subCategory' : name, '');
+    }
+  }
+
+  function closePanel() {
+    if (!st.openPanel) return;
+    _doClose(st.openPanel, true);
+  }
+
+  function _doClose(name, clearBackdrop) {
+    const panel = document.getElementById(name + 'Panel');
+    if (panel) {
+      panel.classList.remove('open');
+      setTimeout(() => { if (panel) panel.hidden = true; }, 380);
+    }
+    setChipExpanded(name, false);
+    st.openPanel = null;
+
+    if (clearBackdrop) {
+      backdrop.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  /* ── Select item (brand / category / subCategory) ── */
+  function selectItem(type, value, label, clickedEl) {
+    const body = document.getElementById(BODIES[type]);
+    if (body) {
+      body.querySelectorAll('.panel-item').forEach(b => {
+        const sel = b === clickedEl;
+        b.classList.toggle('selected', sel);
+        b.setAttribute('aria-selected', sel ? 'true' : 'false');
+      });
+    }
+
+    setChipLabel(type, value ? label : CHIPS[type].def);
+    setChipActive(type, !!value);
+
+    const url = new URL(location.href);
+    const p   = url.searchParams;
+    p.delete('page');
+
+    if (type === 'brand') {
+      if (value) p.set('filter', value);
+      else       p.delete('filter');
+
+    } else if (type === 'category') {
+      if (value)         p.set('filter', value);
+      else if (st.brand) p.set('filter', st.brand);
+      else               p.delete('filter');
+
+    } else if (type === 'subCategory') {
+      if (value)            p.set('filter', value);
+      else if (st.category) p.set('filter', st.category);
+      else if (st.brand)    p.set('filter', st.brand);
+      else                  p.delete('filter');
+    }
+
+    closePanel();
+    setTimeout(() => { location.href = url.toString(); }, 50);
+  }
+
+  /* ── Select sort ── */
+  function selectSort(value, btnEl) {
+    const clone = btnEl.cloneNode(true);
+    clone.querySelectorAll('i').forEach(i => i.remove());
+    const label = clone.textContent.trim();
+    setChipLabel('sort', label);
+    setChipActive('sort', value !== 'newest');
+    st.sort = value;
+
+    const url = new URL(location.href);
+    url.searchParams.set('sort', value);
+    url.searchParams.delete('page');
+
+    closePanel();
+    setTimeout(() => { location.href = url.toString(); }, 50);
+  }
+
+  /* ── Panel search filter ── */
+  function filterItems(type, q) {
+    const Q    = q.trim().toLowerCase();
+    const body = document.getElementById(BODIES[type]);
+    if (!body) return;
+    body.querySelectorAll('.panel-item:not(.pi-any)').forEach(btn => {
+      const name   = (btn.dataset.label  || '').toLowerCase();
+      const parent = (btn.dataset.parent || '').toLowerCase();
+      const hide   = !!Q && !name.includes(Q) && !parent.includes(Q);
+      btn.classList.toggle('search-hidden', hide);
+    });
+  }
+
+  /* ── Sync category visibility by brand ── */
+  function syncCatVis() {
+    const allowed = st.brand ? (BRAND_CAT_MAP[st.brand] || []) : null;
+    document.querySelectorAll('#cBody .panel-item:not(.pi-any)').forEach(btn => {
+      btn.classList.toggle('sync-hidden', allowed !== null && !allowed.includes(btn.dataset.value));
+    });
+  }
+
+  /* ── Sync subcategory visibility by brand + category ── */
+  function syncSubVis() {
+    const byBrand = st.brand ? (BRAND_SUBCAT_MAP[st.brand] || []) : null;
+    document.querySelectorAll('#sBody .panel-item:not(.pi-any)').forEach(btn => {
+      const brandOk = byBrand === null || byBrand.includes(btn.dataset.value);
+      const catOk   = !st.category || btn.dataset.parent === st.category;
+      btn.classList.toggle('sync-hidden', !(brandOk && catOk));
+    });
+  }
+
+  /* ── Mark selected item in a panel body ── */
+  function markSelected(bodyId, value) {
+    const body = document.getElementById(bodyId);
+    if (!body) return;
+    body.querySelectorAll('.panel-item').forEach(btn => {
+      const sel = btn.dataset.value === value;
+      btn.classList.toggle('selected', sel);
+      btn.setAttribute('aria-selected', sel ? 'true' : 'false');
+    });
+    const anyMatched = !!body.querySelector('.panel-item.selected:not(.pi-any)');
+    const anyBtn     = body.querySelector('.pi-any');
+    if (anyBtn) {
+      anyBtn.classList.toggle('selected', !anyMatched);
+      anyBtn.setAttribute('aria-selected', (!anyMatched).toString());
+    }
+  }
+
+  /* ── Boot: restore active state from server-rendered values ── */
+  function boot() {
+    const filterSlug = ACTIVE_FILTER_SLUG.trim();
+    const filterType = ACTIVE_FILTER_TYPE.trim();
+
+    if (filterSlug && filterSlug !== 'all') {
+      if (filterType === 'brand') {
+        st.brand = filterSlug;
+        const btn = document.querySelector(`#bBody .panel-item[data-value="${CSS.escape(filterSlug)}"]`);
+        setChipLabel('brand', btn?.dataset.label || filterSlug);
+        setChipActive('brand', true);
+        markSelected('bBody', filterSlug);
+
+      } else if (filterType === 'category') {
+        st.category = filterSlug;
+        const btn = document.querySelector(`#cBody .panel-item[data-value="${CSS.escape(filterSlug)}"]`);
+        setChipLabel('category', btn?.dataset.label || filterSlug);
+        setChipActive('category', true);
+        markSelected('cBody', filterSlug);
+
+      } else if (filterType === 'sub_category') {
+        st.subCategory = filterSlug;
+        const btn = document.querySelector(`#sBody .panel-item[data-value="${CSS.escape(filterSlug)}"]`);
+        setChipLabel('subCategory', btn?.dataset.label || filterSlug);
+        setChipActive('subCategory', true);
+        markSelected('sBody', filterSlug);
+        if (btn?.dataset.parent) st.category = btn.dataset.parent;
+      }
+    } else {
+      markSelected('bBody', '');
+      markSelected('cBody', '');
+      markSelected('sBody', '');
+    }
+
+    if (st.sort && st.sort !== 'newest') {
+      const sortBtn = document.querySelector(`.sort-btn[data-sort="${CSS.escape(st.sort)}"]`);
+      if (sortBtn) {
+        const clone = sortBtn.cloneNode(true);
+        clone.querySelectorAll('i').forEach(i => i.remove());
+        setChipLabel('sort', clone.textContent.trim());
+      }
+      setChipActive('sort', true);
+    }
+  }
+
+  /* ── Direct listeners on panel items ── */
+  function bindPanelItems() {
+    document.querySelectorAll('.panel-item[data-type]').forEach(item => {
+      item.addEventListener('click', e => {
+        e.stopPropagation();
+        if (item.classList.contains('search-hidden') || item.classList.contains('sync-hidden')) return;
+        selectItem(item.dataset.type, item.dataset.value, item.dataset.label, item);
+      });
+    });
+
+    document.querySelectorAll('.sort-btn[data-sort]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        selectSort(btn.dataset.sort, btn);
+      });
+    });
+  }
+
+  /* ── Delegated listeners (chips, close, outside-click, reset) ── */
+  document.addEventListener('click', e => {
+    /* Filter chips */
+    const chip = e.target.closest('[data-panel]');
+    if (chip && !chip.classList.contains('panel-item')) {
+      openPanel(chip.dataset.panel);
+      return;
+    }
+
+    /* Close buttons */
+    if (e.target.closest('[data-close]')) {
+      closePanel();
+      return;
+    }
+
+    /* Click outside any open panel closes it */
+    if (st.openPanel && !e.target.closest('.panel')) {
+      closePanel();
+      return;
+    }
+
+    /* Reset button */
+    if (e.target.closest('#barReset')) {
+      const url = new URL(location.href);
+      ['filter', 'page'].forEach(k => url.searchParams.delete(k));
+      location.href = url.toString();
+      return;
+    }
+  });
+
+  /* ── Panel search input ── */
+  document.addEventListener('input', e => {
+    const inp = e.target.closest('input[data-sp]');
+    if (inp) filterItems(inp.dataset.sp, inp.value);
+  });
+
+  /* ── Escape key ── */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && st.openPanel) closePanel();
+  });
+
+  /* ── Swipe down to close ── */
+  let _touchStartY = 0;
+  document.addEventListener('touchstart', e => {
+    if (e.target.closest('.panel')) _touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (st.openPanel && e.target.closest('.panel')) {
+      if ((e.changedTouches[0].clientY - _touchStartY) > 64) closePanel();
+    }
+  }, { passive: true });
+
+  /* ── Global helper ── */
+  window.filterProducts = slug => {
+    const url = new URL(location.href);
+    if (!slug || slug === 'all') url.searchParams.delete('filter');
+    else                         url.searchParams.set('filter', slug);
+    url.searchParams.delete('page');
+    location.href = url.toString();
+  };
+
+  /* ── Init ── */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { boot(); bindPanelItems(); });
+  } else {
+    boot();
+    bindPanelItems();
+  }
+
+})();
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     5) TWO-COLUMN PRODUCT GRID  (Main feed + Right sidebar)
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  /* ── Page shell ── */
+  .page-shell {
+    max-width:1400px;
+    margin:0 auto;
+    padding:0.75rem 1.25rem 2rem;
+    display:grid;
+    grid-template-columns:1fr 290px;
+    gap:2rem;
+    align-items:start;
+  }
+
+  /* ── Product grid ── */
+  .product-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));
+    gap:1.5rem; margin-top:.5rem; width:100%;
+  }
+
+  /* ── Product card ── */
+  .product-card {
+    background:#fff; border-radius:20px; overflow:hidden;
+    border:1.5px solid var(--border-light);
+    box-shadow:0 2px 10px rgba(10,37,64,.06);
+    position:relative; cursor:pointer;
+  }
+
+  /* ── Dealer header ── */
+  .card-dealer-header {
+    display:flex; align-items:center; gap:.7rem;
+    padding:.8rem 1rem; border-bottom:1px solid var(--border-light);
+    background:linear-gradient(to right,rgba(247,250,252,.8),#fff);
+  }
+  .dealer-avatar-link {
+  flex-shrink: 0;
+  text-decoration: none;
+  position: relative;
+  display: inline-flex;
+}
+
+  .dealer-avatar {
+    width:36px; height:36px; border-radius:50%;
+    background:linear-gradient(135deg,var(--primary-blue),var(--primary-light));
+    border:2px solid var(--border-light);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800;
+    font-size:.8rem;
+    color:#fff;
+    font-family: 'roboto';
+    overflow:hidden; flex-shrink:0; transition:border-color .2s;
+    position:relative;
+  }
+  .product-card:hover .dealer-avatar { border-color:var(--accent-gold); }
+  .dealer-avatar img { width:100%; height:100%; object-fit:cover; }
+  
+  .avatar-verified {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .6rem;
+  color: #0891b2;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+  .dealer-info { flex:1; min-width:0; }
+  .dealer-name {
+    font-size:.8rem;
+    font-weight:700;
+    font-family: 'roboto';
+    color:var(--text-primary);
+    display:flex; align-items:center; gap:4px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .dealer-name a { color:inherit; text-decoration:none; }
+  .dealer-name a:hover { color:var(--primary-blue); }
+  .dealer-meta {
+    font-size:.68rem; color:var(--text-muted);
+    display:flex; align-items:center; gap:5px;
+    margin-top:1px; flex-wrap:wrap;
+  }
+  .dealer-meta i { font-size:.6rem; }
+  .follow-btn {
+    flex-shrink:0; margin-left:auto;
+    font-size:.72rem;
+    font-weight:700;
+    font-family: 'roboto';
+    padding:5px 11px;
+    border-radius:50px; border:1.5px solid var(--primary-blue);
+    background:transparent; color:var(--primary-blue);
+    cursor:pointer; transition:all .2s;
+    display:flex; align-items:center; gap:4px; white-space:nowrap;
+  }
+  .follow-btn:hover { background:var(--primary-blue); color:#fff; }
+  .follow-btn.following { border-color:var(--border-medium); color:var(--text-muted); background:var(--bg-tertiary); }
+  .follow-btn.following:hover { border-color:#e74c3c; color:#e74c3c; background:rgba(231,76,60,.06); }
+
+  /* ── Product image ── */
+  .product-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .product-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    padding: 8px;
+    transition: transform 0.5s var(--ease-out-expo), filter 0.3s;
+    filter: brightness(1.02) saturate(1.1);
+  }
+
+  .product-card:hover .product-image {
+    transform: scale(1.04);
+    filter: brightness(1.05) saturate(1.2);
+  }
+
+  /* ── Image badges ── */
+  .image-badge-row {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    z-index: 2;
+  }
+  .img-badge { display:inline-flex; align-items:center; gap:4px; font-size:.65rem; font-family:'Roboto'; font-weight:800; padding:3px 8px; border-radius:6px; letter-spacing:.3px; text-transform:uppercase; backdrop-filter:blur(6px); }
+  .img-badge-sale     { color: rgba(231,76,60,.9); }
+  .img-badge-trending { color: rgba(212,175,55,.92); }
+  .img-badge-featured { color: rgba(124,58,237,.9); }
+  .img-badge-verified { color: rgba(8,145,178,.9); }
+  .img-badge-shipping { color: rgba(26,111,212,.9); }
+  .img-badge-new      { color: rgba(0,184,148,.9); }
+  .img-badge-instock  { color: rgba(22,163,74,.9); }
+
+  /* ── Wishlist ── */
+  .wishlist-wrapper { position:absolute; top:10px; right:10px; z-index:2; display:flex; flex-direction:column; align-items:center; gap:.3rem; }
+  .wishlist-btn {
+    width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,.88); backdrop-filter:blur(8px);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-muted); border:none;
+    box-shadow:0 2px 8px rgba(0,0,0,.1); transition:all .2s; cursor:pointer;
+  }
+  .wishlist-btn:hover      { color:#e74c3c; transform:scale(1.12); }
+  .wishlist-btn.wishlisted { color:#e74c3c; }
+  .wishlist-count { font-size:.6rem; font-weight:800; color:#000; min-width:34px; text-align:center; transition:all .2s; line-height:1.6; }
+  .wishlist-count-hidden { opacity:0; pointer-events:none; }
+
+  /* ── View count pill ── */
+  .view-count-pill {
+    position:absolute; bottom:10px; left:10px; z-index:2;
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:.65rem; font-weight:700;
+    background:rgba(255,255,255,.9); color:#000;
+    padding:3px 8px; border-radius:20px; backdrop-filter:blur(6px);
+  }
+  .view-count-pill .fa-eye { color:#22c55e; font-size:.75rem; }
+
+  /* ── Quick view overlay ── */
+  .product-overlay {
+    position:absolute; inset:0;
+    background:linear-gradient(0deg,rgba(10,37,64,.8) 0%,transparent 55%);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:1.25rem; opacity:0; transition:opacity .25s; z-index:1;
+  }
+  .product-card:hover .product-overlay { opacity:1; }
+  .quick-view-btn {
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.6rem 1.4rem;
+    background:linear-gradient(135deg,var(--accent-gold),var(--accent-amber));
+    color:var(--primary-dark); border-radius:50px; font-weight:800; font-size:.82rem;
+    text-decoration:none; box-shadow:0 4px 14px rgba(212,175,55,.45);
+    transition:all .2s; letter-spacing:.2px;
+  }
+  .quick-view-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(212,175,55,.6); }
+
+  /* ── Card body ── */
+  .card-body { padding:1rem 1.1rem 1.25rem; }
+  .card-title {
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    font-size:.98rem; font-weight:700; font-family:'Roboto','Outfit',sans-serif;
+    color:var(--text-primary); text-decoration:none;
+    line-height:1.5; margin-bottom:.3rem; transition:color .2s; display:block;
+  }
+  .card-title:hover { color:var(--primary-blue); }
+  .card-title mark  { background:rgba(212,175,55,.22); color:var(--gold); border-radius:3px; padding:0 2px; }
+  .card-subtitle { font-size:.78rem; color:var(--primary-blue); margin-bottom:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .card-seller-row { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap; font-size:.72rem; color:var(--text-muted); margin-bottom:.6rem; }
+  .card-seller-row i { font-size:.62rem; opacity:.7; }
+  .card-seller-row a { color:inherit; text-decoration:none; }
+  .card-seller-row a:hover { color:var(--primary-blue); }
+
+  /* ── Rating ── */
+  .card-rating { display:flex; align-items:center; gap:5px; margin-bottom:.75rem; font-size:.78rem; }
+  .stars-wrap { display:flex; gap:1px; }
+  .stars-wrap .fa-solid.fa-star  { color:var(--accent-gold); font-size:.72rem; }
+  .stars-wrap .fa-regular.fa-star { color:var(--border-medium,#cbd5e0); font-size:.72rem; }
+  .rating-score { font-weight:800; color:var(--accent-gold); font-size:.78rem; }
+  .rating-count { color:var(--text-muted); font-size:.72rem; }
+
+  /* ── Price section ── */
+  .price-section {
+    position:relative;
+    background:linear-gradient(135deg,#f0f4ff 0%,#f7fafc 100%);
+    border:1px solid rgba(13,71,161,.08);
+    border-radius:12px;
+    padding:.85rem 1rem;
+    margin-bottom:.875rem;
+  }
+  .discount-badge-pill {
+    position:absolute; top:-11px; right:12px;
+    background:linear-gradient(135deg,#e74c3c,#c0392b);
+    color:#fff;
+    font-size:.7rem;
+    font-weight:800;
+    padding:3px 9px;
+    border-radius:20px;
+    letter-spacing:.3px;
+  }
+  .price-row     { display:flex; align-items:center; }
+  .price-col     { flex:1; display:flex; flex-direction:column; gap:2px; }
+  .price-divider { width:1px; height:36px; background:rgba(13,71,161,.1); margin:0 .875rem; }
+  .price-label   { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#000; }
+  .original-price { font-size:.92rem; font-weight:700; color:red; text-decoration:line-through; opacity:.7; }
+  .offer-price    { font-size:1.05rem; font-weight:800; color:#16a34a; }
+
+  /* ── Stock badge ── */
+  .stock-badge-row { font-size:.72rem; font-weight:700; margin-bottom:.5rem; display:flex; align-items:center; gap:4px; }
+  .stock-in-stock     { color:#1a6b3a; }
+  .stock-low-stock    { color:#92400e; }
+  .stock-out-of-stock { color:#c8102e; }
+
+  /* ── Meta badges ── */
+  .badges-row { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .meta-badge { display:inline-flex; align-items:center; gap:4px; padding:.3rem .65rem; border-radius:6px; font-size:.72rem; font-weight:700; text-decoration:none; transition:all .2s; }
+  .meta-badge:hover        { transform:translateY(-1px); }
+  .category-badge          { color:var(--primary-blue); }
+  .category-badge:hover    { background:var(--primary-blue); color:#fff; }
+  .brand-badge             { color:var(--gold); }
+  .brand-badge:hover       { background:var(--accent-gold); color:var(--primary-dark); }
+  .sub-category-badge      { color:#fd79a8; }
+  .sub-category-badge:hover{ background:#fd79a8; color:#fff; }
+
+  /* ── Empty state ── */
+  .empty-state-wrapper { grid-column:1/-1; display:flex; flex-direction:column; align-items:center; gap:1.25rem; padding:5rem 2rem; text-align:center; }
+  .empty-icon-ring { width:96px; height:96px; border-radius:50%; background:var(--bg-tertiary); border:2px dashed var(--border-medium); display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:var(--text-muted); opacity:.5; }
+  .empty-state-title { font-family:var(--font-display); font-size:1.6rem; font-weight:700; color:var(--text-primary); }
+  .empty-state-text  { font-size:.95rem; color:var(--text-secondary); }
+  .empty-state-text a      { color:var(--gold-pure); border-bottom:1px solid var(--gold-dim); }
+  .empty-state-text a:hover{ color:var(--gold-bright); }
+  .empty-cta { padding:.6rem 1.5rem; background:var(--primary-blue); color:#fff; border-radius:50px; font-weight:700; font-size:.88rem; text-decoration:none; transition:all .2s; }
+  .empty-cta:hover { background:var(--primary-dark); transform:translateY(-2px); }
+
+  /* ── Pagination ── */
+  .pagination-wrapper { margin-top:2.5rem; }
+  .pagination { display:flex; justify-content:center; align-items:center; gap:.4rem; list-style:none; flex-wrap:wrap; }
+  .page-link { display:flex; align-items:center; justify-content:center; min-width:42px; height:42px; padding:.4rem .875rem; background:#fff; border:1.5px solid var(--border-light); border-radius:10px; color:var(--text-primary); font-weight:700; font-size:.88rem; text-decoration:none; transition:all .2s; }
+  .page-link:hover { background:var(--primary-blue); color:#fff; border-color:var(--primary-blue); transform:translateY(-2px); box-shadow:var(--shadow-sm); }
+  .page-item.active .page-link   { background:linear-gradient(135deg,var(--accent-gold),var(--accent-amber)); color:var(--primary-dark); border-color:transparent; box-shadow:0 4px 12px rgba(212,175,55,.4); }
+  .page-item.disabled .page-link { opacity:.35; cursor:not-allowed; pointer-events:none; }
+
+  /* ── Right sidebar ── */
+  .right-sidebar { display:flex; flex-direction:column; gap:1.25rem; position:sticky; top:calc(var(--header-h) + 1rem); }
+  .sidebar-card { background:#fff; border:1.5px solid var(--border-light); border-radius:16px; overflow:hidden; box-shadow:0 2px 10px rgba(10,37,64,.05); }
+  .sidebar-card-header { display:flex; align-items:center; gap:7px; padding:.875rem 1.1rem; font-size:.72rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--text-secondary); border-bottom:1px solid var(--border-light); background:var(--bg-secondary); }
+  .sidebar-card-header i { color:var(--accent-gold); font-size:.8rem; }
+  .sidebar-card-body { padding:.75rem 1rem; }
+  .suggest-dealer-row { display:flex; align-items:center; gap:.7rem; padding:.65rem 0; border-bottom:1px solid var(--border-light); }
+  .suggest-dealer-row:last-child { border-bottom:none; padding-bottom:0; }
+  .sd-avatar { width:38px; height:38px; flex-shrink:0; border-radius:50%; background:linear-gradient(135deg,var(--primary-blue),var(--primary-light)); border:2px solid var(--border-light); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; color:#fff; overflow:hidden; text-decoration:none; }
+  .sd-avatar img { width:100%; height:100%; object-fit:cover; }
+  .sd-info     { flex:1; min-width:0; }
+  .sd-name     { font-size:.8rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sd-products { font-size:.68rem; color:var(--text-muted); display:flex; align-items:center; gap:3px; margin-top:1px; }
+  .sd-products i { font-size:.6rem; }
+  .sidebar-brand-row { display:flex; align-items:center; gap:.7rem; padding:.6rem 0; border-bottom:1px solid var(--border-light); text-decoration:none; transition:all .2s; }
+  .sidebar-brand-row:last-child { border-bottom:none; }
+  .sidebar-brand-row:hover { padding-left:4px; }
+  .sb-logo  { width:34px; height:34px; flex-shrink:0; border-radius:8px; background:var(--bg-tertiary); border:1px solid var(--border-light); display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:800; color:var(--accent-gold); overflow:hidden; }
+  .sb-logo img { width:100%; height:100%; object-fit:contain; }
+  .sb-info  { flex:1; min-width:0; }
+  .sb-name  { font-size:.8rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sb-count { font-size:.67rem; color:var(--text-muted); margin-top:1px; }
+  .sb-arrow { font-size:.65rem; color:var(--border-medium); flex-shrink:0; transition:color .2s; }
+  .sidebar-brand-row:hover .sb-arrow { color:var(--accent-gold); }
+
+  /* Grid responsive */
+  @media (max-width:1100px) {
+    .page-shell{grid-template-columns:1fr;}
+    .right-sidebar{display:none;}
+  }
+  @media (max-width:1200px) { .product-grid{grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:1.25rem;} }
+  @media (max-width:1024px) { .product-grid{grid-template-columns:repeat(2,1fr);gap:1.1rem;} }
+  @media (max-width:768px)  {
+    .page-shell{ margin-top: 0; padding: 0.25rem 0.5rem 0.5rem;}
+    .product-grid{grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:1rem;}
+  }
+  @media (max-width:600px)  { .product-grid{grid-template-columns:1fr;gap:.875rem;} .card-body{padding:.75rem;} }
+  @media (max-width:360px)  { .card-body{padding:.625rem;} .card-title{font-size:.88rem;} }
+</style>
+
+  <div class="page-shell">
+
+    <!-- ── MAIN FEED ── -->
+    <div>
+      <div class="product-grid">
+        {% for product in products %}
+        <article class="product-card" data-product-id="{{ product.id }}">
+
+          <!-- Dealer header -->
+          <div class="card-dealer-header">
+{% if product.seller_username %}
+<a href="{% url 'customer:profile_view' username=product.seller_username %}" class="dealer-avatar-link">
+{% else %}
+<span class="dealer-avatar-link">
+{% endif %}
+  <div class="dealer-avatar">
+    {% if product.seller_photo %}
+      <img src="{{ product.seller_photo }}" alt="{{ product.seller_name }}" onerror="this.style.display='none'">
+    {% else %}
+      {{ product.seller_name|first|upper }}
+    {% endif %}
+  </div>
+  {% if product.seller_verified %}
+    <span class="avatar-verified"><i class="fa-solid fa-circle-check"></i></span>
+  {% endif %}
+{% if product.seller_username %}
+</a>
+{% else %}
+</span>
+{% endif %}
+            <div class="dealer-info">
+              <div class="dealer-name">
+                {% if product.seller_username %}
+                  <a href="{% url 'customer:profile_view' username=product.seller_username %}">{{ product.seller_name }}</a>
+                {% else %}
+                  {{ product.seller_name }}
+                {% endif %}
+              </div>
+              <div class="dealer-meta">
+                <i class="fa-solid fa-box" style="color:#1e88e5;"></i>{{ product.seller_total_products }}
+                <span style="color: green;">·</span>
+                <i class="fa-regular fa-clock" style="color:#6c5ce7;"></i>{{ product.age_days|default:"?"|floatformat:0 }}d ago
+              </div>
+            </div>
+
+            {% if request.user.is_authenticated and product.dealer_id != request.user.id %}
+            <button class="follow-btn {% if product.dealer_id in already_following %}following{% endif %}"
+                    data-dealer-id="{{ product.dealer_id }}"
+                    data-username="{{ product.seller_username }}"
+                    onclick="toggleFollow(this)">
+              {% if product.dealer_id in already_following %}
+                 Following
+              {% else %}
+                 Follow
+              {% endif %}
+            </button>
+            {% endif %}
+          </div>
+
+          <!-- Product image -->
+          <a href="{% url 'ponno:product_detail' slug=product.slug %}" style="display:block;">
+            <div class="product-image-wrapper">
+              <img src="{{ product.image }}" alt="{{ product.product_name }}"
+                   class="product-image" loading="lazy"
+                   onerror="this.src='/static/defaults/default-product.png'">
+
+              <!-- Image badges -->
+              <div class="image-badge-row">
+                {% if product.discount_badge %}
+                  <span class="img-badge img-badge-sale"><i class="fa-solid fa-tag"></i>{{ product.discount_badge }}</span>
+                {% endif %}
+                {% if product.is_trending %}
+                  <span class="img-badge img-badge-trending"><i class="fa-solid fa-fire"></i></span>
+                {% endif %}
+                {# FIX-7: key in Python was renamed from 'is_in_stock' → 'in_stock' to match this check #}
+                {% if product.in_stock %}
+                  <span class="img-badge img-badge-instock"><i class="fa-solid fa-boxes-stacked"></i></span>
+                {% endif %}
+                {% if product.is_featured %}
+                  <span class="img-badge img-badge-featured"><i class="fa-solid fa-crown"></i></span>
+                {% endif %}
+                {% if product.is_verified %}
+                  <span class="img-badge img-badge-verified"><i class="fa-solid fa-circle-check"></i></span>
+                {% endif %}
+                {% if product.free_shipping %}
+                  <span class="img-badge img-badge-shipping"><i class="fa-solid fa-truck"></i></span>
+                {% endif %}
+              </div>
+
+              <!-- Wishlist -->
+              <div class="wishlist-wrapper" onclick="event.stopPropagation();">
+                {% if request.user.is_authenticated %}
+                {# FIX-6: product.uuid is str(product_id); wishlisted_ids is a set of str — comparison always works #}
+                <button class="wishlist-btn {% if product.uuid in wishlisted_ids %}wishlisted{% endif %}"
+                        data-product-id="{{ product.uuid }}"
+                        title="Add to wishlist"
+                        onclick="event.preventDefault();event.stopPropagation();toggleWishlist(this)">
+                  {% if product.uuid in wishlisted_ids %}
+                    <i class="fa-solid fa-heart"></i>
+                  {% else %}
+                    <i class="fa-regular fa-heart"></i>
+                  {% endif %}
+                </button>
+                {% else %}
+                <a href="{% url 'customer:signin' %}" class="wishlist-btn" title="Login to wishlist"
+                   onclick="event.stopPropagation();">
+                  <i class="fa-regular fa-heart"></i>
+                </a>
+                {% endif %}
+                <span class="wishlist-count {% if product.wishlist_count == 0 %}wishlist-count-hidden{% endif %}">
+                  {{ product.wishlist_count }}
+                </span>
+              </div>
+
+              <!-- View count pill -->
+              <span class="view-count-pill">
+                <i class="fa-regular fa-eye"></i>{{ product.views }}
+              </span>
+
+              <!-- Quick view overlay -->
+              <div class="product-overlay">
+                <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="quick-view-btn">
+                  <i class="fa-solid fa-eye"></i> Quick View
+                </a>
+              </div>
+            </div>
+          </a>
+
+          <!-- Card body -->
+          <div class="card-body">
+
+            <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="card-title">
+              {% if query and product.highlighted_title %}{{ product.highlighted_title|safe }}
+              {% elif product.title %}{{ product.title }}
+              {% else %}{{ product.product_name }}{% endif %}
+            </a>
+
+            {% if product.title != product.product_name %}
+            <p class="card-subtitle">
+              {% if query and product.highlighted_product_name %}{{ product.highlighted_product_name|safe }}
+              {% else %}{{ product.product_name }}{% endif %}
+            </p>
+            {% endif %}
+
+            <!-- Rating -->
+            {% if product.rating > 0 %}
+            <div class="card-rating">
+              <div class="stars-wrap">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= product.rating %}
+                    <i class="fa-solid fa-star"></i>
+                  {% else %}
+                    <i class="fa-regular fa-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              <span class="rating-score">{{ product.rating }}</span>
+              <span class="rating-count">({{ product.review_count }})</span>
+            </div>
+            {% endif %}
+
+            <!-- Price -->
+            <div class="price-section">
+              {% if product.on_sale %}
+                <div class="discount-badge-pill">{{ product.discount_badge }}</div>
+              {% endif %}
+              <div class="price-row">
+                {% if product.brand_price %}
+                <div class="price-col">
+                  <span class="price-label">Brand Price</span>
+                  <span class="original-price">{{ product.brand_price }}</span>
+                </div>
+                <div class="price-divider"></div>
+                {% endif %}
+                <div class="price-col">
+                  <span class="price-label">{% if product.on_sale %}Offer Price{% else %}Selling Price{% endif %}</span>
+                  <span class="offer-price">{{ product.final_price }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Meta badges -->
+            <div class="badges-row">
+              {% if product.brand_slug %}
+                <a href="{% url 'ponno:discovery_engine' %}?filter={{ product.brand_slug }}"
+                   class="meta-badge brand-badge" onclick="event.stopPropagation();">
+                  <i class="fa-solid fa-award"></i>{{ product.brand }}
+                </a>
+              {% endif %}
+              {% if product.category_slug %}
+                <a href="{% url 'ponno:discovery_engine' %}?filter={{ product.category_slug }}"
+                   class="meta-badge category-badge" onclick="event.stopPropagation();">
+                  <i class="fa-solid fa-tag"></i>{{ product.category }}
+                </a>
+              {% endif %}
+              {% if product.sub_category_slug %}
+                <a href="{% url 'ponno:discovery_engine' %}?filter={{ product.sub_category_slug }}"
+                   class="meta-badge sub-category-badge" onclick="event.stopPropagation();">
+                  <i class="fa-solid fa-list-ul"></i>{{ product.sub_category }}
+                </a>
+              {% endif %}
+            </div>
+
+          </div>
+        </article>
+
+        {% empty %}
+        <div class="empty-state-wrapper">
+          <div class="empty-icon-ring"><i class="fa-solid fa-box-open"></i></div>
+          <h3 class="empty-state-title">
+            {% if query %}No results for "{{ query }}"{% else %}No Products Found{% endif %}
+          </h3>
+          <p class="empty-state-text">
+            {% if query %}Try different keywords or <a href="{% url 'ponno:discovery_engine' %}">browse all products</a>.
+            {% else %}No products match the selected filters.{% endif %}
+          </p>
+          <a href="{% url 'ponno:discovery_engine' %}" class="empty-cta">Clear Filters</a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Infinite scroll sentinel + loader -->
+      <div id="scrollSentinel" style="height:1px;"></div>
+      <div id="scrollLoader" style="display:none;text-align:center;padding:2rem 0;">
+        <div class="spinner" style="margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /main feed -->
+
+    <!-- ── RIGHT SIDEBAR ── -->
+    <aside class="right-sidebar" aria-label="Suggestions">
+
+      <!-- Suggested Dealers -->
+      {% if suggested_dealers %}
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">
+          <i class="fa-solid fa-user-plus"></i> Suggested Dealers
+        </div>
+        <div class="sidebar-card-body">
+          {% for dealer in suggested_dealers %}
+          <div class="suggest-dealer-row">
+            {% if dealer.email_or_phone %}
+            <a href="{% url 'customer:profile_view' username=dealer.email_or_phone %}" class="sd-avatar">
+            {% else %}
+            <span class="sd-avatar">
+            {% endif %}
+              {% if dealer.profileinfo.profile_photo %}
+                <img src="{{ dealer.profileinfo.profile_photo.url }}" alt="">
+              {% else %}
+                {{ dealer.email_or_phone|first|upper }}
+              {% endif %}
+            {% if dealer.email_or_phone %}
+            </a>
+            {% else %}
+            </span>
+            {% endif %}
+
+            <div class="sd-info">
+              <div class="sd-name">{{ dealer.profileinfo.profile_name|default:dealer.email_or_phone }}</div>
+              <div class="sd-products">
+                <i class="fa-solid fa-box"></i>
+                {{ dealer.product_count }} product{{ dealer.product_count|pluralize }}
+              </div>
+            </div>
+
+            {% if request.user.is_authenticated and dealer.id != request.user.id %}
+            <button class="follow-btn {% if dealer.id in already_following %}following{% endif %}"
+                    data-dealer-id="{{ dealer.id }}"
+                    data-username="{{ dealer.email_or_phone }}"
+                    onclick="toggleFollow(this)">
+              {% if dealer.id in already_following %}
+                 Following
+              {% else %}
+                 Follow
+              {% endif %}
+            </button>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Top Brands -->
+      {% if all_brands %}
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">
+          <i class="fa-solid fa-award"></i> Top Brands
+        </div>
+        <div class="sidebar-card-body">
+          {% for b in all_brands|slice:":8" %}
+          <a href="{% url 'ponno:discovery_engine' %}?filter={{ b.brand_slug }}" class="sidebar-brand-row">
+            <div class="sb-logo">
+              {% if b.brand_logo_url %}
+                <img src="{{ b.brand_logo_url }}" alt="{{ b.brand_name }}">
+              {% else %}
+                {{ b.brand_name|slice:":2"|upper }}
+              {% endif %}
+            </div>
+            <div class="sb-info">
+              <div class="sb-name">{{ b.brand_name }}</div>
+              <div class="sb-count">{{ b.product_count }} product{{ b.product_count|pluralize }}</div>
+            </div>
+            <i class="fa-solid fa-chevron-right sb-arrow"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </aside>
+
+  </div><!-- /page-shell -->
+
+<script>
+  function toggleWishlist(btn) {
+    const productId    = btn.dataset.productId;
+    const icon         = btn.querySelector('i');
+    const wrapper      = btn.closest('.wishlist-wrapper');
+    const countEl      = wrapper.querySelector('.wishlist-count');
+    const isWishlisted = btn.classList.contains('wishlisted');
+
+    console.log('toggleWishlist called — isWishlisted:', isWishlisted, 'productId:', productId);
+
+    btn.classList.toggle('wishlisted');
+    icon.className = btn.classList.contains('wishlisted') ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+
+    const currentCount    = parseInt(countEl.textContent) || 0;
+    const optimisticCount = isWishlisted ? currentCount - 1 : currentCount + 1;
+    countEl.textContent   = optimisticCount;
+    countEl.classList.toggle('wishlist-count-hidden', optimisticCount <= 0);
+
+    fetch(`/customer/wishlist/toggle/${productId}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+      console.log('wishlist response:', data);
+      btn.classList.toggle('wishlisted', data.wishlisted);
+      icon.className = data.wishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      countEl.textContent = data.wishlist_count;
+      countEl.classList.toggle('wishlist-count-hidden', data.wishlist_count <= 0);
+    })
+    .catch(err => {
+      console.error('wishlist fetch failed:', err);
+      btn.classList.toggle('wishlisted');
+      icon.className = btn.classList.contains('wishlisted') ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      countEl.textContent = currentCount;
+      countEl.classList.toggle('wishlist-count-hidden', currentCount <= 0);
+    });
+  }
+  /* ── Infinite scroll JS ──
+   * FIX-9: fetch only extracts .product-card elements from the response,
+   * preventing re-execution of <script> tags and re-injection of
+   * full-page HTML (nav, styles, etc.) into the grid.
+   * Uses DOMParser on the full HTML text and only appends article cards.
+   */
+  (function () {
+    'use strict';
+    let page         = {{ page_obj.number }};
+    const totalPages = {{ page_obj.paginator.num_pages }};
+    let loading      = false;
+    let exhausted    = page >= totalPages;
+
+    const grid     = document.querySelector('.product-grid');
+    const sentinel = document.getElementById('scrollSentinel');
+    const loader   = document.getElementById('scrollLoader');
+
+    if (exhausted || !grid) return;
+
+    function currentParams() {
+      const p = new URLSearchParams(window.location.search);
+      p.delete('page');
+      return p;
+    }
+
+    async function loadMore() {
+      if (loading || exhausted) return;
+      loading = true;
+      loader.style.display = 'block';
+      page += 1;
+
+      const params = currentParams();
+      params.set('page', page);
+
+      try {
+        const res = await fetch('?' + params.toString(), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) throw new Error(res.status);
+
+        const html = await res.text();
+        const doc  = new DOMParser().parseFromString(html, 'text/html');
+
+        // FIX-9: only import product cards — no scripts, styles, or layout re-injected
+        const newCards = doc.querySelectorAll('.product-grid .product-card');
+        if (newCards.length === 0) {
+          exhausted = true;
+        } else {
+          newCards.forEach(card => grid.appendChild(card));
+          if (page >= totalPages) exhausted = true;
+        }
+      } catch (e) {
+        page -= 1;
+        console.warn('Infinite scroll fetch failed:', e);
+      } finally {
+        loading = false;
+        loader.style.display = 'none';
+      }
+    }
+
+    new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) loadMore(); },
+      { rootMargin: '300px' }
+    ).observe(sentinel);
+  })();
+
+  /* ── Wishlist toggle JS ── */
+  function toggleWishlist(btn) {
+    const productId    = btn.dataset.productId;
+    const icon         = btn.querySelector('i');
+    const wrapper      = btn.closest('.wishlist-wrapper');
+    const countEl      = wrapper.querySelector('.wishlist-count');
+    const isWishlisted = btn.classList.contains('wishlisted');
+
+    btn.classList.toggle('wishlisted');
+    icon.className = btn.classList.contains('wishlisted') ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+
+    const currentCount    = parseInt(countEl.textContent) || 0;
+    const optimisticCount = isWishlisted ? currentCount - 1 : currentCount + 1;
+    countEl.textContent   = optimisticCount;
+    countEl.classList.toggle('wishlist-count-hidden', optimisticCount <= 0);
+
+    fetch(`/customer/wishlist/toggle/${productId}/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.classList.toggle('wishlisted', data.wishlisted);
+      icon.className = data.wishlisted ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      countEl.textContent = data.wishlist_count;
+      countEl.classList.toggle('wishlist-count-hidden', data.wishlist_count <= 0);
+    })
+    .catch(() => {
+      btn.classList.toggle('wishlisted');
+      icon.className = btn.classList.contains('wishlisted') ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      countEl.textContent = currentCount;
+      countEl.classList.toggle('wishlist-count-hidden', currentCount <= 0);
+    });
+  }
+
+  /* ── Follow / unfollow JS ── */
+  function toggleFollow(btn) {
+    const dealerId    = btn.dataset.dealerId;
+    const username    = btn.dataset.username;
+    const isFollowing = btn.classList.contains('following');
+    const url         = isFollowing
+      ? `/customer/unfollow/${username}/`
+      : `/customer/follow/${username}/`;
+
+    document.querySelectorAll(`.follow-btn[data-dealer-id="${dealerId}"]`).forEach(b => {
+      if (isFollowing) {
+        b.innerHTML = '<i class="fa-solid fa-user-plus"></i> Follow';
+        b.classList.remove('following');
+      } else {
+        b.innerHTML = '<i class="fa-solid fa-user-check"></i> Following';
+        b.classList.add('following');
+      }
+    });
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+    })
+    .catch(() => {
+      document.querySelectorAll(`.follow-btn[data-dealer-id="${dealerId}"]`).forEach(b => {
+        if (isFollowing) {
+          b.innerHTML = '<i class="fa-solid fa-user-check"></i> Following';
+          b.classList.add('following');
+        } else {
+          b.innerHTML = '<i class="fa-solid fa-user-plus"></i> Follow';
+          b.classList.remove('following');
+        }
+      });
+    });
+  }
+
+  /* ── Cookie helper ── */
+  function getCookie(name) {
+    const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return v ? v.pop() : '';
+  }
+</script>
+
+</main>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     7) FOOTER
+═══════════════════════════════════════════════════════════════ -->
+<style>
+  .footer { position:relative; z-index:5; background:var(--abyss); border-top:1px solid var(--rim); padding:.3rem .5rem .2rem; text-align:center; }
+  .footer-tagline { font-family:var(--f-mono); font-size:.65rem; color:var(--t-ghost); letter-spacing:3px; text-transform:uppercase; }
+  .footer-line    { width:60px; height:1px; background:linear-gradient(to right,transparent,var(--gold-dim),transparent); margin:.5rem auto; }
+</style>
+
+<footer class="footer">
+  <div class="footer-tagline">Product Information Engine with Local Authorized Market</div>
+  <div class="footer-line"></div>
+  <div style="font-family:var(--f-mono);font-size:.6rem;color:var(--t-ghost);letter-spacing:2px;">
+    © {% now "Y" %} PIELAM · Bangladesh
+  </div>
+</footer>
+
+</body>
+</html>

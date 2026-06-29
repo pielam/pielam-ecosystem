@@ -1,0 +1,204 @@
+{% load static %}
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Patient Registration</title>
+    <link rel="stylesheet" href="{% static 'tomal/patients.css'%}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">iHEDO</div>
+
+        <ul class="menu">
+            <li class="active">
+                <a href="{% url 'tomal:dashboard' %}">
+                    <i class="fa-solid fa-house"></i>
+                     Dashboard
+                </a>
+            </li>
+            
+            <li class="active">
+                <a href="{% url 'tomal:patients' %}">
+                    <i class="fa-solid fa-users"></i>
+                    Patients
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:appointments' %}">
+                    <i class="fa-solid fa-calendar"></i>
+                    Appointments
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:testandpackages' %}">
+                    <i class="fa-solid fa-vial"></i>
+                    Tests & Packages
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:samplecollection' %}">
+                    <i class="fa-solid fa-syringe"></i>
+                    Sample Collection
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:reports' %}">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:billing' %}">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    Billing
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:inventory' %}">
+                    <i class="fa-solid fa-cube"></i>
+                    Inventory
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:patients' %}">
+                    <i class="fa-solid fa-stethoscope"></i>
+                    Doctors
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:stuff' %}">
+                    <i class="fa-solid fa-user-tie"></i>
+                    Staff
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="{% url 'tomal:analytics' %}">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    Analytics
+                </a>
+            </li>
+            
+            <li class="active">
+                <a href="{% url 'tomal:settings' %}">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <input type="text" placeholder="Search patients, tests, reports…">
+            <div class="user">
+                <img src="https://i.pravatar.cc/40" alt="">
+                <span>Abu Taha</span>
+            </div>
+        </header>
+
+        <!-- Layout Grid -->
+        <div class="grid">
+
+            <!-- New Patient Information -->
+            <section class="card left">
+                <h2>New Patient Information</h2>
+
+                <label>Patient Information</label>
+                <input type="text" placeholder="Enter phone number">
+
+                <div class="row">
+                    <div class="col">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="Enter full name">
+                    </div>
+                    <button class="search-btn">🔍 Search Existing</button>
+                </div>
+
+                <label>Email Address</label>
+                <input type="email" placeholder="Enter email">
+
+                <label>Age</label>
+                <input type="number" placeholder="Enter age">
+
+                <label>Gender</label>
+                <div class="gender">
+                    <label><input type="radio" name="gen"> Male</label>
+                    <label><input type="radio" name="gen"> Female</label>
+                    <label><input type="radio" name="gen"> Others</label>
+                </div>
+
+                <label>Address</label>
+                <textarea placeholder="Enter full address"></textarea>
+
+            </section>
+
+            <!-- Doctor + Department -->
+            <section class="card right">
+                <h2>Doctor & Department</h2>
+
+                <label>Department</label>
+                <select>
+                    <option>Select Department</option>
+                </select>
+
+                <label>Doctor Name</label>
+                <select>
+                    <option>Select Doctor Name</option>
+                </select>
+
+                <label>Visit Type</label>
+                <div class="gender">
+                    <label><input type="radio" name="visit"> Walk-In</label>
+                    <label><input type="radio" name="visit"> Appointment</label>
+                </div>
+
+                <label>Reason for Visit (Optional)</label>
+                <textarea placeholder="Enter reason for visit"></textarea>
+            </section>
+
+        </div>
+
+        <!-- Test Selection -->
+        <section class="card full">
+            <h2>Test Selection</h2>
+
+            <label>Selected Tests</label>
+            <div class="empty-box">No tests selected</div>
+
+            <button class="add-btn">+ Add New Test</button>
+        </section>
+
+        <!-- Buttons -->
+        <div class="actions">
+            <button class="cancel">Cancel</button>
+            <button class="submit">Register Patient</button>
+        </div>
+
+    </main>
+
+</body>
+</html>

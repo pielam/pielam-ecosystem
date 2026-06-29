@@ -1,0 +1,711 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Create Your Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: 
+                radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            animation: particleFloat 20s linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+
+        .signup-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+            max-width: 520px;
+            width: 100%;
+            padding: 48px 40px;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .logo-section .icon-wrapper {
+            display: inline-block;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo-section .icon-wrapper i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .logo-section h1 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .logo-section p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group label i {
+            color: #667eea;
+            font-size: 0.95rem;
+        }
+
+        .form-group label .required {
+            color: #e53e3e;
+            margin-left: 2px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #a0aec0;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 6px;
+            color: #718096;
+            font-size: 0.85rem;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .password-strength-text {
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px;
+            transition: color 0.3s;
+        }
+
+        .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .messages {
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.9rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert i {
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            color: #c53030;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            color: #744210;
+            border-left: 4px solid #dd6b20;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 32px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 28px 0;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 16px;
+            position: relative;
+            color: #718096;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .signin-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .signin-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.3s;
+        }
+
+        .signin-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .requirements {
+            background: linear-gradient(135deg, #ebf4ff 0%, #f3e7ff 100%);
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .requirements h4 {
+            font-size: 0.9rem;
+            color: #5a67d8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .requirements ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .requirements li {
+            padding: 6px 0;
+            color: #4a5568;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .requirements li i {
+            color: #5a67d8;
+            font-size: 0.85rem;
+        }
+
+        .match-indicator {
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .match-indicator.show {
+            display: block;
+        }
+
+        .match-indicator.match {
+            color: #38a169;
+        }
+
+        .match-indicator.no-match {
+            color: #e53e3e;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 600px) {
+            .signup-container {
+                padding: 36px 28px;
+            }
+
+            .logo-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 12px 14px;
+                font-size: 0.95rem;
+            }
+
+            .btn-submit {
+                padding: 14px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signup-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="icon-wrapper">
+                <i class="fa-solid fa-rocket"></i>
+            </div>
+            <h1>Create Your Account</h1>
+            <p>Join thousands of users today</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fa-solid {% if message.tags == 'error' %}fa-circle-exclamation{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Password Requirements -->
+        <div class="requirements">
+            <h4>
+                <i class="fa-solid fa-shield-halved"></i> 
+                Security Requirements
+            </h4>
+            <ul>
+                <li>
+                    <i class="fa-solid fa-check-circle"></i> 
+                    Password must be at least 8 characters
+                </li>
+                <li>
+                    <i class="fa-solid fa-check-circle"></i> 
+                    Mix uppercase, lowercase, and numbers for better security
+                </li>
+                <li>
+                    <i class="fa-solid fa-check-circle"></i> 
+                    Use email (user@example.com) or phone (+1234567890)
+                </li>
+            </ul>
+        </div>
+
+        <!-- Signup Form -->
+        <form method="POST" action="{% url 'signup' %}" id="signupForm">
+            {% csrf_token %}
+
+            <!-- Primary Identity -->
+            <div class="form-group">
+                <label for="email_or_phone">
+                    <i class="fa-solid fa-id-card"></i> 
+                    Email or Phone Number
+                    <span class="required">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="email_or_phone" 
+                    name="email_or_phone" 
+                    placeholder="user@example.com or +1234567890"
+                    value="{{ email_or_phone }}"
+                    required
+                    autocomplete="username"
+                >
+                <small>This will be your login identifier</small>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password">
+                    <i class="fa-solid fa-lock"></i> 
+                    Password
+                    <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter a strong password"
+                        required
+                        minlength="8"
+                        autocomplete="new-password"
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword('password', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="strength-bar"></div>
+                </div>
+                <div class="password-strength-text" id="strength-text"></div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group">
+                <label for="password2">
+                    <i class="fa-solid fa-lock-open"></i> 
+                    Confirm Password
+                    <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password2" 
+                        name="password2" 
+                        placeholder="Re-enter your password"
+                        required
+                        minlength="8"
+                        autocomplete="new-password"
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword('password2', this)">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="match-indicator" id="match-indicator"></div>
+            </div>
+
+            <!-- Timezone (Optional) -->
+            <div class="form-group">
+                <label for="timezone">
+                    <i class="fa-solid fa-globe"></i> 
+                    Timezone
+                </label>
+                <select id="timezone" name="timezone">
+                    <option value="UTC" {% if timezone == 'UTC' %}selected{% endif %}>UTC (Coordinated Universal Time)</option>
+                    <option value="America/New_York">America/New York (EST/EDT)</option>
+                    <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                    <option value="America/Denver">America/Denver (MST/MDT)</option>
+                    <option value="America/Los_Angeles">America/Los Angeles (PST/PDT)</option>
+                    <option value="Europe/London">Europe/London (GMT/BST)</option>
+                    <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                    <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                    <option value="Asia/Dhaka">Asia/Dhaka (BST)</option>
+                    <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+                </select>
+                <small>Select your local timezone for better experience</small>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-submit" id="submitBtn">
+                <i class="fa-solid fa-rocket"></i> 
+                Create Account
+            </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="divider">
+            <span>Already have an account?</span>
+        </div>
+
+        <!-- Sign In Link -->
+        <div class="signin-link">
+            <a href="{% url 'signin' %}">
+                <i class="fa-solid fa-right-to-bracket"></i> 
+                Sign In Here
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Password strength indicator
+        const passwordInput = document.getElementById('password');
+        const password2Input = document.getElementById('password2');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        const matchIndicator = document.getElementById('match-indicator');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Toggle password visibility
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Password strength calculation
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            let strengthLabel = '';
+
+            if (password.length === 0) {
+                strengthBar.style.width = '0%';
+                strengthText.textContent = '';
+                return;
+            }
+
+            // Length
+            if (password.length >= 8) strength += 20;
+            if (password.length >= 12) strength += 20;
+            if (password.length >= 16) strength += 10;
+
+            // Character variety
+            if (/[a-z]/.test(password)) strength += 15;
+            if (/[A-Z]/.test(password)) strength += 15;
+            if (/[0-9]/.test(password)) strength += 10;
+            if (/[^a-zA-Z0-9]/.test(password)) strength += 10;
+
+            // Update bar
+            strengthBar.style.width = strength + '%';
+            
+            if (strength <= 30) {
+                strengthBar.style.backgroundColor = '#e53e3e';
+                strengthLabel = '❌ Weak';
+                strengthText.style.color = '#e53e3e';
+            } else if (strength <= 60) {
+                strengthBar.style.backgroundColor = '#dd6b20';
+                strengthLabel = '⚠️ Fair';
+                strengthText.style.color = '#dd6b20';
+            } else if (strength <= 80) {
+                strengthBar.style.backgroundColor = '#ecc94b';
+                strengthLabel = '👍 Good';
+                strengthText.style.color = '#d69e2e';
+            } else {
+                strengthBar.style.backgroundColor = '#38a169';
+                strengthLabel = '✅ Strong';
+                strengthText.style.color = '#38a169';
+            }
+
+            strengthText.textContent = strengthLabel;
+        });
+
+        // Password match validation
+        password2Input.addEventListener('input', function() {
+            const password = passwordInput.value;
+            const password2 = this.value;
+
+            if (password2.length === 0) {
+                matchIndicator.classList.remove('show');
+                this.style.borderColor = '#e2e8f0';
+                return;
+            }
+
+            matchIndicator.classList.add('show');
+
+            if (password2 === password && password2.length >= 8) {
+                this.style.borderColor = '#38a169';
+                matchIndicator.textContent = '✓ Passwords match';
+                matchIndicator.classList.remove('no-match');
+                matchIndicator.classList.add('match');
+            } else {
+                this.style.borderColor = '#e53e3e';
+                matchIndicator.textContent = '✗ Passwords do not match';
+                matchIndicator.classList.remove('match');
+                matchIndicator.classList.add('no-match');
+            }
+        });
+
+        // Form validation before submit
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            const password = passwordInput.value;
+            const password2 = password2Input.value;
+
+            if (password !== password2) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                password2Input.focus();
+                return false;
+            }
+
+            if (password.length < 8) {
+                e.preventDefault();
+                alert('Password must be at least 8 characters long!');
+                passwordInput.focus();
+                return false;
+            }
+
+            // Disable submit button to prevent double submission
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+        });
+
+        // Auto-detect timezone
+        window.addEventListener('load', function() {
+            const timezoneSelect = document.getElementById('timezone');
+            const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Try to select detected timezone
+            for (let option of timezoneSelect.options) {
+                if (option.value === detectedTimezone) {
+                    option.selected = true;
+                    break;
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

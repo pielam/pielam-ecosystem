@@ -1,0 +1,589 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="origin">
+
+  
+  <meta name="description" content="{{ meta_description }}">
+  <meta name="keywords"    content="{{ meta_keywords }}">
+  <meta name="author"      content="PIELAM">
+
+  <meta property="og:type"        content="product">
+  <meta property="og:title"       content="{{ og_title }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:image"       content="{{ og_image }}">
+  <meta property="og:url"         content="{{ og_url }}">
+  <meta property="og:site_name"   content="PIELAM">
+
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_description }}">
+  <meta name="twitter:image"       content="{{ og_image }}">
+
+  <link rel="canonical" href="{{ og_url }}">
+  <script type="application/ld+json">{{ structured_data|safe }}</script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+
+    /* ═══════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════ */
+    :root {
+      /* Brand */
+      --primary-dark:   #0a2540;
+      --primary-blue:   #0d47a1;
+      --primary-light:  #1976d2;
+      --accent-gold:    #d4af37;
+      --accent-amber:   #ffb300;
+
+      /* Surface */
+      --surface:        #ffffff;
+      --surface-2:      #f5f5f3;
+      --surface-3:      #eeede9;
+
+      /* Border */
+      --border:         #e4e3df;
+      --border-2:       #d0cfc9;
+
+      /* Text */
+      --ink:            #0f0f0f;
+      --ink-2:          #3a3a3a;
+      --ink-3:          #6b6b6b;
+      --ink-4:          #9b9b9b;
+
+      /* Shadows */
+      --shadow-sm:  0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md:  0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
+
+      /* Typography */
+      --font-display: 'Cormorant Garamond', serif;
+      --font-body:    'Syne', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+
+      /* Layout */
+      --header-h:          64px;   /* single-row navbar height */
+      --bottom-bar-height: 68px;
+      --drawer-w:          260px;
+
+      /* Motion */
+      --ease:        cubic-bezier(.4,0,.2,1);
+      --t-fast:      .15s ease;
+      --t-base:      .25s ease;
+      --t-slow:      .4s  cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ═══════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; font-size: 16px; scrollbar-gutter: stable; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+      padding-top: var(--header-h);
+      padding-bottom: var(--bottom-bar-height);
+    }
+    a       { text-decoration: none; color: inherit; }
+    img     { max-width: 100%; display: block; }
+    button  { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar       { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; border: 2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .navbar-glow { display: none; }
+    }
+
+
+    /* ═══════════════════════════════════════
+       SIDE DRAWER
+    ═══════════════════════════════════════ */
+    #drawerOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1999;
+      opacity: 0;
+      transition: opacity .3s var(--ease);
+    }
+
+    #sideDrawer {
+      position: fixed; top: 0; left: 0;
+      width: var(--drawer-w); height: 100%;
+      background: linear-gradient(160deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+      z-index: 2000;
+      transform: translateX(-100%);
+      transition: transform .35s var(--ease);
+      display: flex; flex-direction: column;
+      box-shadow: 4px 0 32px rgba(0,0,0,.35);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.2) transparent;
+    }
+    #sideDrawer::-webkit-scrollbar       { width: 4px; }
+    #sideDrawer::-webkit-scrollbar-track { background: transparent; }
+    #sideDrawer::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
+
+    /* Drawer open state (toggled via JS) */
+    #sideDrawer.is-open   { transform: translateX(0); }
+    #drawerOverlay.is-open { display: block; opacity: 1; }
+
+    /* Drawer header */
+    .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      position: sticky; top: 0;
+      background: var(--primary-dark);
+      z-index: 1; flex-shrink: 0;
+    }
+    .drawer-brand {
+      font-family: var(--font-display);
+      font-size: 1.35rem; font-weight: 700;
+      color: #fff; letter-spacing: .5px;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .drawer-brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: .5rem; }
+    .drawer-brand i { color: var(--accent-gold); font-size: 1.15rem; }
+
+    #drawerClose {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,.1);
+      border-radius: 8px; color: #fff; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--t-fast);
+    }
+    #drawerClose:hover { background: rgba(255,255,255,.2); }
+
+    /* Drawer nav */
+    .drawer-nav {
+      padding: 18px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+      flex: 1;
+    }
+    .drawer-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; border-radius: 10px;
+      color: #fff; font-weight: 600; font-size: .95rem;
+      transition: background var(--t-fast);
+    }
+    .drawer-link:hover           { background: rgba(255,255,255,.12); }
+    .drawer-link i               { width: 18px; text-align: center; opacity: .8; }
+    .drawer-divider              { height: 1px; background: rgba(255,255,255,.12); margin: 8px 4px; }
+    .drawer-link.secondary       { color: rgba(255,255,255,.7); font-weight: 500; font-size: .88rem; }
+    .drawer-link.secondary:hover { background: rgba(255,255,255,.08); }
+    .drawer-link.secondary i     { opacity: .6; }
+
+
+    /* ═══════════════════════════════════════
+       STICKY HEADER — NAVBAR
+    ═══════════════════════════════════════ */
+    .sticky-header {
+      position: fixed; top: 0; left: 0;
+      width: 100%; z-index: 1000;
+    }
+
+    .navbar-container {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+      position: relative; overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Animated shimmer */
+    .navbar-glow {
+      position: absolute; top: 0; left: -100%;
+      width: 200%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(212,175,55,.15), transparent);
+      animation: navGlow 4s infinite;
+      pointer-events: none;
+    }
+    @keyframes navGlow { 0%,100% { left: -100%; } 50% { left: 100%; } }
+
+    /* Inner layout */
+    .navbar-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .875rem 1.5rem;
+      max-width: 1400px; margin: 0 auto;
+      position: relative; z-index: 1;
+      height: var(--header-h);
+    }
+
+    /* Left — logo toggle + brand */
+    .navbar-left {
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    .logo-svg-wrap {
+      /* Fluid size: 30px on tiny screens → 44px on desktop */
+      width:  clamp(30px, 5vw, 44px);
+      height: clamp(30px, 5vw, 44px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      /* Extra padding so the bleed dots (outside viewBox) aren't clipped */
+      padding: 6px;
+      transition: transform var(--t-slow);
+    }
+    .logo-svg-wrap:hover { transform: scale(1.08); }
+    .logo-svg-wrap:focus-visible {
+      outline: 2px solid var(--accent-gold);
+      outline-offset: 3px;
+      border-radius: 8px;
+    }
+    /* The SVG itself fills its wrapper fluidly */
+    .logo-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible; /* needed for the corner dots that bleed outside viewBox */
+    }
+
+    .navbar-brand {
+      font-family: var(--font-display);
+      font-size: 1.75rem; font-weight: 900;
+      color: #fff; letter-spacing: .5px;
+      text-decoration: none;
+    }
+
+    /* Right — nav links */
+    .navbar-links {
+      display: flex; align-items: center; gap: .5rem;
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .625rem 1rem;
+      background: rgba(255,255,255,.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      color: #fff; font-family: var(--font-body);
+      font-weight: 600; font-size: .9rem;
+      text-decoration: none;
+      transition: background var(--t-base), border-color var(--t-base), transform var(--t-base);
+    }
+    .nav-item:hover {
+      background: rgba(255,255,255,.18);
+      border-color: rgba(212,175,55,.4);
+      transform: translateY(-2px);
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+      color: var(--primary-dark);
+      border-color: transparent;
+      box-shadow: 0 4px 16px rgba(212,175,55,.5);
+    }
+    .nav-item i { font-size: .95rem; }
+
+
+    /* ═══════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .navbar-inner { padding: .75rem 1.25rem; }
+      .navbar-brand { font-size: 1.55rem; }
+    }
+
+    @media (max-width: 768px) {
+      :root { --header-h: 60px; }
+      .navbar-inner  { padding: .75rem 1rem; }
+      .navbar-brand  { font-size: 1.4rem; }
+      .nav-item span { display: none; }
+      .nav-item      { padding: 8px 10px; }
+    }
+
+    @media (max-width: 600px) {
+      :root { --header-h: 56px; }
+      .navbar-brand  { font-size: 1.25rem; }
+    }
+
+    @media (max-width: 480px) {
+      :root { --header-h: 52px; }
+      .navbar-inner  { padding: .6rem .875rem; }
+      .navbar-brand  { font-size: 1.15rem; letter-spacing: 0; }
+      .nav-item      { padding: 7px 8px; }
+      .navbar-links  { gap: .3rem; }
+    }
+
+    @media (max-width: 360px) {
+      :root { --header-h: 50px; }
+      .navbar-inner  { padding: .5rem .625rem; }
+      .navbar-brand  { font-size: 1rem; }
+      .nav-item      { padding: 6px 7px; }
+    }
+
+    @media (max-width: 320px) {
+      :root { --header-h: 48px; }
+      .navbar-brand  { font-size: .9rem; }
+      .navbar-inner  { padding: .5rem; }
+    }
+
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     DRAWER OVERLAY
+═══════════════════════════════════════════════ -->
+<div id="drawerOverlay" aria-hidden="true"></div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SIDE DRAWER
+═══════════════════════════════════════════════ -->
+<aside id="sideDrawer" role="dialog" aria-modal="true" aria-label="Dashboard menu">
+
+  <div class="drawer-header">
+    <span class="drawer-brand">
+      <a href="{% url 'engine' %}">
+        <i class="fa-solid fa-microchip-ai"></i> Engine
+      </a>
+    </span>
+    <button id="drawerClose" aria-label="Close menu">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <nav class="drawer-nav" aria-label="Drawer navigation">
+    <a href="{% url 'ponno:brand_list' %}"                  class="drawer-link"><i class="fa-solid fa-tag"></i>Brand</a>
+    <a href="{% url 'ponno:category_list' %}"               class="drawer-link"><i class="fa-solid fa-layer-group"></i>Category</a>
+    <a href="{% url 'ponno:sub_categories_for_category' %}" class="drawer-link"><i class="fa-solid fa-list-ul"></i>SubCategory</a>
+
+    <div class="drawer-divider"></div>
+
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-circle-info"></i>About Us</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-shield-halved"></i>Privacy Policy</a>
+    <a href="#" class="drawer-link secondary"><i class="fa-solid fa-file-contract"></i>Terms of Service</a>
+  </nav>
+
+</aside>
+
+
+<!-- ═══════════════════════════════════════════════
+     STICKY HEADER
+═══════════════════════════════════════════════ -->
+<div class="sticky-header">
+  <nav class="navbar-container" role="navigation" aria-label="Main navigation">
+    <div class="navbar-glow" aria-hidden="true"></div>
+
+    <div class="navbar-inner">
+
+      <!-- Left: SVG icon (opens drawer) + brand link -->
+      <div class="navbar-left">
+        <div class="logo-svg-wrap"
+             id="menuToggle"
+             role="button"
+             aria-label="Open dashboard menu"
+             aria-haspopup="dialog"
+             aria-expanded="false"
+             tabindex="0">
+          <svg viewBox="-20 -20 240 230"
+               xmlns="http://www.w3.org/2000/svg"
+               
+               aria-hidden="true" focusable="false">
+            <defs>
+              <radialGradient id="hexGrad" cx="50%" cy="40%" r="60%">
+                <stop offset="0%"   stop-color="#d4af37"/>
+                <stop offset="100%" stop-color="#8b6a00"/>
+              </radialGradient>
+              <radialGradient id="innerGrad" cx="50%" cy="40%" r="60%">
+                <stop offset="0%"   stop-color="#b8960c"/>
+                <stop offset="100%" stop-color="#5a3e00"/>
+              </radialGradient>
+              <linearGradient id="magGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#1a1000"/>
+                <stop offset="100%" stop-color="#2d1e00"/>
+              </linearGradient>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#ffe680"/>
+                <stop offset="100%" stop-color="#fff8d0"/>
+              </linearGradient>
+              <linearGradient id="bar1Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#ffe680"/>
+                <stop offset="100%" stop-color="#d4af37"/>
+              </linearGradient>
+              <linearGradient id="bar2Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#fff8d0"/>
+                <stop offset="100%" stop-color="#f0c040"/>
+              </linearGradient>
+              <linearGradient id="bar3Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%"   stop-color="#ffe680"/>
+                <stop offset="100%" stop-color="#d4af37"/>
+              </linearGradient>
+              <clipPath id="magClip">
+                <circle cx="100" cy="95" r="34"/>
+              </clipPath>
+            </defs>
+
+            <!-- Pulse rings (animated via JS/CSS) -->
+            <circle id="ePulse1" cx="100" cy="95" r="50" fill="none" stroke="#d4af37" stroke-width="1.5" opacity="0"/>
+            <circle id="ePulse2" cx="100" cy="95" r="65" fill="none" stroke="#ffe680" stroke-width="1"   opacity="0"/>
+
+            <!-- Outer hex -->
+            <polygon fill="url(#hexGrad)"   points="100,14 168,52 168,128 100,166 32,128 32,52"/>
+            <!-- Inner hex -->
+            <polygon fill="url(#innerGrad)" points="100,28 154,60 154,120 100,152 46,120 46,60"/>
+
+            <!-- Corner traces -->
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="100" y1="14"  x2="100" y2="-8"/>
+            <circle fill="#ffe680" cx="100" cy="-8"  r="4"/>
+
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="168" y1="52"  x2="187" y2="41"/>
+            <circle fill="#ffe680" cx="187" cy="41"  r="4"/>
+
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="168" y1="128" x2="187" y2="139"/>
+            <circle fill="#ffe680" cx="187" cy="139" r="4"/>
+
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="100" y1="166" x2="100" y2="188"/>
+            <circle fill="#ffe680" cx="100" cy="188" r="4"/>
+
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="32"  y1="128" x2="13"  y2="139"/>
+            <circle fill="#ffe680" cx="13"  cy="139" r="4"/>
+
+            <line stroke="#d4af37" stroke-width="2" stroke-linecap="round" x1="32"  y1="52"  x2="13"  y2="41"/>
+            <circle fill="#ffe680" cx="13"  cy="41"  r="4"/>
+
+            <!-- Lens -->
+            <circle fill="url(#magGrad)"   cx="100" cy="95" r="40"/>
+            <circle fill="none" stroke="url(#ringGrad)" stroke-width="2.5" cx="100" cy="95" r="40"/>
+
+            <!-- Scan line -->
+            <line id="eScan" x1="66" y1="80" x2="134" y2="80"
+                  stroke="rgba(255,230,128,0.55)" stroke-width="1.5"
+                  clip-path="url(#magClip)" opacity="0"/>
+
+            <!-- Bar chart inside lens -->
+            <rect fill="url(#bar1Grad)" x="80"  y="100" width="9" height="20" rx="1"/>
+            <rect fill="url(#bar2Grad)" x="93"  y="88"  width="9" height="32" rx="1"/>
+            <rect fill="url(#bar3Grad)" x="106" y="94"  width="9" height="26" rx="1"/>
+          </svg>
+        </div>
+
+        <a href="{% url 'ponno:discovery_engine' %}" class="navbar-brand">pielam</a>
+      </div>
+
+      <!-- Right: nav links -->
+      <div class="navbar-links">
+        <a href="{% url 'ponno:home' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+          <i class="fa-solid fa-house"></i><span>Home</span>
+        </a>
+        <a href="{% url 'notify:notification' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
+          <i class="fa-solid fa-bell"></i><span>Notifications</span>
+        </a>
+        <a href="{% url 'customer:profile' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+          <i class="fa-solid fa-circle-user"></i><span>Profile</span>
+        </a>
+      </div>
+
+    </div>
+  </nav>
+</div>
+<!-- /.sticky-header -->
+
+
+<!-- ═══════════════════════════════════════════════
+     DRAWER JAVASCRIPT
+     — Self-contained IIFE, no external deps needed
+═══════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── element refs ── */
+  const drawer      = document.getElementById('sideDrawer');
+  const overlay     = document.getElementById('drawerOverlay');
+  const toggle      = document.getElementById('menuToggle');
+  const closeBtn    = document.getElementById('drawerClose');
+
+  /* ── state ── */
+  let isOpen = false;
+
+  /* ── open ── */
+  function openDrawer() {
+    isOpen = true;
+    drawer.classList.add('is-open');
+    overlay.classList.add('is-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    /* move focus to close button for a11y */
+    closeBtn.focus();
+  }
+
+  /* ── close ── */
+  function closeDrawer() {
+    isOpen = false;
+    drawer.classList.remove('is-open');
+    overlay.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    toggle.focus();
+  }
+
+  /* ── event listeners ── */
+  toggle.addEventListener('click', () => isOpen ? closeDrawer() : openDrawer());
+
+  toggle.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      isOpen ? closeDrawer() : openDrawer();
+    }
+  });
+
+  closeBtn.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) closeDrawer();
+  });
+
+  /* ── focus trap inside drawer ── */
+  drawer.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab' || !isOpen) return;
+    const focusable = drawer.querySelectorAll(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last)  { e.preventDefault(); first.focus(); }
+    }
+  });
+
+})();
+</script>

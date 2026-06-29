@@ -1,0 +1,206 @@
+{% load static %}
+{% load tz %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="{% static 'personal/css/profile.css' %}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <title>{{ profile_info.profile_name|default:"Anonymous" }}</title>
+</head>
+
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Top Navigation Bar -->
+<header class="top-bar">
+    <a href="{% url 'engine' %}" class="logo-link">
+        <i class="fas fa-atom machine-icon"></i>
+        <span class="logo-text">PIELAM</span>
+    </a>
+
+    <nav class="nav-actions">
+        
+
+        <!-- Profile Quick View -->
+        <a href="{% url 'personal_identity' %}" class="profile-link" title="{{ request.user.email_or_phone }}">
+            <div class="profile-avatar">
+                {% if profile_info.profile_photo %}
+                    <img src="{{ profile_info.profile_photo.url }}" alt="Profile" loading="lazy">
+                {% else %}
+                    <div class="profile-initials">{{ profile_info.profile_name|default:"A"|slice:":1"|upper }}</div>
+                {% endif %}
+                <span class="status-indicator {% if request.user.is_active %}active{% endif %}"></span>
+            </div>
+        </a>
+        <!-- Notifications -->
+        <button class="icon-button notifications-btn" aria-label="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            {% if notification_count and notification_count > 0 %}
+                <span class="notification-badge">{{ notification_count }}</span>
+            {% endif %}
+        </button>
+        
+        <!-- Menu Dropdown -->
+        <div class="dropdown-wrapper">
+            <button class="icon-button menu-btn" aria-label="Menu">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <div class="dropdown-menu">
+                <a href="#network" class="dropdown-item">
+                    <i class="fas fa-user"></i>
+                    <span> Network </span>
+                </a>
+                <a href="#settings" class="dropdown-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#help" class="dropdown-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Help & Support</span>
+                </a>
+                <a href="#privacy" class="dropdown-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Privacy Policy</span>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="{% url 'logout' %}" class="dropdown-item danger">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+
+<div class="profile">
+    <div class="profile-left">
+        <div class="vaipen-card-infos">
+            <h2> Network </h2>
+            <hr><br>
+            <div class="vaipen-card-info">
+                <div class="vaipen-card-info-row">
+                    <div class="vaipen-card-info-label"><p>Following:</p></div>
+                    <div class="vaipen-card-info-value"><p>{{ followings_count }}</p></div>
+                </div>
+                <div class="vaipen-card-info-row">
+                    <div class="vaipen-card-info-label"><p>Followers:</p></div>
+                    <div class="vaipen-card-info-value"><p>{{ followers_count }}</p></div>
+                </div>
+                <div class="vaipen-card-info-row">
+                    <div class="vaipen-card-info-label"><p>Subscribers:</p></div>
+                    <div class="vaipen-card-info-value"><p>{{ subscribers_count }}</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-middle">
+        <!-- Profile Cover Photo -->
+        <div class="profile-cover-picture">
+            {% if profile_info.profile_cover_photo %}
+                <img src="{{ profile_info.profile_cover_photo.url }}" alt="Cover Photo" class="profile-cover-photo">
+            {% else %}
+                <img src="{% static 'accounts/images/avatar.jpg' %}" alt="Cover Photo">
+            {% endif %}
+        </div>
+
+        <!-- Profile Photo and Info -->
+        <div class="profile-container">
+            <div class="profile-photo">
+                {% if profile_info.profile_photo %}
+                    <img src="{{ profile_info.profile_photo.url }}" alt="Profile Photo" class="profile-picture">
+                {% else %}
+                    <img src="{% static 'accounts/images/avatar.jpg' %}" alt="Default Profile Photo" class="profile-picture">
+                {% endif %}
+            </div>
+
+            <div class="profile-info">
+                <a href="#" class="profile-name">
+                    {{ profile_info.profile_name|default:"Anonymous" }}
+                    {% if profile_info.is_profile_verified %}
+                        <span class="verified-icon" title="Verified">
+                            <i class="fa fa-check-circle"></i>
+                        </span>
+                    {% endif %}
+                </a>
+                <p class="profile-username">@{{ request.user.username }}</p>
+            </div>
+        </div>
+
+        <!-- Profile Bio -->
+        <div id="profile-bio-container">
+            <div id="profile-bio" class="profile-bio">
+                <p id="bio-text" class="bio-text">
+                    {{ profile_info.profile_bio|default:"No bio available." }}
+                </p>
+            </div>
+        </div>
+
+        <!-- General Information Section -->
+        <h2 class="general-info-heading">General Information</h2>
+        <hr>
+        <div class="general-info">
+            <div class="general-info-row">
+                <div class="general-info-label">Account Category:</div>
+                <div class="general-info-value">{{ profile_info.profile_type|default:"Not specified" }}</div>
+            </div>
+
+            <div class="general-info-row">
+                <div class="general-info-label">Gender:</div>
+                <div class="general-info-value">{{ profile_info.profile_gender|default:"Not specified" }}</div>
+            </div>
+
+            <div class="general-info-row">
+                <div class="general-info-label">Date of Birth:</div>
+                <div class="general-info-value">
+                    {% if profile_info.profile_dob %}
+                        {{ profile_info.profile_dob|date:"F j, Y" }}
+                    {% else %}
+                        Not specified
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="general-info-row">
+    <div class="general-info-label">Age:</div>
+    <div class="general-info-value">
+        {% if age %}
+            {{ age }}
+        {% else %}
+            N/A
+        {% endif %}
+    </div>
+</div>
+
+            <div class="general-info-row">
+                <div class="general-info-label">Language:</div>
+                <div class="general-info-value">{{ profile_info.profile_language|default:"Not specified" }}</div>
+            </div>
+
+            <div class="general-info-row">
+                <div class="general-info-label">Account Creation Time:</div>
+                <div class="general-info-value">{{ profile_info.profile_creation_time|date:"F j, Y, g:i a" }}</div>
+            </div>
+
+            <div class="general-info-row">
+                <div class="general-info-label">Last Updated Time:</div>
+                <div class="general-info-value">{{ profile_info.profile_updated_time|date:"F j, Y, g:i a" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

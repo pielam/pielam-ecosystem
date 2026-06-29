@@ -1,0 +1,522 @@
+{% include "base.html" %}
+{% include "search.html" %}
+
+
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories — PIELAM</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Reset & Root ─────────────────────────────────────── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary-dark:    #0a2540;
+            --primary-blue:    #0d47a1;
+            --primary-light:   #1976d2;
+            --accent-gold:     #d4af37;
+            --accent-amber:    #ffb300;
+            --success-emerald: #00b894;
+            --danger-crimson:  #e74c3c;
+            --text-primary:    #1a202c;
+            --text-secondary:  #4a5568;
+            --text-muted:      #718096;
+            --bg-primary:      #ffffff;
+            --bg-secondary:    #f7fafc;
+            --bg-tertiary:     #edf2f7;
+            --border-light:    #e2e8f0;
+            --border-medium:   #cbd5e0;
+            --shadow-sm:       0 2px 6px rgba(10,37,64,0.08);
+            --shadow-md:       0 4px 12px rgba(10,37,64,0.12);
+            --shadow-lg:       0 10px 30px rgba(10,37,64,0.15);
+            --font-display:    'Playfair Display', serif;
+            --font-body:       'Outfit', sans-serif;
+            --transition-base: 0.25s ease;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+
+        /* ── Page Wrapper ─────────────────────────────────────── */
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 6rem 2rem 4rem;
+        }
+
+        /* ── Page Header ──────────────────────────────────────── */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 2.25rem;
+            font-weight: 900;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.375rem;
+        }
+        .page-title i { color: var(--accent-gold); font-size: 1.75rem; }
+        .page-subtitle { color: var(--text-muted); font-size: 1rem; }
+
+        /* ── Breadcrumb ───────────────────────────────────────── */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color var(--transition-base);
+        }
+        .breadcrumb a:hover { color: var(--primary-dark); }
+        .breadcrumb i { font-size: 0.65rem; color: var(--border-medium); }
+
+        /* ── Category Grid ────────────────────────────────────── */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.25rem;
+        }
+
+        /* ── Category Card ────────────────────────────────────── */
+        .category-card {
+            background: white;
+            border-radius: 16px;
+            border: 1.5px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all var(--transition-base);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .category-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-medium);
+        }
+        .category-card.highlighted {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.25), var(--shadow-lg);
+        }
+
+        /* Image / icon area */
+        .category-image-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 130px;
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            overflow: hidden;
+            position: relative;
+        }
+        /* Color accent bar at top using inline style */
+        .category-image-wrap::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--card-color, var(--primary-blue));
+        }
+        .category-image-wrap img {
+            max-width: 100%;
+            max-height: 80px;
+            object-fit: contain;
+            transition: transform var(--transition-base);
+        }
+        .category-card:hover .category-image-wrap img { transform: scale(1.08); }
+
+        /* Fallback icon when no image */
+        .category-icon-fallback {
+            font-size: 2.5rem;
+            color: var(--card-color, var(--primary-blue));
+            opacity: 0.75;
+            transition: transform var(--transition-base);
+        }
+        .category-card:hover .category-icon-fallback { transform: scale(1.12); }
+
+        /* Badge strip */
+        .category-badges {
+            position: absolute;
+            top: 0.625rem;
+            left: 0.625rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+        }
+        .category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .category-badge i { font-size: 0.65rem; }
+        .badge-featured  { background: #fef3c7; color: #92400e; }
+        .badge-trending  { background: #fee2e2; color: #991b1b; }
+        .badge-root      { background: #dbeafe; color: #1e40af; }
+
+        /* Children indicator (top-right) */
+        .children-indicator {
+            position: absolute;
+            top: 0.625rem;
+            right: 0.625rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(10,37,64,0.75);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            backdrop-filter: blur(4px);
+        }
+        .children-indicator i { font-size: 0.6rem; }
+
+        /* Info area */
+        .category-info {
+            padding: 1rem 1.125rem 1.125rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+        .category-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .category-short-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+        }
+        /* Parent breadcrumb pill */
+        .category-parent {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            background: #eff6ff;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            width: fit-content;
+        }
+        .category-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: auto;
+            padding-top: 0.625rem;
+            border-top: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .category-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .category-meta i { font-size: 0.7rem; }
+
+        /* ── Empty State ──────────────────────────────────────── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-muted);
+        }
+        .empty-state i { font-size: 4rem; opacity: 0.3; margin-bottom: 1.25rem; display: block; }
+        .empty-state h3 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+
+        /* ── Pagination ───────────────────────────────────────── */
+        .pagination-wrapper {
+            display: flex; justify-content: center;
+            margin-top: 3rem;
+        }
+        .pagination { display: flex; gap: 0.5rem; list-style: none; }
+        .page-link {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: white; border: 1.5px solid var(--border-medium);
+            border-radius: 10px; color: var(--text-primary);
+            text-decoration: none; font-weight: 600; font-size: 0.9rem;
+            transition: all var(--transition-base);
+        }
+        .page-link:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-2px); }
+        .page-item.active .page-link { background: var(--primary-dark); color: white; border-color: transparent; }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .page-wrapper { padding: 5rem 1rem 3rem; }
+            .menu { padding: 0.75rem 1rem; }
+            .menu-item span { display: none; }
+            .page-title { font-size: 1.6rem; }
+            .category-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.875rem; }
+            .category-image-wrap { height: 100px; }
+        }
+    </style>
+</head>
+
+<body>
+
+
+<div class="page-wrapper">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fa-solid fa-table-cells-large"></i>
+            {% if parent_category %}
+                {{ parent_category.category_name }}
+            {% else %}
+                All Categories
+            {% endif %}
+        </h1>
+        <p class="page-subtitle">
+            {{ stats.total }} categories available on PIELAM
+            {% if highlighted_category %}
+                &mdash; showing <strong>{{ highlighted_category.category_name }}</strong> highlighted
+            {% endif %}
+            {% if parent_category %}
+                &mdash; browsing subcategories of <strong>{{ parent_category.category_name }}</strong>
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- Breadcrumb (only when drilling into a parent) -->
+    {% if breadcrumb %}
+        <div class="breadcrumb">
+            <a href="{% url 'ponno:category_list' %}">
+                <i class="fa-solid fa-table-cells-large"></i> All Categories
+            </a>
+            {% for crumb in breadcrumb %}
+                <i class="fa-solid fa-chevron-right"></i>
+                {% if not forloop.last %}
+                    <a href="{% url 'ponno:category_list' %}?parent={{ crumb.slug }}">{{ crumb.name }}</a>
+                {% else %}
+                    <span>{{ crumb.name }}</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        {% for tab in filter_tabs %}
+            <a
+                href="{% url 'ponno:category_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}"
+                class="filter-tab {% if tab.active %}active{% endif %}"
+            >
+                {% if tab.value == 'all' %}      <i class="fa-solid fa-border-all"></i>
+                {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
+                {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
+                {% elif tab.value == 'root' %}    <i class="fa-solid fa-sitemap"></i>
+                {% endif %}
+                {{ tab.label }}
+                <span class="tab-count">{{ tab.count }}</span>
+            </a>
+        {% endfor %}
+
+        <select class="sort-select" onchange="applySort(this.value)" aria-label="Sort categories">
+            {% for opt in sort_options %}
+                <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>
+                    {{ opt.label }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Category Grid -->
+    <div class="category-grid">
+        {% for cat in categories %}
+            <a
+                href="{{ cat.category_url }}"
+                class="category-card {% if cat.highlighted %}highlighted{% endif %}"
+                style="--card-color: {{ cat.color_code|default:'#0d47a1' }};"
+            >
+
+                <!-- Badges -->
+                <div class="category-badges">
+                    {% if cat.is_featured %}
+                        <span class="category-badge badge-featured">
+                            <i class="fa-solid fa-star"></i> Featured
+                        </span>
+                    {% endif %}
+                    {% if cat.is_trending %}
+                        <span class="category-badge badge-trending">
+                            <i class="fa-solid fa-fire"></i> Trending
+                        </span>
+                    {% endif %}
+                    {% if cat.is_root %}
+                        <span class="category-badge badge-root">
+                            <i class="fa-solid fa-layer-group"></i> Top Level
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Children indicator -->
+                {% if cat.has_children %}
+                    <div class="children-indicator">
+                        <i class="fa-solid fa-sitemap"></i> {{ cat.child_count }}
+                    </div>
+                {% endif %}
+
+                <!-- Image / Icon -->
+                <div class="category-image-wrap">
+                    {% if cat.image %}
+                        <img
+                            src="{{ cat.image }}"
+                            alt="{{ cat.name }}"
+                            loading="lazy"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        >
+                        <span class="category-icon-fallback" style="display:none;">
+                            {% if cat.icon_class %}
+                                <i class="{{ cat.icon_class }}"></i>
+                            {% else %}
+                                <i class="fa-solid fa-table-cells-large"></i>
+                            {% endif %}
+                        </span>
+                    {% else %}
+                        <span class="category-icon-fallback">
+                            {% if cat.icon_class %}
+                                <i class="{{ cat.icon_class }}"></i>
+                            {% else %}
+                                <i class="fa-solid fa-table-cells-large"></i>
+                            {% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="category-info">
+                    <div class="category-name">{{ cat.name }}</div>
+
+                    {% if cat.short_description %}
+                        <div class="category-short-desc">{{ cat.short_description }}</div>
+                    {% endif %}
+
+                    {% if not cat.is_root and cat.parent_name %}
+                        <div class="category-parent">
+                            <i class="fa-solid fa-turn-up fa-rotate-90"></i>
+                            {{ cat.parent_name }}
+                        </div>
+                    {% endif %}
+
+                    <div class="category-meta">
+                        <span>
+                            <i class="fa-solid fa-box"></i>
+                            {{ cat.product_count }} products
+                        </span>
+                        {% if cat.has_children %}
+                            <span>
+                                <i class="fa-solid fa-folder-tree"></i>
+                                {{ cat.child_count }} sub
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </a>
+
+        {% empty %}
+            <div class="empty-state">
+                <i class="fa-solid fa-table-cells-large"></i>
+                <h3>No categories found</h3>
+                <p>
+                    {% if query %}
+                        No results for &ldquo;<strong>{{ query }}</strong>&rdquo;.
+                    {% else %}
+                        No categories match the selected filter.
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination-wrapper" aria-label="Category pages">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div><!-- /page-wrapper -->
+
+
+<script>
+function applySort(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', value);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+</script>
+
+</body>
+</html>

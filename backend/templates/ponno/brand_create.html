@@ -1,0 +1,592 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+<title>Create Brand | PIELAM</title>
+
+<style>
+  :root {
+    --primary-dark:  #0a2540;
+    --primary-blue:  #0d47a1;
+    --primary-light: #1976d2;
+    --accent-gold:   #d4af37;
+    --accent-amber:  #ffb300;
+    --success:       #00b894;
+    --danger:        #e74c3c;
+    --text-primary:  #1a202c;
+    --text-secondary:#4a5568;
+    --text-muted:    #718096;
+    --bg-primary:    #ffffff;
+    --bg-secondary:  #f7fafc;
+    --bg-tertiary:   #edf2f7;
+    --border-light:  #e2e8f0;
+    --border-medium: #cbd5e0;
+    --shadow-sm: 0 2px 6px rgba(10,37,64,.08);
+    --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+    --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+    --r-sm: 8px;
+    --r-md: 14px;
+    --r-lg: 20px;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'Roboto', sans-serif;
+    --transition:   .2s ease;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; font-size:16px; }
+  body {
+    font-family: var(--font-body);
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── Navbar ── */
+  .navbar {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+    padding: .875rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .navbar-brand {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+  }
+  .navbar-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    color: rgba(255,255,255,.8);
+    text-decoration: none;
+    font-size: .875rem;
+    font-weight: 500;
+    padding: .4rem .875rem;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 999px;
+    transition: var(--transition);
+  }
+  .navbar-back:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+  /* ── Page wrapper ── */
+  .page-wrap {
+    max-width: 760px;
+    margin: 2rem auto;
+    padding: 0 1.25rem;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    margin-bottom: 1.75rem;
+  }
+  .page-header__eyebrow {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent-gold);
+    margin-bottom: .375rem;
+  }
+  .page-header__title {
+    font-family: var(--font-display);
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+  .page-header__sub {
+    font-size: .875rem;
+    color: var(--text-muted);
+    margin-top: .375rem;
+  }
+
+  /* ── Messages ── */
+  .messages { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+  .msg {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    padding: .75rem 1rem;
+    border-radius: var(--r-sm);
+    font-size: .875rem;
+    font-weight: 500;
+  }
+  .msg-error   { background: rgba(231,76,60,.08);  border: 1px solid rgba(231,76,60,.2);  color: #c0392b; }
+  .msg-success { background: rgba(0,184,148,.08);  border: 1px solid rgba(0,184,148,.2);  color: #00856f; }
+  .msg-warning { background: rgba(255,179,0,.08);  border: 1px solid rgba(255,179,0,.2);  color: #b45309; }
+  .msg i { margin-top: 2px; flex-shrink: 0; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+  }
+  .card-head-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--r-sm);
+    background: rgba(13,71,161,.1);
+    color: var(--primary-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .875rem;
+    flex-shrink: 0;
+  }
+  .card-head-title {
+    font-size: .8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-secondary);
+  }
+  .card-head-required {
+    margin-left: auto;
+    font-size: .7rem;
+    color: var(--text-muted);
+  }
+  .card-head-required span { color: var(--danger); }
+  .card-body { padding: 1.25rem; }
+
+  /* ── Field groups ── */
+  .field-group {
+    display: grid;
+    gap: 1rem;
+  }
+  .field-group.cols-2 { grid-template-columns: 1fr 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: .375rem;
+  }
+  .field label {
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+  }
+  .field label .req { color: var(--danger); }
+  .field label .opt {
+    font-size: .7rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: .25rem;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: .625rem .875rem;
+    border: 1px solid var(--border-medium);
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-size: .875rem;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    appearance: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(25,118,210,.1);
+  }
+  .field input::placeholder,
+  .field textarea::placeholder { color: var(--text-muted); }
+  .field textarea { resize: vertical; min-height: 90px; }
+  .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2rem; }
+
+  .field-hint {
+    font-size: .75rem;
+    color: var(--text-muted);
+    margin-top: -.125rem;
+  }
+
+  /* ── Image upload ── */
+  .upload-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: .375rem;
+  }
+  .upload-label {
+    font-size: .8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+  }
+  .upload-zone {
+    position: relative;
+    border: 2px dashed var(--border-medium);
+    border-radius: var(--r-md);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+    background: var(--bg-secondary);
+  }
+  .upload-zone:hover,
+  .upload-zone.drag-over {
+    border-color: var(--primary-light);
+    background: rgba(25,118,210,.04);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-zone__icon {
+    font-size: 1.5rem;
+    color: var(--border-medium);
+    margin-bottom: .5rem;
+    transition: color var(--transition);
+  }
+  .upload-zone:hover .upload-zone__icon { color: var(--primary-light); }
+  .upload-zone__text {
+    font-size: .8125rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .upload-zone__text strong { color: var(--primary-light); }
+  .upload-preview {
+    display: none;
+    width: 72px; height: 72px;
+    border-radius: var(--r-sm);
+    object-fit: cover;
+    border: 2px solid var(--border-light);
+    margin: .5rem auto 0;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 1.125rem 0;
+  }
+
+  /* ── Submit bar ── */
+  .submit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+  }
+  .submit-bar__note {
+    font-size: .8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+  }
+  .submit-bar__actions { display: flex; gap: .75rem; align-items: center; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .6rem 1.375rem;
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: .875rem;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    transition: opacity var(--transition), transform .1s ease, box-shadow var(--transition);
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(13,71,161,.3);
+  }
+  .btn-primary:hover { opacity: .9; box-shadow: 0 6px 18px rgba(13,71,161,.4); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border-medium);
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .field-group.cols-2 { grid-template-columns: 1fr; }
+    .page-header__title { font-size: 1.5rem; }
+    .submit-bar { flex-direction: column; align-items: stretch; }
+    .submit-bar__actions { flex-direction: column; }
+    .btn { justify-content: center; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <a href="{% url 'ponno:discovery_engine' %}" class="navbar-brand">pielam</a>
+  <a href="{% url 'business_profile' %}" class="navbar-back">
+    <i class="fas fa-arrow-left"></i> Back to Profile
+  </a>
+</nav>
+
+<!-- ── Page ── -->
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-header__eyebrow">Brand management</div>
+    <div class="page-header__title">Create a new brand</div>
+    <div class="page-header__sub">Fill in the details below. Only brand name and type are required to get started.</div>
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="msg msg-{{ message.tags }}">
+      <i class="fas {% if 'error' in message.tags %}fa-circle-xmark{% elif 'success' in message.tags %}fa-circle-check{% else %}fa-triangle-exclamation{% endif %}"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ── Card 1: Identity ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon"><i class="fas fa-tag"></i></div>
+        <span class="card-head-title">Brand Identity</span>
+        <span class="card-head-required"><span>*</span> required</span>
+      </div>
+      <div class="card-body">
+        <div class="field-group">
+
+          <!-- Brand name -->
+          <div class="field">
+            <label for="brand_name">Brand name <span class="req">*</span></label>
+            <input
+              type="text"
+              id="brand_name"
+              name="brand_name"
+              placeholder="e.g. Apex Sportswear"
+              maxlength="150"
+              required
+              value="{{ form_data.brand_name|default:'' }}"
+            >
+          </div>
+
+          <!-- Brand type -->
+          <div class="field">
+            <label for="brand_type">Brand type <span class="req">*</span></label>
+            <select id="brand_type" name="brand_type" required>
+              {% for value, label in brand_types %}
+              <option value="{{ value }}" {% if form_data.brand_type == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Tagline -->
+          <div class="field">
+            <label for="brand_tagline">Tagline <span class="opt">optional</span></label>
+            <input
+              type="text"
+              id="brand_tagline"
+              name="brand_tagline"
+              placeholder="A short memorable slogan"
+              maxlength="200"
+              value="{{ form_data.brand_tagline|default:'' }}"
+            >
+          </div>
+
+          <!-- Description -->
+          <div class="field">
+            <label for="brand_description">Description <span class="opt">optional</span></label>
+            <textarea
+              id="brand_description"
+              name="brand_description"
+              placeholder="What does this brand stand for? What does it sell?"
+              maxlength="1000"
+            >{{ form_data.brand_description|default:'' }}</textarea>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 2: Logo ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon"><i class="fas fa-image"></i></div>
+        <span class="card-head-title">Brand Logo</span>
+      </div>
+      <div class="card-body">
+        <div class="field-group cols-2">
+
+          <!-- Logo -->
+          <div class="upload-wrap">
+            <span class="upload-label"><i class="fas fa-circle-dot" style="color:var(--accent-gold);font-size:.75rem;"></i> Logo <span style="font-size:.7rem;color:var(--text-muted);margin-left:.25rem;">optional</span></span>
+            <div class="upload-zone" id="logoZone">
+              <input type="file" name="brand_logo" id="brand_logo" accept="image/*" onchange="previewImage(this,'logoPreview','logoZone')">
+              <div class="upload-zone__icon"><i class="fas fa-cloud-arrow-up"></i></div>
+              <div class="upload-zone__text"><strong>Click to upload</strong> or drag &amp; drop<br>PNG, JPG, WEBP · max 5 MB</div>
+              <img id="logoPreview" class="upload-preview" alt="Logo preview">
+            </div>
+          </div>
+
+          <!-- Banner -->
+          <div class="upload-wrap">
+            <span class="upload-label"><i class="fas fa-circle-dot" style="color:var(--accent-gold);font-size:.75rem;"></i> Banner <span style="font-size:.7rem;color:var(--text-muted);margin-left:.25rem;">optional</span></span>
+            <div class="upload-zone" id="bannerZone">
+              <input type="file" name="brand_banner" id="brand_banner" accept="image/*" onchange="previewImage(this,'bannerPreview','bannerZone')">
+              <div class="upload-zone__icon"><i class="fas fa-panorama"></i></div>
+              <div class="upload-zone__text"><strong>Click to upload</strong> or drag &amp; drop<br>PNG, JPG, WEBP · max 5 MB · wide format</div>
+              <img id="bannerPreview" class="upload-preview" alt="Banner preview">
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Card 3: Contact ── -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-icon"><i class="fas fa-address-card"></i></div>
+        <span class="card-head-title">Contact &amp; Company</span>
+      </div>
+      <div class="card-body">
+        <div class="field-group cols-2">
+
+          <div class="field">
+            <label for="company_name">Company name <span class="opt">optional</span></label>
+            <input type="text" id="company_name" name="company_name" placeholder="Legal entity name" maxlength="200" value="{{ form_data.company_name|default:'' }}">
+          </div>
+
+          <div class="field">
+            <label for="country_of_origin">Country <span class="opt">2-letter ISO</span></label>
+            <input type="text" id="country_of_origin" name="country_of_origin" placeholder="e.g. BD" maxlength="2" value="{{ form_data.country_of_origin|default:'' }}">
+          </div>
+
+          <div class="field">
+            <label for="brand_email">Brand email <span class="opt">optional</span></label>
+            <input type="email" id="brand_email" name="brand_email" placeholder="brand@example.com" maxlength="150" value="{{ form_data.brand_email|default:'' }}">
+          </div>
+
+          <div class="field">
+            <label for="brand_phone">Brand phone <span class="opt">optional</span></label>
+            <input type="text" id="brand_phone" name="brand_phone" placeholder="+880..." maxlength="20" value="{{ form_data.brand_phone|default:'' }}">
+          </div>
+
+          <div class="field" style="grid-column:1/-1">
+            <label for="brand_website">Website <span class="opt">optional</span></label>
+            <input type="url" id="brand_website" name="brand_website" placeholder="https://yourbrand.com" maxlength="200" value="{{ form_data.brand_website|default:'' }}">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Submit bar ── -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="submit-bar">
+        <div class="submit-bar__note">
+          <i class="fas fa-info-circle"></i>
+          You can add social links, SEO fields and more after creation.
+        </div>
+        <div class="submit-bar__actions">
+          <a href="{% url 'business_profile' %}" class="btn btn-ghost">
+            <i class="fas fa-xmark"></i> Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Brand
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<script>
+function previewImage(input, previewId, zoneId) {
+  const file = input.files[0];
+  if (!file) return;
+  const preview = document.getElementById(previewId);
+  const reader  = new FileReader();
+  reader.onload  = e => {
+    preview.src   = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  // Drag-over class cleanup
+  const zone = document.getElementById(zoneId);
+  if (zone) zone.classList.remove('drag-over');
+}
+
+// Drag-over visual feedback
+document.querySelectorAll('.upload-zone').forEach(zone => {
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop',      e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const input = zone.querySelector('input[type="file"]');
+    if (input && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+});
+</script>
+
+</body>
+</html>
