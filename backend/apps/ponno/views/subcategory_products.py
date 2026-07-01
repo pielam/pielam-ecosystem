@@ -1,4 +1,4 @@
-# backend/apps/ponno/views/category_products.py
+# backend/apps/ponno/views/subcategory_products.py
 
 import hashlib
 from decimal import Decimal, InvalidOperation
@@ -6,18 +6,17 @@ from decimal import Decimal, InvalidOperation
 from django.core.cache import cache
 from django.core.paginator import Paginator, InvalidPage
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.urls import reverse
 from django.db.models import Q
 
 from apps.ponno.models.product import Product
-from apps.ponno.models.category import Category
-from apps.ponno.models.brand import Brand
 from apps.ponno.models.sub_category import SubCategory
+from apps.ponno.models.brand import Brand
 
 
 CACHE_TTL         = 60   # seconds
-PRODUCTS_PER_PAGE = 12
+PRODUCTS_PER_PAGE = 12   # fallback if subcategory.products_per_page isn't set
 
 
 def _decimal_or_none(value: str):
@@ -31,31 +30,37 @@ def _decimal_or_none(value: str):
         return None
 
 
-def CategoryProducts(request, category_slug):
+def SubCategoryProducts(request, category_slug):
     """
-    Category Products View
-    - Shows all active products belonging to a category (and, optionally,
-      one of its subcategories)
-    - Supports search, brand filter, subcategory filter, price range,
-      stock filter, and sorting
+    SubCategory Products View
+
+    NOTE: the URL kwarg is named `category_slug` (from urls.py:
+    path('subcategory/<slug:category_slug>/', SubCategoryProducts, name='subcategory_products'))
+    but it actually carries the *subcategory's* slug — SubCategory.objects
+    is looked up on sub_category_slug, not the parent Category's slug.
+    Kept as-is here rather than renaming, to avoid a breaking urls.py change.
+
+    - Shows all active products belonging to a subcategory
+    - Supports search, brand filter, price range, stock filter, and sorting
     - Cached per unique URL to handle high traffic
     """
 
-    # ── Category ─────────────────────────────────────────────────────
-    category = get_object_or_404(
-        Category.objects.active_categories(),
-        category_slug=category_slug,
-    )
+    # ── SubCategory ──────────────────────────────────────────────────
+    try:
+        subcategory = SubCategory.objects.get_by_slug(category_slug)
+    except SubCategory.DoesNotExist:
+        raise Http404("SubCategory not found")
+
+    category = subcategory.category
 
     # ── Params ───────────────────────────────────────────────────────
-    query           = request.GET.get('q', '').strip()[:100]
-    brand_slug      = request.GET.get('brand', '').strip()[:80]
-    subcategory_slug = request.GET.get('subcategory', '').strip()[:80]
-    sort_by         = request.GET.get('sort', 'popular').strip()
-    in_stock_only   = request.GET.get('in_stock') == '1'
-    min_price       = _decimal_or_none(request.GET.get('min_price'))
-    max_price       = _decimal_or_none(request.GET.get('max_price'))
-    page_number     = request.GET.get('page', '1')
+    query         = request.GET.get('q', '').strip()[:100]
+    brand_slug    = request.GET.get('brand', '').strip()[:80]
+    sort_by       = request.GET.get('sort', 'popular').strip()
+    in_stock_only = request.GET.get('in_stock') == '1'
+    min_price     = _decimal_or_none(request.GET.get('min_price'))
+    max_price     = _decimal_or_none(request.GET.get('max_price'))
+    page_number   = request.GET.get('page', '1')
 
     VALID_SORTS = {'popular', 'newest', 'price_asc', 'price_desc', 'rating', 'bestseller'}
     if sort_by not in VALID_SORTS:
@@ -63,27 +68,20 @@ def CategoryProducts(request, category_slug):
 
     # ── Cache key ────────────────────────────────────────────────────
     raw_key = (
-        f"categoryproducts:{category_slug}:{query}:{brand_slug}:{subcategory_slug}:"
+        f"subcategoryproducts:{category_slug}:{query}:{brand_slug}:"
         f"{sort_by}:{in_stock_only}:{min_price}:{max_price}:{page_number}"
     )
-    cache_key = 'category_products_' + hashlib.md5(raw_key.encode()).hexdigest()
+    cache_key = 'subcategory_products_' + hashlib.md5(raw_key.encode()).hexdigest()
 
     cached = cache.get(cache_key)
     if cached:
-        return render(request, 'ponno/category_products.html', cached)
+        # View count is tracked once per request regardless of cache hit,
+        # so recency stays accurate even when the page body is cached.
+        subcategory.increment_view_count()
+        return render(request, 'ponno/subcategory_products.html', cached)
 
-    # ── Base queryset (active, non-deleted products in this category) ─
-    products = Product.objects.active_products().filter(category=category)
-
-    # ── Subcategory filter ──────────────────────────────────────────
-    selected_subcategory = None
-    if subcategory_slug:
-        selected_subcategory = SubCategory.objects.active().filter(
-            category=category,
-            sub_category_slug=subcategory_slug,
-        ).first()
-        if selected_subcategory:
-            products = products.filter(sub_category=selected_subcategory)
+    # ── Base queryset (active, non-deleted products in this subcategory) ─
+    products = Product.objects.active_products().filter(sub_category=subcategory)
 
     # ── Brand filter ─────────────────────────────────────────────────
     selected_brand = None
@@ -94,7 +92,7 @@ def CategoryProducts(request, category_slug):
         if selected_brand:
             products = products.filter(brand=selected_brand)
 
-    # ── Search (within category) ────────────────────────────────────
+    # ── Search (within subcategory) ─────────────────────────────────
     if query:
         products = products.filter(
             Q(product_name__icontains=query) |
@@ -128,34 +126,29 @@ def CategoryProducts(request, category_slug):
     products = products.distinct()  # search across joined fields can duplicate rows
 
     # ── Stats (cached separately, longer TTL) ────────────────────────
-    stats_key = f'category_products_stats_{category.pk}'
+    stats_key = f'subcategory_products_stats_{subcategory.pk}'
     stats = cache.get(stats_key)
     if stats is None:
-        all_in_category = Product.objects.active_products().filter(category=category)
+        all_in_subcategory = Product.objects.active_products().filter(sub_category=subcategory)
         stats = {
-            'total':    all_in_category.count(),
-            'in_stock': all_in_category.filter(stock__gt=0).count(),
-            'on_sale':  all_in_category.filter(discount_percentage__gt=0).count(),
-            'featured': all_in_category.filter(is_featured=True).count(),
+            'total':    all_in_subcategory.count(),
+            'in_stock': all_in_subcategory.filter(stock__gt=0).count(),
+            'on_sale':  all_in_subcategory.filter(discount_percentage__gt=0).count(),
+            'featured': all_in_subcategory.filter(is_featured=True).count(),
         }
         cache.set(stats_key, stats, 120)
 
-    # ── Subcategories under this category (for filter tabs) ──────────
-    subcategories = (
-        SubCategory.objects.for_category(category)
-        .order_by('display_order', 'sub_category_name')
-    )
-
-    # ── Brands present among this category's products (for filter) ──
+    # ── Brands present among this subcategory's products (for filter) ─
     brands = (
         Brand.objects.active_brands()
-        .filter(products__category=category, products__is_active=True)
+        .filter(products__sub_category=subcategory, products__is_active=True)
         .distinct()
         .order_by('brand_name')
     )
 
     # ── Paginate ─────────────────────────────────────────────────────
-    paginator = Paginator(products, PRODUCTS_PER_PAGE)
+    per_page = subcategory.products_per_page or PRODUCTS_PER_PAGE
+    paginator = Paginator(products, per_page)
     try:
         page_obj = paginator.get_page(page_number)
     except InvalidPage:
@@ -194,48 +187,35 @@ def CategoryProducts(request, category_slug):
     ]
 
     sort_options = [
-        {'value': 'popular',    'label': 'Most Popular',   'active': sort_by == 'popular'},
-        {'value': 'newest',     'label': 'Newest First',   'active': sort_by == 'newest'},
+        {'value': 'popular',    'label': 'Most Popular',       'active': sort_by == 'popular'},
+        {'value': 'newest',     'label': 'Newest First',       'active': sort_by == 'newest'},
         {'value': 'price_asc',  'label': 'Price: Low to High', 'active': sort_by == 'price_asc'},
         {'value': 'price_desc', 'label': 'Price: High to Low', 'active': sort_by == 'price_desc'},
-        {'value': 'rating',     'label': 'Top Rated',      'active': sort_by == 'rating'},
-        {'value': 'bestseller', 'label': 'Best Selling',   'active': sort_by == 'bestseller'},
-    ]
-
-    # ── Breadcrumb ───────────────────────────────────────────────────
-    breadcrumb = []
-    node = category
-    chain = []
-    while node:
-        chain.insert(0, node)
-        node = node.parent
-    breadcrumb = [
-        {
-            'name': n.category_name,
-            'slug': n.category_slug,
-            'url':  reverse('ponno:category_products', kwargs={'category_slug': n.category_slug}),
-        }
-        for n in chain
+        {'value': 'rating',     'label': 'Top Rated',          'active': sort_by == 'rating'},
+        {'value': 'bestseller', 'label': 'Best Selling',       'active': sort_by == 'bestseller'},
     ]
 
     context = {
-        'products':              formatted_products,
-        'page_obj':              page_obj,
-        'category':              category,
-        'subcategories':         subcategories,
-        'selected_subcategory':  selected_subcategory,
-        'brands':                brands,
-        'selected_brand':        selected_brand,
-        'breadcrumb':            breadcrumb,
-        'query':                 query,
-        'current_sort':          sort_by,
-        'sort_options':          sort_options,
-        'in_stock_only':         in_stock_only,
-        'min_price':             min_price,
-        'max_price':             max_price,
-        'total_count':           paginator.count,
-        'stats':                 stats,
+        'products':       formatted_products,
+        'page_obj':       page_obj,
+        'subcategory':    subcategory,
+        'category':       category,
+        'breadcrumb':     subcategory.breadcrumb,
+        'brands':         brands,
+        'selected_brand': selected_brand,
+        'query':          query,
+        'current_sort':   sort_by,
+        'sort_options':   sort_options,
+        'in_stock_only':  in_stock_only,
+        'min_price':      min_price,
+        'max_price':      max_price,
+        'total_count':    paginator.count,
+        'stats':          stats,
     }
 
+    # Track a view (once per request, after context is built so a failed
+    # render doesn't still count as a "view").
+    subcategory.increment_view_count()
+
     cache.set(cache_key, context, CACHE_TTL)
-    return render(request, 'ponno/category_products.html', context)
+    return render(request, 'ponno/subcategory_products.html', context)

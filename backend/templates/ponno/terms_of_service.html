@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .policy-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--content-pad, clamp(1rem, 4vw, 2.5rem));
+  }
+
+  .policy-hero {
+    background: linear-gradient(135deg, var(--nav-bg-from, #1565c0), var(--nav-bg-to, #1e88e5));
+    color: var(--on-dark, #fff);
+    border-radius: 16px;
+    padding: var(--space-6, 2.5rem);
+    box-shadow: var(--shadow-lg, 0 8px 28px rgba(10,37,64,.22));
+    margin-bottom: var(--space-6, 2.5rem);
+  }
+
+  .policy-hero h1 {
+    font-size: var(--text-3xl, 2.25rem);
+    margin: 0 0 var(--space-1, .5rem);
+    font-weight: 900;
+  }
+
+  .policy-hero p {
+    margin: 0;
+    color: var(--on-dark-sub, rgba(255,255,255,.85));
+    font-size: var(--text-sm, .875rem);
+  }
+
+  .policy-toc {
+    background: #fff;
+    border: 1px solid rgba(10,37,64,.08);
+    border-radius: 12px;
+    padding: var(--space-4, 1.5rem);
+    margin-bottom: var(--space-6, 2.5rem);
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(10,37,64,.10));
+  }
+
+  .policy-toc h2 {
+    margin: 0 0 var(--space-2, .75rem);
+    font-size: var(--text-lg, 1.125rem);
+  }
+
+  .policy-toc ol {
+    margin: 0;
+    padding-left: 1.25rem;
+    columns: 2;
+    column-gap: var(--space-5, 2rem);
+  }
+
+  .policy-toc li {
+    margin-bottom: var(--space-1, .5rem);
+  }
+
+  .policy-toc a {
+    color: var(--accent, #4a90e2);
+    text-decoration: none;
+    font-size: var(--text-sm, .875rem);
+  }
+
+  .policy-toc a:hover {
+    text-decoration: underline;
+  }
+
+  .policy-section {
+    background: #fff;
+    border: 1px solid rgba(10,37,64,.06);
+    border-radius: 12px;
+    padding: var(--space-5, 2rem);
+    margin-bottom: var(--space-4, 1.5rem);
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(10,37,64,.10));
+  }
+
+  .policy-section h2 {
+    font-size: var(--text-xl, 1.35rem);
+    margin: 0 0 var(--space-2, .75rem);
+    color: #1a2b4a;
+  }
+
+  .policy-section p,
+  .policy-section li {
+    color: #4a5568;
+    line-height: 1.75;
+  }
+
+  .policy-section ul,
+  .policy-section ol.terms-list {
+    padding-left: 1.25rem;
+  }
+
+  .policy-section li {
+    margin-bottom: var(--space-1, .5rem);
+  }
+
+  .policy-note {
+    background: #fff7e6;
+    border: 1px solid #f0d999;
+    border-radius: 10px;
+    padding: var(--space-3, 1rem);
+    font-size: var(--text-sm, .875rem);
+    color: #7a5c00;
+    margin-bottom: var(--space-6, 2.5rem);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-wrap">
+
+  <section class="policy-hero">
+    <h1>Terms of Service</h1>
+    <p>Last updated: {{ last_updated }}</p>
+  </section>
+
+  <div class="policy-note">
+    This page is a general-purpose Terms of Service template for the PIELAM platform.
+    It is provided as a starting point and does not constitute legal advice — please
+    have it reviewed by legal counsel before publishing, and adjust it to reflect your
+    actual business practices, marketplace policies, and applicable law.
+  </div>
+
+  <nav class="policy-toc" aria-label="Table of contents">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#acceptance">1. Acceptance of Terms</a></li>
+      <li><a href="#eligibility">2. Eligibility</a></li>
+      <li><a href="#accounts">3. Accounts &amp; Security</a></li>
+      <li><a href="#marketplace">4. Marketplace &amp; Content</a></li>
+      <li><a href="#orders-payments">5. Orders &amp; Payments</a></li>
+      <li><a href="#user-conduct">6. Acceptable Use</a></li>
+      <li><a href="#intellectual-property">7. Intellectual Property</a></li>
+      <li><a href="#third-party">8. Third-Party Services</a></li>
+      <li><a href="#termination">9. Suspension &amp; Termination</a></li>
+      <li><a href="#disclaimers">10. Disclaimers</a></li>
+      <li><a href="#liability">11. Limitation of Liability</a></li>
+      <li><a href="#indemnification">12. Indemnification</a></li>
+      <li><a href="#changes-to-terms">13. Changes to These Terms</a></li>
+      <li><a href="#governing-law">14. Governing Law</a></li>
+      <li><a href="#contact">15. Contact Us</a></li>
+    </ol>
+  </nav>
+
+  <section class="policy-section" id="acceptance">
+    <h2>1. Acceptance of Terms</h2>
+    <p>
+      By accessing or using PIELAM (the "Platform"), including browsing products, creating an
+      account, uploading a brand or product listing, or making a purchase, you agree to be
+      bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do
+      not use the Platform.
+    </p>
+  </section>
+
+  <section class="policy-section" id="eligibility">
+    <h2>2. Eligibility</h2>
+    <p>
+      You must be at least 18 years old, or the age of majority in your jurisdiction, to create
+      an account or make a purchase on PIELAM. By using the Platform, you represent that you
+      meet this requirement and that all information you provide is accurate and current.
+    </p>
+  </section>
+
+  <section class="policy-section" id="accounts">
+    <h2>3. Accounts &amp; Security</h2>
+    <ul>
+      <li>You are responsible for maintaining the confidentiality of your account credentials, including any OTP codes sent to you.</li>
+      <li>You are responsible for all activity that occurs under your account.</li>
+      <li>Notify us immediately at the contact details below if you suspect unauthorized use of your account.</li>
+      <li>We reserve the right to suspend or terminate accounts that provide false information or violate these Terms.</li>
+    </ul>
+  </section>
+
+  <section class="policy-section" id="marketplace">
+    <h2>4. Marketplace &amp; Content</h2>
+    <p>
+      PIELAM allows users and brands to create profiles, upload products, and share content
+      such as images, descriptions, and reviews ("User Content"). By posting User Content, you:
+    </p>
+    <ul>
+      <li>Confirm that you own the content or have the right to share it.</li>
+      <li>Grant PIELAM a non-exclusive, worldwide, royalty-free license to host, display, and distribute that content on the Platform for the purpose of operating our services.</li>
+      <li>Agree not to post content that is false, misleading, infringing, defamatory, or otherwise unlawful.</li>
+    </ul>
+    <p>
+      PIELAM may remove any listing, review, or profile content that violates these Terms or
+      applicable law, at our discretion and without prior notice.
+    </p>
+  </section>
+
+  <section class="policy-section" id="orders-payments">
+    <h2>5. Orders &amp; Payments</h2>
+    <ul>
+      <li>Product prices, availability, and descriptions are set by the listing seller/brand and may change without notice.</li>
+      <li>Payments are processed through third-party payment providers; PIELAM does not store your full payment card details.</li>
+      <li>Orders are subject to acceptance, and we reserve the right to cancel or refuse any order at our discretion (e.g. suspected fraud, pricing errors, or stock unavailability).</li>
+      <li>Shipping times, return policies, and warranties are governed by the individual seller/brand unless otherwise stated.</li>
+    </ul>
+  </section>
+
+  <section class="policy-section" id="user-conduct">
+    <h2>6. Acceptable Use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Use the Platform for any unlawful purpose or in violation of these Terms.</li>
+      <li>Upload malicious code, attempt to breach security, or interfere with the Platform's operation.</li>
+      <li>Scrape, harvest, or misuse data from the Platform without authorization.</li>
+      <li>Impersonate any person or entity, or misrepresent your affiliation with a brand.</li>
+      <li>Post spam, fraudulent listings, counterfeit products, or content that infringes on third-party rights.</li>
+      <li>Harass, abuse, or harm other users, including through reviews or messages.</li>
+    </ul>
+  </section>
+
+  <section class="policy-section" id="intellectual-property">
+    <h2>7. Intellectual Property</h2>
+    <p>
+      The PIELAM name, logo, platform design, and underlying software are the property of
+      PIELAM and protected by applicable intellectual property laws. Except for User Content,
+      you may not copy, modify, distribute, or create derivative works from the Platform
+      without our prior written consent.
+    </p>
+  </section>
+
+  <section class="policy-section" id="third-party">
+    <h2>8. Third-Party Services</h2>
+    <p>
+      PIELAM integrates with third-party services (e.g. payment processors, SMS/OTP providers,
+      social sign-in). Your use of those services may be subject to their own terms and privacy
+      policies, and PIELAM is not responsible for the practices of third parties.
+    </p>
+  </section>
+
+  <section class="policy-section" id="termination">
+    <h2>9. Suspension &amp; Termination</h2>
+    <p>
+      We may suspend or terminate your account or access to the Platform at any time, with or
+      without notice, if we believe you have violated these Terms, engaged in fraudulent or
+      harmful activity, or for any other reason at our discretion. You may also close your
+      account at any time via your account settings or by contacting us.
+    </p>
+  </section>
+
+  <section class="policy-section" id="disclaimers">
+    <h2>10. Disclaimers</h2>
+    <p>
+      The Platform is provided "as is" and "as available" without warranties of any kind,
+      whether express or implied, including but not limited to warranties of merchantability,
+      fitness for a particular purpose, and non-infringement. PIELAM does not guarantee that
+      the Platform will be uninterrupted, secure, or error-free, or that products listed by
+      third-party sellers/brands will meet your expectations.
+    </p>
+  </section>
+
+  <section class="policy-section" id="liability">
+    <h2>11. Limitation of Liability</h2>
+    <p>
+      To the fullest extent permitted by law, PIELAM and its affiliates shall not be liable
+      for any indirect, incidental, special, consequential, or punitive damages, or any loss
+      of profits, data, or goodwill, arising from your use of or inability to use the Platform,
+      even if we have been advised of the possibility of such damages.
+    </p>
+  </section>
+
+  <section class="policy-section" id="indemnification">
+    <h2>12. Indemnification</h2>
+    <p>
+      You agree to indemnify and hold harmless PIELAM, its affiliates, and their respective
+      officers, employees, and agents from any claims, damages, liabilities, and expenses
+      (including reasonable legal fees) arising from your use of the Platform, your User
+      Content, or your violation of these Terms.
+    </p>
+  </section>
+
+  <section class="policy-section" id="changes-to-terms">
+    <h2>13. Changes to These Terms</h2>
+    <p>
+      We may update these Terms from time to time. We will post the updated Terms on this page
+      with a new "Last updated" date and, where appropriate, provide additional notice (such as
+      email or an in-app notification). Continued use of the Platform after changes take effect
+      constitutes acceptance of the revised Terms.
+    </p>
+  </section>
+
+  <section class="policy-section" id="governing-law">
+    <h2>14. Governing Law</h2>
+    <p>
+      These Terms are governed by the laws of the jurisdiction in which PIELAM operates, without
+      regard to conflict-of-law principles. Any disputes arising from these Terms or your use
+      of the Platform shall be subject to the exclusive jurisdiction of the competent courts in
+      that jurisdiction, unless otherwise required by applicable law.
+    </p>
+  </section>
+
+  <section class="policy-section" id="contact">
+    <h2>15. Contact Us</h2>
+    <p>
+      If you have questions about these Terms of Service, please contact us at
+      <strong>legal@pielam.com</strong>.
+    </p>
+  </section>
+
+</div>
+{% endblock %}

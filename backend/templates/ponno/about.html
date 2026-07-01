@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .about-wrap {
+    max-width: var(--content-max, 1400px);
+    margin: 0 auto;
+    padding: var(--content-pad, clamp(1rem, 4vw, 2.5rem));
+  }
+
+  .about-hero {
+    background: linear-gradient(135deg, var(--nav-bg-from, #1565c0), var(--nav-bg-to, #1e88e5));
+    color: var(--on-dark, #fff);
+    border-radius: 16px;
+    padding: var(--space-8, 3rem) var(--space-6, 2.5rem);
+    box-shadow: var(--shadow-lg, 0 8px 28px rgba(10,37,64,.22));
+    text-align: center;
+    margin-bottom: var(--space-6, 2.5rem);
+  }
+
+  .about-hero h1 {
+    font-size: var(--text-3xl, 2.25rem);
+    margin: 0 0 var(--space-2, .75rem);
+    font-weight: 900;
+  }
+
+  .about-hero p {
+    font-size: var(--text-lg, 1.125rem);
+    color: var(--on-dark-sub, rgba(255,255,255,.85));
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-5, 2rem);
+    margin-bottom: var(--space-8, 3rem);
+  }
+
+  .about-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: var(--space-5, 2rem);
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(10,37,64,.10));
+    border: 1px solid rgba(10,37,64,.06);
+  }
+
+  .about-card i {
+    font-size: 1.75rem;
+    color: var(--accent, #4a90e2);
+    margin-bottom: var(--space-2, .75rem);
+  }
+
+  .about-card h3 {
+    margin: 0 0 var(--space-1, .5rem);
+    font-size: var(--text-xl, 1.35rem);
+  }
+
+  .about-card p {
+    margin: 0;
+    color: #4a5568;
+    line-height: 1.6;
+  }
+
+  .about-section {
+    margin-bottom: var(--space-8, 3rem);
+  }
+
+  .about-section h2 {
+    font-size: var(--text-2xl, 1.75rem);
+    margin-bottom: var(--space-3, 1rem);
+  }
+
+  .about-section p {
+    color: #4a5568;
+    line-height: 1.75;
+    max-width: 820px;
+  }
+
+  .about-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6, 2.5rem);
+    justify-content: center;
+    text-align: center;
+    margin-bottom: var(--space-8, 3rem);
+  }
+
+  .about-stats div strong {
+    display: block;
+    font-size: var(--text-2xl, 1.75rem);
+    color: var(--accent, #4a90e2);
+  }
+
+  .about-stats div span {
+    color: #4a5568;
+    font-size: var(--text-sm, .875rem);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-wrap">
+
+  <section class="about-hero">
+    <h1>About PIELAM</h1>
+    <p>PIELAM is a discovery-driven marketplace connecting brands, sellers, and shoppers in one place — built to make finding and sharing products effortless.</p>
+  </section>
+
+  <section class="about-section">
+    <h2>Who we are</h2>
+    <p>
+      PIELAM brings together product discovery, brands, and personal profiles into a single
+      connected platform. Whether you're browsing categories, following your favorite brands,
+      or building your own storefront, PIELAM is designed to make the experience simple and fast.
+    </p>
+  </section>
+
+  <div class="about-stats">
+    <div><strong>{{ total_brands|default:"1,000+" }}</strong><span>Brands</span></div>
+    <div><strong>{{ total_products|default:"10,000+" }}</strong><span>Products</span></div>
+    <div><strong>{{ total_users|default:"5,000+" }}</strong><span>Members</span></div>
+  </div>
+
+  <div class="about-grid">
+    <div class="about-card">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <h3>Discover</h3>
+      <p>Explore products across categories, brands, and subcategories with smart search and filtering.</p>
+    </div>
+    <div class="about-card">
+      <i class="fa-solid fa-store"></i>
+      <h3>Sell</h3>
+      <p>Create a brand profile, upload products, and reach customers directly on the platform.</p>
+    </div>
+    <div class="about-card">
+      <i class="fa-solid fa-users"></i>
+      <h3>Connect</h3>
+      <p>Follow brands and creators, rate products, and share what you find with your network.</p>
+    </div>
+  </div>
+
+  <section class="about-section">
+    <h2>Our mission</h2>
+    <p>
+      We believe discovering great products should be simple, transparent, and enjoyable.
+      PIELAM is built to bridge the gap between sellers and shoppers with an experience that
+      feels personal, fast, and trustworthy.
+    </p>
+  </section>
+
+</div>
+{% endblock %}

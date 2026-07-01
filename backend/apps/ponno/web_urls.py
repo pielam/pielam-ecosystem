@@ -27,6 +27,13 @@ from apps.ponno.views.category_edit import CategoryEditView
 
 from apps.ponno.views.sub_category_create import SubCategoryCreateView
 from apps.ponno.views.sub_category_edit import SubCategoryEditView
+from apps.ponno.views.subcategory_list import SubCategoryListView
+from apps.ponno.views.subcategory_products import SubCategoryProducts
+
+
+from apps.ponno.views.about import AboutView
+from apps.ponno.views.privacy_policy import PrivacyPolicyView
+from apps.ponno.views.terms_of_service import TermsOfServiceView
 
 
 app_name = "ponno"  # Namespace for URL names
@@ -38,8 +45,6 @@ urlpatterns = [
 
     path('product/upload/', ProductUploadView, name='product_upload'),
     path('product/<slug:slug>/edit/', ProductEditView, name='product_edit'),  # ← add this
-
-
     path('ajax/search/', AjaxSearchView, name='ajax_search'),
     path('product/<slug:slug>/', ProductDetailView, name='product_detail'),
 
@@ -56,10 +61,11 @@ urlpatterns = [
 
     path("sub-categories/", sub_categories_for_category, name="sub_categories_for_category"),
 
-    #path('category/', CategoryListView, name='category_list'),
+    
     path('sub_categories/create/', SubCategoryCreateView, name='subcategory_create'),
     path('sub_categories/<slug:slug>/edit/', SubCategoryEditView, name='subcategory_edit'),
-    #path('category/<slug:category_slug>/', CategoryProducts, name='category_products'),
+    path('subcategory/<slug:category_slug>/', SubCategoryProducts, name='subcategory_products'),
+    path('subcategory/', SubCategoryListView, name='subcategory_list'),
 
     # Wishlist
     path(
@@ -85,5 +91,9 @@ urlpatterns = [
         ProductShareView,
         name='share_product',
     ),
+
+    path('about/', AboutView, name='about'),
+    path('privacy-policy/', PrivacyPolicyView, name='privacy_policy'),
+    path('terms-of-service/', TermsOfServiceView, name='terms_of_service'),
   
 ]

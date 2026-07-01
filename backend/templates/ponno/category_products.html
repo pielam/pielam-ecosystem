@@ -1,0 +1,721 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.category_name }} — PIELAM</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Reset & Root ─────────────────────────────────────── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary-dark:    #0a2540;
+            --primary-blue:    #0d47a1;
+            --primary-light:   #1976d2;
+            --accent-gold:     #d4af37;
+            --accent-amber:    #ffb300;
+            --success-emerald: #00b894;
+            --danger-crimson:  #e74c3c;
+            --text-primary:    #1a202c;
+            --text-secondary:  #4a5568;
+            --text-muted:      #718096;
+            --bg-primary:      #ffffff;
+            --bg-secondary:    #f7fafc;
+            --bg-tertiary:     #edf2f7;
+            --border-light:    #e2e8f0;
+            --border-medium:   #cbd5e0;
+            --shadow-sm:       0 2px 6px rgba(10,37,64,0.08);
+            --shadow-md:       0 4px 12px rgba(10,37,64,0.12);
+            --shadow-lg:       0 10px 30px rgba(10,37,64,0.15);
+            --font-display:    'Playfair Display', serif;
+            --font-body:       'Outfit', sans-serif;
+            --transition-base: 0.25s ease;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Page Wrapper ─────────────────────────────────────── */
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 6rem 2rem 4rem;
+        }
+
+        /* ── Category Header (banner) ─────────────────────────── */
+        .category-hero {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-blue));
+            border-radius: 20px;
+            padding: 2rem 2.25rem;
+            margin-bottom: 1.75rem;
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+        .category-hero-icon {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.14);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.75rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .category-hero-icon img { width: 100%; height: 100%; object-fit: contain; padding: 0.5rem; }
+        .category-hero-title {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+        }
+        .category-hero-sub { opacity: 0.85; font-size: 0.95rem; }
+
+        /* ── Breadcrumb ───────────────────────────────────────── */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .breadcrumb a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color var(--transition-base);
+        }
+        .breadcrumb a:hover { color: var(--primary-dark); }
+        .breadcrumb i { font-size: 0.65rem; color: var(--border-medium); }
+
+        /* ── Subcategory Tabs ─────────────────────────────────── */
+        .subcategory-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+        .subcategory-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            border: 1.5px solid var(--border-medium);
+            background: white;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.82rem;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+        .subcategory-tab:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+        .subcategory-tab.active {
+            background: var(--primary-dark);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* ── Toolbar (search / filters / sort) ───────────────── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            background: white;
+            border: 1.5px solid var(--border-light);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .toolbar-search {
+            flex: 1 1 220px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1.5px solid var(--border-medium);
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+        }
+        .toolbar-search i { color: var(--text-muted); font-size: 0.85rem; }
+        .toolbar-search input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-family: var(--font-body);
+            font-size: 0.88rem;
+            flex: 1;
+            color: var(--text-primary);
+        }
+        .toolbar select,
+        .toolbar .price-input {
+            padding: 0.5rem 1.75rem 0.5rem 0.9rem;
+            border: 1.5px solid var(--border-medium);
+            border-radius: 999px;
+            background: white;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            outline: none;
+        }
+        .toolbar select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+        .price-range {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .price-input {
+            width: 90px;
+            padding: 0.5rem 0.75rem;
+            cursor: text;
+            font-weight: 500;
+        }
+        .toolbar-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+        .toolbar-apply {
+            padding: 0.5rem 1.25rem;
+            border-radius: 999px;
+            border: none;
+            background: var(--primary-dark);
+            color: white;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background var(--transition-base);
+        }
+        .toolbar-apply:hover { background: var(--primary-blue); }
+        .toolbar-sort { margin-left: auto; }
+
+        /* ── Result summary ───────────────────────────────────── */
+        .result-summary {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .result-summary strong { color: var(--text-primary); }
+
+        /* ── Product Grid ─────────────────────────────────────── */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 1.25rem;
+        }
+
+        /* ── Product Card ─────────────────────────────────────── */
+        .product-card {
+            background: white;
+            border-radius: 16px;
+            border: 1.5px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            transition: all var(--transition-base);
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-medium);
+        }
+
+        .product-image-wrap {
+            position: relative;
+            height: 180px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .product-image-wrap img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform var(--transition-base);
+        }
+        .product-card:hover .product-image-wrap img { transform: scale(1.06); }
+
+        .product-badges {
+            position: absolute;
+            top: 0.625rem;
+            left: 0.625rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .product-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .badge-sale      { background: #fee2e2; color: #991b1b; }
+        .badge-featured  { background: #fef3c7; color: #92400e; }
+        .badge-trending  { background: #ffe4e6; color: #9f1239; }
+        .badge-oos       { background: #e2e8f0; color: #475569; }
+
+        .wishlist-btn {
+            position: absolute;
+            top: 0.625rem;
+            right: 0.625rem;
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.92);
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-base);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            z-index: 2;
+        }
+        .wishlist-btn:hover { transform: scale(1.1); color: var(--danger-crimson); }
+        .wishlist-btn.active { color: var(--danger-crimson); }
+        .wishlist-btn.active i { font-weight: 900; }
+
+        .product-info {
+            padding: 1rem 1.125rem 1.125rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+        .product-brand {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .product-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            min-height: 2.5em;
+        }
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .product-rating i { color: var(--accent-amber); font-size: 0.75rem; }
+
+        .product-price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: auto;
+            padding-top: 0.5rem;
+        }
+        .product-price {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+        .product-price-original {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+        .product-discount {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--danger-crimson);
+        }
+        .product-stock {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+        .stock-in    { color: var(--success-emerald); }
+        .stock-low   { color: var(--accent-amber); }
+        .stock-out   { color: var(--danger-crimson); }
+
+        /* ── Empty State ──────────────────────────────────────── */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--text-muted);
+        }
+        .empty-state i { font-size: 4rem; opacity: 0.3; margin-bottom: 1.25rem; display: block; }
+        .empty-state h3 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+
+        /* ── Pagination ───────────────────────────────────────── */
+        .pagination-wrapper {
+            display: flex; justify-content: center;
+            margin-top: 3rem;
+        }
+        .pagination { display: flex; gap: 0.5rem; list-style: none; }
+        .page-link {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: white; border: 1.5px solid var(--border-medium);
+            border-radius: 10px; color: var(--text-primary);
+            text-decoration: none; font-weight: 600; font-size: 0.9rem;
+            transition: all var(--transition-base);
+        }
+        .page-link:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-2px); }
+        .page-item.active .page-link { background: var(--primary-dark); color: white; border-color: transparent; }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .page-wrapper { padding: 5rem 1rem 3rem; }
+            .category-hero { padding: 1.5rem; }
+            .category-hero-title { font-size: 1.5rem; }
+            .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.875rem; }
+            .product-image-wrap { height: 130px; }
+            .toolbar-sort { margin-left: 0; }
+        }
+    </style>
+</head>
+
+<body>
+
+<!--
+    If you have a shared nav / search partial (e.g. base.html, search.html),
+    include it here, inside <body>. Example:
+
+    {% include "search.html" %}
+-->
+
+<div class="page-wrapper">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{% url 'ponno:category_list' %}">
+            <i class="fa-solid fa-table-cells-large"></i> All Categories
+        </a>
+        {% for crumb in breadcrumb %}
+            <i class="fa-solid fa-chevron-right"></i>
+            {% if not forloop.last %}
+                <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+            {% else %}
+                <span>{{ crumb.name }}</span>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Category Hero -->
+    <div class="category-hero">
+        <div class="category-hero-icon">
+            {% if category.category_image %}
+                <img src="{{ category.image_url }}" alt="{{ category.category_name }}">
+            {% else %}
+                <i class="{{ category.icon_class|default:'fa-solid fa-table-cells-large' }}"></i>
+            {% endif %}
+        </div>
+        <div>
+            <div class="category-hero-title">{{ category.category_name }}</div>
+            <div class="category-hero-sub">
+                {{ stats.total }} product{{ stats.total|pluralize }} available
+                {% if selected_subcategory %}
+                    &mdash; in <strong>{{ selected_subcategory.sub_category_name }}</strong>
+                {% endif %}
+                {% if selected_brand %}
+                    &mdash; by <strong>{{ selected_brand.brand_name }}</strong>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Subcategory Tabs -->
+    {% if subcategories %}
+        <div class="subcategory-tabs">
+            <a
+                href="{% url 'ponno:category_products' category_slug=category.category_slug %}{% if query %}?q={{ query|urlencode }}{% endif %}"
+                class="subcategory-tab {% if not selected_subcategory %}active{% endif %}"
+            >
+                All
+            </a>
+            {% for sub in subcategories %}
+                <a
+                    href="{% url 'ponno:category_products' category_slug=category.category_slug %}?subcategory={{ sub.sub_category_slug }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                    class="subcategory-tab {% if selected_subcategory.pk == sub.pk %}active{% endif %}"
+                >
+                    {{ sub.sub_category_name }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Toolbar: search / brand / price / stock / sort -->
+    <form method="get" class="toolbar" id="filter-form">
+        {% if selected_subcategory %}
+            <input type="hidden" name="subcategory" value="{{ selected_subcategory.sub_category_slug }}">
+        {% endif %}
+
+        <div class="toolbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="q" placeholder="Search in {{ category.category_name }}..." value="{{ query }}">
+        </div>
+
+        {% if brands %}
+            <select name="brand" onchange="document.getElementById('filter-form').submit();">
+                <option value="">All Brands</option>
+                {% for b in brands %}
+                    <option value="{{ b.brand_slug }}" {% if selected_brand.pk == b.pk %}selected{% endif %}>
+                        {{ b.brand_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+
+        <div class="price-range">
+            <input type="number" name="min_price" class="price-input" placeholder="Min ৳" value="{{ min_price|default:'' }}" min="0">
+            <span>&ndash;</span>
+            <input type="number" name="max_price" class="price-input" placeholder="Max ৳" value="{{ max_price|default:'' }}" min="0">
+        </div>
+
+        <label class="toolbar-checkbox">
+            <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %}>
+            In stock only
+        </label>
+
+        <button type="submit" class="toolbar-apply">Apply</button>
+
+        <select name="sort" class="toolbar-sort" onchange="document.getElementById('filter-form').submit();" aria-label="Sort products">
+            {% for opt in sort_options %}
+                <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <div class="result-summary">
+        Showing <strong>{{ total_count }}</strong> product{{ total_count|pluralize }}
+        {% if query %}for &ldquo;<strong>{{ query }}</strong>&rdquo;{% endif %}
+    </div>
+
+    <!-- Product Grid -->
+    <div class="product-grid">
+        {% for p in products %}
+            <a href="{{ p.product_url }}" class="product-card" data-product-id="{{ p.product_id }}">
+
+                <div class="product-image-wrap">
+                    <div class="product-badges">
+                        {% if p.is_on_sale %}
+                            <span class="product-badge badge-sale">
+                                <i class="fa-solid fa-tag"></i> -{{ p.discount_percentage|floatformat:0 }}%
+                            </span>
+                        {% endif %}
+                        {% if p.is_featured %}
+                            <span class="product-badge badge-featured">
+                                <i class="fa-solid fa-star"></i> Featured
+                            </span>
+                        {% endif %}
+                        {% if p.is_trending %}
+                            <span class="product-badge badge-trending">
+                                <i class="fa-solid fa-fire"></i> Trending
+                            </span>
+                        {% endif %}
+                        {% if not p.is_in_stock %}
+                            <span class="product-badge badge-oos">Out of Stock</span>
+                        {% endif %}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="wishlist-btn"
+                        onclick="event.preventDefault(); event.stopPropagation(); toggleWishlist(this, '{{ p.product_id }}');"
+                        aria-label="Toggle wishlist"
+                    >
+                        <i class="fa-regular fa-heart"></i>
+                    </button>
+
+                    <img
+                        src="{{ p.image }}"
+                        alt="{{ p.name }}"
+                        loading="lazy"
+                        onerror="this.src='/static/defaults/default-product.png';"
+                    >
+                </div>
+
+                <div class="product-info">
+                    {% if p.brand_name %}
+                        <div class="product-brand">{{ p.brand_name }}</div>
+                    {% endif %}
+
+                    <div class="product-name">{{ p.name }}</div>
+
+                    {% if p.review_count > 0 %}
+                        <div class="product-rating">
+                            <i class="fa-solid fa-star"></i>
+                            {{ p.rating_average }} ({{ p.review_count }})
+                        </div>
+                    {% endif %}
+
+                    <div class="product-price-row">
+                        <span class="product-price">{{ p.currency }} {{ p.final_price|floatformat:2 }}</span>
+                        {% if p.is_on_sale %}
+                            <span class="product-price-original">{{ p.selling_price|floatformat:2 }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if p.is_in_stock %}
+                        {% if p.stock <= 10 %}
+                            <div class="product-stock stock-low">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Only {{ p.stock }} left
+                            </div>
+                        {% else %}
+                            <div class="product-stock stock-in">
+                                <i class="fa-solid fa-check"></i> In Stock
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="product-stock stock-out">
+                            <i class="fa-solid fa-xmark"></i> Out of Stock
+                        </div>
+                    {% endif %}
+                </div>
+
+            </a>
+
+        {% empty %}
+            <div class="empty-state">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>No products found</h3>
+                <p>
+                    {% if query %}
+                        No results for &ldquo;<strong>{{ query }}</strong>&rdquo; in {{ category.category_name }}.
+                    {% else %}
+                        No products match the selected filters.
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination-wrapper" aria-label="Product pages">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&sort={{ current_sort }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.sub_category_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&sort={{ current_sort }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.sub_category_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&sort={{ current_sort }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if selected_subcategory %}&subcategory={{ selected_subcategory.sub_category_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div><!-- /page-wrapper -->
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleWishlist(button, productId) {
+    const url = "{% url 'ponno:wishlist_toggle' product_id='00000000-0000-0000-0000-000000000000' %}"
+        .replace('00000000-0000-0000-0000-000000000000', productId);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+        .then(response => {
+            if (!response.ok) {
+                // Likely unauthenticated — send to login, or just ignore silently.
+                throw new Error('Wishlist toggle failed');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const icon = button.querySelector('i');
+            const nowActive = data.added !== undefined ? data.added : !button.classList.contains('active');
+            button.classList.toggle('active', nowActive);
+            icon.classList.toggle('fa-regular', !nowActive);
+            icon.classList.toggle('fa-solid', nowActive);
+        })
+        .catch(() => {
+            // Not logged in or request failed — no-op for now.
+        });
+}
+</script>
+
+</body>
+</html>

@@ -1,8 +1,3 @@
-{% include "base.html" %}
-{% include "search.html" %}
-
-
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -51,7 +46,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-
         /* ── Page Wrapper ─────────────────────────────────────── */
         .page-wrapper {
             max-width: 1400px;
@@ -94,6 +88,69 @@
         }
         .breadcrumb a:hover { color: var(--primary-dark); }
         .breadcrumb i { font-size: 0.65rem; color: var(--border-medium); }
+
+        /* ── Filter Tabs ──────────────────────────────────────── */
+        .filter-tabs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .filter-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            border: 1.5px solid var(--border-medium);
+            background: white;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+        .filter-tab:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            transform: translateY(-1px);
+        }
+        .filter-tab.active {
+            background: var(--primary-dark);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 3px 10px rgba(10,37,64,0.2);
+        }
+        .tab-count {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.06);
+            font-weight: 700;
+        }
+        .filter-tab.active .tab-count { background: rgba(255,255,255,0.22); }
+
+        .sort-select {
+            margin-left: auto;
+            padding: 0.5rem 1.75rem 0.5rem 0.9rem;
+            border: 1.5px solid var(--border-medium);
+            border-radius: 999px;
+            background: white;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color var(--transition-base);
+        }
+        .sort-select:focus { border-color: var(--primary-blue); }
 
         /* ── Category Grid ────────────────────────────────────── */
         .category-grid {
@@ -291,12 +348,20 @@
             .page-title { font-size: 1.6rem; }
             .category-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.875rem; }
             .category-image-wrap { height: 100px; }
+            .sort-select { margin-left: 0; }
         }
     </style>
 </head>
 
 <body>
 
+<!--
+    If you have a shared nav / search partial (e.g. base.html, search.html),
+    include it here, inside <body>, not before <!DOCTYPE html> like the
+    previous version did. Example:
+
+    {% include "search.html" %}
+-->
 
 <div class="page-wrapper">
 
@@ -338,7 +403,6 @@
         </div>
     {% endif %}
 
-    
     <!-- Filter Tabs -->
     <div class="filter-tabs">
         {% for tab in filter_tabs %}
@@ -507,7 +571,6 @@
     {% endif %}
 
 </div><!-- /page-wrapper -->
-
 
 <script>
 function applySort(value) {
