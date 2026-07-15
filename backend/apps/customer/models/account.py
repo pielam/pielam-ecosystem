@@ -350,12 +350,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     # INTERNATIONALIZATION
     # ================================================================
     
-    timezone = models.CharField(
-        _("Timezone"),
-        max_length=50,
-        default='UTC',
-        help_text=_("User's preferred timezone")
-    )
     
     language = models.CharField(
         _("Language"),
@@ -441,7 +435,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     # ================================================================
     # TIMESTAMPS
     # ================================================================
-    from django.utils import timezone 
     date_joined = models.DateTimeField(
         _("Date Joined"),
         default=timezone.now,

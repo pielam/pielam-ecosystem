@@ -9,6 +9,8 @@ from urllib.parse import urljoin, urlparse
 import json
 import logging
 
+from megamind.utils.feed_cache import refresh_feed_cache
+
 logger = logging.getLogger(__name__)
 
 
@@ -190,7 +192,23 @@ class ServiceDataFetcher:
         for og_tag in soup.find_all('meta', property=lambda x: x and x.startswith('og:')):
             property_name = og_tag.get('property', '').replace('og:', '')
             og_data[property_name] = og_tag.get('content', '')
-        
+
+        # Strip scripts, styles, nav, footer, header, aside BEFORE any
+        # content extraction below. This used to run right before
+        # `main_content`/`text_content` was built — *after* links,
+        # images, headings, paragraphs, lists, and tables had already
+        # been pulled from the raw, un-stripped page. That ordering
+        # bug meant the nav/header/footer exclusion had zero effect on
+        # anything except the final text blob: `extracted_links` (and
+        # every other extracted field) still included every link out
+        # of the page's own site-wide nav/footer — which is why a
+        # product page's `links` ended up full of that site's own
+        # "Home" / "Notifications" / "About Us" nav entries instead of
+        # actual in-content links. Doing this first scopes every field
+        # below to real page content only.
+        for element in soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
+            element.decompose()
+
         # Extract all headings
         headings = {
             'h1': [h.get_text(strip=True) for h in soup.find_all('h1')],
@@ -291,11 +309,9 @@ class ServiceDataFetcher:
                     'title': iframe.get('title', ''),
                 })
         
-        # Remove scripts, styles, nav, footer, header for clean content
-        for element in soup(['script', 'style', 'nav', 'footer', 'header', 'aside']):
-            element.decompose()
-        
-        # Extract main content
+        # main_content/text_content are built from the already-cleaned
+        # soup (nav/header/footer/script/style/aside were stripped
+        # above, before extraction) — nothing further to strip here.
         main_content = soup.find(['main', 'article']) or soup.find('body')
         text_content = main_content.get_text(separator='\n', strip=True) if main_content else ''
         
@@ -419,22 +435,56 @@ def fetch_service_data(service):
     try:
         fetcher = ServiceDataFetcher(service)
         data = fetcher.fetch()
-        
+
         service.last_fetched_data = data
         service.last_fetch_time = timezone.now()
         service.fetch_status = 'success'
         service.fetch_error = None
+
+        # The engine feed reads extracted_images/extracted_videos/
+        # extracted_links directly off the model — `last_fetched_data`
+        # above is the full raw payload for other consumers, but those
+        # three fields need to be populated explicitly. Only the HTML
+        # handler currently produces media in a feed-relevant shape;
+        # other content types (image/video/audio/document/json/text)
+        # don't represent "a page with embedded media" the same way,
+        # so they're left as empty lists rather than guessing a mapping.
+        if data.get('type') == 'html':
+            service.extracted_images = data.get('images', [])
+            service.extracted_videos = data.get('videos', [])
+            service.extracted_links = data.get('links', [])
+        else:
+            service.extracted_images = []
+            service.extracted_videos = []
+            service.extracted_links = []
+
         service.save()
-        
+
+        # Precompute the engine-feed payload now, while we're already
+        # paying the cost of a fetch — not on every feed read later.
+        # Safe to call regardless of whether this service ends up
+        # eligible for the public feed (status/is_connected are
+        # checked at read time, not here).
+        try:
+            refresh_feed_cache(service)
+        except Exception:
+            # Never let feed-cache bookkeeping fail the actual fetch —
+            # log and move on; the engine feed serializer falls back to
+            # building the payload live if cached_feed_payload is empty.
+            logger.exception(
+                "refresh_feed_cache failed for service %s after successful fetch",
+                service.pk,
+            )
+
         logger.info(f"Successfully fetched data from {service.service_name}")
         return True
-        
+
     except Exception as e:
         error_message = str(e)
         service.fetch_status = 'error'
         service.fetch_error = error_message
         service.last_fetch_time = timezone.now()
         service.save()
-        
+
         logger.error(f"Failed to fetch data from {service.service_name}: {error_message}")
         return False

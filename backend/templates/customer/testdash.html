@@ -1,0 +1,543 @@
+{# apps/customer/templates/customer/dashboard.html #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ponno — What's moving right now</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:    #14181F;
+    --paper:  #F2F4F1;
+    --panel:  #FFFFFF;
+    --teal:   #0F7173;
+    --amber:  #F2A93B;
+    --brick:  #C6432E;
+    --sage:   #5C8A63;
+    --line:   #D9DDD6;
+    --shadow: 0 1px 2px rgba(20,24,31,0.06), 0 4px 12px rgba(20,24,31,0.05);
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 24px 64px;
+  }
+
+  /* ---------- MASTHEAD ---------- */
+
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    padding:36px 0 22px;
+    border-bottom:2px solid var(--ink);
+  }
+
+  .masthead__brand{
+    font-family:'Roboto Slab',serif;
+    font-weight:700;
+    font-size:28px;
+    letter-spacing:-0.01em;
+  }
+
+  .masthead__brand span{ color:var(--teal); }
+
+  .masthead__tagline{
+    font-size:13px;
+    color:#5B6169;
+    margin-top:4px;
+  }
+
+  .freshness{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:#5B6169;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  .freshness__dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--sage);
+    box-shadow:0 0 0 3px rgba(92,138,99,0.18);
+  }
+
+  @media (prefers-reduced-motion:no-preference){
+    .freshness__dot{ animation:pulse 2.4s ease-in-out infinite; }
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+
+  /* ---------- LAYOUT ---------- */
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    gap:40px;
+    margin-top:32px;
+  }
+
+  @media (max-width:860px){
+    .grid{ grid-template-columns:1fr; }
+  }
+
+  .section-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--teal);
+    margin:0 0 14px;
+  }
+
+  /* ---------- TRENDING LIST (the hero: the data itself) ---------- */
+
+  .trending{
+    list-style:none;
+    margin:0; padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .trending__row{
+    display:grid;
+    grid-template-columns:40px 64px 1fr auto;
+    align-items:center;
+    gap:16px;
+    padding:14px 12px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+  }
+
+  .trending__row + .trending__row{ margin-top:8px; }
+
+  .trending__rank{
+    font-family:'Roboto Slab',serif;
+    font-weight:700;
+    font-size:20px;
+    color:#B7BDC4;
+    text-align:center;
+  }
+
+  .trending__row:nth-child(-n+3) .trending__rank{ color:var(--teal); }
+
+  .trending__thumb{
+    width:64px; height:64px;
+    border-radius:6px;
+    object-fit:cover;
+    background:var(--paper);
+    border:1px solid var(--line);
+  }
+
+  .trending__name{
+    font-weight:600;
+    font-size:15px;
+    line-height:1.3;
+  }
+
+  .trending__meta{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    color:#5B6169;
+    margin-top:4px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .trending__price{
+    text-align:right;
+    white-space:nowrap;
+  }
+
+  .trending__price-now{
+    font-family:'Roboto Slab',serif;
+    font-weight:700;
+    font-size:17px;
+  }
+
+  .trending__discount{
+    display:inline-block;
+    margin-top:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:500;
+    color:#fff;
+    background:var(--brick);
+    padding:2px 6px;
+    border-radius:4px;
+  }
+
+  .empty-state{
+    padding:32px;
+    text-align:center;
+    color:#5B6169;
+    background:var(--panel);
+    border:1px dashed var(--line);
+    border-radius:8px;
+    font-size:14px;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+
+  .sidebar > * + *{ margin-top:32px; }
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 12px 6px 6px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:999px;
+    font-size:13px;
+    font-weight:500;
+  }
+
+  .chip img{
+    width:24px; height:24px;
+    border-radius:50%;
+    object-fit:cover;
+    background:var(--paper);
+  }
+
+  .cat-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .cat-list a{
+    display:flex;
+    justify-content:space-between;
+    padding:10px 12px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-weight:500;
+  }
+
+  .cat-list a:hover{ border-color:var(--teal); color:var(--teal); }
+
+  /* ---------- RECEIPT CARD (signature element) ---------- */
+
+  .receipt{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px 8px 2px 2px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+
+  .receipt__perf{
+    height:0;
+    border-top:2px dotted #C7CCC3;
+    margin:0 14px;
+  }
+
+  .receipt__head{
+    padding:16px 18px 10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#5B6169;
+  }
+
+  .receipt__body{ padding:6px 18px 18px; }
+
+  .receipt__row{
+    display:flex;
+    justify-content:space-between;
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+    font-size:14px;
+  }
+
+  .receipt__row:last-child{ border-bottom:none; }
+
+  .receipt__row b{
+    font-family:'Roboto Slab',serif;
+    font-size:16px;
+  }
+
+  .receipt__foot{
+    padding:12px 18px 18px;
+    font-size:12px;
+    color:#5B6169;
+  }
+
+  .signin-note{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:18px;
+    font-size:13px;
+    color:#5B6169;
+  }
+
+  .signin-note a{ color:var(--teal); font-weight:600; }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:8px;
+  }
+
+  .stat{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+
+  .stat__value{
+    font-family:'Roboto Slab',serif;
+    font-weight:700;
+    font-size:18px;
+  }
+
+  .stat__label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    color:#5B6169;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+
+  .service-dot{
+    width:7px; height:7px;
+    border-radius:50%;
+    background:#C7CCC3;
+    display:inline-block;
+  }
+
+  .service-dot--on{ background:var(--sage); }
+
+  footer{
+    margin-top:56px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:#8A9097;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <div class="masthead__brand">ponno<span>.</span></div>
+      <div class="masthead__tagline">What's moving right now</div>
+    </div>
+    <div class="freshness">
+      <span class="freshness__dot"></span>
+      <span id="freshness-text" data-generated-at="{{ generated_at }}">
+        Updated {{ cache_age_seconds }}s ago
+      </span>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <main>
+      <p class="section-label">Trending — ranked by views &amp; sales</p>
+
+      {% if trending_products %}
+        <ol class="trending">
+          {% for p in trending_products %}
+          <li class="trending__row">
+            <span class="trending__rank">{{ forloop.counter }}</span>
+            <img class="trending__thumb" src="{{ p.image }}" alt="" loading="lazy">
+            <div>
+              <a class="trending__name" href="/products/{{ p.slug }}/">{{ p.name }}</a>
+              <div class="trending__meta">
+                <span>{{ p.views }} views</span>
+                <span>{{ p.sales }} sold</span>
+                {% if p.rating != "0.00" %}<span>★ {{ p.rating }}</span>{% endif %}
+              </div>
+            </div>
+            <div class="trending__price">
+              <div class="trending__price-now">৳{{ p.price }}</div>
+              {% if p.discount_pct != "0.00" %}
+                <span class="trending__discount">−{{ p.discount_pct }}%</span>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <div class="empty-state">Nothing trending yet — check back soon.</div>
+      {% endif %}
+    </main>
+
+    <aside class="sidebar">
+
+      <section>
+        <p class="section-label">Featured brands</p>
+        {% if featured_brands %}
+          <div class="chip-row">
+            {% for b in featured_brands %}
+              <a class="chip" href="/brands/{{ b.slug }}/">
+                <img src="{{ b.logo }}" alt="">
+                {{ b.name }}
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">No featured brands right now.</div>
+        {% endif %}
+      </section>
+
+      <section>
+        <p class="section-label">Featured categories</p>
+        {% if featured_categories %}
+          <div class="cat-list">
+            {% for c in featured_categories %}
+              <a href="/categories/{{ c.slug }}/">
+                {{ c.name }} <span>→</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">No featured categories right now.</div>
+        {% endif %}
+      </section>
+
+      {% if user.is_authenticated %}
+        <section class="receipt">
+          <div class="receipt__head">Your activity</div>
+          <div class="receipt__perf"></div>
+          <div class="receipt__body">
+            <div class="receipt__row">
+              <span>Signed in as</span>
+              <b>{{ profile.display_name|default:user.display_name }}</b>
+            </div>
+            <div class="receipt__row">
+              <span>Saved items</span>
+              <b>{{ activity.wishlist_count }}</b>
+            </div>
+            <div class="receipt__row">
+              <span>Orders placed</span>
+              <b>{{ activity.order_count }}</b>
+            </div>
+          </div>
+          <div class="receipt__perf"></div>
+          <div class="receipt__foot">Refreshed independently of the trending list above.</div>
+        </section>
+
+        {% if profile.is_business and profile.business %}
+          <section class="receipt">
+            <div class="receipt__head">Business</div>
+            <div class="receipt__perf"></div>
+            <div class="receipt__body">
+              <div class="receipt__row">
+                <span>Name</span>
+                <b>{{ profile.business.name|default:"—" }}</b>
+              </div>
+              {% if profile.business.type %}
+              <div class="receipt__row">
+                <span>Type</span>
+                <b>{{ profile.business.type }}</b>
+              </div>
+              {% endif %}
+              {% if profile.business.website %}
+              <div class="receipt__row">
+                <span>Website</span>
+                <b><a href="{{ profile.business.website }}">{{ profile.business.website }}</a></b>
+              </div>
+              {% endif %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if engine and engine.connected_services %}
+          <section>
+            <p class="section-label">Connected services</p>
+            <div class="stat-grid">
+              <div class="stat"><span class="stat__value">{{ engine.images_count }}</span><span class="stat__label">Images</span></div>
+              <div class="stat"><span class="stat__value">{{ engine.videos_count }}</span><span class="stat__label">Videos</span></div>
+              <div class="stat"><span class="stat__value">{{ engine.links_count }}</span><span class="stat__label">Links</span></div>
+              <div class="stat"><span class="stat__value">{{ engine.text_count }}</span><span class="stat__label">Text blocks</span></div>
+            </div>
+            <div class="chip-row" style="margin-top:10px;">
+              {% for s in engine.connected_services %}
+                <a class="chip" href="{{ s.url }}">
+                  <span class="service-dot {% if s.is_connected %}service-dot--on{% endif %}"></span>
+                  {{ s.name }}
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      {% else %}
+        <div class="signin-note">
+          <a href="/login/">Sign in</a> to see your saved items and orders here.
+        </div>
+      {% endif %}
+
+    </aside>
+  </div>
+
+  <footer>
+    cache: shell fresh for {{ shell_ttl }}s · generated server-side · v{{ cache_version }}
+  </footer>
+
+</div>
+
+<script>
+  // Honest, live-updating cache-age readout — ticks up client-side instead
+  // of freezing at whatever value was true when the HTML was rendered.
+  (function () {
+    var el = document.getElementById('freshness-text');
+    if (!el) return;
+    var generatedAt = parseFloat(el.dataset.generatedAt);
+    if (!generatedAt) return;
+
+    function tick() {
+      var ageSec = Math.max(0, Math.round(Date.now() / 1000 - generatedAt));
+      el.textContent = 'Updated ' + ageSec + 's ago';
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>
+
+</body>
+</html>

@@ -1,3 +1,5 @@
+<!--  backend/templates/base.html -->
+  
 {% load static %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE|default:'en' }}">
@@ -656,8 +658,8 @@
 
   <div class="drawer-header">
     <span class="drawer-brand">
-      <a href="{% url 'engine' %}">
-        <i class="fa-solid fa-microchip-ai"></i> Engine
+      <a>
+        <i class="fa-solid fa-bars"></i> Menu
       </a>
     </span>
     <button id="drawerClose" aria-label="Close menu">
@@ -771,7 +773,7 @@
            aria-current="{% if 'home' in url_name %}page{% else %}false{% endif %}">
           <i class="fa-solid fa-house" aria-hidden="true"></i><span>Home</span>
         </a>
-        <a href="{% url 'notify:notification' %}"
+        <a href="{% url 'notify:notifications' %}"
            role="listitem"
            class="nav-item {% if 'notification' in url_name %}active{% endif %}"
            aria-current="{% if 'notification' in url_name %}page{% else %}false{% endif %}">

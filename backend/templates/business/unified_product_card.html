@@ -1,0 +1,24 @@
+{% load static %}
+<article class="ue-card ue-product" data-product-id="{{ p.id }}" data-kind="product">
+  <a href="{{ p.product_url }}">
+    <img class="ue-product__image" src="{{ p.image }}" alt="{{ p.title }}" loading="lazy">
+  </a>
+  <div class="ue-product__body">
+    <h3 class="ue-product__title">{{ p.highlighted_title|default:p.title|safe }}</h3>
+    <div class="ue-product__price">
+      <span class="ue-product__price--final">{{ p.final_price }}</span>
+      {% if p.on_sale %}
+        <span class="ue-product__price--original">{{ p.original_price }}</span>
+      {% endif %}
+      {% if p.discount_badge %}
+        <span class="ue-product__badge">{{ p.discount_badge }}</span>
+      {% endif %}
+    </div>
+    <div class="ue-product__meta-row">
+      <span>{{ p.seller_name }}</span>
+      <span>{{ p.views }} views</span>
+      <span>{{ p.stock_status }}</span>
+      {% if p.id in wishlisted_ids %}<span>♥ Wishlisted</span>{% endif %}
+    </div>
+  </div>
+</article>

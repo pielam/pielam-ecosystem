@@ -12,12 +12,14 @@ urlpatterns = [
 
     path('', include('apps.ponno.web_urls')),
     path('engine/', include('dispos.web_urls')),
+    path('customer/',   include('apps.customer.web_urls')),
+    path('notifications/', include('apps.notify.web_urls')),
 
     path("accounts/", include("allauth.urls")),
 
-    path('customer/',      include('apps.customer.urls')),
+    
     path('tomal/',         include('apps.tomal.urls')),
-    path('notifications/', include('apps.notify.urls')),
+    
     path('kobutor/',       include('apps.kobutor.urls')),
 
     # ── Megamind API ──────────────────────────────────────────────────────

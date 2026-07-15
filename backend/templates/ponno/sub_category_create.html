@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create SubCategory | PIELAM{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --primary-dark:  #0a2540;
+    --primary-blue:  #0d47a1;
+    --primary-light: #1976d2;
+    --accent-gold:   #d4af37;
+    --accent-amber:  #ffb300;
+    --success:       #00b894;
+    --danger:        #e74c3c;
+    --text-primary:  #1a202c;
+    --text-secondary:#4a5568;
+    --text-muted:    #718096;
+    --bg-primary:    #ffffff;
+    --bg-secondary:  #f7fafc;
+    --bg-tertiary:   #edf2f7;
+    --border-light:  #e2e8f0;
+    --border-medium: #cbd5e0;
+    --shadow-sm: 0 2px 6px rgba(10,37,64,.08);
+    --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+    --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+    --r-sm: 8px;
+    --r-md: 14px;
+    --r-lg: 20px;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'Roboto', sans-serif;
+    --transition:   .2s ease;
+  }
+
+  .sc-page { max-width: 760px; margin: 2rem auto; padding: 0 1.25rem; font-family: var(--font-body); color: var(--text-primary); }
+
+  /* Header */
+  .sc-header { margin-bottom: 1.75rem; }
+  .sc-header__eyebrow {
+    font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--accent-gold); margin-bottom: .375rem;
+  }
+  .sc-header__title {
+    font-family: var(--font-display); font-size: 1.875rem; font-weight: 700;
+    color: var(--text-primary); line-height: 1.2;
+  }
+  .sc-header__sub { font-size: .875rem; color: var(--text-muted); margin-top: .375rem; }
+
+  /* Breadcrumb */
+  .sc-breadcrumb { font-size: .8125rem; color: var(--text-muted); margin-bottom: 1rem; }
+  .sc-breadcrumb a { color: var(--primary-light); text-decoration: none; }
+  .sc-breadcrumb a:hover { text-decoration: underline; }
+
+  /* Messages */
+  .sc-messages { margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: .5rem; list-style: none; padding: 0; }
+  .sc-messages li {
+    padding: .75rem 1rem; border-radius: var(--r-sm); font-size: .875rem; font-weight: 500;
+  }
+  .sc-messages li.error   { background: rgba(231,76,60,.08);  border: 1px solid rgba(231,76,60,.2);  color: #c0392b; }
+  .sc-messages li.success { background: rgba(0,184,148,.08);  border: 1px solid rgba(0,184,148,.2);  color: #00856f; }
+  .sc-messages li.warning { background: rgba(255,179,0,.08);  border: 1px solid rgba(255,179,0,.2);  color: #b45309; }
+
+  /* Card */
+  .sc-card {
+    background: var(--bg-primary); border: 1px solid var(--border-light); border-radius: var(--r-lg);
+    overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 1.25rem; position: relative;
+  }
+  .sc-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  }
+  .sc-card-head {
+    display: flex; align-items: center; gap: .625rem; padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-light); background: var(--bg-secondary);
+  }
+  .sc-card-head-icon {
+    width: 32px; height: 32px; border-radius: var(--r-sm); background: rgba(13,71,161,.1);
+    color: var(--primary-blue); display: flex; align-items: center; justify-content: center;
+    font-size: .875rem; flex-shrink: 0;
+  }
+  .sc-card-head-title {
+    font-size: .8125rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-secondary);
+  }
+  .sc-card-head-required { margin-left: auto; font-size: .7rem; color: var(--text-muted); }
+  .sc-card-head-required span { color: var(--danger); }
+  .sc-card-body { padding: 1.25rem; }
+
+  /* Fields */
+  .sc-field-group { display: grid; gap: 1rem; }
+  .sc-field-group.cols-2 { grid-template-columns: 1fr 1fr; }
+  .sc-field-group.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .sc-field { display: flex; flex-direction: column; gap: .375rem; }
+  .sc-field label {
+    font-size: .8125rem; font-weight: 600; color: var(--text-secondary);
+    display: flex; align-items: center; gap: .25rem;
+  }
+  .sc-field label .req { color: var(--danger); }
+  .sc-field label .opt { font-size: .7rem; font-weight: 400; color: var(--text-muted); margin-left: .25rem; }
+
+  .sc-field input, .sc-field select, .sc-field textarea {
+    width: 100%; padding: .625rem .875rem; border: 1px solid var(--border-medium);
+    border-radius: var(--r-sm); font-family: var(--font-body); font-size: .875rem;
+    color: var(--text-primary); background: var(--bg-primary);
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none; appearance: none;
+  }
+  .sc-field input:focus, .sc-field select:focus, .sc-field textarea:focus {
+    border-color: var(--primary-light); box-shadow: 0 0 0 3px rgba(25,118,210,.1);
+  }
+  .sc-field input::placeholder, .sc-field textarea::placeholder { color: var(--text-muted); }
+  .sc-field textarea { resize: vertical; min-height: 80px; }
+  .sc-field select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2rem;
+  }
+  .sc-field input[type="color"] { padding: .25rem; height: 42px; cursor: pointer; }
+
+  /* Upload zones */
+  .sc-upload-wrap { display: flex; flex-direction: column; gap: .375rem; }
+  .sc-upload-label {
+    font-size: .8125rem; font-weight: 600; color: var(--text-secondary);
+    display: flex; align-items: center; gap: .25rem;
+  }
+  .sc-upload-zone {
+    position: relative; border: 2px dashed var(--border-medium); border-radius: var(--r-md);
+    padding: 1.25rem 1rem; text-align: center; cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+    background: var(--bg-secondary);
+  }
+  .sc-upload-zone:hover, .sc-upload-zone.drag-over {
+    border-color: var(--primary-light); background: rgba(25,118,210,.04);
+  }
+  .sc-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .sc-upload-zone__icon { font-size: 1.375rem; color: var(--border-medium); margin-bottom: .5rem; transition: color var(--transition); }
+  .sc-upload-zone:hover .sc-upload-zone__icon { color: var(--primary-light); }
+  .sc-upload-zone__text { font-size: .75rem; color: var(--text-muted); line-height: 1.5; }
+  .sc-upload-zone__text strong { color: var(--primary-light); }
+  .sc-upload-preview { display: none; width: 60px; height: 60px; border-radius: var(--r-sm); object-fit: cover; border: 2px solid var(--border-light); margin: .5rem auto 0; }
+
+  /* Toggle switches for status flags */
+  .sc-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .875rem; }
+  .sc-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    padding: .75rem .875rem; border: 1px solid var(--border-light); border-radius: var(--r-sm);
+    background: var(--bg-secondary);
+  }
+  .sc-toggle-label { font-size: .8125rem; font-weight: 500; color: var(--text-secondary); }
+  .sc-toggle-label small { display: block; font-size: .7rem; font-weight: 400; color: var(--text-muted); margin-top: 1px; }
+  .sc-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .sc-switch input { opacity: 0; width: 0; height: 0; }
+  .sc-switch-slider {
+    position: absolute; cursor: pointer; inset: 0; background: var(--border-medium);
+    border-radius: 999px; transition: var(--transition);
+  }
+  .sc-switch-slider::before {
+    content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: var(--transition);
+  }
+  .sc-switch input:checked + .sc-switch-slider { background: var(--primary-light); }
+  .sc-switch input:checked + .sc-switch-slider::before { transform: translateX(18px); }
+
+  /* Submit bar */
+  .sc-submit-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    padding: 1rem 1.25rem; background: var(--bg-secondary); border-top: 1px solid var(--border-light);
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+  }
+  .sc-submit-bar__note { font-size: .8rem; color: var(--text-muted); display: flex; align-items: center; gap: .375rem; }
+  .sc-submit-bar__actions { display: flex; gap: .75rem; align-items: center; }
+
+  .sc-btn {
+    display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.375rem; border-radius: var(--r-sm);
+    font-family: var(--font-body); font-weight: 600; font-size: .875rem; cursor: pointer;
+    text-decoration: none; border: none; transition: opacity var(--transition), transform .1s ease, box-shadow var(--transition);
+  }
+  .sc-btn:active { transform: scale(.97); }
+  .sc-btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+    color: #fff; box-shadow: 0 4px 12px rgba(13,71,161,.3);
+  }
+  .sc-btn-primary:hover { opacity: .9; box-shadow: 0 6px 18px rgba(13,71,161,.4); }
+  .sc-btn-ghost { background: transparent; border: 1px solid var(--border-medium); color: var(--text-secondary); }
+  .sc-btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+  @media (max-width: 600px) {
+    .sc-field-group.cols-2, .sc-field-group.cols-3, .sc-toggle-grid { grid-template-columns: 1fr; }
+    .sc-header__title { font-size: 1.5rem; }
+    .sc-submit-bar { flex-direction: column; align-items: stretch; }
+    .sc-submit-bar__actions { flex-direction: column; }
+    .sc-btn { justify-content: center; }
+  }
+</style>
+
+<div class="sc-page">
+
+  <nav class="sc-breadcrumb">
+    <a href="{% url 'ponno:home' %}">Home</a> &raquo; <span>Create SubCategory</span>
+  </nav>
+
+  <div class="sc-header">
+    <div class="sc-header__eyebrow">Catalog management</div>
+    <div class="sc-header__title">Create a new subcategory</div>
+    <div class="sc-header__sub">Only name, parent category, and type are required. Everything else can be adjusted later.</div>
+  </div>
+
+  {% if messages %}
+  <ul class="sc-messages">
+    {% for message in messages %}
+    <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="sub-category-form" novalidate>
+    {% csrf_token %}
+
+    <!-- ===== CARD 1: BASIC INFO ===== -->
+    <div class="sc-card">
+      <div class="sc-card-head">
+        <div class="sc-card-head-icon"><i class="fas fa-folder-tree"></i></div>
+        <span class="sc-card-head-title">Basic Information</span>
+        <span class="sc-card-head-required"><span>*</span> required</span>
+      </div>
+      <div class="sc-card-body">
+        <div class="sc-field-group">
+
+          <div class="sc-field">
+            <label for="sub_category_name">SubCategory name <span class="req">*</span></label>
+            <input type="text" id="sub_category_name" name="sub_category_name"
+                   placeholder="e.g. Gaming Laptops" maxlength="150" required
+                   value="{{ form_data.sub_category_name|default:'' }}">
+          </div>
+
+          <div class="sc-field-group cols-2">
+            <div class="sc-field">
+              <label for="category">Parent category <span class="req">*</span></label>
+              <select id="category" name="category" required>
+                <option value="">— Select category —</option>
+                {% for category in categories %}
+                <option value="{{ category.pk }}" {% if form_data.category == category.pk|stringformat:"s" %}selected{% endif %}>
+                  {{ category.category_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="sc-field">
+              <label for="brand">Brand <span class="opt">optional</span></label>
+              <select id="brand" name="brand">
+                <option value="">— None —</option>
+                {% for brand in brands %}
+                <option value="{{ brand.pk }}" {% if form_data.brand == brand.pk|stringformat:"s" %}selected{% endif %}>
+                  {{ brand.brand_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="sc-field">
+            <label for="sub_category_type">SubCategory type</label>
+            <select id="sub_category_type" name="sub_category_type">
+              {% for value, label in sub_category_types %}
+              <option value="{{ value }}" {% if form_data.sub_category_type == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          
+
+          
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CARD 2: MEDIA & STYLE ===== -->
+   
+    <!-- ===== CARD 3: VISIBILITY & STATUS ===== -->
+    
+    <!-- ===== SUBMIT BAR ===== -->
+    <div class="sc-card" style="margin-bottom:0;">
+      <div class="sc-submit-bar">
+        <div class="sc-submit-bar__note">
+          <i class="fas fa-info-circle"></i>
+          SEO fields and advanced metadata can be added after creation.
+        </div>
+        <div class="sc-submit-bar__actions">
+          <a href="{% url 'ponno:home' %}" class="sc-btn sc-btn-ghost">
+            <i class="fas fa-xmark"></i> Cancel
+          </a>
+          <button type="submit" class="sc-btn sc-btn-primary">
+            <i class="fas fa-plus"></i> Create SubCategory
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<script>
+function scPreviewImage(input, previewId, zoneId) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const maxSizeMB = 5;
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    alert(`File is too large. Max size is ${maxSizeMB}MB.`);
+    input.value = '';
+    return;
+  }
+
+  const preview = document.getElementById(previewId);
+  const reader  = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+
+  const zone = document.getElementById(zoneId);
+  if (zone) zone.classList.remove('drag-over');
+}
+
+document.querySelectorAll('.sc-upload-zone').forEach(zone => {
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const input = zone.querySelector('input[type="file"]');
+    if (input && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event('change'));
+    }
+  });
+});
+
+// Client-side price range check (mirrors model's clean() validation)
+document.querySelector('.sub-category-form').addEventListener('submit', function(e) {
+  const min = parseFloat(document.getElementById('min_price').value);
+  const max = parseFloat(document.getElementById('max_price').value);
+  if (!isNaN(min) && !isNaN(max) && min > max) {
+    e.preventDefault();
+    alert('Minimum price cannot be greater than maximum price.');
+  }
+});
+</script>
+
+{% endblock %}

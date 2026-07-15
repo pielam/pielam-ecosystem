@@ -13,7 +13,7 @@ from engine.business_engine.business_profile import BusinessProfileView
 from engine.business_engine.personal_engine import (
     EngineView,
     PersonalEngineView,
-
+    engine_feed_api,
 )
 from engine.profile_views.personal_profile import ProfileView
 
@@ -63,6 +63,7 @@ urlpatterns = [
 
     # ==================== MAIN PAGES ====================
     path('',                          EngineView,               name='engine'),
+    path('api/feed/',                 engine_feed_api,          name='engine_feed_api'),
     path('personal/engine/',          PersonalEngineView,       name='personal_engine'),
     path('business/profile/',         BusinessProfileView,      name='business_profile'),
     path('edit_business_profile/',    EditBusinessProfileView,  name='edit_business_profile'),

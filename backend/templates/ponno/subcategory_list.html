@@ -1,23 +1,22 @@
+{% extends "base.html" %}
+
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% block title %}{% if query %}{{ query }} — {% endif %}Subcategories — PIELAM{% endblock %}
+
+{% block extra_css %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <title>{% if query %}{{ query }} — {% endif %}Subcategories — PIELAM</title>
 
   <style>
-
     /* ═══════════════════════════════════════════════
-       GLOBAL — Design Tokens, Reset, Base
+       SUBCATEGORY LIST — page-scoped tokens & reset
+       Scoped to .page-wrapper so they never leak into
+       base.html's header/drawer (which already owns
+       --accent, --shadow-*, --ease, --header-h, etc.)
     ═══════════════════════════════════════════════ */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
-
-    :root {
+    .page-wrapper {
       --ink:        #0f0f0f;
       --ink-2:      #3a3a3a;
       --ink-3:      #6b6b6b;
@@ -27,8 +26,8 @@
       --surface-3:  #eeede9;
       --border:     #e4e3df;
       --border-2:   #d0cfc9;
-      --accent:     #c8102e;
-      --accent-2:   #a00d24;
+      --sl-accent:  #c8102e;
+      --sl-accent-2:#a00d24;
       --gold:       #b8860b;
       --gold-2:     #8b6508;
       --green:      #1a6b3a;
@@ -52,36 +51,26 @@
       --bg-tertiary:     #edf2f7;
       --border-light:    #e2e8f0;
       --border-medium:   #cbd5e0;
-      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
-      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
-      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
-      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
-      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --sl-shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --sl-shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --sl-shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --sl-shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --sl-shadow-xl: 0 20px 50px rgba(10,37,64,.2);
       --font-display: 'Cormorant Garamond', serif;
       --font-body:    'Syne', sans-serif;
       --f-mono:       'JetBrains Mono', monospace;
       --f-display:    'Cormorant Garamond', serif;
       --f-body:       'Syne', sans-serif;
-      --header-h:          124px;
-      --nav-h:             64px;
       --bottom-bar-height: 68px;
       --r-sm:  8px;
       --r-md:  14px;
       --r-lg:  20px;
       --r-xl:  28px;
-      --ease:            cubic-bezier(.4,0,.2,1);
+      --sl-ease:         cubic-bezier(.4,0,.2,1);
       --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
       --transition-fast: .15s ease;
       --transition-base: .25s ease;
       --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
-      --t-primary:   #0f0f0f;
-      --t-secondary: #3a3a3a;
-      --t-muted:     #6b6b6b;
-      --t-ghost:     #9b9b9b;
-      --rim:         #e4e3df;
-      --raised:      #f5f5f3;
-      --overlay:     #eeede9;
-      --abyss:       #0f0f0f;
       --gold-pure:   #b8860b;
       --gold-dim:    rgba(184,134,11,0.40);
       --gold-trace:  rgba(184,134,11,0.08);
@@ -90,886 +79,536 @@
       --amber:    #92400e;
       --ruby:     #c8102e;
       --sapphire: #1e3a8a;
-    }
 
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
-    body {
-      font-family: 'roboto';
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-      color: var(--ink);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: clip;
-      padding-top:    var(--header-h);
-      padding-bottom: var(--bottom-bar-height);
-    }
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
-    }
-    a      { text-decoration:none; color:inherit; }
-    img    { max-width:100%; display:block; }
-    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
-    ::-webkit-scrollbar       { width:8px; }
-    ::-webkit-scrollbar-track { background:var(--surface-3); }
-    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
-    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
-    .hide-mobile { display:none; }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration:0.01ms !important;
-        animation-iteration-count:1 !important;
-        transition-duration:0.01ms !important;
-        scroll-behavior:auto !important;
-      }
-    }
-
-    /* ── PAGE WRAPPER (was missing) ── */
-    .page-wrapper {
       max-width: 1400px;
       margin: 0 auto;
       padding: 2rem 2rem 3rem;
       position: relative;
       z-index: 1;
     }
+
+    .page-wrapper *,
+    .page-wrapper *::before,
+    .page-wrapper *::after {
+      box-sizing: border-box;
+    }
+
+    .page-wrapper a      { text-decoration: none; color: inherit; }
+    .page-wrapper img    { max-width: 100%; display: block; }
+    .page-wrapper button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    /* ── STATS BAR ── */
+    .sl-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .sl-stat {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 1.5px solid var(--border-light);
+      background: #fff; font-size: 12px; font-weight: 600;
+      color: var(--text-secondary); white-space: nowrap;
+      box-shadow: var(--sl-shadow-xs);
+    }
+    .sl-stat i { font-size: 13px; }
+    .sl-stat.s-gold   { background: #fffbeb; border-color: rgba(212,175,55,.4);  color: #92400e; }
+    .sl-stat.s-blue   { background: #dbeafe; border-color: #bfdbfe;              color: #1e40af; }
+    .sl-stat.s-green  { background: #d1fae5; border-color: #a7f3d0;              color: #065f46; }
+    .sl-stat.s-purple { background: #ede9fe; border-color: #c4b5fd;              color: #5b21b6; }
+
+    /* ── TOOLBAR ── */
+    .sl-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .sl-search {
+      flex: 1; min-width: 200px; max-width: 400px;
+      display: flex; align-items: center;
+      background: #fff; border: 1.5px solid var(--border-medium);
+      border-radius: var(--r-md); overflow: hidden;
+      transition: border-color var(--transition-base), box-shadow var(--transition-base);
+    }
+    .sl-search:focus-within {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(13,71,161,.08);
+    }
+    .sl-search i { padding: 0 10px; font-size: 15px; color: var(--text-muted); }
+    .sl-search input {
+      flex: 1; border: none; outline: none;
+      font-family: var(--font-body); font-size: 13px;
+      padding: 9px 0; background: transparent; color: var(--text-primary);
+    }
+    .sl-search input::placeholder { color: var(--text-muted); font-size: 12px; }
+
+    .sl-select {
+      padding: 9px 28px 9px 12px;
+      border: 1.5px solid var(--border-medium);
+      border-radius: var(--r-md);
+      background: #fff;
+      font-family: var(--font-body);
+      font-size: 12px; font-weight: 600; color: var(--text-primary);
+      cursor: pointer; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      transition: border-color var(--transition-base);
+    }
+    .sl-select:focus { border-color: var(--primary-blue); }
+
+    .sl-view-btns { display: flex; gap: 4px; margin-left: auto; }
+    .sl-vbtn {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--border-medium); border-radius: var(--r-md);
+      background: #fff; cursor: pointer; font-size: 15px; color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+    .sl-vbtn.active, .sl-vbtn:hover {
+      background: var(--primary-dark); color: #fff; border-color: var(--primary-dark);
+    }
+
+    /* ── FILTER TABS ── */
+    .sl-tabs {
+      display: flex; gap: 6px; margin-bottom: 1rem;
+      flex-wrap: nowrap; overflow-x: auto;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
+    }
+    .sl-tabs::-webkit-scrollbar { display: none; }
+    .sl-tab {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 1.5px solid var(--border-medium); background: #fff;
+      color: var(--text-secondary); font-family: var(--font-body);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      transition: all var(--transition-base);
+      box-shadow: var(--sl-shadow-xs);
+    }
+    .sl-tab:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-1px); }
+    .sl-tab.active {
+      background: var(--primary-dark); color: #fff; border-color: transparent;
+      box-shadow: 0 3px 10px rgba(10,37,64,.2);
+    }
+    .sl-tab .tc {
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+      background: rgba(0,0,0,.06); color: inherit; font-weight: 700;
+    }
+    .sl-tab.active .tc { background: rgba(255,255,255,.22); }
+
+    /* ── RESULTS BAR ── */
+    .sl-results {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.875rem; flex-wrap: wrap; gap: 6px;
+    }
+    .sl-results-left { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .sl-results-left strong { color: var(--primary-blue); font-weight: 700; }
+    .sl-sort-info { font-size: 11px; color: var(--text-muted); }
+
+    /* ── GRID ── */
+    .subcategory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+    /* ── CARD ── */
+    .sc-card {
+      background: #fff; border-radius: var(--r-lg);
+      border: 1.5px solid var(--border-light);
+      box-shadow: var(--sl-shadow-sm);
+      overflow: hidden; display: flex; flex-direction: column;
+      cursor: pointer; position: relative;
+      transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    }
+    .sc-card:hover { transform: translateY(-5px); box-shadow: var(--sl-shadow-lg); border-color: var(--border-medium); }
+    .sc-card:focus-visible { outline: 3px solid var(--primary-blue); outline-offset: 2px; }
+    .sc-card.highlighted { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(212,175,55,.22), var(--sl-shadow-lg); }
+
+    .sc-image {
+      height: 110px; background: var(--bg-secondary);
+      display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid var(--border-light); padding: 1rem;
+      position: relative; overflow: hidden;
+    }
+    .sc-image img { max-width: 100%; max-height: 70px; object-fit: contain; transition: transform var(--transition-slow); }
+    .sc-card:hover .sc-image img { transform: scale(1.07); }
+
+    .sc-image-placeholder {
+      width: 56px; height: 56px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+    }
+
+    .sc-badges { position: absolute; top: 7px; left: 7px; display: flex; flex-wrap: wrap; gap: 3px; z-index: 2; }
+    .sc-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 6px; border-radius: 999px; font-size: 9px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .sc-badge i { font-size: 9px; }
+    .bdg-f  { background: #fef3c7; color: #92400e; }
+    .bdg-t  { background: #fee2e2; color: #991b1b; }
+    .bdg-a  { background: #d1fae5; color: #065f46; }
+
+    .sc-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .sc-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .sc-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sc-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--bg-secondary); border: 1px solid var(--border-light);
+      font-size: 9px; color: var(--text-muted); font-weight: 600;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .sc-chip i { font-size: 9px; }
+
+    .sc-parent {
+      font-size: 10px; color: var(--primary-blue); font-weight: 600;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .sc-tagline { font-size: 11px; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+
+    .sc-mini-stats { display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+    .sc-ms { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-secondary); }
+    .sc-ms i      { font-size: 10px; color: var(--text-muted); }
+    .sc-ms strong { color: var(--text-primary); font-weight: 600; }
+
+    .sc-pop { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .sc-pop-label { font-size: 9px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+    .sc-pop-track { flex: 1; height: 3px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; }
+    .sc-pop-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary-dark), var(--primary-light)); transition: width 0.4s ease; }
+    .sc-pop-val { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 22px; text-align: right; flex-shrink: 0; }
+
+    .sc-meta {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding-top: 8px; margin-top: auto; border-top: 1px solid var(--border-light);
+      font-size: 10px; color: var(--text-muted); flex-wrap: wrap;
+    }
+    .sc-meta span { display: flex; align-items: center; gap: 3px; }
+    .sc-meta i    { font-size: 10px; }
+
+    .sc-cta {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      margin-top: 8px; padding: 7px 0; width: 100%;
+      background: var(--primary-dark); color: #fff; border-radius: var(--r-sm);
+      font-family: var(--font-body); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2px; border: none; cursor: pointer;
+      transition: background var(--transition-base); text-decoration: none;
+    }
+    .sc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
+    .sc-card:hover .sc-cta   { background: var(--primary-blue); }
+    .sc-card:hover .sc-cta i { transform: translateX(3px); }
+
+    /* ── LIST MODE ── */
+    .subcategory-grid.list-mode { grid-template-columns: 1fr; }
+    .subcategory-grid.list-mode .sc-card { flex-direction: row; align-items: stretch; }
+    .subcategory-grid.list-mode .sc-image {
+      width: 100px; height: auto; min-height: 80px; flex-shrink: 0;
+      border-bottom: none; border-right: 1px solid var(--border-light);
+    }
+    .subcategory-grid.list-mode .sc-body { flex-direction: row; align-items: center; gap: 16px; padding: 10px 14px; }
+    .subcategory-grid.list-mode .sc-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .subcategory-grid.list-mode .sc-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .subcategory-grid.list-mode .sc-pop   { width: 140px; }
+    .subcategory-grid.list-mode .sc-cta   { width: auto; padding: 6px 14px; margin: 0; }
+    .subcategory-grid.list-mode .sc-meta  { border: none; padding: 0; flex-wrap: nowrap; }
+
+    /* ── EMPTY STATE ── */
+    .sl-empty { grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+    .sl-empty-icon {
+      width: 72px; height: 72px; border-radius: 50%; background: var(--bg-tertiary);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;
+    }
+    .sl-empty i   { font-size: 2rem; opacity: 0.25; }
+    .sl-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
+    .sl-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
+    .sl-empty-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; background: var(--primary-dark); color: #fff;
+      border: none; border-radius: var(--r-md);
+      font-family: var(--font-body); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background var(--transition-base);
+    }
+    .sl-empty-btn:hover { background: var(--primary-blue); }
+
+    /* ── PAGINATION ── */
+    .pagination-wrapper {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; flex-wrap: wrap; margin-top: 2.5rem;
+    }
+    .page-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; background: #fff;
+      border: 1.5px solid var(--border-medium); border-radius: var(--r-sm);
+      color: var(--text-primary); text-decoration: none;
+      font-family: var(--font-body); font-weight: 600; font-size: 12px;
+      transition: all var(--transition-base);
+    }
+    .page-link:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-1px); }
+    .page-number { min-width: 36px; justify-content: center; }
+    .page-item.active .page-link { background: var(--primary-dark); color: #fff; border-color: transparent; }
+    .page-ellipsis { padding: 0 4px; color: var(--text-muted); font-size: 13px; user-select: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .sl-toolbar       { gap: 6px; }
+      .sl-search        { min-width: 0; flex: 1 1 55%; }
+      .sl-select        { font-size: 11px; }
+      .subcategory-grid { gap: 10px; }
+      .sc-image         { height: 96px; }
+      .sc-name          { font-size: 12px; }
+      .sc-tagline       { font-size: 10px; }
+    }
+
+    @media (max-width: 600px) {
+      .subcategory-grid { gap: 8px; }
+      .sc-image         { height: 88px; padding: 0.875rem; }
+      .sc-body          { padding: 8px 10px 10px; }
+      .sc-name          { font-size: 11px; }
+      .sc-cta           { font-size: 10px; padding: 6px 0; }
+    }
+
+    @media (max-width: 480px) {
+      .sl-toolbar       { flex-direction: column; align-items: stretch; }
+      .sl-search        { max-width: 100%; flex: none; }
+      .sl-select        { width: 100%; }
+      .sl-view-btns     { margin-left: 0; }
+      .subcategory-grid { gap: 6px; }
+      .sc-image         { height: 80px; padding: 0.75rem; }
+      .sc-tagline,
+      .sc-chip          { display: none; }
+      .sc-pop           { display: none; }
+      .sc-meta          { font-size: 9px; gap: 6px; }
+      .sc-badge         { font-size: 8px; padding: 1px 5px; }
+    }
+
+    @media (max-width: 360px) {
+      .sc-image         { height: 70px; }
+      .sc-name          { font-size: 10px; }
+      .sc-cta           { font-size: 9px; padding: 5px 0; border-radius: 6px; }
+      .sl-tab           { font-size: 11px; padding: 5px 10px; }
+      .sl-stat          { font-size: 11px; padding: 5px 10px; }
+    }
+
+    @media (max-width: 320px) {
+      .sc-meta          { display: none; }
+      .sc-image         { height: 60px; padding: 0.5rem; }
+      .sc-name          { font-size: 9px; }
+      .sc-cta           { font-size: 8px; border-radius: 4px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sc-card,
+      .sc-card:hover,
+      .sc-image img,
+      .sc-card:hover .sc-image img,
+      .sc-cta,
+      .sc-cta i,
+      .sc-card:hover .sc-cta i,
+      .sl-tab,
+      .sl-vbtn,
+      .sc-pop-fill {
+        transition: none;
+        transform: none;
+        animation: none;
+      }
+    }
   </style>
-</head>
+{% endblock %}
 
-<body>
+{% block content %}
 
-<!--
-    If you have a shared nav / search partial (e.g. base.html, search.html),
-    include it here, inside <body>. Example:
+  <div class="page-wrapper">
 
-    {% include "search.html" %}
--->
-
-<style>
-/* ════════════════════════════════════════════════════════════════
-   SUBCATEGORY LIST — Enterprise CSS
-   ════════════════════════════════════════════════════════════════ */
-
-.sl-stats {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-.sl-stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-light);
-  background: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  box-shadow: var(--shadow-xs);
-}
-.sl-stat i { font-size: 13px; }
-.sl-stat.s-gold   { background: #fffbeb; border-color: rgba(212,175,55,.4);  color: #92400e; }
-.sl-stat.s-blue   { background: #dbeafe; border-color: #bfdbfe;              color: #1e40af; }
-.sl-stat.s-green  { background: #d1fae5; border-color: #a7f3d0;              color: #065f46; }
-.sl-stat.s-purple { background: #ede9fe; border-color: #c4b5fd;              color: #5b21b6; }
-
-/* ── TOOLBAR ── */
-.sl-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-.sl-search {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
-}
-.sl-search:focus-within {
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(13,71,161,.08);
-}
-.sl-search i {
-  padding: 0 10px;
-  font-size: 15px;
-  color: var(--text-muted);
-}
-.sl-search input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-family: var(--font-body);
-  font-size: 13px;
-  padding: 9px 0;
-  background: transparent;
-  color: var(--text-primary);
-}
-.sl-search input::placeholder { color: var(--text-muted); font-size: 12px; }
-
-.sl-select {
-  padding: 9px 28px 9px 12px;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  background: #fff;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
-  transition: border-color var(--transition-base);
-}
-.sl-select:focus { border-color: var(--primary-blue); }
-
-.sl-view-btns {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.sl-vbtn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  background: #fff;
-  cursor: pointer;
-  font-size: 15px;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-}
-.sl-vbtn.active,
-.sl-vbtn:hover {
-  background: var(--primary-dark);
-  color: #fff;
-  border-color: var(--primary-dark);
-}
-
-/* ── FILTER TABS ── */
-.sl-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 1rem;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-.sl-tabs::-webkit-scrollbar { display: none; }
-
-.sl-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-medium);
-  background: #fff;
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-xs);
-}
-.sl-tab:hover {
-  border-color: var(--primary-blue);
-  color: var(--primary-blue);
-  transform: translateY(-1px);
-}
-.sl-tab.active {
-  background: var(--primary-dark);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 3px 10px rgba(10,37,64,.2);
-}
-.sl-tab .tc {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.06);
-  color: inherit;
-  font-weight: 700;
-}
-.sl-tab.active .tc { background: rgba(255,255,255,.22); }
-
-/* ── RESULTS BAR ── */
-.sl-results {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.875rem;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.sl-results-left {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.sl-results-left strong { color: var(--primary-blue); font-weight: 700; }
-.sl-sort-info { font-size: 11px; color: var(--text-muted); }
-
-/* ── GRID ── */
-.subcategory-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-/* ── CARD ── */
-.sc-card {
-  background: #fff;
-  border-radius: var(--r-lg);
-  border: 1.5px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  position: relative;
-  transition:
-    transform var(--transition-base),
-    box-shadow var(--transition-base),
-    border-color var(--transition-base);
-}
-.sc-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border-medium);
-}
-.sc-card:focus-visible {
-  outline: 3px solid var(--primary-blue);
-  outline-offset: 2px;
-}
-.sc-card.highlighted {
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 0 3px rgba(212,175,55,.22), var(--shadow-lg);
-}
-
-/* Image area */
-.sc-image {
-  height: 110px;
-  background: var(--bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--border-light);
-  padding: 1rem;
-  position: relative;
-  overflow: hidden;
-}
-.sc-image img {
-  max-width: 100%;
-  max-height: 70px;
-  object-fit: contain;
-  transition: transform var(--transition-slow);
-}
-.sc-card:hover .sc-image img { transform: scale(1.07); }
-
-.sc-image-placeholder {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--r-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* Badges */
-.sc-badges {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  z-index: 2;
-}
-.sc-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.sc-badge i { font-size: 9px; }
-.bdg-f  { background: #fef3c7; color: #92400e; }
-.bdg-t  { background: #fee2e2; color: #991b1b; }
-.bdg-a  { background: #d1fae5; color: #065f46; }
-
-/* Body */
-.sc-body {
-  padding: 10px 12px 12px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.sc-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.sc-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  font-size: 9px;
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.sc-chip i { font-size: 9px; }
-
-.sc-parent {
-  font-size: 10px;
-  color: var(--primary-blue);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.sc-tagline {
-  font-size: 11px;
-  color: var(--text-muted);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-}
-
-/* Mini stats row */
-.sc-mini-stats {
-  display: flex;
-  gap: 10px;
-  margin-top: 2px;
-  flex-wrap: wrap;
-}
-.sc-ms {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  color: var(--text-secondary);
-}
-.sc-ms i      { font-size: 10px; color: var(--text-muted); }
-.sc-ms strong { color: var(--text-primary); font-weight: 600; }
-
-/* Popularity bar */
-.sc-pop {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-.sc-pop-label {
-  font-size: 9px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.sc-pop-track {
-  flex: 1;
-  height: 3px;
-  background: var(--bg-tertiary);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.sc-pop-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--primary-dark), var(--primary-light));
-  transition: width 0.4s ease;
-}
-.sc-pop-val {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-muted);
-  min-width: 22px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* Meta row */
-.sc-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding-top: 8px;
-  margin-top: auto;
-  border-top: 1px solid var(--border-light);
-  font-size: 10px;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-}
-.sc-meta span { display: flex; align-items: center; gap: 3px; }
-.sc-meta i    { font-size: 10px; }
-
-/* CTA button */
-.sc-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 7px 0;
-  width: 100%;
-  background: var(--primary-dark);
-  color: #fff;
-  border-radius: var(--r-sm);
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  border: none;
-  cursor: pointer;
-  transition: background var(--transition-base);
-  text-decoration: none;
-}
-.sc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
-.sc-card:hover .sc-cta   { background: var(--primary-blue); }
-.sc-card:hover .sc-cta i { transform: translateX(3px); }
-
-/* ── LIST MODE ── */
-.subcategory-grid.list-mode { grid-template-columns: 1fr; }
-
-.subcategory-grid.list-mode .sc-card {
-  flex-direction: row;
-  align-items: stretch;
-}
-.subcategory-grid.list-mode .sc-image {
-  width: 100px;
-  height: auto;
-  min-height: 80px;
-  flex-shrink: 0;
-  border-bottom: none;
-  border-right: 1px solid var(--border-light);
-}
-.subcategory-grid.list-mode .sc-body {
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 14px;
-}
-.subcategory-grid.list-mode .sc-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.subcategory-grid.list-mode .sc-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.subcategory-grid.list-mode .sc-pop   { width: 140px; }
-.subcategory-grid.list-mode .sc-cta   { width: auto; padding: 6px 14px; margin: 0; }
-.subcategory-grid.list-mode .sc-meta  { border: none; padding: 0; flex-wrap: nowrap; }
-
-/* ── EMPTY STATE ── */
-.sl-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 4rem 1rem;
-  color: var(--text-muted);
-}
-.sl-empty-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--bg-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-}
-.sl-empty i   { font-size: 2rem; opacity: 0.25; }
-.sl-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
-.sl-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
-.sl-empty-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  background: var(--primary-dark);
-  color: #fff;
-  border: none;
-  border-radius: var(--r-md);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-base);
-}
-.sl-empty-btn:hover { background: var(--primary-blue); }
-
-/* ── PAGINATION (was missing) ── */
-.pagination-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 2.5rem;
-}
-.page-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: #fff;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-sm);
-  color: var(--text-primary);
-  text-decoration: none;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 12px;
-  transition: all var(--transition-base);
-}
-.page-link:hover {
-  border-color: var(--primary-blue);
-  color: var(--primary-blue);
-  transform: translateY(-1px);
-}
-.page-number { min-width: 36px; justify-content: center; }
-.page-item.active .page-link {
-  background: var(--primary-dark);
-  color: #fff;
-  border-color: transparent;
-}
-.page-ellipsis {
-  padding: 0 4px;
-  color: var(--text-muted);
-  font-size: 13px;
-  user-select: none;
-}
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .sl-toolbar       { gap: 6px; }
-  .sl-search        { min-width: 0; flex: 1 1 55%; }
-  .sl-select        { font-size: 11px; }
-  .subcategory-grid { gap: 10px; }
-  .sc-image         { height: 96px; }
-  .sc-name          { font-size: 12px; }
-  .sc-tagline       { font-size: 10px; }
-}
-
-@media (max-width: 600px) {
-  .subcategory-grid { gap: 8px; }
-  .sc-image         { height: 88px; padding: 0.875rem; }
-  .sc-body          { padding: 8px 10px 10px; }
-  .sc-name          { font-size: 11px; }
-  .sc-cta           { font-size: 10px; padding: 6px 0; }
-}
-
-@media (max-width: 480px) {
-  .sl-toolbar       { flex-direction: column; align-items: stretch; }
-  .sl-search        { max-width: 100%; flex: none; }
-  .sl-select        { width: 100%; }
-  .sl-view-btns     { margin-left: 0; }
-  .subcategory-grid { gap: 6px; }
-  .sc-image         { height: 80px; padding: 0.75rem; }
-  .sc-tagline,
-  .sc-chip          { display: none; }
-  .sc-pop           { display: none; }
-  .sc-meta          { font-size: 9px; gap: 6px; }
-  .sc-badge         { font-size: 8px; padding: 1px 5px; }
-}
-
-@media (max-width: 360px) {
-  .sc-image         { height: 70px; }
-  .sc-name          { font-size: 10px; }
-  .sc-cta           { font-size: 9px; padding: 5px 0; border-radius: 6px; }
-  .sl-tab           { font-size: 11px; padding: 5px 10px; }
-  .sl-stat          { font-size: 11px; padding: 5px 10px; }
-}
-
-@media (max-width: 320px) {
-  .sc-meta          { display: none; }
-  .sc-image         { height: 60px; padding: 0.5rem; }
-  .sc-name          { font-size: 9px; }
-  .sc-cta           { font-size: 8px; border-radius: 4px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sc-card,
-  .sc-card:hover,
-  .sc-image img,
-  .sc-card:hover .sc-image img,
-  .sc-cta,
-  .sc-cta i,
-  .sc-card:hover .sc-cta i,
-  .sl-tab,
-  .sl-vbtn,
-  .sc-pop-fill {
-    transition: none;
-    transform: none;
-    animation: none;
-  }
-}
-
-</style>
-
-
-<div class="page-wrapper">
-
-  {# ── FILTER TABS ── #}
-  <div class="sl-tabs" role="tablist" aria-label="Filter subcategories">
-    {% for tab in filter_tabs %}
-      <a
-        href="{% url 'ponno:subcategory_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}"
-        class="sl-tab {% if tab.active %}active{% endif %}"
-        role="tab"
-        aria-selected="{% if tab.active %}true{% else %}false{% endif %}"
-      >
-        {% if   tab.value == 'all'      %}<i class="fa-solid fa-border-all"></i>
-        {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
-        {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
-        {% elif tab.value == 'menu'     %}<i class="fa-solid fa-circle-check"></i>
-        {% endif %}
-        {{ tab.label }}
-        <span class="tc">{{ tab.count }}</span>
-      </a>
-    {% endfor %}
-  </div>
-
-  {# ── RESULTS BAR ── #}
-  {% if subcategories %}
-  <div class="sl-results">
-    <div class="sl-results-left">
-      Showing
-      <strong id="resShowing">{{ subcategories|length }}</strong>
-      of
-      <strong>{{ total_count }}</strong>
-      subcategor{% if total_count != 1 %}ies{% else %}y{% endif %}
-      {% if current_filter != 'all' %}&mdash; {{ current_filter|capfirst }} only{% endif %}
-    </div>
-    <div class="sl-sort-info">
-      Sorted by
-      {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
-      {% if query %}
-        &nbsp;&middot;&nbsp;
+    {# ── FILTER TABS ── #}
+    <div class="sl-tabs" role="tablist" aria-label="Filter subcategories">
+      {% for tab in filter_tabs %}
         <a
-          href="{% url 'ponno:subcategory_list' %}{% if current_filter != 'all' %}?type={{ current_filter }}{% endif %}"
-          style="color:var(--primary-blue);font-weight:600;"
+          href="{% url 'ponno:subcategory_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}"
+          class="sl-tab {% if tab.active %}active{% endif %}"
+          role="tab"
+          aria-selected="{% if tab.active %}true{% else %}false{% endif %}"
         >
-          <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
+          {% if   tab.value == 'all'      %}<i class="fa-solid fa-border-all"></i>
+          {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
+          {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
+          {% elif tab.value == 'menu'     %}<i class="fa-solid fa-circle-check"></i>
+          {% endif %}
+          {{ tab.label }}
+          <span class="tc">{{ tab.count }}</span>
         </a>
-      {% endif %}
+      {% endfor %}
     </div>
-  </div>
-  {% endif %}
 
-  {# ── SUBCATEGORY GRID ── #}
-  <div class="subcategory-grid" id="subcategoryGrid">
-
-    {% for sub in subcategories %}
-    <a
-      href="{% url 'ponno:subcategory_products' category_slug=sub.sub_category_slug %}"
-      class="sc-card {% if sub.highlighted %}highlighted{% endif %}"
-      aria-label="{{ sub.sub_category_name }}{% if sub.sub_category_short_description %} — {{ sub.sub_category_short_description }}{% endif %}"
-      tabindex="0"
-    >
-
-      {# Badges #}
-      <div class="sc-badges">
-        {% if sub.is_featured %}
-          <span class="sc-badge bdg-f"><i class="fa-solid fa-star"></i>Featured</span>
-        {% endif %}
-        {% if sub.is_trending %}
-          <span class="sc-badge bdg-t"><i class="fa-solid fa-fire"></i>Trending</span>
-        {% endif %}
-        {% if sub.is_active %}
-          <span class="sc-badge bdg-a"><i class="fa-solid fa-circle-check"></i>Active</span>
+    {# ── RESULTS BAR ── #}
+    {% if subcategories %}
+    <div class="sl-results">
+      <div class="sl-results-left">
+        Showing
+        <strong id="resShowing">{{ subcategories|length }}</strong>
+        of
+        <strong>{{ total_count }}</strong>
+        subcategor{% if total_count != 1 %}ies{% else %}y{% endif %}
+        {% if current_filter != 'all' %}&mdash; {{ current_filter|capfirst }} only{% endif %}
+      </div>
+      <div class="sl-sort-info">
+        Sorted by
+        {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
+        {% if query %}
+          &nbsp;&middot;&nbsp;
+          <a
+            href="{% url 'ponno:subcategory_list' %}{% if current_filter != 'all' %}?type={{ current_filter }}{% endif %}"
+            style="color:var(--primary-blue);font-weight:600;"
+          >
+            <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
+          </a>
         {% endif %}
       </div>
+    </div>
+    {% endif %}
 
-      {# Image #}
-      <div class="sc-image" style="{% if sub.color_code %}background:{{ sub.color_code }}22;{% endif %}">
-        <img
-          src="{{ sub.image_url }}"
-          alt="{{ sub.sub_category_name }} image"
-          loading="lazy"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-        >
-        <div class="sc-image-placeholder" style="display:none;background:#e0e7ff;color:#3730a3">
-          {{ sub.sub_category_name|slice:":2"|upper }}
-        </div>
-      </div>
+    {# ── SUBCATEGORY GRID ── #}
+    <div class="subcategory-grid" id="subcategoryGrid">
 
-      {# Body #}
-      <div class="sc-body">
+      {% for sub in subcategories %}
+      <a
+        href="{% url 'ponno:subcategory_products' category_slug=sub.sub_category_slug %}"
+        class="sc-card {% if sub.highlighted %}highlighted{% endif %}"
+        aria-label="{{ sub.sub_category_name }}{% if sub.sub_category_short_description %} — {{ sub.sub_category_short_description }}{% endif %}"
+        tabindex="0"
+      >
 
-        <div class="sc-parent">
-          <i class="fa-solid fa-layer-group"></i>
-          {{ sub.category.category_name }}
-        </div>
-
-        <div class="sc-name-row">
-          <div class="sc-name">{{ sub.sub_category_name }}</div>
-          {% if sub.sub_category_type %}
-          <span class="sc-chip">
-            {% if   sub.sub_category_type == 'digital'  %}<i class="fa-solid fa-cloud"></i>
-            {% elif sub.sub_category_type == 'physical' %}<i class="fa-solid fa-box-open"></i>
-            {% elif sub.sub_category_type == 'service'  %}<i class="fa-solid fa-handshake"></i>
-            {% else                                     %}<i class="fa-solid fa-tag"></i>
-            {% endif %}
-            {{ sub.sub_category_type|capfirst }}
-          </span>
+        <div class="sc-badges">
+          {% if sub.is_featured %}
+            <span class="sc-badge bdg-f"><i class="fa-solid fa-star"></i>Featured</span>
+          {% endif %}
+          {% if sub.is_trending %}
+            <span class="sc-badge bdg-t"><i class="fa-solid fa-fire"></i>Trending</span>
+          {% endif %}
+          {% if sub.is_active %}
+            <span class="sc-badge bdg-a"><i class="fa-solid fa-circle-check"></i>Active</span>
           {% endif %}
         </div>
 
-        {% if sub.sub_category_short_description %}
-          <div class="sc-tagline">{{ sub.sub_category_short_description }}</div>
-        {% endif %}
-
-        <div class="sc-mini-stats">
-          <span class="sc-ms">
-            <i class="fa-solid fa-box"></i>
-            <strong>{{ sub.product_count }}</strong>&nbsp;products
-          </span>
-          <span class="sc-ms">
-            <i class="fa-solid fa-eye"></i>
-            <strong>{{ sub.view_count }}</strong>&nbsp;views
-          </span>
-        </div>
-
-        <div class="sc-pop">
-          <span class="sc-pop-label">Popularity</span>
-          <div class="sc-pop-track">
-            <div class="sc-pop-fill" style="width:{{ sub.popularity_score|floatformat:0 }}%"></div>
+        <div class="sc-image" style="{% if sub.color_code %}background:{{ sub.color_code }}22;{% endif %}">
+          <img
+            src="{{ sub.image_url }}"
+            alt="{{ sub.sub_category_name }} image"
+            loading="lazy"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          >
+          <div class="sc-image-placeholder" style="display:none;background:#e0e7ff;color:#3730a3">
+            {{ sub.sub_category_name|slice:":2"|upper }}
           </div>
-          <span class="sc-pop-val">{{ sub.popularity_score|floatformat:0 }}</span>
         </div>
 
-        <div class="sc-meta">
-          <span><i class="fa-solid fa-box"></i>{{ sub.product_count }} product{% if sub.product_count != 1 %}s{% endif %}</span>
-          <span><i class="fa-solid fa-eye"></i>{{ sub.view_count }} views</span>
-        </div>
+        <div class="sc-body">
 
-        <div class="sc-cta">
-          View products <i class="fa-solid fa-arrow-right"></i>
-        </div>
+          <div class="sc-parent">
+            <i class="fa-solid fa-layer-group"></i>
+            {{ sub.category.category_name }}
+          </div>
 
-      </div>{# /sc-body #}
-    </a>
+          <div class="sc-name-row">
+            <div class="sc-name">{{ sub.sub_category_name }}</div>
+            {% if sub.sub_category_type %}
+            <span class="sc-chip">
+              {% if   sub.sub_category_type == 'digital'  %}<i class="fa-solid fa-cloud"></i>
+              {% elif sub.sub_category_type == 'physical' %}<i class="fa-solid fa-box-open"></i>
+              {% elif sub.sub_category_type == 'service'  %}<i class="fa-solid fa-handshake"></i>
+              {% else                                     %}<i class="fa-solid fa-tag"></i>
+              {% endif %}
+              {{ sub.sub_category_type|capfirst }}
+            </span>
+            {% endif %}
+          </div>
 
-    {% empty %}
-    <div class="sl-empty">
-      <div class="sl-empty-icon">
-        <i class="fa-solid fa-sitemap"></i>
-      </div>
-      <h3>No subcategories found</h3>
-      <p>
-        {% if query %}
-          No subcategories matched &ldquo;<strong>{{ query }}</strong>&rdquo;.
-          Try a different keyword or clear the search.
-        {% else %}
-          No subcategories match the selected filter.
-          Try switching to &ldquo;All&rdquo;.
-        {% endif %}
-      </p>
-      <a href="{% url 'ponno:subcategory_list' %}" class="sl-empty-btn">
-        <i class="fa-solid fa-rotate-left"></i> View all subcategories
+          {% if sub.sub_category_short_description %}
+            <div class="sc-tagline">{{ sub.sub_category_short_description }}</div>
+          {% endif %}
+
+          <div class="sc-mini-stats">
+            <span class="sc-ms">
+              <i class="fa-solid fa-box"></i>
+              <strong>{{ sub.product_count }}</strong>&nbsp;products
+            </span>
+            <span class="sc-ms">
+              <i class="fa-solid fa-eye"></i>
+              <strong>{{ sub.view_count }}</strong>&nbsp;views
+            </span>
+          </div>
+
+          <div class="sc-pop">
+            <span class="sc-pop-label">Popularity</span>
+            <div class="sc-pop-track">
+              <div class="sc-pop-fill" style="width:{{ sub.popularity_score|floatformat:0 }}%"></div>
+            </div>
+            <span class="sc-pop-val">{{ sub.popularity_score|floatformat:0 }}</span>
+          </div>
+
+          <div class="sc-meta">
+            <span><i class="fa-solid fa-box"></i>{{ sub.product_count }} product{% if sub.product_count != 1 %}s{% endif %}</span>
+            <span><i class="fa-solid fa-eye"></i>{{ sub.view_count }} views</span>
+          </div>
+
+          <div class="sc-cta">
+            View products <i class="fa-solid fa-arrow-right"></i>
+          </div>
+
+        </div>{# /sc-body #}
       </a>
-    </div>
-    {% endfor %}
 
-  </div>{# /subcategory-grid #}
-
-  {# ── PAGINATION ── #}
-  {% if page_obj.paginator.num_pages > 1 %}
-  <nav class="pagination-wrapper" aria-label="Subcategory page navigation">
-    {% if page_obj.has_previous %}
-      <a class="page-link"
-         href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-        <i class="fa-solid fa-chevron-left"></i> Previous
-      </a>
-    {% endif %}
-
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-        <span class="page-item active"><span class="page-link">{{ num }}</span></span>
-      {% elif num == 1 or num == page_obj.paginator.num_pages %}
-        <a class="page-link page-number"
-           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          {{ num }}
+      {% empty %}
+      <div class="sl-empty">
+        <div class="sl-empty-icon">
+          <i class="fa-solid fa-sitemap"></i>
+        </div>
+        <h3>No subcategories found</h3>
+        <p>
+          {% if query %}
+            No subcategories matched &ldquo;<strong>{{ query }}</strong>&rdquo;.
+            Try a different keyword or clear the search.
+          {% else %}
+            No subcategories match the selected filter.
+            Try switching to &ldquo;All&rdquo;.
+          {% endif %}
+        </p>
+        <a href="{% url 'ponno:subcategory_list' %}" class="sl-empty-btn">
+          <i class="fa-solid fa-rotate-left"></i> View all subcategories
         </a>
-      {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
-        <span class="page-ellipsis">&hellip;</span>
-      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class="page-link page-number"
-           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          {{ num }}
+      </div>
+      {% endfor %}
+
+    </div>{# /subcategory-grid #}
+
+    {# ── PAGINATION ── #}
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination-wrapper" aria-label="Subcategory page navigation">
+      {% if page_obj.has_previous %}
+        <a class="page-link"
+           href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+          <i class="fa-solid fa-chevron-left"></i> Previous
         </a>
       {% endif %}
-    {% endfor %}
 
-    {% if page_obj.has_next %}
-      <a class="page-link"
-         href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-        Next <i class="fa-solid fa-chevron-right"></i>
-      </a>
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="page-item active"><span class="page-link">{{ num }}</span></span>
+        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+          <a class="page-link page-number"
+             href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+            {{ num }}
+          </a>
+        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+          <span class="page-ellipsis">&hellip;</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a class="page-link page-number"
+             href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+            {{ num }}
+          </a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a class="page-link"
+           href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+          Next <i class="fa-solid fa-chevron-right"></i>
+        </a>
+      {% endif %}
+    </nav>
     {% endif %}
-  </nav>
-  {% endif %}
 
-</div>{# /page-wrapper #}
+  </div>{# /page-wrapper #}
 
-</body>
-</html>
+{% endblock %}

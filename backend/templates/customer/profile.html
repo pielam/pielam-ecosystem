@@ -181,23 +181,22 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: rgba(0, 0, 0, 0.40);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+
+  background: var(--gold, #b8860b);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid #000;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+
   white-space: nowrap;
 }
 
 .profile-cover .cover-edit-btn:hover {
-  background: rgba(0, 0, 0, 0.60);
-  border-color: rgba(255, 255, 255, 0.45);
+  background: var(--gold-2, #8b6508);
+  border-color: #000;
 }
 
 .profile-cover .cover-edit-btn:active {
@@ -208,6 +207,11 @@
 .profile-cover .cover-edit-btn i {
   font-size: 15px;
   line-height: 1;
+  color: #fff;
+}
+
+.profile-cover .cover-edit-btn svg {
+  stroke: #fff;
 }
 
 /* ── position all buttons bottom-right ── */
@@ -247,14 +251,13 @@
 
 @media (max-width: 768px) {
   .profile-cover {
-    height: auto;           /* height follows image */
+    height: auto;
     min-height: 160px;
-    margin-top: 0rem;
+    margin-top: 0;     /* was already 0rem here, keep it explicit */
   }
 
   .profile-cover .cover-edit-btn span {
     display: none;
-
   }
 
   .profile-cover .cover-edit-btn {
@@ -262,7 +265,6 @@
     gap: 0;
   }
 
-  /* Edit & Settings — stacked column, top-right */
   .profile-cover .cover-edit-btn:nth-child(3) {
     top: 10px;
     right: 10px;
@@ -273,7 +275,6 @@
     right: 10px;
   }
 
-  /* Edit cover — bottom-right */
   .profile-cover .cover-edit-btn:nth-child(2) {
     bottom: 10px;
     right: 10px;
@@ -287,10 +288,9 @@
   }
 }
 
-/* ── Mobile (≤ 480px) ── */
 @media (max-width: 480px) {
   .profile-cover {
-    margin-top: 2.85rem;
+    margin-top: 0;      /* was: 2.85rem (or var(--header-h)) */
     min-height: 130px;
   }
 
@@ -298,14 +298,13 @@
     padding: 7px 9px;
     font-size: 13px;
   }
-/* Edit cover — bottom-right */
+
   .profile-cover .cover-edit-btn:nth-child(2) {
     bottom: 10px;
     right: 10px;
     top: unset;
   }
 
-  /* Edit & Settings — stacked column, top-right */
   .profile-cover .cover-edit-btn:nth-child(3),
   .profile-cover .cover-edit-btn:nth-child(4) {
     right: 10px;
@@ -316,7 +315,7 @@
   }
 
   .profile-cover .cover-edit-btn:nth-child(4) {
-    top: 52px; /* button height (~34px) + 8px gap */
+    top: 52px;
   }
 
   .cover-image {
@@ -328,15 +327,21 @@
 
       <div class="profile-cover">
         <img src="{{ profile_info.profile_cover_photo }}"
-     alt="Cover photo" class="cover-image" loading="lazy">
+            alt="Cover photo" class="cover-image" loading="lazy">
         <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
           <i class="fa-solid fa-camera"></i><span>Cover Photo</span>
         </a>
-        <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
+        {% comment %} <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
               <i class="fa-solid fa-user-pen"></i><span>Edit</span>
-            </a>
-            <a href="{% url 'customer:profile_settings' %}" class="cover-edit-btn">
-              <i class="fa-solid fa-gear"></i><span>Settings</span>
+            </a> {% endcomment %}
+            <a href="{% url 'customer:profile_manager' %}" class="cover-edit-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+            <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5"/>
+            <path d="M18.5 13.2v1.2M18.5 19.6v1.2M21.4 14.9l-1 .6M16.6 17.5l-1 .6M21.4 19.1l-1-.6M16.6 15.5l-1-.6"/>
+            <circle cx="18.5" cy="17" r="1.6"/>
+        </svg>
+        <span>Manager</span>
             </a>
       </div>
 {# ═══ COVER ═══ #}
@@ -474,18 +479,18 @@
 }
 
 .pill-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: whitesmoke;
+  color: black;
 }
 
 .pill-gray {
-  background: #f3f4f6;
-  color: #374151;
+  background: whitesmoke;
+  color: black;
 }
 
 .pill-amber {
-  background: #fef3c7;
-  color: #92400e;
+  background: whitesmoke;
+  color: black;
 }
 
 
@@ -677,10 +682,16 @@
   <a href="{% url 'service_profile' %}" class="profile-action-btn profile-action-btn--ghost">
     <i class="fas fa-spider"></i>
     <span>Engine</span>
+  </a> 
+
+  {% if profile_completion == 100 %}
+  <a href="{% url 'customer:dashboard' %}" class="profile-action-btn profile-action-btn--ghost">
+    
+    <span>Dashboard</span>
   </a>
+  {% endif %}
 
 </div>
-
 
 <style>
 
@@ -1038,6 +1049,8 @@
 
 
 </style>
+
+{% if profile_completion < 100 %}
 <!-- ═══ PROFILE COMPLETION BAR ═══ -->
 <div class="completion-strip">
   <div class="completion-card">
@@ -1071,11 +1084,7 @@
         </div>
       </div>
       <div class="completion-tip">
-        {% if profile_completion < 100 %}
-          Complete your profile to build trust with buyers.
-        {% else %}
-          Your profile is 100% complete — great work!
-        {% endif %}
+        Complete your profile to build trust with buyers.
       </div>
     </div>
 
@@ -1083,27 +1092,19 @@
 </div>
 
 <div class="section-divider"></div>
+{% endif %}
 
 
 <script>
 function animateCompletionCircle() {
   const circle = document.getElementById('completionCircle');
   const bar    = document.getElementById('completionBar');
-  if (!circle) return;
+  if (!circle) return; // block doesn't exist at all when profile is 100% complete
 
-  const pct          = parseFloat(circle.dataset.pct) || 0;
-  const radius       = 22;
-  const circumference = 2 * Math.PI * radius;
-  const offset       = circumference - (pct / 100) * circumference;
-
-  /* Hide entire strip + divider when 100% complete */
-  if (pct >= 100) {
-    const strip   = document.querySelector('.completion-strip');
-    const divider = document.querySelector('.section-divider');
-    if (strip)   strip.style.display   = 'none';
-    if (divider) divider.style.display = 'none';
-    return;
-  }
+  const pct           = parseFloat(circle.dataset.pct) || 0;
+  const radius         = 22;
+  const circumference   = 2 * Math.PI * radius;
+  const offset         = circumference - (pct / 100) * circumference;
 
   setTimeout(() => {
     circle.style.strokeDashoffset = offset;

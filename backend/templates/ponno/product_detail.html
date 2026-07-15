@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% load static %}
 
 {% block title %}{{ meta_title }}{% endblock %}
@@ -94,9 +95,9 @@
   }
 
   body {
-    font-family: var(--font-body);
-    background: var(--surface-2);
-    color: var(--ink);
+    font-family: 'roboto';
+    
+    
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -140,35 +141,49 @@
 <style>
   .breadcrumb-bar {
     background: transparent;
-    border-bottom: 1px solid var(--border); padding: 11px 24px;
-  }
+    
+    padding: 1px 2px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;   /* Fixed: align-item → align-items */
+}
+
   .breadcrumb {
-    max-width: 1400px; margin: 0 auto;
-    display: flex; align-items: center; gap: 6px;
-    font-size: .8rem; color: var(--ink-3); flex-wrap: wrap;
+    max-width: 1400px; 
+    margin: 0 auto;
+    display: flex; 
+    align-items: center; 
+    gap: 6px;
+    font-size: .8rem; 
+    color: black; 
+    flex-wrap: wrap;
   }
-  .breadcrumb-separator { color: var(--border-2); font-size: .65rem; }
+  .breadcrumb-separator { color: blue; font-size: .65rem; }
   .breadcrumb-current { color: var(--ink); font-weight: 600; }
   .breadcrumb-item {
+
     display: flex; align-items: center; gap: 5px;
-    color: var(--ink-3); font-weight: 500;
+    color: black; font-weight: 500;
     transition: color var(--transition-fast);
   }
   .breadcrumb-item img {
     width: 20px; height: 20px; object-fit: contain;
-    border-radius: 3px; flex-shrink: 0;
+    border-radius: 50%; flex-shrink: 0;
+    border: 1px solid gold;
   }
-  .breadcrumb-item i { font-size: .8rem; color: var(--ink-4); }
+  .breadcrumb-item i { font-size: .8rem; color:  #1e88e5;; }
 </style>
 
 <!-- ══════════════════════════════════════════════════════════════════
      FEATURE 5 · PAGE WRAPPER + CONTAINER SHELL
 ══════════════════════════════════════════════════════════════════ -->
 <style>
-  .product-detail-wrapper { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+  .product-detail-wrapper { max-width: 1400px; margin: 0 auto; padding: 1px 2px 3px; }
   .product-container {
-    background: var(--surface); border-radius: var(--r-xl);
-    border: 1px solid var(--border); padding: 40px; box-shadow: var(--shadow-sm);
+    border-radius: var(--r-xl);
+    padding: 1px; 
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
   }
 
@@ -182,18 +197,19 @@
   .product-info-section   { grid-column: 2; grid-row: 1; }
   .product-description-section {
     grid-column: 1 / -1; grid-row: 2;
-    margin-top: 32px; padding-top: 28px;
-    border-top: 2px solid var(--border);
+    margin-top: 2px; padding-top: 2px;
+    
   }
 
   .product-image-section {
-    position: relative; display: flex; flex-direction: column;
+    position: relative; \
+    display: flex; flex-direction: column;
     gap: 0; width: 100%; min-width: 0;
     animation: fadeUp .5s var(--ease-out-expo) both;
   }
   .image-wrapper {
     border-radius: var(--r-lg); overflow: hidden;
-    background: var(--surface-2); border: 1px solid var(--border);
+    background: white; 
     aspect-ratio: 1/1; width: 100%; max-width: 100%;
     transition: all var(--transition-slow); box-sizing: border-box;
   }
@@ -229,7 +245,7 @@
 
   .image-bottom-row {
     display: flex; align-items: center;
-    flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    flex-wrap: wrap; gap: 8px; margin-top: 1px;
     width: 100%; box-sizing: border-box;
   }
   .stock-badge {
@@ -242,7 +258,8 @@
   .stock-badge.out-of-stock { background: rgba(200,16,46,.9);  color: #fff; }
   .stock-badge.pre-order    { background: rgba(13,71,161,.9);  color: #fff; }
 
-  .product-info-section { display: flex; flex-direction: column; gap: 20px; min-width: 0; animation: fadeUp .5s .08s var(--ease-out-expo) both; }
+  .product-info-section { 
+    display: flex; flex-direction: column; gap: 20px; min-width: 0; animation: fadeUp .5s .08s var(--ease-out-expo) both; }
 
   .badges-section { display: flex; flex-wrap: wrap; gap: 8px; }
   .badge.verified-badge {
@@ -253,62 +270,98 @@
   .stars i { font-size: .95rem; color: var(--gold); }
   .stars i.fa-regular { color: var(--border-2); }
   .rating-text { font-size: .85rem; color: var(--ink-3); }
-  .product-meta {
-    display: flex; flex-wrap: wrap; gap: 14px;
-    padding: 11px 0;
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-  }
-  .meta-item {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: .82rem; color: var(--ink-3); font-weight: 500;
-  }
-  .meta-item i      { color: var(--ink-4); }
-  .meta-item strong { color: var(--ink-2); }
+  
+.product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;  /* spreads items evenly */
+  gap: 4px;
+  padding: 1px 0;
 
-  .price-section { margin: 4px 0; }
+}  
+  .meta-item {
+    display: inline-flex; 
+    align-items: center; 
+    gap: 5px;
+    font-size: .82rem; 
+    color: black; 
+    font-weight: 500;
+  }
+  .meta-item i      { color: blue; }
+  .meta-item strong { color: black; }
+
+  .price-section { 
+    margin: 1px 0; 
+    text-align: center;
+    color: black;
+  }
   .price-card {
     position: relative;
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: var(--r-md); padding: 22px 26px;
-    display: flex; flex-direction: column; gap: 10px;
+    background: white; 
+    
+    border-radius: var(--r-md); 
+    padding: 1px 2px;
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
     background-image:
       radial-gradient(circle 7px at 0 50%, transparent 98%, var(--surface)),
       radial-gradient(circle 7px at 100% 50%, transparent 98%, var(--surface));
   }
   .price-row {
-    display: flex; justify-content: space-between;
-    align-items: center; flex-wrap: wrap; gap: 6px;
+    display: flex; 
+    justify-content: space-between;
+    align-items: center; 
+    flex-wrap: wrap; 
+    gap: 6px;
   }
-  .price-row.main-price      { padding-top: 10px; border-top: 1px dashed var(--border-2); }
-  .price-row.final-price-row { padding-top: 8px;  border-top: 1px dashed var(--border-2); }
+  .price-row.main-price      { padding-top: 1px; border-top: 1px dashed var(--border-2); }
+  .price-row.final-price-row { padding-top: 1px;  border-top: 1px dashed var(--border-2); }
   .price-label {
-    font-size: .8rem; font-weight: 600; color: black;
-    text-transform: uppercase; letter-spacing: .4px;
+    font-size: .8rem; 
+    font-weight: 600; 
+    color: black;
+    text-transform: uppercase; 
+    letter-spacing: .4px;
   }
-  .brand-price-val {
-    color: gold; font-size: 1.5rem; font-weight: 700;
-    font-family: Roboto, sans-serif; text-decoration: line-through;
-  }
+.brand-price-val {
+  color: black;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'roboto';
+  text-decoration: none;
+}
 
-  .buying-price-val {
-    color: ; font-size: 1.5rem; font-weight: 700;
-    font-family: Roboto, sans-serif; text-decoration: line-through;
-  }
+.buying-price-val {
+  color: red;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'roboto', sans-serif;
+  text-decoration: none;
+}
 
-  .selling-price-val {
-    font-size: 1.7rem; font-weight: 700; color: ;
-    letter-spacing: -1px; line-height: 1; font-family: Roboto, sans-serif;
-  }
+.selling-price-val {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: green;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-family: 'roboto', sans-serif;
+}
+
   .final-price-val {
     font-size: 2rem; font-weight: 800; color: var(--rust);
-    letter-spacing: -1px; line-height: 1; font-family: Roboto, sans-serif;
+    letter-spacing: -1px; line-height: 1; font-family: 'roboto', sans-serif;
   }
   .tax-note { font-size: .72rem; color: var(--ink-4); margin-top: -4px; }
   .savings-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--green-bg); color: var(--accent-2);
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px;
+    color: black;
     padding: 6px 14px; border-radius: 20px;
     font-size: .82rem; font-weight: 700; width: fit-content; margin-top: 4px;
+    align-self: center;
   }
 
   .stock-section {
@@ -341,7 +394,7 @@
     border-radius: var(--r-md); padding: 24px;
   }
   .order-title {
-    font-family: var(--font-display); font-size: 1.4rem; font-weight: 400;
+    font-family: 'roboto'; font-size: 1.4rem; font-weight: 400;
     color: var(--ink); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
@@ -364,7 +417,30 @@
     background: linear-gradient(135deg,var(--blue),#2563eb);
     box-shadow: 0 4px 16px rgba(30,58,138,.25);
   }
+
+  .order-btn.whatsapp i {
+  display: inline-block;
+  animation: iconShake 1.5s ease-in-out infinite;
+}
+
+@keyframes iconShake {
+  0%, 100%      { transform: rotate(0deg); }
+  10%, 30%, 50% { transform: rotate(-15deg); }
+  20%, 40%, 60% { transform: rotate(15deg); }
+  70%           { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-btn.whatsapp i { animation: none; }
+}
+
+
   .order-btn.call:hover { box-shadow: 0 8px 24px rgba(30,58,138,.35); }
+  .order-btn.email {
+    background: linear-gradient(135deg,var(--ink-2),var(--ink));
+    box-shadow: 0 4px 16px rgba(26,29,35,.25);
+  }
+  .order-btn.email:hover { box-shadow: 0 8px 24px rgba(26,29,35,.35); }
   .order-btn.out-of-stock-btn {
     background: var(--surface-3); color: var(--ink-3);
     border: 1px dashed var(--border-2); box-shadow: none; cursor: not-allowed;
@@ -400,6 +476,7 @@
     .product-image.zoomed { transform: scale(1.3); }
     .image-wrapper:hover  { transform: none; box-shadow: none; }
     .order-section        { display: none; }
+    
 
     .product-detail-wrapper { padding: 12px 12px 90px; }
     .product-container      { padding: 16px; border-radius: var(--r-lg); }
@@ -434,7 +511,7 @@
     .product-badges   { gap: 5px; margin-top: 10px; }
     .image-bottom-row { gap: 5px; margin-top: 8px; }
 
-    .product-meta { gap: 8px; padding: 9px 0; }
+    .product-meta { gap: 8px; padding: 1px 0; }
     .meta-item    { font-size: .75rem; }
 
     .trust-row  { grid-template-columns: repeat(3,1fr); gap: 5px; }
@@ -530,7 +607,7 @@
   .tab-panel { display: none; padding: 28px 0 0; }
   .tab-panel.active { display: block; }
   .section-title {
-    font-family: var(--font-display); font-size: 1.5rem; font-weight: 400;
+    font-family: 'roboto'; font-size: 1.5rem; font-weight: 400;
     color: var(--ink); margin-bottom: 16px;
     display: flex; align-items: center; gap: 8px;
   }
@@ -655,7 +732,7 @@
     border-bottom: 1px solid var(--border);
   }
   .section-header .section-title {
-    font-family: var(--font-display); font-size: 1.4rem; font-weight: 400;
+    font-family: 'roboto'; font-size: 1.4rem; font-weight: 400;
     color: var(--ink); margin: 0;
     display: flex; align-items: center; gap: 8px;
   }
@@ -882,6 +959,13 @@
     .product-card  { width: 126px; }
     .section-header .section-title { font-size: 1.1rem; }
   }
+
+  .pd-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
 </style>
 
 <!-- ══════════════════════════════════════════════════════════════════
@@ -943,7 +1027,7 @@
 
   .dealer-hero-info { flex: 1; min-width: 0; }
   .dealer-name {
-    font-family: var(--font-display); font-size: 1.75rem; font-weight: 600;
+    font-family: 'roboto'; font-size: 1.75rem; font-weight: 600;
     color: #fff; text-decoration: none; display: block;
     margin-bottom: 4px; transition: opacity .2s;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -1139,15 +1223,37 @@
 ══════════════════════════════════════════════════════════════════ -->
 <style>
   .mob-order-bar {
-    display: none; position: fixed; bottom: 0; left: 0; right: 0;
-    z-index: 999; background: var(--surface);
-    border-top: 1px solid var(--border); padding: 10px 14px; gap: 10px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,.12);
+    display: none; 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; right: 0;
+    z-index: 999; 
+    padding: 10px 14px; gap: 10px;
+    background: whitesmoke;
+    
   }
-  .mob-order-bar .order-btn { flex: 1; border-radius: var(--r-sm); padding: 13px 10px; font-size: .88rem; }
+  .mob-order-bar .order-btn {
+    flex: 1; border-radius: var(--r-sm); padding: 13px 10px; font-size: .88rem;
+    min-width: 0; white-space: nowrap; overflow: hidden;
+  }
+  .mob-order-bar .order-btn span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   @media (max-width: 768px) {
     .mob-order-bar { display: flex; }
+  }
+
+  @media (max-width: 420px) {
+    .mob-order-bar { padding: 8px 10px; gap: 6px; }
+    .mob-order-bar .order-btn { padding: 11px 6px; font-size: .78rem; gap: 6px; }
+    .mob-order-bar .order-btn i { font-size: 1rem; }
+  }
+
+  @media (max-width: 340px) {
+    .mob-order-bar .order-btn span { display: none; }
+    .mob-order-bar .order-btn { gap: 0; }
+    .mob-order-bar .order-btn i { font-size: 1.15rem; }
   }
 </style>
 
@@ -1163,7 +1269,7 @@
     border: 1px solid var(--border);
     background: var(--surface-2);
     transition: all var(--transition-base);
-    font-family: var(--font-body);
+    font-family: 'roboto';
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1228,7 +1334,7 @@
     margin-bottom: 6px;
   }
   .rating-modal-title {
-    font-family: var(--font-display); font-size: 1.4rem;
+    font-family: 'roboto'; font-size: 1.4rem;
     font-weight: 600; color: var(--ink); margin: 0;
   }
   .rating-modal-close {
@@ -1283,11 +1389,11 @@
       {% if product.brand.brand_logo %}
         <img src="{{ product.brand.brand_logo.url }}" alt="" width="20" height="20">
       {% else %}
-        <i class="fa-solid fa-award" aria-hidden="true"></i>
+        <i class="fa-solid fa-award" aria-hidden="true" ></i>
       {% endif %}
       {{ product.brand.brand_name }}
     </span>
-    {% endif %}
+    {% endif %} 
 
     {% if product.category %}
     <i class="fa-solid fa-chevron-right breadcrumb-separator" aria-hidden="true"></i>
@@ -1295,7 +1401,7 @@
       {% if product.category.category_logo %}
         <img src="{{ product.category.category_logo.url }}" alt="" width="20" height="20">
       {% else %}
-        <i class="fa-solid fa-tag" aria-hidden="true"></i>
+        <i class="fa-solid fa-tag" aria-hidden="true" ></i>
       {% endif %}
       {{ product.category.category_name }}
     </span>
@@ -1313,13 +1419,16 @@
     </span>
     {% endif %}
 
+    
+    <i class="fa-solid fa-chevron-right breadcrumb-separator" aria-hidden="true"></i>
+    <span class="breadcrumb-current" aria-current="page">{{ product.product_name }}</span>
+
     {% if product.product_title %}
     <i class="fa-solid fa-chevron-right breadcrumb-separator" aria-hidden="true"></i>
     <span class="breadcrumb-current">{{ product.product_title }}</span>
     {% endif %}
 
-    <i class="fa-solid fa-chevron-right breadcrumb-separator" aria-hidden="true"></i>
-    <span class="breadcrumb-current" aria-current="page">{{ product.product_name }}</span>
+    
 
   </nav>
 </div>
@@ -1354,57 +1463,6 @@
           {% endif %}
         </div>
 
-        <div class="product-badges">
-          {% if product.discount_percentage > 0 %}
-          <span class="badge badge-discount">
-            <i class="fa-solid fa-tag" aria-hidden="true"></i> {{ product.discount_percentage|floatformat:0 }}% OFF
-          </span>
-          {% endif %}
-          {% if product.is_featured %}
-          <span class="badge badge-featured">
-            <i class="fa-solid fa-star" aria-hidden="true"></i> Featured
-          </span>
-          {% endif %}
-          {% if product.is_trending %}
-          <span class="badge badge-trending">
-            <i class="fa-solid fa-fire" aria-hidden="true"></i> Trending
-          </span>
-          {% endif %}
-          {% if product.is_verified %}
-          <span class="badge badge-verified">
-            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Verified
-          </span>
-          {% endif %}
-          {% if product.free_shipping %}
-          <span class="badge badge-shipping">
-            <i class="fa-solid fa-truck" aria-hidden="true"></i> Free Shipping
-          </span>
-          {% endif %}
-
-          {% if product.stock == 0 and product.allow_backorder %}
-          <span class="badge badge-preorder">
-            <i class="fa-solid fa-clock" aria-hidden="true"></i> Pre-Order Available
-          </span>
-          {% endif %}
-          {% if product.stock_status == 'in_stock' %}
-          <div class="stock-badge in-stock">
-            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> In Stock
-          </div>
-          {% elif product.stock_status == 'low_stock' %}
-          <div class="stock-badge low-stock">
-            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Low Stock
-          </div>
-          {% elif product.stock_status == 'pre_order' %}
-          <div class="stock-badge pre-order">
-            <i class="fa-solid fa-clock" aria-hidden="true"></i> Pre-Order
-          </div>
-          {% else %}
-          <div class="stock-badge out-of-stock">
-            <i class="fa-solid fa-circle-xmark" aria-hidden="true"></i> Out of Stock
-          </div>
-          {% endif %}
-        </div>
-
       </div>
       <!-- /product-image-section -->
 
@@ -1420,108 +1478,95 @@
         </div>
         {% endif %}
 
-        <div class="product-meta">
-          <span class="meta-item">
-            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-            Condition: <strong>{{ product.get_product_condition_display }}</strong>
-          </span>
-          {% if product.review_count > 0 %}
-          <div class="rating-section">
-            <div class="stars" role="img" aria-label="Rated {{ product.rating_average }} out of 5 stars">
-              {% for i in "12345" %}
-                {% if forloop.counter <= product.rating_average %}
-                  <i class="fa-solid fa-star" aria-hidden="true"></i>
-                {% else %}
-                  <i class="fa-regular fa-star" aria-hidden="true"></i>
-                {% endif %}
-              {% endfor %}
-            </div>
-            <span class="rating-text">
-              {{ product.rating_average }}&nbsp;·&nbsp;{{ product.review_count }} reviews
-            </span>
-          </div>
-          {% endif %}
-          <span class="meta-item">
-            <i class="fa-solid fa-eye" aria-hidden="true"></i>
-            <strong>{{ product.view_count }}</strong> views
-          </span>
-          {% if product.total_sales > 0 %}
-          <span class="meta-item">
-            <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
-            <strong>{{ product.total_sales }}</strong> sold
-          </span>
-          {% endif %}
-        </div>
+        
 
-        <!-- FEATURE 8 · PRICE BLOCK -->
+<!-- FEATURE 8 · PRICE BLOCK -->
         <div class="price-section">
           <div class="price-card" aria-label="Pricing">
-            {% if product.brand_price %}
-            <div class="price-row">
-              <span class="price-label">Brand MRP</span>
-              <span class="price brand-price-val">{{ product.fmt_brand_price }}</span>
-            </div>
-            {% endif %}
-            {% comment %} {% if product.buying_price %}
-            <div class="price-row">
-              <span class="price-label">Buying Price</span>
-              <span class="price buying-price-val">{{ product.buying_price }}</span>
-            </div>
-            {% endif %} {% endcomment %}
-            <div class="price-row main-price">
-              <span class="price-label">Selling Price</span>
-              <span class="price selling-price-val">{{ product.fmt_selling_price }}</span>
-            </div> 
-            {% if product.discount_percentage > 0 and product.final_price %}
-            <div class="price-row final-price-row">
-              <span class="price-label">After {{ product.discount_percentage|floatformat:0 }}% Discount</span>
-              <span class="price final-price-val">{{ product.fmt_final_price }}</span>
-            </div>
-            {% endif %}
-            {% if product.tax_rate > 0 %}
-            <p class="tax-note">
-              <i class="fa-solid fa-receipt" aria-hidden="true"></i>
-              {{ product.tax_rate|floatformat:1 }}% tax may apply
-            </p>
-            {% endif %}
-            {% if savings > 0 %}
-            <div class="savings-badge">
-              <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
-              Save {{ product.fmt_savings }}
-            </div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- FEATURE 10 · STOCK & SHIPPING INFO -->
-        <div class="stock-section">
-          <div class="stock-item">
-            <i class="fa-solid fa-box" aria-hidden="true"></i>
-            <span class="stock-label">Available Stock:</span>
-            <span class="stock-value {% if product.is_low_stock %}low{% elif product.stock == 0 %}out{% endif %}">
-              {% if product.stock > 0 %}
-                {{ product.stock }} units{% if product.is_low_stock %} — Low Stock{% endif %}
-              {% else %}
-                Out of Stock
+            {% if product.price_hidden %}
+              <div class="price-row main-price">
+                <span class="price-label">Price</span>
+                <span class="price selling-price-val">Contact Seller</span>
+              </div>
+            {% else %}
+              {% if product.show_brand_price and product.brand_price %}
+              <div class="price-row">
+                <span class="price-label">Brand MRP</span>
+                <span class="price brand-price-val">{{ product.fmt_brand_price }}</span>
+              </div>
               {% endif %}
-            </span>
+
+              {% if product.show_buying_price and product.fmt_buying_price %}
+              <div class="price-row">
+                <span class="price-label">Cost Price</span>
+                <span class="price buying-price-val">{{ product.fmt_buying_price }}</span>
+              </div>
+              {% endif %}
+
+              {% if product.show_selling_price %}
+              <div class="price-row main-price">
+                <span class="price-label">Selling Price</span>
+                <span class="price selling-price-val">{{ product.fmt_selling_price }}</span>
+              </div>
+              {% if product.discount_percentage > 0 and product.final_price %}
+              <div class="price-row final-price-row">
+                <span class="price-label">After {{ product.discount_percentage|floatformat:0 }}% Discount</span>
+                <span class="price final-price-val">{{ product.fmt_final_price }}</span>
+              </div>
+              {% endif %}
+              {% if product.tax_rate > 0 %}
+              <p class="tax-note">
+                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                {{ product.tax_rate|floatformat:1 }}% tax may apply
+              </p>
+              {% endif %}
+              {% endif %}
+            {% endif %}
           </div>
         </div>
 
-        {% if product.shipping_cost %}
-        <div class="shipping-info">
-          <div class="shipping-row">
-            <i class="fa-solid fa-truck" aria-hidden="true"></i>
-            <span>Shipping: <strong>{{ product.fmt_shipping_cost }}</strong></span>
-          </div>
-        </div>
+        <div class="product-meta">
+  <span class="meta-item">
+    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+    Condition: <strong>{{ product.get_product_condition_display }}</strong>
+  </span>
+
+  {% if product.review_count > 0 %}
+  <span class="meta-item rating-section">
+    <span class="stars" role="img" aria-label="Rated {{ product.rating_average }} out of 5 stars">
+      {% for i in "12345" %}
+        {% if forloop.counter <= product.rating_average %}
+          <i class="fa-solid fa-star" aria-hidden="true"></i>
+        {% else %}
+          <i class="fa-regular fa-star" aria-hidden="true"></i>
         {% endif %}
+      {% endfor %}
+    </span>
+    <span class="rating-text">
+      {{ product.rating_average }}&nbsp;({{ product.review_count }})
+    </span>
+  </span>
+  {% endif %}
+
+  <span class="meta-item">
+    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+    <strong>{{ product.view_count }}</strong> views
+  </span>
+
+  {% if product.total_sales > 0 %}
+  <span class="meta-item">
+    <i class="fa-solid fa-bag-shopping" aria-hidden="true"></i>
+    <strong>{{ product.total_sales }}</strong> sold
+  </span>
+  {% endif %}
+</div>
+
 
         <!-- FEATURE 11 · ORDER SECTION (desktop) -->
         {% if product.dealer %}
         <div class="order-section">
-          <h2 class="order-title">
-            <i class="fa-solid fa-shopping-cart" aria-hidden="true"></i>
+          <h2 class="price-section">
+            <i class="fa-solid fa-shopping-cart" aria-hidden="true" style="color: blue;"></i>
             Order This Product
           </h2>
           <div class="order-buttons">
@@ -1531,13 +1576,15 @@
                 <span>Currently Out of Stock</span>
               </span>
             {% else %}
+
               {% if product.dealer.profileinfo.social_whatsapp %}
-              <a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}%20SKU:%20{{ product.sku }}"
-                 target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
-                <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+              <a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}%20SKU:%20{{ product.sku }}"
+                target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
+                <i class="fa-brands fa-whatsapp fa-shake" aria-hidden="true" style="--fa-animation-duration: 1.5s;"></i>
                 <span>Order via WhatsApp</span>
               </a>
               {% endif %}
+
               {% if show_dealer_phone and product.dealer.profileinfo.profile_phone %}
               <a href="tel:{{ product.dealer.profileinfo.profile_phone }}" class="order-btn call">
                 <i class="fa-solid fa-phone" aria-hidden="true"></i>
@@ -1751,7 +1798,7 @@
     <!-- ══════════════════════════════════════════════════════════════
          FEATURE 14 · RELATED + SUGGESTED PRODUCTS
     ══════════════════════════════════════════════════════════════ -->
-
+<div class="pd-right-column">
     {% if suggested_products %}
     <!-- ══════════════════════════
          SUGGESTED FOR YOU
@@ -1857,7 +1904,9 @@
               {% endif %}
 
               <div class="product-card-pricing">
-                {% if sp.discount_percentage > 0 and sp.final_price %}
+                {% if sp.price_hidden %}
+                  <p class="product-card-price">Contact Seller</p>
+                {% elif sp.discount_percentage > 0 and sp.final_price and sp.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ sp.fmt_selling_price }}
                   </p>
@@ -1866,11 +1915,15 @@
                   </p>
                   <p class="product-card-savings">
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
-                    Save {{ sp.fmt_discount_percentage }}%
+                    Save {{ sp.discount_percentage|floatformat:0 }}%
                   </p>
-                {% else %}
+                {% elif sp.show_selling_price %}
                   <p class="product-card-price">
                     {{ sp.fmt_selling_price }}
+                  </p>
+                {% elif sp.show_brand_price and sp.fmt_brand_price %}
+                  <p class="product-card-price">
+                    {{ sp.fmt_brand_price }}
                   </p>
                 {% endif %}
               </div>
@@ -1976,7 +2029,9 @@
               {% endif %}
 
               <div class="product-card-pricing">
-                {% if related.discount_percentage > 0 and related.final_price %}
+                {% if related.price_hidden %}
+                  <p class="product-card-price">Contact Seller</p>
+                {% elif related.discount_percentage > 0 and related.final_price and related.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ related.fmt_selling_price }}
                   </p>
@@ -1985,11 +2040,15 @@
                   </p>
                   <p class="product-card-savings">
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
-                    Save {{ related.fmt_discount_percentage }}%
+                    Save {{ related.discount_percentage|floatformat:0 }}%
                   </p>
-                {% else %}
+                {% elif related.show_selling_price %}
                   <p class="product-card-price">
                     {{ related.fmt_selling_price }}
+                  </p>
+                {% elif related.show_brand_price and related.fmt_brand_price %}
+                  <p class="product-card-price">
+                    {{ related.fmt_brand_price }}
                   </p>
                 {% endif %}
               </div>
@@ -2096,7 +2155,9 @@
               {% endif %}
 
               <div class="product-card-pricing">
-                {% if dp.discount_percentage > 0 and dp.final_price %}
+                {% if dp.price_hidden %}
+                  <p class="product-card-price">Contact Seller</p>
+                {% elif dp.discount_percentage > 0 and dp.final_price and dp.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ dp.fmt_selling_price }}
                   </p>
@@ -2105,11 +2166,15 @@
                   </p>
                   <p class="product-card-savings">
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
-                    Save {{ dp.fmt_discount_percentage }}%
+                    Save {{ dp.discount_percentage|floatformat:0 }}%
                   </p>
-                {% else %}
+                {% elif dp.show_selling_price %}
                   <p class="product-card-price">
                     {{ dp.fmt_selling_price }}
+                  </p>
+                {% elif dp.show_brand_price and dp.fmt_brand_price %}
+                  <p class="product-card-price">
+                    {{ dp.fmt_brand_price }}
                   </p>
                 {% endif %}
               </div>
@@ -2121,9 +2186,11 @@
       </div>
     </div>
     {% endif %}
-
+  
   </div>
+</div>
   <!-- /product-container -->
+
 </div>
 <!-- /product-detail-wrapper -->
 
@@ -2296,12 +2363,14 @@
       <i class="fa-solid fa-ban" aria-hidden="true"></i> Out of Stock
     </span>
   {% else %}
-    {% if product.dealer.profileinfo.social_whatsapp %}
-    <a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}"
-       target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
-      <i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span>WhatsApp</span>
-    </a>
-    {% endif %}
+
+{% if product.dealer.profileinfo.social_whatsapp %}
+<a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}"
+   target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
+  <i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span>WhatsApp</span>
+</a>
+{% endif %}
+
     {% if show_dealer_phone and product.dealer.profileinfo.profile_phone %}
     <a href="tel:{{ product.dealer.profileinfo.profile_phone }}" class="order-btn call">
       <i class="fa-solid fa-phone" aria-hidden="true"></i><span>Call</span>
@@ -2735,6 +2804,3 @@
   }
 </script>
 {% endblock %}
-
-
-

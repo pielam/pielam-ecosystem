@@ -1,1506 +1,1240 @@
-{% include "base.html" %}
-{% include "search.html" %}
-
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title> Engine | PIELAM</title>
 
+{% block extra_css %}
 <style>
+  .engine-wrap {
+    --sig-image: var(--accent, #4a90e2);
+    --sig-video: #8b5cf6;
+    --ink:    #0f1f36;
+    --muted:  #64748b;
+    --faint:  #94a3b8;
+    --line:   rgba(10, 37, 64, .08);
+    --surface: #fff;
+    --radius: 14px;
 
-/* ═══════════════════════════════════════════════
-       GLOBAL — Design Tokens, Reset, Base
-    ═══════════════════════════════════════════════ */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
+    max-width: var(--content-max, 1400px);
+    margin: 0 auto;
+    padding: var(--content-pad, clamp(1rem, 4vw, 2.5rem));
+  }
 
-    :root {
-      --r: 12px; 
-      --r-sm: 8px;   
-      --purple: #7c3aed; 
-      --shadow-xs: 0 1px 3px rgba(10,37,64,.05); 
+  @media (prefers-reduced-motion: reduce) {
+    .engine-wrap * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
 
-      --ink:        #0f0f0f;
-      --ink-2:      #3a3a3a;
-      --ink-3:      #6b6b6b;
-      --ink-4:      #9b9b9b;
-      --surface:    #ffffff;
-      --surface-2:  #f5f5f3;
-      --surface-3:  #eeede9;
-      --border:     #e4e3df;
-      --border-2:   #d0cfc9;
-      --accent:     #c8102e;
-      --accent-2:   #a00d24;
-      --gold:       #b8860b;
-      --gold-2:     #8b6508;
-      --green:      #1a6b3a;
-      --green-bg:   #edf7f1;
-      --warn:       #92400e;
-      --warn-bg:    #fffbeb;
-      --blue:       #1e3a8a;
-      --blue-light: #3b82f6;
-      --primary-dark:    #0a2540;
-      --primary-blue:    #0d47a1;
-      --primary-light:   #1976d2;
-      --accent-gold:     #d4af37;
-      --accent-amber:    #ffb300;
-      --success-emerald: #00b894;
-      --danger-crimson:  #e74c3c;
-      --text-primary:    #1a202c;
-      --text-secondary:  #4a5568;
-      --text-muted:      #718096;
-      --bg-primary:      #ffffff;
-      --bg-secondary:    #f7fafc;
-      --bg-tertiary:     #edf2f7;
-      --border-light:    #e2e8f0;
-      --border-medium:   #cbd5e0;
-      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
-      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
-      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
-      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
-      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
-      --font-display: 'Cormorant Garamond', serif;
-      --font-body:    'Syne', sans-serif;
-      --f-mono:       'JetBrains Mono', monospace;
-      --f-display:    'Cormorant Garamond', serif;
-      --f-body:       'Syne', sans-serif;
-      --header-h:          64px;
-      --bg:       var(--bg-primary);
-      --nav-h:             64px;
-      --bottom-bar-height: 68px;
-      --r-sm:  8px;
-      --r-md:  14px;
-      --r-lg:  20px;
-      --r-xl:  28px;
-      --ease:            cubic-bezier(.4,0,.2,1);
-      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
-      --transition-fast: .15s ease;
-      --transition-base: .25s ease;
-      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
-      --t-primary:   #0f0f0f;
-      --t-secondary: #3a3a3a;
-      --t-muted:     #6b6b6b;
-      --t-ghost:     #9b9b9b;
-      --rim:         #e4e3df;
-      --raised:      #f5f5f3;
-      --overlay:     #eeede9;
-      --abyss:       #0f0f0f;
-      --gold-pure:   #b8860b;
-      --gold-dim:    rgba(184,134,11,0.40);
-      --gold-trace:  rgba(184,134,11,0.08);
-      --gold-bright: #d4a017;
-      --emerald:  #1a6b3a;
-      --amber:    #92400e;
-      --ruby:     #c8102e;
-      --sapphire: #1e3a8a;
+  .engine-wrap :focus-visible {
+    outline: 2px solid var(--accent, #4a90e2);
+    outline-offset: 2px;
+  }
 
-      
+  /* ── Header ─────────────────────────────────────────────── */
+
+  .engine-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .engine-head h1 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 900;
+    letter-spacing: -.01em;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .engine-head h1 i { color: var(--accent, #4a90e2); }
+
+  .engine-sub {
+    margin: .3rem 0 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    max-width: 46ch;
+  }
+
+  .engine-live {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: #16a34a;
+    background: #ecfdf3;
+    border: 1px solid #b8f0cd;
+    padding: .35rem .75rem .35rem .6rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .engine-live .dot {
+    position: relative;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+  .engine-live .dot::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 1.5px solid #16a34a;
+    animation: ring 1.8s ease-out infinite;
+  }
+  @keyframes ring {
+    0%   { transform: scale(.4); opacity: .9; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  /* Frequency legend — the page's one signature explanation:
+     every post carries a tiny 2-bar signal readout, this is the key. */
+  .engine-legend {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    padding: .6rem .9rem;
+    margin-bottom: 1.4rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+  .engine-legend .legend-label {
+    font-weight: 700;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .engine-legend .legend-item { display: flex; align-items: center; gap: .4rem; }
+  .engine-legend .legend-bar { display: inline-block; width: 4px; height: 12px; border-radius: 2px; }
+  .engine-legend .legend-bar.image { background: var(--sig-image); }
+  .engine-legend .legend-bar.video { background: var(--sig-video); }
+  .engine-legend .legend-hint { margin-left: auto; }
+
+  /* ── Tabs ───────────────────────────────────────────────── */
+
+  .engine-tabs {
+    position: relative;
+    display: flex;
+    gap: .2rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .engine-tab {
+    appearance: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: color var(--t-fast, .15s ease);
+  }
+
+  .engine-tab i { font-size: .9em; }
+  .engine-tab:hover { color: var(--ink); }
+  .engine-tab.active { color: var(--accent, #4a90e2); }
+
+  .engine-tab[data-tab="image"].active { color: var(--sig-image); }
+  .engine-tab[data-tab="video"].active { color: var(--sig-video); }
+
+  .tab-indicator {
+    position: absolute;
+    bottom: -1px;
+    height: 2.5px;
+    background: var(--accent, #4a90e2);
+    border-radius: 2px 2px 0 0;
+    transition: transform .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1), background-color .15s ease;
+  }
+
+  .engine-tab .tab-count {
+    background: rgba(10, 37, 64, .06);
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 800;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    min-width: 1.5em;
+    text-align: center;
+  }
+
+  /* ── Service-type filter chips ──────────────────────────── */
+
+  .engine-filters {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.6rem;
+  }
+
+  .filter-chip {
+    appearance: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .4rem .8rem;
+    transition: all var(--t-fast, .15s ease);
+  }
+  .filter-chip:hover { border-color: var(--accent, #4a90e2); color: var(--ink); }
+  .filter-chip.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+  .filter-chip .fx-clear { display: none; }
+  .filter-chip.active .fx-clear { display: inline; opacity: .7; margin-left: .1rem; }
+
+  /* ── Attribution (shared across all layouts) ───────────── */
+
+  .engine-attrib {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+  }
+
+  .engine-attrib img.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #e2e8f0;
+    border: 1px solid var(--line);
+  }
+
+  .engine-attrib .who { min-width: 0; line-height: 1.25; }
+
+  .engine-attrib .name-row {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .engine-attrib .name-row i.verified { color: var(--accent, #4a90e2); font-size: .8em; }
+
+  .engine-attrib .meta-row {
+    font-size: var(--text-xs);
+    color: var(--faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .engine-attrib a.attrib-link {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    text-decoration: none;
+    min-width: 0;
+  }
+
+  /* ── Panels ─────────────────────────────────────────────── */
+
+  .engine-panel { display: none; }
+  .engine-panel.active { display: block; }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .enter { animation: card-in .32s cubic-bezier(.2,.6,.3,1) both; }
+
+  /* ── ALL: stream of post cards ──────────────────────────── */
+
+  .post-stream {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .post-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: box-shadow var(--t-fast, .15s ease), transform var(--t-fast, .15s ease);
+  }
+  .post-card:hover { box-shadow: 0 8px 24px rgba(15,31,54,.08); }
+
+  .post-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+    padding: .9rem 1.1rem;
+  }
+
+  .post-card-head-right {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    flex-shrink: 0;
+  }
+
+  .signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+  }
+  .signal-bars i { display: block; width: 4px; border-radius: 2px; background: var(--line); min-height: 3px; }
+  .signal-bars i.on.image { background: var(--sig-image); }
+  .signal-bars i.on.video { background: var(--sig-video); }
+
+  .type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: var(--text-xs);
+    color: var(--muted);
+    background: rgba(10, 37, 64, .045);
+    border-radius: 999px;
+    padding: .28rem .6rem;
+    white-space: nowrap;
+  }
+
+  .post-card-body { padding: 0 1.1rem 1rem; }
+
+  .post-card-title {
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 .3rem;
+    font-size: var(--text-base);
+  }
+
+  .post-card-desc {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    margin: 0 0 .8rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Adaptive media mosaic, not a plain scroll strip */
+  .post-media {
+    display: grid;
+    gap: 4px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: .8rem;
+  }
+  .post-media img, .post-media video, .post-media iframe {
+    border: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #eef2f7;
+  }
+  .post-media a.media-link { display: block; width: 100%; height: 100%; cursor: pointer; }
+  .post-media .m-solo { grid-template-columns: 1fr; }
+  .post-media .m-solo .cell { height: 320px; }
+  .post-media[data-count="2"] { grid-template-columns: 1fr 1fr; }
+  .post-media[data-count="2"] .cell { height: 220px; }
+  .post-media[data-count="3"] { grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; }
+  .post-media[data-count="3"] .cell:nth-child(1) { grid-row: 1 / 3; height: 100%; }
+  .post-media[data-count="3"] .cell:nth-child(2),
+  .post-media[data-count="3"] .cell:nth-child(3) { height: 108px; }
+  .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .post-media[data-count="4"] .cell { height: 158px; }
+
+  .post-media .cell { position: relative; }
+  .post-media .cell.more-overlay::after {
+    content: attr(data-more);
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 1.1rem;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: rgba(15, 20, 32, .55);
+    pointer-events: none; /* clicks pass through to the button underneath */
+  }
+
+  /* The "+N" cell is a real trigger, not a link-through tile — clicking
+     it opens the full gallery for the post instead of navigating to
+     just one of the hidden items. */
+  .cell-gallery-btn {
+    appearance: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-size: cover;
+    background-position: center;
+    background-color: #eef2f7;
+    cursor: pointer;
+  }
+
+  .post-card-counts {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+    font-size: var(--text-xs);
+    color: var(--faint);
+  }
+  .post-card-counts .counts-left { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .post-card-counts span { display: flex; align-items: center; gap: .3rem; }
+  .post-card-counts i.image { color: var(--sig-image); }
+  .post-card-counts i.video { color: var(--sig-video); }
+
+  .visit-source {
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .visit-source:hover { color: var(--accent, #4a90e2); }
+
+  /* ── PHOTOS: masonry (also carries link tiles, same shape) ─ */
+
+  .photo-masonry { column-count: 4; column-gap: .85rem; }
+  @media (max-width: 1100px) { .photo-masonry { column-count: 3; } }
+  @media (max-width: 760px)  { .photo-masonry { column-count: 2; } }
+  @media (max-width: 460px)  { .photo-masonry { column-count: 1; } }
+
+  .photo-tile {
+    position: relative;
+    break-inside: avoid;
+    margin-bottom: .85rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: block;
+    text-decoration: none;
+    border-left: 3px solid var(--sig-image);
+    cursor: pointer;
+  }
+  .photo-tile img { display: block; width: 100%; height: auto; background: #eef2f7; }
+  .photo-tile .photo-overlay {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: .6rem .7rem .55rem;
+    background: linear-gradient(0deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,0) 100%);
+    opacity: 0;
+    transition: opacity var(--t-fast, .15s ease);
+  }
+  .photo-tile:hover .photo-overlay, .photo-tile:focus-visible .photo-overlay { opacity: 1; }
+  .photo-tile .photo-overlay .engine-attrib .name-row,
+  .photo-tile .photo-overlay .engine-attrib .meta-row { color: #fff; }
+  .photo-tile .photo-overlay .engine-attrib .meta-row { color: rgba(255,255,255,.75); }
+
+  /* ── VIDEOS: grid ───────────────────────────────────────── */
+
+  .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.1rem; }
+  .video-card { background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); border-left: 3px solid var(--sig-video); }
+  .video-card .video-wrap { position: relative; background: #0f1420; }
+  .video-card video, .video-card iframe { width: 100%; height: 170px; display: block; border: 0; }
+  .video-card video { object-fit: cover; }
+  .video-card .video-wrap.has-iframe::after { display: none; }
+  .video-card .video-wrap::after {
+    content: '\f04b';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,.9);
+    font-size: 1.4rem;
+    pointer-events: none;
+    transition: opacity var(--t-fast, .15s ease);
+  }
+  .video-card .video-wrap.playing::after { opacity: 0; }
+  .video-card-foot { padding: .7rem .85rem; }
+
+  /* ── Skeletons ──────────────────────────────────────────── */
+
+  .skel-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.1rem;
+    overflow: hidden;
+  }
+  .skel-line, .skel-block, .skel-circle {
+    background: linear-gradient(90deg, #eef1f5 25%, #f6f8fa 37%, #eef1f5 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.3s ease infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .skel-circle { width: 32px; height: 32px; border-radius: 50%; }
+  .skel-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .9rem; }
+  .skel-lines { flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+  .skel-line { height: 10px; }
+  .skel-line.w40 { width: 40%; }
+  .skel-line.w70 { width: 70%; }
+  .skel-line.w90 { width: 90%; }
+  .skel-block { height: 220px; margin-top: .8rem; }
+
+  /* ── Empty / error / sentinel ───────────────────────────── */
+
+  .engine-empty { text-align: center; padding: 4rem 1rem; color: var(--faint); }
+  .engine-empty i { font-size: 2rem; margin-bottom: .75rem; display: block; color: #cbd5e1; }
+  .engine-empty p { max-width: 34ch; margin: 0 auto; font-size: var(--text-sm); }
+
+  .engine-sentinel {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    color: var(--faint);
+    font-size: var(--text-sm);
+  }
+  .engine-sentinel .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid rgba(74,144,226,.25);
+    border-top-color: var(--accent, #4a90e2);
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .sentinel-retry {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: var(--text-xs);
+    padding: .4rem .9rem;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .sentinel-retry:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); }
+
+  /* ── Gallery modal (view-all for a post's full media set) ──
+     Distinct from the removed per-image lightbox: this shows every
+     item in one post's images+videos, not a zoomed single image.
+     Each item inside still click-throughs to its own source link,
+     exactly like everywhere else in the feed. ─────────────────── */
+
+  .gallery-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 12, 20, .9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .gallery-modal.open { opacity: 1; pointer-events: auto; }
+
+  .gallery-body {
+    max-width: 1000px;
+    width: 100%;
+    max-height: 86vh;
+    overflow-y: auto;
+    border-radius: 12px;
+  }
+
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .gallery-cell {
+    position: relative;
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #0f1420;
+    aspect-ratio: 1 / 1;
+  }
+  .gallery-cell img, .gallery-cell video, .gallery-cell iframe {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border: 0;
+  }
+
+  .gallery-close {
+    position: absolute;
+    top: 1.25rem; right: 1.5rem;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.12);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1001;
+  }
+  .gallery-close:hover { background: rgba(255,255,255,.22); }
+
+  /* ══════════════════════════════════════════════════════════
+     Responsive breakpoints
+     Desktop-first source above already covers large screens;
+     these narrow the layout down through tablet, phone, and
+     small-phone sizes without touching JS or markup.
+     ══════════════════════════════════════════════════════════ */
+
+  @media (max-width: 900px) {
+    .engine-legend .legend-hint { display: none; } /* the click hint is redundant on touch */
+  }
+
+  @media (max-width: 768px) {
+    .engine-head { gap: .7rem; }
+    .engine-sub { max-width: 100%; }
+    .engine-legend { gap: .7rem .9rem; }
+
+    .post-card-head { padding: .8rem .9rem; }
+    .post-card-body { padding: 0 .9rem .9rem; }
+
+    .post-media .m-solo .cell { height: 240px; }
+    .post-media[data-count="2"] .cell { height: 170px; }
+    .post-media[data-count="3"] .cell:nth-child(2),
+    .post-media[data-count="3"] .cell:nth-child(3) { height: 90px; }
+    .post-media[data-count="4"] .cell { height: 120px; }
+
+    .video-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .9rem; }
+    .video-card video, .video-card iframe { height: 150px; }
+
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .gallery-modal { padding: 1rem; }
+    .gallery-close { top: .75rem; right: .75rem; }
+  }
+
+  @media (max-width: 560px) {
+    .engine-tab { padding: .7rem .65rem; font-size: var(--text-xs); gap: .35rem; }
+    .engine-tab .tab-count { font-size: .65rem; padding: .05rem .35rem; }
+
+    .filter-chip { padding: .35rem .65rem; }
+
+    .post-card-head-right { gap: .6rem; }
+    .post-card-counts { justify-content: flex-start; }
+
+    /* Below ~560px, side-by-side mosaic tiles get too cramped —
+       stack them instead of squeezing narrower columns. */
+    .post-media[data-count="2"] { grid-template-columns: 1fr; }
+    .post-media[data-count="2"] .cell { height: 200px; }
+    .post-media[data-count="3"] {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
     }
+    .post-media[data-count="3"] .cell:nth-child(1) { grid-row: auto; height: 200px; }
+    .post-media[data-count="3"] .cell:nth-child(2),
+    .post-media[data-count="3"] .cell:nth-child(3) { height: 150px; }
+    .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; }
+    .post-media[data-count="4"] .cell { height: 110px; }
 
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
-    body {
-      font-family: 'roboto';
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-      color: var(--ink);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;  /* ← safe cross-browser fix */
+    .video-grid { grid-template-columns: 1fr; }
 
-      padding-bottom: var(--bottom-bar-height);
-    }
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-      pointer-events: none; 
-      z-index: 0;
-    }
-    a      { text-decoration:none; color:inherit; }
-    img    { max-width:100%; display:block; }
-    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
-    ::-webkit-scrollbar       { width:8px; }
-    ::-webkit-scrollbar-track { background:var(--surface-3); }
-    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
-    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
-    .hide-mobile { display:none; }
-@media (max-width: 768px) { :root { --header-h: 58px; } }
-@media (max-width: 480px) { :root { --header-h: 54px; } }
-@media (max-width: 360px) { :root { --header-h: 50px; } }
-@media (max-width: 320px) { :root { --header-h: 48px; } }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+    .gallery-close { width: 34px; height: 34px; font-size: 1rem; }
 
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+    .engine-attrib img.avatar { width: 28px; height: 28px; }
+  }
 
-  .avatar-glow-ring{animation:none}
-  .profile-cover:hover .cover-image{transform:none}
-  .profile-avatar-wrap:hover .profile-avatar{transform:none}
-}
-
-
+  @media (max-width: 380px) {
+    .engine-head h1 { font-size: 1.25rem; gap: .45rem; }
+    .engine-live { font-size: .68rem; padding: .3rem .6rem .3rem .5rem; }
+    .engine-legend { padding: .5rem .65rem; font-size: .68rem; }
+    .post-media .m-solo .cell { height: 200px; }
+    .post-card-title { font-size: var(--text-sm); }
+  }
 </style>
+{% endblock %}
 
-</head>
+{% block content %}
+<div class="engine-wrap">
 
-<body>
-
-
-<style>
-
-    /* ═══════════════════════════════════════════════════════
-   FEED ENGINE — using only root palette tokens
-   No digital effects. Clean, professional UI.
-   Updated: white background + roboto font everywhere.
-═══════════════════════════════════════════════════════ */
-
-/* ── Global font override ── */
-* { font-family: 'roboto', sans-serif; }
-
-a   { color: inherit; text-decoration: none; }
-img { display: block; max-width: 100%; }
-
-::-webkit-scrollbar       { width: 4px; height: 4px; }
-::-webkit-scrollbar-track {  }
-::-webkit-scrollbar-thumb {  border-radius: var(--r-sm); }
-::-webkit-scrollbar-thumb:hover {  }
-
-/* ── Typography utils ── */
-.syne { font-family: 'roboto', sans-serif; }
-.mono { font-family: 'roboto', sans-serif; }
-
-
-/* ═══════════════════════════════════════════════════════
-   TOOLBAR
-═══════════════════════════════════════════════════════ */
-.toolbar {
-  position: sticky; top: var(--nav-h); z-index: 300;
-  height: 48px;
-  background: #ffffff;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 24px; gap: 10px;
-  box-shadow: var(--shadow-xs);
-}
-
-.search-wrap { position: relative; flex: 1; max-width: 440px; }
-.search-wrap svg {
-  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-  width: 13px; height: 13px; color: var(--ink-3); pointer-events: none;
-}
-.search-input {
-  width: 100%;
-  padding: 7px 12px 7px 32px;
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--ink);
-  font-size: 12px; font-family: 'roboto', sans-serif; outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-.search-input::placeholder { color: var(--ink-4); }
-.search-input:focus {
-  border-color: var(--primary-blue);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(13,71,161,.08);
-}
-
-.kbd {
-  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
-  font-family: 'roboto', sans-serif; font-size: 9px; color: var(--ink-4);
-  background: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 4px; padding: 1px 5px; pointer-events: none;
-}
-
-.toolbar-sep { width: 1px; height: 20px; background: var(--border); }
-
-.sort-select {
-  padding: 7px 10px;
-  background: #ffffff;
-  border: 1px solid var(--border); border-radius: var(--r-sm);
-  color: var(--ink-2); font-size: 11px; font-family: 'roboto', sans-serif;
-  outline: none; cursor: pointer; transition: border-color #d4af37;
-}
-.sort-select:focus { border-color: #d4af37; }
-.sort-select option { background: #ffffff; }
-
-.view-toggle {
-  display: flex; border: 1px solid #d4af37; border-radius: var(--r-sm); overflow: hidden;
-}
-.view-btn {
-  width: 32px; height: 30px;
-  background: #ffffff;
-  border: none; color: var(--ink-3); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-.view-btn svg { width: 12px; height: 12px; }
-.view-btn + .view-btn { border-left: 1px solid #d4af37; }
-.view-btn.active, .view-btn:hover {
-  background: #ffffff;
-  color: var(--primary-blue);
-}
-
-/* ═══════════════════════════════════════════════════════
-   LAYOUT SHELL
-═══════════════════════════════════════════════════════ */
-.layout {
-  display: grid;
-  grid-template-columns: 252px 1fr 240px;
-  max-width: 1480px; margin: 0 auto;
-  min-height: calc(100vh - var(--nav-h) - 48px);
-  background: #ffffff;
-}
-
-/* ═══════════════════════════════════════════════════════
-   LEFT PANEL
-═══════════════════════════════════════════════════════ */
-.left-panel {
-  border-right: 1px solid #d4af37;
-  padding: 20px 14px;
-  position: sticky; top: calc(var(--nav-h) + 48px);
-  height: calc(100vh - var(--nav-h) - 48px);
-  overflow-y: auto; overflow-x: hidden;
-  background: #ffffff;
-}
-
-.panel-label {
-  font-size: 10px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--ink-3);
-  padding: 0 2px; margin-bottom: 10px;
-  font-family: 'roboto', sans-serif;
-}
-
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-
-.stat-card {
-  background: #ffffff;
-  border: 1px solid #d4af37;
-  border-radius: var(--r-md);
-  padding: 14px 12px;
-  cursor: default;
-  transition: box-shadow var(--transition-base), transform var(--transition-base);
-}
-.stat-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
-}
-.stat-card__glow { display: none; } /* removed digital glow effect */
-
-.stat-card__icon {
-  width: 28px; height: 28px; border-radius: var(--r-sm);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 10px;
-}
-.stat-card__icon svg { width: 13px; height: 13px; }
-.ic-cyan    { background: rgba(13,71,161,.08);  color: var(--primary-blue); }
-.ic-violet  { background: rgba(124,58,237,.08); color: var(--purple); }
-.ic-emerald { background: var(--green-bg);      color: var(--green); }
-.ic-amber   { background: var(--warn-bg);       color: var(--warn); }
-.ic-rose    { background: rgba(200,16,46,.06);  color: var(--accent); }
-
-.stat-card__val {
-  font-family: 'roboto', sans-serif;
-  font-size: 22px; font-weight: 700;
-  letter-spacing: -0.04em; line-height: 1;
-  color: var(--ink);
-}
-.stat-card__label { font-size: 10px; color: var(--ink-3); margin-top: 4px; letter-spacing: .06em; text-transform: uppercase; }
-
-.fetch-status {
-  background: #ffffff;
-  border: 1px solid #d4af37;
-  border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px;
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
-}
-.fetch-cell { text-align: center; position: relative; }
-.fetch-cell + .fetch-cell::before {
-  content: ''; position: absolute; left: 0; top: 10%; bottom: 10%;
-  width: 1px;
-  background: var(--border);
-}
-.fetch-cell__val {
-  font-family: 'roboto', sans-serif;
-  font-size: 18px; font-weight: 700; letter-spacing: -0.04em;
-  line-height: 1; display: block;
-}
-.val--emerald { color: var(--green); }
-.val--rose    { color: var(--accent); }
-.val--amber   { color: var(--warn); }
-.fetch-cell__label { font-size: 9px; color: var(--ink-3); margin-top: 4px; text-transform: uppercase; letter-spacing: .08em; }
-
-.divider {
-  height: 1px; background: var(--border); margin: 16px 0;
-}
-
-.filter-list { display: flex; flex-direction: column; gap: 2px; }
-.filter-btn {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; border-radius: var(--r-sm);
-  cursor: pointer; user-select: none;
-  border: 1px solid #d4af37;
-  background: #ffffff;
-  transition: border-color var(--transition-fast);
-  font-family: 'roboto', sans-serif;
-}
-.filter-btn:hover {
-  background: #ffffff;
-  border-color: #d4af37;
-}
-.filter-btn.active {
-  background: #ffffff;
-  border-color: #d4af37;
-  border-left: 3px solid #d4af37;
-}
-.filter-btn.active .fi-label { color: var(--primary-blue); font-weight: 600; }
-.filter-btn.active .fi-icon  { color: var(--primary-blue); }
-.filter-btn.active .fi-count { color: var(--primary-blue); }
-
-.fi-icon     { color: var(--ink-3); flex-shrink: 0; }
-.fi-icon svg { width: 13px; height: 13px; display: block; }
-.fi-label    { font-size: 12px; font-weight: 500; color: var(--ink-2); flex: 1; }
-.fi-count    { font-family: 'roboto', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink-4); }
-
-/* ═══════════════════════════════════════════════════════
-   FEED COLUMN
-═══════════════════════════════════════════════════════ */
-.feed { padding: 20px; border-right: 1px solid #d4af37; min-width: 0; background: #ffffff; }
-
-.feed-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-.feed-title {
-  font-family: 'roboto', sans-serif; font-size: 14px; font-weight: 700;
-  letter-spacing: .02em; color: var(--ink);
-}
-.feed-badge {
-  font-family: 'roboto', sans-serif; font-size: 11px; font-weight: 600; color: var(--ink-3);
-  background: #ffffff;
-  border: 1px solid #d4af37;
-  border-radius: 999px; padding: 2px 9px;
-}
-.live-indicator {
-  margin-left: auto; display: flex; align-items: center; gap: 5px;
-  font-size: 10px; font-weight: 700; color: var(--green);
-  letter-spacing: .08em; font-family: 'roboto', sans-serif; text-transform: uppercase;
-}
-.live-indicator svg { width: 11px; height: 11px; }
-
-.feed.view-grid .post-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.feed.view-grid .post { margin-bottom: 0; }
-
-/* ═══════════════════════════════════════════════════════
-   POST CARD
-═══════════════════════════════════════════════════════ */
-.post {
-  background: #ffffff;
-  border: 1px solid #d4af37;
-  border-radius: var(--r-lg);
-  margin-bottom: 14px; overflow: hidden;
-  transition: box-shadow var(--transition-base), transform var(--transition-base), border-color #d4af37;
-}
-.post:hover {
-  border-color: #d4af37;
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-.post[data-stale="true"] {
-  border-left: 3px solid #d4af37;
-}
-
-/* ── Post header ── */
-.post__head { display: flex; align-items: center; gap: 11px; padding: 14px 16px 10px; }
-.post__ava-wrap { position: relative; flex-shrink: 0; }
-.post__ava {
-  width: 38px; height: 38px; border-radius: 50%;
-  border: 2px solid #d4af37; object-fit: cover;
-  background: #ffffff;
-  display: block;
-  transition: border-color var(--transition-fast);
-}
-.post__ava:hover { border-color: var(--primary-blue); }
-.post__verified-badge {
-  position: absolute; bottom: -1px; right: -1px;
-  width: 13px; height: 13px;
-  background: var(--primary-blue);
-  border: 2px solid #d4af37; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-}
-.post__verified-badge svg { width: 6px; height: 6px; }
-
-.post__user { flex: 1; min-width: 0; }
-.post__name-row { display: flex; align-items: center; gap: 6px; }
-.post__name {
-  font-size: 13px; font-weight: 700;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 180px; font-family: 'roboto', sans-serif; color: var(--ink);
-}
-.post__name a:hover { color: var(--primary-blue); }
-.post__role-inline { color: var(--ink-3); font-size: 10px; }
-.post__meta-row {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 11px; color: var(--ink-3); margin-top: 2px; flex-wrap: wrap;
-  font-family: 'roboto', sans-serif;
-}
-.post__meta-row svg { flex-shrink: 0; opacity: .5; }
-
-.post__type-chip {
-  margin-left: auto; flex-shrink: 0;
-  padding: 3px 9px; border-radius: 999px;
-  font-size: 9px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; border: 1px solid  #d4af37;
-  background: transparent;
-  font-family: 'roboto', sans-serif;
-}
-.ptype--education { color: var(--primary-blue);  border-color: rgba(13,71,161,.3);  background: rgba(13,71,161,.06); }
-.ptype--news      { color: var(--accent);         border-color: rgba(200,16,46,.3);  background: rgba(200,16,46,.05); }
-.ptype--product   { color: var(--warn);           border-color: rgba(146,64,14,.3);  background: var(--warn-bg); }
-.ptype--business  { color: var(--purple);         border-color: rgba(124,58,237,.3); background: rgba(124,58,237,.05); }
-.ptype--person    { color: var(--green);          border-color: rgba(26,107,58,.3);  background: var(--green-bg); }
-.ptype--location  { color: var(--primary-light);  border-color: rgba(25,118,210,.3); background: rgba(25,118,210,.05); }
-.ptype--api       { color: var(--gold);           border-color: rgba(184,134,11,.3); background: rgba(184,134,11,.05); }
-
-/* ── OG Card ── */
-.post__og {
-  display: block; margin: 0 16px;
-  border-radius: var(--r-md); overflow: hidden;
-  border: 1px solid #d4af37; cursor: pointer;
-  background: #ffffff;
-  transition: border-color #d4af37, box-shadow var(--transition-fast);
-}
-.post__og:hover { border-color: #d4af37; box-shadow: var(--shadow-sm); }
-
-.post__og-img-wrap { position: relative; overflow: hidden; }
-.post__og-img {
-  width: 100%; height: 176px; object-fit: cover;
-  background: #ffffff;
-  display: block;
-  transition: transform var(--transition-slow);
-}
-.post__og:hover .post__og-img { transform: scale(1.03); }
-
-.post__og-fallback {
-  height: 176px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 10px;
-  background: #ffffff;
-}
-.post__og-fallback-letters {
-  font-family: 'roboto', sans-serif; font-size: 42px; font-weight: 700;
-  color: var(--border-2); line-height: 1;
-}
-.post__og-fallback-url {
-  font-family: 'roboto', sans-serif; font-size: 10px; color: var(--ink-4);
-}
-
-.og-status-pill {
-  position: absolute; top: 8px; right: 8px; z-index: 3;
-  padding: 3px 9px; border-radius: 999px;
-  font-size: 9px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; font-family: 'roboto', sans-serif;
-}
-.og-status-pill--success { background: var(--green-bg);  color: var(--green);  border: 1px solid #d4af37; }
-.og-status-pill--error   { background: rgba(200,16,46,.06); color: var(--accent); border: 1px solid #d4af37; }
-.og-status-pill--pending { background: #ffffff; color: var(--ink-3);  border: 1px solid #d4af37; }
-
-.post__og-meta {
-  padding: 10px 12px;
-  background: #ffffff;
-  display: flex; align-items: flex-start; gap: 8px;
-  border-top: 1px solid #d4af37;
-}
-.post__og-text { flex: 1; min-width: 0; }
-.post__og-title {
-  font-size: 12px; font-weight: 600; color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: 'roboto', sans-serif;
-}
-.post__og-url {
-  font-family: 'roboto', sans-serif; font-size: 10px; color: var(--ink-3); margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.og-arrow { color: var(--ink-4); flex-shrink: 0; margin-top: 1px; transition: color var(--transition-fast), transform var(--transition-fast); }
-.post__og:hover .og-arrow { color: var(--primary-blue); transform: translate(2px,-2px); }
-
-/* ── Description ── */
-.post__desc-wrap { padding: 10px 16px 4px; }
-.post__desc {
-  font-size: 12px; color: var(--ink-2); line-height: 1.7;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  overflow: hidden; font-family: 'roboto', sans-serif;
-}
-
-/* ── Image strip ── */
-.post__images { padding: 10px 16px 0; }
-.post__img-strip { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-.post__img-strip::-webkit-scrollbar { display: none; }
-.post__thumb {
-  flex-shrink: 0; width: 72px; height: 54px;
-  border-radius: var(--r-sm); object-fit: cover;
-  border: 1px solid #d4af37;
-  background: #ffffff;
-  cursor: pointer; transition: transform var(--transition-fast), border-color var(--transition-fast);
-}
-.post__thumb:hover { transform: scale(1.05); border-color: #d4af37; box-shadow: var(--shadow-sm); }
-.post__thumb-more {
-  flex-shrink: 0; width: 72px; height: 54px;
-  border-radius: var(--r-sm); border: 1px dashed #d4af37;
-  background: #ffffff; color: var(--ink-3);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-  font-family: 'roboto', sans-serif;
-}
-.post__thumb-more:hover { color: var(--ink); }
-
-/* ── Extracted links ── */
-.post__links { padding: 10px 16px 0; display: flex; flex-direction: column; gap: 5px; }
-.post__link {
-  display: flex; align-items: center; gap: 9px; padding: 8px 10px;
-  border-radius: var(--r-sm); border: 1px solid#d4af37;
-  background: #ffffff;
-  transition: all var(--transition-fast);
-}
-.post__link:hover { border-color: var(--border-2); box-shadow: var(--shadow-xs); }
-.post__link-icon {
-  width: 26px; height: 26px; border-radius: var(--r-sm); flex-shrink: 0;
-  border: 1px solid #d4af37;
-  background: #ffffff;
-  display: flex; align-items: center; justify-content: center; color: var(--ink-3);
-  transition: color var(--transition-fast);
-}
-.post__link:hover .post__link-icon { color: var(--primary-blue); }
-.post__link-icon svg { width: 11px; height: 11px; }
-.post__link-body { flex: 1; min-width: 0; }
-.post__link-text {
-  font-size: 12px; font-weight: 500; color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
-  font-family: 'roboto', sans-serif;
-}
-.post__link-host { font-family: 'roboto', sans-serif; font-size: 10px; color: var(--ink-3); margin-top: 1px; display: block; }
-
-/* ── Extracted text ── */
-.post__text-row { padding: 10px 16px 0; }
-.post__text-card {
-  background: #ffffff;
-  border-radius: var(--r-sm); border: 1px solid #d4af37;
-  padding: 12px 14px;
-  border-left: 3px solid #d4af37;
-}
-.post__text-body {
-  font-size: 12px; color: var(--ink-2); line-height: 1.8;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  overflow: hidden; font-family: 'roboto', sans-serif;
-}
-.post__text-expand {
-  display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
-  font-size: 11px; font-weight: 600; color: var(--primary-blue);
-  cursor: pointer; border: none; padding: 0;
-  font-family: 'roboto', sans-serif; transition: opacity var(--transition-fast);
-}
-.post__text-expand svg { width: 10px; height: 10px; }
-.post__text-expand:hover { opacity: .75; }
-
-/* ── Footer ── */
-.post__foot { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; padding: 10px 16px 13px; }
-.foot-tag {
-  display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px;
-  border-radius: 999px; 
-  border: 1px solid #d4af37;
-  background: #ffffff;
-  font-size: 10px; color: var(--ink-3); font-family: 'roboto', sans-serif;
-  cursor: pointer; transition: all var(--transition-fast);
-}
-.foot-tag svg { width: 10px; height: 10px; opacity: .6; }
-.foot-tag[data-clickable="true"]:hover {
-  border-color: #d4af37;
-  background: rgba(13,71,161,.06);
-  color: var(--primary-blue);
-}
-.foot-tag[data-clickable="true"]:hover svg { opacity: 1; }
-.foot-tag--static { cursor: default; }
-
-.post__action-group { margin-left: auto; display: flex; align-items: center; gap: 4px; }
-.post-action {
-  width: 28px; height: 28px; border-radius: var(--r-sm);
-  border: 1px solid #d4af37; background: #ffffff;
-  color: var(--ink-3); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all var(--transition-fast); text-decoration: none;
-}
-.post-action svg { width: 11px; height: 11px; }
-.post-action:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
-
-/* ═══════════════════════════════════════════════════════
-   RIGHT PANEL
-═══════════════════════════════════════════════════════ */
-.right-panel {
-  padding: 20px 14px;
-  position: sticky; top: calc(var(--nav-h) + 48px);
-  height: calc(100vh - var(--nav-h) - 48px);
-  overflow-y: auto; overflow-x: hidden;
-  background: #ffffff;
-}
-
-.contributor {
-  display: flex; align-items: center; gap: 10px; padding: 8px 8px;
-  border-radius: var(--r-sm); border: 1px solid #d4af37;
-  background: #ffffff;
-  cursor: pointer; transition: all var(--transition-fast); margin-bottom: 3px;
-  text-decoration: none; color: inherit;
-}
-.contributor:hover { border-color: var(--border); }
-.contributor__ava {
-  width: 32px; height: 32px; border-radius: 50%;
-  border: 1px solid var(--border); object-fit: cover;
-  background: #ffffff; flex-shrink: 0;
-  transition: border-color #d4af37;
-}
-.contributor:hover .contributor__ava { border-color: #d4af37; }
-.contributor__info { flex: 1; min-width: 0; }
-.contributor__name {
-  font-size: 12px; font-weight: 600; color: var(--ink);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: 'roboto', sans-serif;
-}
-.contributor__sub  { font-size: 10px; color: var(--ink-3); }
-.contributor__n    { font-family: 'roboto', sans-serif; font-size: 13px; font-weight: 700; color: var(--primary-blue); flex-shrink: 0; }
-
-.mini-stat {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px; margin-bottom: 4px;
-  border: 1px solid #d4af37;
-  background: #ffffff;
-  border-radius: var(--r-sm);
-}
-.mini-stat__label { font-size: 10px; color: var(--ink-3); font-family: 'roboto', sans-serif; }
-.mini-stat__val   { font-family: 'roboto', sans-serif; font-size: 12px; font-weight: 700; color: var(--ink); }
-
-.breakdown-list { display: flex; flex-direction: column; gap: 10px; }
-.breakdown-item__head {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;
-}
-.breakdown-item__label { font-size: 11px; color: var(--ink-2); font-family: 'roboto', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
-.breakdown-item__val   { font-family: 'roboto', sans-serif; font-size: 11px; color: var(--ink-3); }
-.breakdown-track { height: 3px; background: var(--border); border-radius: 999px; overflow: hidden; }
-.breakdown-fill  { height: 100%; border-radius: 999px; background: var(--primary-blue); transition: width .7s cubic-bezier(.4,0,.2,1); }
-
-/* ═══════════════════════════════════════════════════════
-   EMPTY STATE
-═══════════════════════════════════════════════════════ */
-.empty {
-  padding: 80px 24px; text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  background: #ffffff;
-}
-.empty__icon {
-  width: 56px; height: 56px; border-radius: var(--r-lg);
-  background: #ffffff; border: 1px solid #d4af37;
-  display: flex; align-items: center; justify-content: center; color: var(--ink-3);
-}
-.empty__icon svg { width: 24px; height: 24px; }
-.empty__title { font-size: 14px; font-weight: 700; color: var(--ink); font-family: 'roboto', sans-serif; }
-.empty__body  { font-size: 12px; color: var(--ink-3); line-height: 1.7; max-width: 260px; font-family: 'roboto', sans-serif; }
-
-/* ═══════════════════════════════════════════════════════
-   LIGHTBOX
-═══════════════════════════════════════════════════════ */
-.lightbox {
-  display: none; position: fixed; inset: 0; z-index: 600;
-   backdrop-filter: blur(12px);
-  align-items: center; justify-content: center;
-}
-.lightbox.open { display: flex; }
-.lightbox__img {
-  max-width: 90vw; max-height: 88vh;
-  border-radius: var(--r-lg); border: 1px solid #d4af37;
-  box-shadow: var(--shadow-xl);
-}
-.lightbox__close {
-  position: absolute; top: 18px; right: 18px;
-  width: 38px; height: 38px; border-radius: 50%;
-  
-  border: 1px solid #d4af37;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #fff; transition: background var(--transition-fast);
-}
-.lightbox__close:hover {  }
-.lightbox__close svg { width: 14px; height: 14px; }
-
-/* ═══════════════════════════════════════════════════════
-   POST DETAILS MODAL
-═══════════════════════════════════════════════════════ */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; z-index: 620;
-  background: rgba(10,37,64,.5); backdrop-filter: blur(6px);
-  align-items: center; justify-content: center; padding: 24px;
-}
-.modal-overlay.open { display: flex; }
-.modal {
-  width: 100%; max-width: 500px; max-height: 82vh;
-  background: #ffffff; border: 1px solid #d4af37;
-  border-radius: var(--r-xl); display: flex; flex-direction: column;
-  overflow: hidden; box-shadow: var(--shadow-xl);
-}
-.modal__head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 0; }
-.modal__title {
-  font-family: 'roboto', sans-serif; font-size: 14px; font-weight: 700; flex: 1; color: var(--ink);
-}
-.modal__close {
-  width: 30px; height: 30px; border-radius: 50%; background: #ffffff;
-  border: 1px solid #d4af37; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--ink-2); transition: all var(--transition-fast);
-}
-.modal__close:hover { background: #ffffff; color: var(--ink); }
-.modal__close svg { width: 12px; height: 12px; }
-
-.modal__tabs {
-  display: flex; gap: 2px; padding: 12px 20px 0;
-  border-bottom: 1px solid #d4af37;
-}
-.modal__tab {
-  padding: 8px 14px; font-size: 11px; font-weight: 600; color: var(--ink-3);
-  background: none; border: none; cursor: pointer; font-family: 'roboto', sans-serif;
-  border-bottom: 2px solid #d4af37; margin-bottom: -1px;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
-  display: flex; align-items: center; gap: 5px;
-}
-.modal__tab svg { width: 11px; height: 11px; }
-.modal__tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); }
-.modal__tab:hover:not(.active) { color: var(--ink); }
-
-.modal__body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; background: #ffffff; }
-.modal__panel { display: none; }
-.modal__panel.active { display: block; }
-.modal-img-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.modal-img-grid img {
-  width: 100%; height: 110px; object-fit: cover;
-  border-radius: var(--r-sm); border: 1px solid #d4af37;
-  cursor: pointer; transition: transform var(--transition-fast);
-}
-.modal-img-grid img:hover { transform: scale(1.02); border-color: var(--border-2); }
-
-.modal-link-row {
-  display: flex; align-items: center; gap: 10px; padding: 10px 0;
-  border-bottom: 1px solid #d4af37; text-decoration: none; color: inherit;
-}
-.modal-link-row:last-child { border-bottom: none; }
-.modal-link-icon {
-  width: 28px; height: 28px; border-radius: var(--r-sm); flex-shrink: 0;
-  background: #ffffff; border: 1px solid #d4af37; color: var(--ink-3);
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-link-icon svg { width: 12px; height: 12px; }
-.modal-link-info { flex: 1; min-width: 0; }
-.modal-link-info .t { font-size: 12px; font-weight: 500; color: var(--ink); font-family: 'roboto', sans-serif; }
-.modal-link-info .h { font-family: 'roboto', sans-serif; font-size: 10px; color: var(--ink-3); margin-top: 1px; }
-.modal-text-full { font-size: 13px; color: var(--ink-2); line-height: 1.85; white-space: pre-line; font-family: 'roboto', sans-serif; }
-.modal-empty { color: var(--ink-3); font-size: 11px; font-family: 'roboto', sans-serif; }
-
-/* ═══════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════ */
-.toast-shelf {
-  position: fixed; bottom: 20px; right: 20px; z-index: 700;
-  display: flex; flex-direction: column; gap: 6px; pointer-events: none;
-}
-.toast {
-  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
-  background: var(--ink); border-radius: var(--r-md);
-  font-size: 12px; font-weight: 500; color: #ffffff;
-  box-shadow: var(--shadow-lg); pointer-events: auto;
-  animation: toast-in .18s ease; font-family: 'roboto', sans-serif;
-  border-left: 3px solid var(--accent-gold);
-}
-.toast__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-@keyframes toast-in {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-/* ═══════════════════════════════════════════════════════
-   DATA TICKER  (simplified, no neon)
-═══════════════════════════════════════════════════════ */
-.data-ticker {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 995;
-  height: 24px; background: var(--primary-dark);
-  border-top: 1px solid rgba(255,255,255,.1);
-  overflow: hidden; display: flex; align-items: center;
-}
-.data-ticker__inner {
-  display: flex; gap: 60px;
-  animation: tickerscroll 40s linear infinite; white-space: nowrap;
-}
-.data-ticker__item {
-  font-family: 'roboto', sans-serif; font-size: 9px;
-  color: white; letter-spacing: .08em;
-  display: flex; align-items: center; gap: 8px;
-}
-.data-ticker__item .val { color: var(--accent-gold); }
-.data-ticker__item .sep { color: whitesmoke; }
-@keyframes tickerscroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════ */
-@media (max-width: 1260px) { .layout { grid-template-columns: 230px 1fr; } .right-panel { display: none; } }
-@media (max-width: 820px)  { .layout { grid-template-columns: 1fr; } .left-panel { display: none; } .feed { padding: 14px 12px; } .feed.view-grid .post-list { grid-template-columns: 1fr; } }
-@media (max-width: 560px)  { .toolbar { gap: 8px; } .sort-select, .view-toggle, .toolbar-sep { display: none; } .nav__pill { display: none; } .nav__sep { display: none; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; } }
-
-</style>
-
-
-<!-- HUD overlay layers -->
-<div class="hud-grid" aria-hidden="true"></div>
-<div class="hud-corners" aria-hidden="true"></div>
-
-
-
-<!-- ══════════════════════════════════ LAYOUT ══════════════════════════════════ -->
-<div class="layout">
-
-  <!-- ██ LEFT PANEL ██ -->
-  <aside class="left-panel" aria-label="Overview and filters">
-
-    <div style="margin-bottom:20px;">
-      <div class="panel-label">Overview</div>
-      <div class="stat-grid">
-
-        <div class="stat-card">
-          <div class="stat-card__glow glow-cyan" aria-hidden="true"></div>
-          <div class="stat-card__icon ic-cyan" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
-          </div>
-          <div class="stat-card__val">{{ total_users }}</div>
-          <div class="stat-card__label">Users</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card__glow glow-violet" aria-hidden="true"></div>
-          <div class="stat-card__icon ic-violet" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-          </div>
-          <div class="stat-card__val">{{ total_services }}</div>
-          <div class="stat-card__label">Sources</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card__glow glow-emerald" aria-hidden="true"></div>
-          <div class="stat-card__icon ic-emerald" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </div>
-          <div class="stat-card__val">{{ total_images }}</div>
-          <div class="stat-card__label">Images</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card__glow glow-amber" aria-hidden="true"></div>
-          <div class="stat-card__icon ic-amber" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-          </div>
-          <div class="stat-card__val">{{ total_links }}</div>
-          <div class="stat-card__label">Links</div>
-        </div>
-
-      </div>
-
-      <div class="fetch-status" aria-label="Fetch status breakdown">
-        <div class="fetch-cell">
-          <span class="fetch-cell__val val--emerald" id="okCount">—</span>
-          <div class="fetch-cell__label">OK</div>
-        </div>
-        <div class="fetch-cell">
-          <span class="fetch-cell__val val--rose" id="errCount">—</span>
-          <div class="fetch-cell__label">Error</div>
-        </div>
-        <div class="fetch-cell">
-          <span class="fetch-cell__val val--amber" id="pendCount">—</span>
-          <div class="fetch-cell__label">Pending</div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="divider"></div>
-
+  <div class="engine-head">
     <div>
-      <div class="panel-label">Filter by type</div>
-      <div class="filter-list" id="filterList">
-
-        <div class="filter-btn active" data-type="all" tabindex="0" role="button" aria-pressed="true">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></span>
-          <span class="fi-label">All posts</span>
-          <span class="fi-count" id="cnt-all">{{ feed_count }}</span>
-        </div>
-
-        <div class="filter-btn" data-type="education" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></span>
-          <span class="fi-label">Education</span>
-          <span class="fi-count" id="cnt-education">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="news" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg></span>
-          <span class="fi-label">News</span>
-          <span class="fi-count" id="cnt-news">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="product" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span>
-          <span class="fi-label">Product</span>
-          <span class="fi-count" id="cnt-product">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="business" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg></span>
-          <span class="fi-label">Business</span>
-          <span class="fi-count" id="cnt-business">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="person" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg></span>
-          <span class="fi-label">Person</span>
-          <span class="fi-count" id="cnt-person">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="location" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-          <span class="fi-label">Location</span>
-          <span class="fi-count" id="cnt-location">0</span>
-        </div>
-
-        <div class="filter-btn" data-type="api" tabindex="0" role="button" aria-pressed="false">
-          <span class="fi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-          <span class="fi-label">API</span>
-          <span class="fi-count" id="cnt-api">0</span>
-        </div>
-
-      </div>
+      <h1><i class="fa-solid fa-microchip-ai"></i> Engine</h1>
+      <p class="engine-sub">Every publicly connected service across PIELAM, pulled into one live feed.</p>
     </div>
-
-  </aside>
-
-
-  <!-- ██ FEED ██ -->
-  <main class="feed" id="feedMain" aria-label="Global feed">
-
-    
-
-    <div class="post-list" id="postList">
-
-    {% for post in feed %}
-    <article
-      class="post"
-      data-type="{{ post.svc_type }}"
-      data-fetch="{{ post.fetch_status }}"
-      data-stale="{% if not post.last_fetch %}true{% else %}false{% endif %}"
-      data-posted="{{ post.posted_at|date:'c' }}"
-      data-images="{{ post.images_count }}"
-      data-links="{{ post.links_count }}"
-      data-modal-payload='{
-        "title": "{{ post.og_title|default:post.svc_name|escapejs }}",
-        "images": [{% for img in post.images %}{% if img.url %}"{{ img.url|escapejs }}"{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}],
-        "links": [{% for lnk in post.links %}{% if lnk.href %}{"text": "{{ lnk.text|default:lnk.href|escapejs }}", "host": "{{ lnk.href|escapejs }}"}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}],
-        "text": "{{ post.text|default:''|escapejs }}"
-      }'
-      aria-label="Post by {{ post.profile_name }}"
-    >
-
-      <div class="post__head">
-        <div class="post__ava-wrap">
-          <a href="{{ post.profile_url }}" aria-label="View {{ post.profile_name }}'s profile">
-            <img src="{{ post.profile_photo }}" alt="{{ post.profile_name }}" class="post__ava" loading="lazy" />
-          </a>
-          {% if post.profile_verified %}
-          <div class="post__verified-badge" title="Verified" aria-label="Verified">
-            <svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          {% endif %}
-        </div>
-
-        <div class="post__user">
-          <div class="post__name-row">
-            <span class="post__name"><a href="{{ post.profile_url }}">{{ post.profile_name }}</a></span>
-          </div>
-          <div class="post__meta-row">
-            <span class="post__role-inline">{{ post.user_role }}</span>
-            <span aria-hidden="true">·</span>
-            {% if post.profile_location %}
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span>{{ post.profile_location }}</span>
-              <span aria-hidden="true">·</span>
-            {% endif %}
-            <time datetime="{{ post.posted_at|date:'c' }}">{{ post.posted_at|timesince }} ago</time>
-          </div>
-        </div>
-
-        <span class="post__type-chip ptype--{{ post.svc_type }}">{{ post.svc_type }}</span>
-      </div>
-
-      <a href="{{ post.svc_url }}" target="_blank" rel="noopener noreferrer" class="post__og" aria-label="Open {{ post.og_title|default:post.svc_name }} in new tab">
-        <div class="post__og-img-wrap">
-          {% if post.og_thumbnail %}
-            <img src="{{ post.og_thumbnail }}" alt="{{ post.og_title|default:post.svc_name }}" class="post__og-img" loading="lazy" />
-          {% else %}
-            <div class="post__og-fallback" aria-hidden="true">
-              <div class="post__og-fallback-letters">{{ post.svc_name|slice:":2"|upper }}</div>
-              <div class="post__og-fallback-url">{{ post.svc_url|truncatechars:38 }}</div>
-            </div>
-          {% endif %}
-          <span class="og-status-pill og-status-pill--{{ post.fetch_status }}" aria-label="Status: {{ post.fetch_status }}">{{ post.fetch_status }}</span>
-        </div>
-        <div class="post__og-meta">
-          <div class="post__og-text">
-            <div class="post__og-title">{{ post.og_title|default:post.svc_name }}</div>
-            <div class="post__og-url">{{ post.svc_url|truncatechars:52 }}</div>
-          </div>
-          <svg class="og-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17L17 7M7 7h10v10"/></svg>
-        </div>
-      </a>
-
-      {% if post.og_description %}
-      <div class="post__desc-wrap">
-        <p class="post__desc">{{ post.og_description }}</p>
-      </div>
-      {% endif %}
-
-      {% if post.images %}
-      <div class="post__images">
-        <div class="post__img-strip" role="list" aria-label="{{ post.images_count }} image{{ post.images_count|pluralize }}">
-          {% for img in post.images|slice:":7" %}
-            {% if img.url %}
-            <img role="listitem" src="{{ img.url }}" alt="{{ img.alt|default:'Extracted image' }}" class="post__thumb" loading="lazy" data-lb="{{ img.url }}" tabindex="0" />
-            {% endif %}
-          {% endfor %}
-          {% if post.images_count > 7 %}
-          <button type="button" class="post__thumb-more" aria-label="{{ post.images_count|add:'-7' }} more images" onclick="openPostModal(this, 'images')">
-            +{{ post.images_count|add:"-7" }}
-          </button>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-
-      {% if post.links %}
-      <div class="post__links" aria-label="Extracted links">
-        {% for lnk in post.links|slice:":2" %}{% if lnk.href %}
-        <a href="{{ lnk.href }}" target="_blank" rel="noopener noreferrer" class="post__link">
-          <span class="post__link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
-          <span class="post__link-body">
-            <span class="post__link-text">{{ lnk.text|default:lnk.href|truncatechars:58 }}</span>
-            <span class="post__link-host">{{ lnk.href|truncatechars:32 }}</span>
-          </span>
-        </a>
-        {% endif %}{% endfor %}
-      </div>
-      {% endif %}
-
-      {% if post.has_text %}
-      <div class="post__text-row">
-        <div class="post__text-card">
-          <p class="post__text-body">{{ post.text|truncatechars:220 }}</p>
-          <button type="button" class="post__text-expand" onclick="openPostModal(this, 'text')">
-            Read full text
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
-      </div>
-      {% endif %}
-
-      <div class="post__foot">
-        {% if post.images_count %}
-        <button type="button" class="foot-tag" data-clickable="true" onclick="openPostModal(this, 'images')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          {{ post.images_count }} img
-        </button>
-        {% endif %}
-        {% if post.links_count %}
-        <button type="button" class="foot-tag" data-clickable="true" onclick="openPostModal(this, 'links')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-          {{ post.links_count }} lnk
-        </button>
-        {% endif %}
-        {% if post.has_text %}
-        <button type="button" class="foot-tag" data-clickable="true" onclick="openPostModal(this, 'text')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-          txt
-        </button>
-        {% endif %}
-        {% if post.og_site_name %}<span class="foot-tag foot-tag--static mono" style="font-size:8.5px;letter-spacing:.05em;">{{ post.og_site_name }}</span>{% endif %}
-
-        <div class="post__action-group">
-          <button class="post-action" onclick="copyLink('{{ post.svc_url }}')" title="Copy link" aria-label="Copy link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          </button>
-          <a href="{{ post.svc_url }}" target="_blank" rel="noopener noreferrer" class="post-action" title="Open source" aria-label="Open source">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
-        </div>
-      </div>
-
-    </article>
-    {% empty %}
-    <div class="empty" aria-live="polite">
-      <div class="empty__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-      </div>
-      <div class="empty__title">No nodes connected</div>
-      <p class="empty__body">// Awaiting source connections. Feed will populate on first sync.</p>
-    </div>
-    {% endfor %}
-
-    </div>
-  </main>
-
-
-  <!-- ██ RIGHT PANEL ██ -->
-  <aside class="right-panel" aria-label="Contributors and analytics">
-
-    <div style="margin-bottom:20px;">
-      <div class="panel-label">Top contributors</div>
-      {% regroup feed by user_id as user_groups %}
-      {% for group in user_groups|slice:":10" %}
-      {% with post=group.list.0 %}
-      <a href="{{ post.profile_url }}" class="contributor" aria-label="{{ post.profile_name }}, {{ group.list|length }} source{{ group.list|length|pluralize }}">
-        <img src="{{ post.profile_photo }}" alt="{{ post.profile_name }}" class="contributor__ava" loading="lazy" />
-        <div class="contributor__info">
-          <div class="contributor__name">{{ post.profile_name }}</div>
-          <div class="contributor__sub">{{ group.list|length }} node{{ group.list|length|pluralize }}</div>
-        </div>
-        <span class="contributor__n">{{ group.list|length }}</span>
-      </a>
-      {% endwith %}
-      {% empty %}
-      <p style="font-size:10px;color:var(--t3);padding:8px 0;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">// No nodes yet.</p>
-      {% endfor %}
-    </div>
-
-    <div class="divider"></div>
-
-    <div style="margin-bottom:20px;">
-      <div class="panel-label">System stats</div>
-      <div class="mini-stat"><span class="mini-stat__label">avg_img/node</span><span class="mini-stat__val" id="avgImg">—</span></div>
-      <div class="mini-stat"><span class="mini-stat__label">avg_lnk/node</span><span class="mini-stat__val" id="avgLnk">—</span></div>
-      <div class="mini-stat"><span class="mini-stat__label">nodes_with_txt</span><span class="mini-stat__val" id="withTxt">—</span></div>
-      <div class="mini-stat"><span class="mini-stat__label">total_nodes</span><span class="mini-stat__val">{{ feed_count }}</span></div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div>
-      <div class="panel-label">Type matrix</div>
-      <div class="breakdown-list" id="breakdownList" aria-label="Post type breakdown"></div>
-    </div>
-
-  </aside>
-
-</div>
-
-<!-- Data ticker -->
-<div class="data-ticker" aria-hidden="true">
-  <div class="data-ticker__inner" id="tickerInner">
-    <!-- populated by JS -->
+    <span class="engine-live"><span class="dot"></span> <span id="live-count">{{ feed_count }}</span> loaded</span>
   </div>
-</div>
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
-  <div class="lightbox__close" id="lbClose" tabindex="0" role="button" aria-label="Close">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <div class="engine-legend">
+    <span class="legend-label"><i class="fa-solid fa-wave-square"></i> Signal</span>
+    <span class="legend-item"><span class="legend-bar image"></span> Photos &amp; Links</span>
+    <span class="legend-item"><span class="legend-bar video"></span> Videos</span>
+    <span class="legend-hint">tap a photo to open its source link · tap "+N" to see everything</span>
   </div>
-  <img id="lbImg" src="" alt="" class="lightbox__img" />
-</div>
 
-<!-- Post details modal -->
-<div class="modal-overlay" id="postModalOverlay" role="dialog" aria-modal="true" aria-label="Post details">
-  <div class="modal">
-    <div class="modal__head">
-      <span class="modal__title" id="postModalTitle">Post details</span>
-      <div class="modal__close" id="postModalClose" tabindex="0" role="button" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>
-    </div>
-    <div class="modal__tabs">
-      <button class="modal__tab" data-tab="images" onclick="switchPostModalTab('images')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Images
-      </button>
-      <button class="modal__tab" data-tab="links" onclick="switchPostModalTab('links')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        Links
-      </button>
-      <button class="modal__tab" data-tab="text" onclick="switchPostModalTab('text')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg>
-        Text
-      </button>
-    </div>
-    <div class="modal__body">
-      <div class="modal__panel" data-panel="images"><div class="modal-img-grid" id="postModalImages"></div></div>
-      <div class="modal__panel" data-panel="links"><div id="postModalLinks"></div></div>
-      <div class="modal__panel" data-panel="text"><p class="modal-text-full" id="postModalText"></p></div>
+  <div class="engine-tabs" role="tablist">
+    <button class="engine-tab active" data-tab="all" role="tab" aria-selected="true">
+      <i class="fa-solid fa-layer-group"></i> All <span class="tab-count" id="count-all">0</span>
+    </button>
+    <button class="engine-tab" data-tab="image" role="tab" aria-selected="false">
+      <i class="fa-solid fa-image"></i> Photos <span class="tab-count" id="count-image">0</span>
+    </button>
+    <button class="engine-tab" data-tab="video" role="tab" aria-selected="false">
+      <i class="fa-solid fa-video"></i> Videos <span class="tab-count" id="count-video">0</span>
+    </button>
+    <span class="tab-indicator" id="tab-indicator"></span>
+  </div>
+
+  <div class="engine-filters" id="type-filters"></div>
+
+  <div id="panel-all" class="engine-panel active">
+    <div class="post-stream" id="stream-all"></div>
+  </div>
+
+  <div id="panel-image" class="engine-panel">
+    <div class="photo-masonry" id="grid-image"></div>
+  </div>
+
+  <div id="panel-video" class="engine-panel">
+    <div class="video-grid" id="grid-video"></div>
+  </div>
+
+  <div id="empty-state" class="engine-empty" hidden>
+    <i class="fa-solid fa-satellite-dish"></i>
+    <p id="empty-text">Nothing here yet. Public posts show up as people connect services.</p>
+  </div>
+
+  <div class="engine-sentinel" id="sentinel">
+    <span class="spinner" id="sentinel-spinner" hidden></span>
+    <span id="sentinel-text"></span>
+  </div>
+
+  <div class="gallery-modal" id="gallery-modal">
+    <button class="gallery-close" id="gallery-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    <div class="gallery-body">
+      <div class="gallery-grid" id="gallery-grid"></div>
     </div>
   </div>
+
 </div>
 
-<!-- Toasts -->
-<div class="toast-shelf" id="toastShelf" aria-live="polite" aria-atomic="false"></div>
+{{ feed|json_script:"engine-initial-feed" }}
+<script id="engine-initial-state" type="application/json">
+  {"hasMore": {{ has_more|yesno:"true,false" }}, "nextCursor": {% if next_cursor %}"{{ next_cursor|escapejs }}"{% else %}null{% endif %}, "feedApiUrl": "{{ feed_api_url|escapejs }}"}
+</script>
+{% endblock %}
 
-
+{% block extra_js %}
 <script>
-(function(){
-  'use strict';
+(function () {
+  const initialFeed  = JSON.parse(document.getElementById('engine-initial-feed').textContent);
+  const initialState = JSON.parse(document.getElementById('engine-initial-state').textContent);
 
-  /* ═══════════════════════════════════════════════════
-     DATA TICKER
-  ═══════════════════════════════════════════════════ */
-  const tickerData = [
-    ['NODE_COUNT', '{{ feed_count }}'],
-    ['SYNC_STATUS', 'ACTIVE'],
-    ['RELAY', 'GLOBAL'],
-    ['PROTOCOL', 'MEGAMIND/2.7'],
-    ['ENCRYPTION', 'AES-256-GCM'],
-    ['UPTIME', '99.98%'],
-    ['LATENCY', '12ms'],
-    ['BANDWIDTH', '1.2MB/s'],
-    ['INTEGRITY', 'VERIFIED'],
-    ['SESSION', 'AUTHENTICATED'],
-  ];
-  const ticker = document.getElementById('tickerInner');
-  if(ticker){
-    const items = [...tickerData, ...tickerData];
-    ticker.innerHTML = items.map(([k,v]) =>
-      `<span class="data-ticker__item">${k}<span class="sep">::</span><span class="val">${v}</span></span>`
-    ).join('');
+  const SERVICE_ICONS = {
+    education:    'fa-graduation-cap',
+    product:      'fa-box',
+    brand:        'fa-tag',
+    category:     'fa-shapes',
+    subcategory:  'fa-diagram-project',
+    news:         'fa-newspaper',
+    location:     'fa-location-dot',
+    api:          'fa-plug',
+    person:       'fa-user',
+    business:     'fa-building',
+    entertainment:'fa-clapperboard',
+  };
+  const SERVICE_LABELS = {
+    education: 'Education', product: 'Product', brand: 'Brand', category: 'Category',
+    subcategory: 'Subcategory', news: 'News', location: 'Location', api: 'API',
+    person: 'Person', business: 'Business', entertainment: 'Entertainment',
+  };
+
+  const state = {
+    posts:        [],
+    hasMore:      initialState.hasMore,
+    nextCursor:   initialState.nextCursor,
+    apiUrl:       initialState.feedApiUrl,
+    loading:      false,
+    errored:      false,
+    activeTab:    'all',
+    activeTypes:  new Set(),   // service_type filter, empty = show all
+    itemsByPostId: new Map(),  // post.id -> { post, items } — full (unsliced) media list, for the gallery
+  };
+
+  const els = {
+    tabs:        document.querySelectorAll('.engine-tab'),
+    tabIndicator:document.getElementById('tab-indicator'),
+    panels:      document.querySelectorAll('.engine-panel'),
+    filters:     document.getElementById('type-filters'),
+    streamAll:   document.getElementById('stream-all'),
+    gridImage:   document.getElementById('grid-image'),
+    gridVideo:   document.getElementById('grid-video'),
+    empty:       document.getElementById('empty-state'),
+    emptyText:   document.getElementById('empty-text'),
+    sentinel:    document.getElementById('sentinel'),
+    spinner:     document.getElementById('sentinel-spinner'),
+    sentinelText:document.getElementById('sentinel-text'),
+    liveCount:   document.getElementById('live-count'),
+    galleryModal:document.getElementById('gallery-modal'),
+    galleryGrid: document.getElementById('gallery-grid'),
+    galleryClose:document.getElementById('gallery-close'),
+    counts: {
+      all:   document.getElementById('count-all'),
+      image: document.getElementById('count-image'),
+      video: document.getElementById('count-video'),
+    },
+  };
+
+  const esc = (s) => (s || '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  function domainOf(url) {
+    try { return new URL(url).hostname.replace('www.', ''); } catch (e) { return ''; }
   }
 
-  /* ═══════════════════════════════════════════════════
-     POST TALLYING
-  ═══════════════════════════════════════════════════ */
-  const postList    = document.getElementById('postList');
-  const searchInput = document.getElementById('searchInput');
-  const sortSelect  = document.getElementById('sortSelect');
-  const feedMain    = document.getElementById('feedMain');
-  const visCount    = document.getElementById('visibleCount');
-  const viewList    = document.getElementById('viewList');
-  const viewGrid    = document.getElementById('viewGrid');
-  const refreshBtn  = document.getElementById('refreshBtn');
-  const lightbox    = document.getElementById('lightbox');
-  const lbImg       = document.getElementById('lbImg');
-  const lbClose     = document.getElementById('lbClose');
-  const toastShelf  = document.getElementById('toastShelf');
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
 
-  if(!postList) return;
-  const posts = Array.from(postList.querySelectorAll('.post'));
+  function attribHTML(post) {
+    const a = post.attribution;
+    return `
+      <a class="engine-attrib attrib-link" href="${esc(a.url)}">
+        <img class="avatar" src="${esc(a.avatar)}" alt="" loading="lazy">
+        <span class="who">
+          <span class="name-row">${esc(a.name)}${a.verified ? ' <i class="fa-solid fa-circle-check verified"></i>' : ''}</span>
+          <span class="meta-row">${esc(post.source.og_site_name || post.source.service_name)} · ${timeAgo(post.posted_at)}</span>
+        </span>
+      </a>`;
+  }
 
-  let ok=0, err=0, pend=0, totalImg=0, totalLnk=0, txtC=0;
-  const typeCnt = {};
+  function typeBadge(post) {
+    const t = post.source.service_type;
+    const icon = SERVICE_ICONS[t] || 'fa-circle-nodes';
+    const label = SERVICE_LABELS[t] || t || 'Service';
+    return `<span class="type-badge"><i class="fa-solid ${icon}"></i>${esc(label)}</span>`;
+  }
 
-  posts.forEach(p => {
-    const fs=p.dataset.fetch, t=p.dataset.type;
-    if(fs==='success') ok++; else if(fs==='error') err++; else pend++;
-    const imgs=parseInt(p.dataset.images)||0, lnks=parseInt(p.dataset.links)||0;
-    totalImg+=imgs; totalLnk+=lnks;
-    if(p.querySelector('.post__text-card')) txtC++;
-    typeCnt[t]=(typeCnt[t]||0)+1;
+  function signalBars(post) {
+    const vals = [post.images_count || 0, post.videos_count || 0];
+    const max = Math.max(1, ...vals);
+    const cls = ['image', 'video'];
+    return `<span class="signal-bars" title="${vals[0]} photos · ${vals[1]} videos">
+      ${vals.map((v, i) => {
+        const h = v ? Math.max(4, Math.round((v / max) * 14)) : 3;
+        return `<i class="${v ? 'on ' + cls[i] : ''}" style="height:${h}px"></i>`;
+      }).join('')}
+    </span>`;
+  }
+
+  // ── Image link resolver ──────────────────────────────────────
+  // Every image (real image or an injected link tile) opens its own
+  // source link on click. img.href comes from the scraper (the <a>
+  // an image was found wrapped in) or, for injected links, the
+  // link's own target. Falls back to the post's service_url only
+  // when the image genuinely has no link of its own.
+  function imageTarget(post, img) {
+    return img.href || post.source.service_url;
+  }
+
+  // ── Media mosaic (post card) ────────────────────────────────
+
+  // A "video" entry is a normalized video_info dict:
+  // { platform, embed_url, watch_url, thumbnail, type: 'video'|'iframe', mime_type? }
+  // type 'video'  → direct file, use a native <video controls>
+  // type 'iframe' → YouTube/Vimeo/etc, use the platform's own embed player
+  // Either way: zero JS touches playback afterward, and clicks never
+  // bubble up to a card-level handler.
+  //
+  // An "image" entry is { url, alt, href } — this also covers links
+  // folded in server-side (using og_thumbnail as the visual and the
+  // link's own href as the click target). Every image tile is a plain
+  // <a href> — clicking it navigates straight to that link, no lightbox.
+  function videoTagHTML(v, opts) {
+    opts = opts || {};
+    const style = opts.style || '';
+    if (v.type === 'video') {
+      const poster = v.thumbnail || opts.fallbackPoster || '';
+      return `<video controls preload="metadata" style="${style}"
+                ${poster ? `poster="${esc(poster)}"` : ''}
+                onclick="event.stopPropagation()">
+                <source src="${esc(v.embed_url)}" type="${esc(v.mime_type || 'video/mp4')}">
+                Your browser can't play this video. <a href="${esc(v.watch_url)}" target="_blank" rel="noopener">Watch it here</a> instead.
+              </video>`;
+    }
+    return `<iframe src="${esc(v.embed_url)}" style="${style}" title="video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen loading="lazy" onclick="event.stopPropagation()"></iframe>`;
+  }
+
+  // Full (unsliced) media list for one post — the mosaic only shows the
+  // first 4; this is the complete set the "+N" overlay opens into the
+  // gallery. Computed once per render and cached in state.itemsByPostId
+  // so the gallery trigger can look it up by post.id without re-deriving it.
+  function buildMosaicItems(post) {
+    return [
+      ...post.videos.map(v => ({ kind: 'video', ...v })),
+      ...post.images.map(im => ({ kind: 'image', url: im.url, alt: im.alt, href: im.href })),
+    ];
+  }
+
+  function mosaicHTML(post) {
+    const items = buildMosaicItems(post);
+    state.itemsByPostId.set(String(post.id), { post, items });
+
+    if (!items.length) return '';
+
+    const shown = items.slice(0, 4);
+    const extra = items.length - shown.length;
+
+    const cells = shown.map((it, i) => {
+      const isLast = i === shown.length - 1 && extra > 0;
+      const classes = ['cell', it.kind === 'video' ? 'is-video' : ''];
+      if (isLast) classes.push('more-overlay');
+      const dataMore = isLast ? ` data-more="+${extra}"` : '';
+
+      let media;
+      if (isLast) {
+        // Overflow cell: opens the full gallery instead of linking
+        // through to just this one hidden item.
+        const thumb = it.kind === 'video' ? (it.thumbnail || post.source.og_thumbnail || '') : it.url;
+        media = `<button type="button" class="cell-gallery-btn"
+                    data-post-id="${esc(String(post.id))}"
+                    aria-label="View all ${items.length} items for this post"
+                    style="background-image:url('${esc(thumb)}')"></button>`;
+      } else if (it.kind === 'video') {
+        media = videoTagHTML(it, { style: 'width:100%;height:100%;object-fit:cover;' });
+      } else {
+        media = `<a class="media-link" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                    <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy">
+                  </a>`;
+      }
+      return `<div class="${classes.join(' ')}"${dataMore}>${media}</div>`;
+    }).join('');
+
+    const variant = shown.length === 1 ? 'm-solo' : '';
+    return `<div class="post-media ${variant}" data-count="${shown.length}">${cells}</div>`;
+  }
+
+  // ── Gallery modal ────────────────────────────────────────────
+
+  function openGallery(postId) {
+    const entry = state.itemsByPostId.get(postId);
+    if (!entry) return;
+    const { post, items } = entry;
+
+    els.galleryGrid.innerHTML = items.map((it) => {
+      if (it.kind === 'video') {
+        return `<div class="gallery-cell">${videoTagHTML(it, { style: 'width:100%;height:100%;object-fit:cover;', fallbackPoster: post.source.og_thumbnail })}</div>`;
+      }
+      return `<a class="gallery-cell" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener">
+                <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy">
+              </a>`;
+    }).join('');
+
+    els.galleryModal.classList.add('open');
+  }
+
+  function closeGallery() {
+    els.galleryModal.classList.remove('open');
+    els.galleryGrid.innerHTML = '';
+  }
+
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('.cell-gallery-btn');
+    if (trigger) {
+      e.preventDefault();
+      openGallery(trigger.dataset.postId);
+    }
   });
+  els.galleryClose.addEventListener('click', closeGallery);
+  els.galleryModal.addEventListener('click', (e) => { if (e.target === els.galleryModal) closeGallery(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGallery(); });
 
-  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
-  set('okCount',ok); set('errCount',err); set('pendCount',pend);
-  Object.entries(typeCnt).forEach(([t,c])=>set('cnt-'+t,c));
+  // ── Renderers ──────────────────────────────────────────────
 
-  const n=posts.length||1;
-  set('avgImg',(totalImg/n).toFixed(1));
-  set('avgLnk',(totalLnk/n).toFixed(1));
-  set('withTxt',txtC);
-
-  /* breakdown */
-  const bd=document.getElementById('breakdownList');
-  if(bd){
-    const sorted=Object.entries(typeCnt).sort((a,b)=>b[1]-a[1]);
-    const max=sorted[0]?sorted[0][1]:1;
-    bd.innerHTML=sorted.map(([t,c])=>`
-      <div class="breakdown-item">
-        <div class="breakdown-item__head">
-          <span class="breakdown-item__label">${t}</span>
-          <span class="breakdown-item__val">${c}</span>
+  function renderPostCard(post) {
+    const domain = domainOf(post.source.service_url) || post.source.service_name;
+    return `
+      <article class="post-card enter" data-service-type="${esc(post.source.service_type)}">
+        <div class="post-card-head">
+          ${attribHTML(post)}
+          <div class="post-card-head-right">
+            ${signalBars(post)}
+            ${typeBadge(post)}
+          </div>
         </div>
-        <div class="breakdown-track">
-          <div class="breakdown-fill" style="width:${(c/max*100).toFixed(1)}%"></div>
+        <div class="post-card-body">
+          <p class="post-card-title">${esc(post.source.og_title)}</p>
+          ${post.source.og_description ? `<p class="post-card-desc">${esc(post.source.og_description)}</p>` : ''}
+          ${mosaicHTML(post)}
+          <div class="post-card-counts">
+            <span class="counts-left">
+              ${post.images_count ? `<span><i class="fa-solid fa-image image"></i>${post.images_count}</span>` : ''}
+              ${post.videos_count ? `<span><i class="fa-solid fa-video video"></i>${post.videos_count}</span>` : ''}
+            </span>
+            <a class="visit-source" href="${esc(post.source.service_url)}" target="_blank" rel="noopener">${esc(domain)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+          </div>
         </div>
-      </div>`).join('');
+      </article>`;
   }
 
-  /* ═══════════════════════════════════════════════════
-     FILTERING
-  ═══════════════════════════════════════════════════ */
-  let activeType='all', searchQ='';
+  function renderPhotoTile(post, img) {
+    return `
+      <a class="photo-tile enter" href="${esc(imageTarget(post, img))}" target="_blank" rel="noopener">
+        <img src="${esc(img.url)}" alt="${esc(img.alt || '')}" loading="lazy">
+        <div class="photo-overlay">${attribHTML(post)}</div>
+      </a>`;
+  }
 
-  function applyFilters(){
-    let vis=0;
-    posts.forEach(p=>{
-      const mt = activeType==='all' || p.dataset.type===activeType;
-      const ms = !searchQ || p.textContent.toLowerCase().includes(searchQ);
-      const show = mt && ms;
-      p.style.display = show ? '' : 'none';
-      if(show) vis++;
+  function renderVideoCard(post, vid) {
+    return `
+      <div class="video-card enter">
+        <div class="video-wrap ${vid.type === 'iframe' ? 'has-iframe' : ''}">
+          ${videoTagHTML(vid, { style: 'width:100%;height:170px;object-fit:cover;display:block;', fallbackPoster: post.source.og_thumbnail })}
+        </div>
+        <div class="video-card-foot">${attribHTML(post)}</div>
+      </div>`;
+  }
+
+  // ── Filtering + full render ──────────────────────────────────
+
+  function filteredPosts() {
+    if (!state.activeTypes.size) return state.posts;
+    return state.posts.filter(p => state.activeTypes.has(p.source.service_type));
+  }
+
+  function renderAll() {
+    const posts = filteredPosts();
+    const frags = { all: [], image: [], video: [] };
+
+    posts.forEach((post) => {
+      frags.all.push(renderPostCard(post)); // also populates state.itemsByPostId via mosaicHTML
+      post.images.forEach((img) => frags.image.push(renderPhotoTile(post, img)));
+      post.videos.forEach((vid) => frags.video.push(renderVideoCard(post, vid)));
     });
-    visCount.textContent=vis;
+
+    els.streamAll.innerHTML = frags.all.join('');
+    els.gridImage.innerHTML = frags.image.join('');
+    els.gridVideo.innerHTML = frags.video.join('');
+
+    els.counts.all.textContent   = els.streamAll.children.length;
+    els.counts.image.textContent = els.gridImage.children.length;
+    els.counts.video.textContent = els.gridVideo.children.length;
+    els.liveCount.textContent    = state.posts.length;
+
+    updateEmptyState();
   }
 
-  document.querySelectorAll('.filter-btn[data-type]').forEach(btn=>{
-    const go=()=>{
-      document.querySelectorAll('.filter-btn').forEach(b=>{
-        b.classList.remove('active'); b.setAttribute('aria-pressed','false');
-      });
-      btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
-      activeType=btn.dataset.type; applyFilters();
+  function updateEmptyState() {
+    const counts = {
+      all:   els.streamAll.children.length,
+      image: els.gridImage.children.length,
+      video: els.gridVideo.children.length,
     };
-    btn.addEventListener('click',go);
-    btn.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
-  });
-
-  let st;
-  searchInput && searchInput.addEventListener('input',()=>{
-    clearTimeout(st);
-    st=setTimeout(()=>{ searchQ=searchInput.value.trim().toLowerCase(); applyFilters(); },200);
-  });
-
-  sortSelect && sortSelect.addEventListener('change',()=>{
-    const v=sortSelect.value, arr=[...posts];
-    if(v==='newest') arr.sort((a,b)=>new Date(b.dataset.posted)-new Date(a.dataset.posted));
-    else if(v==='oldest') arr.sort((a,b)=>new Date(a.dataset.posted)-new Date(b.dataset.posted));
-    else if(v==='images') arr.sort((a,b)=>parseInt(b.dataset.images)-parseInt(a.dataset.images));
-    else if(v==='links')  arr.sort((a,b)=>parseInt(b.dataset.links)-parseInt(a.dataset.links));
-    arr.forEach(p=>postList.appendChild(p));
-  });
-
-  viewList && viewList.addEventListener('click',()=>{
-    feedMain.classList.remove('view-grid');
-    viewList.classList.add('active'); viewGrid.classList.remove('active');
-    viewList.setAttribute('aria-pressed','true'); viewGrid.setAttribute('aria-pressed','false');
-  });
-  viewGrid && viewGrid.addEventListener('click',()=>{
-    feedMain.classList.add('view-grid');
-    viewGrid.classList.add('active'); viewList.classList.remove('active');
-    viewGrid.setAttribute('aria-pressed','true'); viewList.setAttribute('aria-pressed','false');
-  });
-
-  /* ═══════════════════════════════════════════════════
-     LIGHTBOX
-  ═══════════════════════════════════════════════════ */
-  function openLB(url,alt){
-    lbImg.src=url; lbImg.alt=alt||'';
-    lightbox.classList.add('open');
-    document.body.style.overflow='hidden'; lbClose.focus();
-  }
-  function closeLB(){
-    lightbox.classList.remove('open'); lbImg.src=''; document.body.style.overflow='';
-  }
-  document.querySelectorAll('[data-lb]').forEach(el=>{
-    el.addEventListener('click',()=>openLB(el.dataset.lb,el.alt));
-    el.addEventListener('keydown',e=>{ if(e.key==='Enter') openLB(el.dataset.lb,el.alt); });
-  });
-  lbClose && lbClose.addEventListener('click',closeLB);
-  lightbox && lightbox.addEventListener('click',e=>{ if(e.target===lightbox) closeLB(); });
-
-  /* ═══════════════════════════════════════════════════
-     TOAST
-  ═══════════════════════════════════════════════════ */
-  function toast(msg, dotColor){
-    const t=document.createElement('div');
-    t.className='toast';
-    t.innerHTML=`<span class="toast__dot" style="background:${dotColor||'var(--accent-gold)'}"></span>${msg}`;
-    toastShelf.appendChild(t);
-    setTimeout(()=>t.remove(),3200);
+    const isEmpty = counts[state.activeTab] === 0 && !state.loading;
+    els.empty.hidden = !isEmpty;
+    if (isEmpty) {
+      const labels = { all: 'posts', image: 'photos', video: 'videos' };
+      const scoped = state.activeTypes.size ? ' matching this filter' : '';
+      els.emptyText.textContent = state.posts.length
+        ? `No ${labels[state.activeTab]}${scoped}. Try another filter.`
+        : `Nothing here yet. Public posts show up as people connect services.`;
+    }
   }
 
-  window.copyLink=url=>{
-    navigator.clipboard.writeText(url)
-      .then(()=>toast('Link copied to clipboard','var(--success-emerald)'))
-      .catch(()=>toast('Copy failed','var(--danger-crimson)'));
-  };
+  // ── Skeletons ──────────────────────────────────────────────
 
-  refreshBtn && refreshBtn.addEventListener('click',()=>{
-    refreshBtn.style.opacity='.5';
-    toast('Syncing nodes…','var(--primary-blue)');
-    setTimeout(()=>location.reload(),500);
-  });
-
-  document.addEventListener('keydown',e=>{
-    if(e.key==='/'&&document.activeElement!==searchInput){ e.preventDefault(); searchInput && searchInput.focus(); }
-    if(e.key==='Escape'){ closeLB(); closePostModal(); }
-  });
-
-  /* ═══════════════════════════════════════════════════
-     POST DETAILS MODAL
-  ═══════════════════════════════════════════════════ */
-  const postModalOverlay = document.getElementById('postModalOverlay');
-  const postModalClose   = document.getElementById('postModalClose');
-
-  function escapeHtml(str){
-    const div=document.createElement('div'); div.textContent=str||''; return div.innerHTML;
+  function skeletonCard() {
+    return `
+      <div class="skel-card">
+        <div class="skel-head">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-line w40"></div>
+            <div class="skel-line w70"></div>
+          </div>
+        </div>
+        <div class="skel-line w90"></div>
+        <div class="skel-block"></div>
+      </div>`;
   }
 
-  window.openPostModal=function(triggerEl,tab){
-    const postEl=triggerEl.closest('.post'); if(!postEl) return;
-    let payload;
-    try { payload=JSON.parse(postEl.dataset.modalPayload); }
-    catch(e){ console.error('Bad modal payload',e); return; }
+  function showSkeletons(n) {
+    els.streamAll.insertAdjacentHTML('beforeend', Array(n).fill(skeletonCard()).join(''));
+  }
+  function clearSkeletons() {
+    els.streamAll.querySelectorAll('.skel-card').forEach(n => n.remove());
+  }
 
-    document.getElementById('postModalTitle').textContent=(payload.title||'Post details');
+  // ── Tabs ───────────────────────────────────────────────────
 
-    const imgGrid=document.getElementById('postModalImages');
-    imgGrid.innerHTML=(payload.images||[])
-      .map(url=>`<img src="${escapeHtml(url)}" alt="" loading="lazy" />`)
-      .join('')||'<p class="modal-empty">No images attached.</p>';
-    imgGrid.querySelectorAll('img').forEach(img=>{
-      img.addEventListener('click',()=>openLB(img.src,img.alt));
+  function positionIndicator(btn) {
+    els.tabIndicator.style.width = btn.offsetWidth + 'px';
+    els.tabIndicator.style.transform = `translateX(${btn.offsetLeft}px)`;
+  }
+
+  function setActiveTab(tab, btn) {
+    state.activeTab = tab;
+    els.tabs.forEach((b) => {
+      const active = b.dataset.tab === tab;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+    els.panels.forEach((panel) => panel.classList.toggle('active', panel.id === `panel-${tab}`));
+    positionIndicator(btn || document.querySelector(`.engine-tab[data-tab="${tab}"]`));
+    updateEmptyState();
+  }
 
-    const linkWrap=document.getElementById('postModalLinks');
-    linkWrap.innerHTML=(payload.links||[])
-      .map(lnk=>`
-        <a href="${escapeHtml(lnk.host)}" target="_blank" rel="noopener noreferrer" class="modal-link-row">
-          <span class="modal-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></span>
-          <span class="modal-link-info"><span class="t">${escapeHtml(lnk.text)}</span><span class="h">${escapeHtml(lnk.host)}</span></span>
-        </a>`)
-      .join('')||'<p class="modal-empty">No links extracted.</p>';
+  els.tabs.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab, btn)));
+  window.addEventListener('resize', () => positionIndicator(document.querySelector('.engine-tab.active')));
 
-    document.getElementById('postModalText').textContent=payload.text||'No text extracted for this node.';
-    postModalOverlay.classList.add('open');
-    document.body.style.overflow='hidden';
-    switchPostModalTab(tab||'images');
-    postModalClose.focus();
-  };
+  // ── Service-type filter chips ───────────────────────────────
 
-  window.closePostModal=function(){
-    postModalOverlay.classList.remove('open'); document.body.style.overflow='';
-  };
+  function buildFilterChips() {
+    const types = new Set(state.posts.map(p => p.source.service_type).filter(Boolean));
+    if (!types.size) { els.filters.hidden = true; return; }
+    els.filters.hidden = false;
+    els.filters.innerHTML = [...types].sort().map(t => `
+      <button class="filter-chip" data-type="${esc(t)}" type="button">
+        <i class="fa-solid ${SERVICE_ICONS[t] || 'fa-circle-nodes'}"></i>
+        ${esc(SERVICE_LABELS[t] || t)}
+        <i class="fa-solid fa-xmark fx-clear"></i>
+      </button>`).join('');
 
-  window.switchPostModalTab=function(tab){
-    document.querySelectorAll('#postModalOverlay .modal__tab').forEach(t=>{
-      t.classList.toggle('active',t.dataset.tab===tab);
+    els.filters.querySelectorAll('.filter-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.type;
+        if (state.activeTypes.has(t)) { state.activeTypes.delete(t); chip.classList.remove('active'); }
+        else { state.activeTypes.add(t); chip.classList.add('active'); }
+        renderAll();
+      });
     });
-    document.querySelectorAll('#postModalOverlay .modal__panel').forEach(p=>{
-      p.classList.toggle('active',p.dataset.panel===tab);
-    });
-  };
+  }
 
-  postModalClose && postModalClose.addEventListener('click',closePostModal);
-  postModalOverlay && postModalOverlay.addEventListener('click',e=>{ if(e.target===postModalOverlay) closePostModal(); });
+  // ── Video playback ────────────────────────────────────────────
+  // .video-card (Videos tab) has native `controls` — leave it alone
+  // entirely so click-to-play always works. We only mirror real
+  // play/pause events to toggle our decorative overlay, never force
+  // pause or seek ourselves (that was breaking manual playback).
+  document.addEventListener('play', (e) => {
+    e.target.closest('.video-wrap')?.classList.add('playing');
+  }, true);
+  document.addEventListener('pause', (e) => {
+    e.target.closest('.video-wrap')?.classList.remove('playing');
+  }, true);
 
+  // Mosaic thumbnails inside post cards use native `controls` too
+  // (see mosaicHTML) — no JS play/pause logic needed, same as the
+  // grid. Real play/pause events still drive the decorative overlay.
+
+  // ── Infinite scroll ──────────────────────────────────────────
+
+  async function loadMore() {
+    if (state.loading || !state.hasMore) return;
+    state.loading = true;
+    state.errored = false;
+    els.spinner.hidden = false;
+    els.sentinelText.textContent = 'Loading more…';
+    showSkeletons(3);
+
+    try {
+      const params = new URLSearchParams({ limit: '12' });
+      if (state.nextCursor) params.set('cursor', state.nextCursor);
+      const res = await fetch(`${state.apiUrl}?${params.toString()}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+
+      if (data.success) {
+        state.posts = state.posts.concat(data.results);
+        state.hasMore    = data.has_more;
+        state.nextCursor = data.next_cursor;
+        buildFilterChips();
+        renderAll();
+      } else {
+        state.hasMore = false;
+        state.errored = true;
+      }
+    } catch (err) {
+      console.error('Engine feed load failed', err);
+      state.errored = true;
+    } finally {
+      clearSkeletons();
+      state.loading = false;
+      els.spinner.hidden = true;
+      renderSentinelText();
+    }
+  }
+
+  function renderSentinelText() {
+    if (state.errored) {
+      els.sentinelText.innerHTML = `Couldn't load more posts. <button class="sentinel-retry" id="retry-btn" type="button">Retry</button>`;
+      document.getElementById('retry-btn')?.addEventListener('click', () => { state.hasMore = true; loadMore(); });
+      return;
+    }
+    els.sentinelText.textContent = state.hasMore ? '' : (state.posts.length ? "You've reached the end" : '');
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+  observer.observe(els.sentinel);
+
+  // ── Boot ───────────────────────────────────────────────────
+
+  state.posts = initialFeed;
+  buildFilterChips();
+  renderAll();
+  positionIndicator(document.querySelector('.engine-tab.active'));
+  renderSentinelText();
 })();
 </script>
-
-</body>
-</html>
+{% endblock %}

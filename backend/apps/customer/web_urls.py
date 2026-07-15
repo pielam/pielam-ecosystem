@@ -4,10 +4,15 @@ from apps.customer.views.signin import SignInView
 from apps.customer.views.profile import ProfileView
 from apps.customer.views.logout import LogoutView
 from apps.customer.views.profile_edit import EditProfileView
-from apps.customer.views.profile_settings import ProfileSettingsView
+from apps.customer.views.profile_managers import ProfileManagerView
 from apps.customer.views.forgot_password import ForgotPasswordView
 from apps.customer.views.public_profile import PublicProfileView, follow, unfollow
 from apps.customer.views.public_profile import WishlistToggleView
+
+from apps.customer.views.dashboard import (
+       ProfessionalDashboardView,
+       ProfessionalDashboardTemplateView,
+   )
 
 
 app_name = "customer"
@@ -25,7 +30,7 @@ urlpatterns = [
 
     path('profile/', ProfileView, name='profile'),  # <-- Add this line
     path("edit_profile/", EditProfileView, name="edit_profile"),
-    path("profile_settings/", ProfileSettingsView, name="profile_settings"),
+    path("profile_manager/", ProfileManagerView, name="profile_manager"),
 
     # user's profile visible to all user
     path('profile_view/<str:username>/', PublicProfileView, name='profile_view'),
@@ -34,5 +39,6 @@ urlpatterns = [
 
     path('wishlist/toggle/<uuid:product_id>/', WishlistToggleView, name='wishlist_toggle'),
 
-    
+    path("api/dashboard/", ProfessionalDashboardView.as_view(), name="dashboard-api"),
+    path("dashboard/", ProfessionalDashboardTemplateView.as_view(), name="dashboard"),
 ]

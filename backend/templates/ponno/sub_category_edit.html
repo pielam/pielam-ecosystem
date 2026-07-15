@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit {{ sub_category.sub_category_name }} — Dealer Panel{% endblock %}
+
+{% block content %}
+<style>
+  .sc-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  .sc-breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .sc-breadcrumb a { color: #6b7280; text-decoration: none; }
+  .sc-breadcrumb a:hover { text-decoration: underline; }
+  .sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+  .sc-header__eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; margin-bottom: 4px; }
+  .sc-header__title { font-size: 24px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 10px; }
+  .sc-status-pill { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+  .sc-status-pill.active { background: #dcfce7; color: #166534; }
+  .sc-status-pill.inactive { background: #fee2e2; color: #991b1b; }
+
+  .sc-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+  .sc-section__title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+  .sc-section__hint { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+
+  .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sc-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+  .sc-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .sc-field--full { grid-column: 1 / -1; }
+  .sc-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .sc-label .req { color: #dc2626; }
+  .sc-hint { font-size: 12px; color: #9ca3af; }
+
+  .sc-input, .sc-select, .sc-textarea {
+    border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 12px;
+    font-size: 14px; color: #111827; background: #fff; width: 100%;
+    font-family: inherit;
+  }
+  .sc-input:focus, .sc-select:focus, .sc-textarea:focus {
+    outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  }
+  .sc-textarea { resize: vertical; min-height: 80px; }
+
+  .sc-color-row { display: flex; align-items: center; gap: 10px; }
+  .sc-color-swatch {
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid #d1d5db;
+    padding: 0; cursor: pointer; flex-shrink: 0;
+  }
+
+  .sc-media-row { display: flex; align-items: center; gap: 14px; }
+  .sc-media-preview {
+    width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+    border: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;
+  }
+  .sc-media-preview--empty {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #9ca3af; text-align: center;
+  }
+
+  .sc-toggle-list { display: flex; flex-direction: column; gap: 12px; }
+  .sc-toggle-row { display: flex; align-items: center; gap: 10px; }
+  .sc-toggle-row input[type="checkbox"] { width: 18px; height: 18px; }
+
+  .sc-submit-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-top: 24px; flex-wrap: wrap;
+  }
+  .sc-submit-bar__actions { display: flex; gap: 10px; }
+  .sc-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 10px 20px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .sc-btn--primary { background: #4f46e5; color: #fff; }
+  .sc-btn--primary:hover { background: #4338ca; }
+  .sc-btn--ghost { background: #fff; border-color: #d1d5db; color: #374151; }
+  .sc-btn--ghost:hover { background: #f9fafb; }
+
+  @media (max-width: 640px) {
+    .sc-grid, .sc-grid--3 { grid-template-columns: 1fr; }
+    .sc-submit-bar { flex-direction: column; align-items: stretch; }
+    .sc-submit-bar__actions { flex-direction: column; }
+    .sc-btn { justify-content: center; }
+  }
+</style>
+
+<div class="sc-page">
+
+  <nav class="sc-breadcrumb">
+    <a href="{% url 'ponno:home' %}">Home</a> &raquo;
+    <a href="{% url 'ponno:subcategory_products' category_slug=sub_category.sub_category_slug %}">{{ sub_category.sub_category_name }}</a> &raquo;
+    <span>Edit</span>
+  </nav>
+
+  <div class="sc-header">
+    <div>
+      <div class="sc-header__eyebrow">Catalog management</div>
+      <div class="sc-header__title">
+        Edit {{ sub_category.sub_category_name }}
+        <span class="sc-status-pill {% if sub_category.is_active %}active{% else %}inactive{% endif %}">
+          {% if sub_category.is_active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </div>
+    </div>
+    <a href="{% url 'ponno:subcategory_products' category_slug=sub_category.sub_category_slug %}" class="sc-btn sc-btn--ghost">View subcategory page</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ===== BASIC INFO ===== -->
+    <div class="sc-section">
+      <div class="sc-section__title">Basic information</div>
+      <div class="sc-section__hint">Core details for how this subcategory is identified and organized.</div>
+
+      <div class="sc-grid">
+        <div class="sc-field">
+          <label class="sc-label" for="sub_category_name">SubCategory name <span class="req">*</span></label>
+          <input type="text" id="sub_category_name" name="sub_category_name" class="sc-input"
+                 value="{{ form_data.sub_category_name|default:sub_category.sub_category_name }}"
+                 required minlength="2" maxlength="150">
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="sub_category_type">SubCategory type <span class="req">*</span></label>
+          <select id="sub_category_type" name="sub_category_type" class="sc-select">
+            {% for value, label in sub_category_types %}
+              <option value="{{ value }}"
+                {% if form_data.sub_category_type|default:sub_category.sub_category_type == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="category">Parent category <span class="req">*</span></label>
+          <select id="category" name="category" class="sc-select" required>
+            <option value="">— Select a category —</option>
+            {% for cat in categories %}
+              <option value="{{ cat.pk }}"
+                {% if form_data.category|default_if_none:'' == cat.pk|stringformat:'s' or sub_category.category_id == cat.pk and not form_data %}selected{% endif %}>
+                {{ cat.category_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="brand">Brand</label>
+          <select id="brand" name="brand" class="sc-select">
+            <option value="">— None —</option>
+            {% for b in brands %}
+              <option value="{{ b.pk }}"
+                {% if form_data.brand|default_if_none:'' == b.pk|stringformat:'s' or sub_category.brand_id == b.pk and not form_data %}selected{% endif %}>
+                {{ b.brand_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="sc-field sc-field--full">
+          <label class="sc-label" for="sub_category_short_description">Short description</label>
+          <input type="text" id="sub_category_short_description" name="sub_category_short_description" class="sc-input"
+                 maxlength="200"
+                 value="{{ form_data.sub_category_short_description|default:sub_category.sub_category_short_description|default:'' }}">
+        </div>
+
+        <div class="sc-field sc-field--full">
+          <label class="sc-label" for="sub_category_description">Description</label>
+          <textarea id="sub_category_description" name="sub_category_description" class="sc-textarea" maxlength="1000">{{ form_data.sub_category_description|default:sub_category.sub_category_description|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== APPEARANCE ===== -->
+    <div class="sc-section">
+      <div class="sc-section__title">Appearance</div>
+      <div class="sc-section__hint">Icon, color, and layout for this subcategory.</div>
+
+      <div class="sc-grid">
+        <div class="sc-field">
+          <label class="sc-label" for="icon_class">Icon class</label>
+          <input type="text" id="icon_class" name="icon_class" class="sc-input"
+                 placeholder="fa fa-laptop" maxlength="50"
+                 value="{{ form_data.icon_class|default:sub_category.icon_class|default:'' }}">
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="color_code">Theme color</label>
+          <div class="sc-color-row">
+            <input type="color" id="color_code_picker" class="sc-color-swatch"
+                   value="{{ form_data.color_code|default:sub_category.color_code|default:'#6366f1' }}"
+                   oninput="document.getElementById('color_code').value = this.value">
+            <input type="text" id="color_code" name="color_code" class="sc-input"
+                   placeholder="#FF5733" maxlength="7"
+                   value="{{ form_data.color_code|default:sub_category.color_code|default:'' }}">
+          </div>
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="display_style">Display style <span class="req">*</span></label>
+          <select id="display_style" name="display_style" class="sc-select">
+            {% for value, label in display_styles %}
+              <option value="{{ value }}"
+                {% if form_data.display_style|default:sub_category.display_style == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="display_order">Display order</label>
+          <input type="number" id="display_order" name="display_order" class="sc-input"
+                 min="0"
+                 value="{{ form_data.display_order|default:sub_category.display_order }}">
+          <span class="sc-hint">Lower number = higher priority</span>
+        </div>
+
+        <div class="sc-field">
+          <label class="sc-label" for="products_per_page">Products per page</label>
+          <input type="number" id="products_per_page" name="products_per_page" class="sc-input"
+                 min="1"
+                 value="{{ form_data.products_per_page|default:sub_category.products_per_page }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VISIBILITY & STATUS ===== -->
+ 
+    <!-- ===== COMMISSION & PRICING ===== -->
+ 
+    <!-- ===== MEDIA ===== -->
+ 
+    <!-- ===== SEO ===== -->
+    <div class="sc-section">
+      <div class="sc-section__title">SEO</div>
+      <div class="sc-section__hint">Controls how this subcategory page appears in search results.</div>
+
+      <div class="sc-field sc-field--full">
+        <label class="sc-label" for="meta_title">Meta title</label>
+        <input type="text" id="meta_title" name="meta_title" class="sc-input" maxlength="60"
+               value="{{ form_data.meta_title|default:sub_category.meta_title|default:'' }}">
+        <span class="sc-hint">Up to 60 characters</span>
+      </div>
+
+      <div class="sc-field sc-field--full">
+        <label class="sc-label" for="meta_description">Meta description</label>
+        <textarea id="meta_description" name="meta_description" class="sc-textarea" maxlength="160">{{ form_data.meta_description|default:sub_category.meta_description|default:'' }}</textarea>
+        <span class="sc-hint">Up to 160 characters</span>
+      </div>
+
+      <div class="sc-field sc-field--full">
+        <label class="sc-label" for="meta_keywords">Meta keywords</label>
+        <input type="text" id="meta_keywords" name="meta_keywords" class="sc-input"
+               placeholder="comma, separated, keywords" maxlength="255"
+               value="{{ form_data.meta_keywords|default:sub_category.meta_keywords|default:'' }}">
+      </div>
+
+      <div class="sc-field sc-field--full">
+        <label class="sc-label" for="canonical_url">Canonical URL</label>
+        <input type="url" id="canonical_url" name="canonical_url" class="sc-input"
+               placeholder="https://" maxlength="200"
+               value="{{ form_data.canonical_url|default:sub_category.canonical_url|default:'' }}">
+      </div>
+    </div>
+
+    <div class="sc-submit-bar">
+      <a href="{% url 'ponno:subcategory_products' category_slug=sub_category.sub_category_slug %}" class="sc-btn sc-btn--ghost">Cancel</a>
+      <div class="sc-submit-bar__actions">
+        <button type="submit" class="sc-btn sc-btn--primary">Save changes</button>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

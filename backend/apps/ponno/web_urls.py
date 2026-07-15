@@ -35,12 +35,16 @@ from apps.ponno.views.about import AboutView
 from apps.ponno.views.privacy_policy import PrivacyPolicyView
 from apps.ponno.views.terms_of_service import TermsOfServiceView
 
+from apps.ponno.views.home import feed_load_more, feed_page_api 
+
 
 app_name = "ponno"  # Namespace for URL names
 
 urlpatterns = [
     path('', DiscoveryEngineView, name='discovery_engine'),
     path('home', HomeEngineView, name='home'),
+    path('engine/load-more/', feed_load_more, name='feed_load_more'),
+    path('engine/feed/', feed_page_api, name='feed_page_api'),
 
 
     path('product/upload/', ProductUploadView, name='product_upload'),

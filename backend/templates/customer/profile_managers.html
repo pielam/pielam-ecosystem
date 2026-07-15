@@ -1,0 +1,952 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} — Profile Settings | PIELAM{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- ═══════════════════════════════════════════════
+     DESIGN TOKENS + STYLES
+     Jewel-tone ledger design. Everything is scoped
+     under the .profile-manager class (NOT an ID) so
+     it never collides with base.html's own selectors
+     and can be safely reused/duplicated if needed.
+     ═══════════════════════════════════════════════ -->
+<style>
+
+:root {
+  --r: 12px; --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
+
+  --ink: #0f0f0f; --ink-2: #3a3a3a; --ink-3: #6b6b6b; --ink-4: #9b9b9b;
+  --surface: #ffffff; --surface-2: #f7f6f2; --surface-3: #eeede9;
+  --border: #e4e3df; --border-2: #d0cfc9;
+
+  --ruby: #c8102e; --ruby-dim: #a00d24;
+  --gold: #b8860b; --gold-bright: #d4a017; --gold-trace: rgba(184,134,11,.08); --gold-dim: rgba(184,134,11,.35);
+  --emerald: #1a6b3a; --emerald-bg: #edf7f1;
+  --sapphire: #1e3a8a; --sapphire-bg: #eef2fb;
+  --amber: #92400e; --amber-bg: #fffbeb;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --shadow-xs: 0 1px 3px rgba(10,37,64,.05);
+  --shadow-sm: 0 2px 6px rgba(10,37,64,.08);
+  --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+  --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+
+  --ease: cubic-bezier(.4,0,.2,1);
+  --t-fast: .15s ease;
+  --t-base: .25s ease;
+
+  --shell-pad: clamp(16px, 3vw + 4px, 32px);
+  --shell-maxw: 1200px;
+
+  --fs-page-title: clamp(1.35rem, 1rem + 2.2vw, 2.4rem);
+  --fs-card-title: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
+  --fs-stat-num:   clamp(1.35rem, 1.1rem + 0.9vw, 1.8rem);
+
+  --header-pad-top: clamp(24px, 3vw + 10px, 40px);
+  --header-pad-bot: clamp(48px, 5vw + 20px, 76px);
+  --shell-pull-up: clamp(-40px, -3vw - 10px, -20px);
+
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+.profile-manager,
+.profile-manager *,
+.profile-manager *::before,
+.profile-manager *::after {
+  box-sizing: border-box;
+}
+.profile-manager {
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.6;
+}
+.profile-manager a { text-decoration:none; color:inherit; }
+.profile-manager img { max-width:100%; display:block; }
+.profile-manager button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+.profile-manager input,
+.profile-manager select,
+.profile-manager textarea { font-family: var(--font-body); }
+.profile-manager input,
+.profile-manager select,
+.profile-manager textarea,
+.profile-manager button { font-size: max(16px, 1em); }
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-manager *,
+  .profile-manager *::before,
+  .profile-manager *::after {
+    animation-duration:.01ms!important; transition-duration:.01ms!important;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .profile-manager .pl-logout-link:hover,
+  .profile-manager .btn-primary:hover,
+  .profile-manager .btn-gold:hover,
+  .profile-manager .nav-btn:hover { transform:none; }
+}
+
+/* ── Page header ─────────────────────────────── */
+.profile-manager .page-header {
+  background: linear-gradient(135deg, var(--ink) 0%, #262626 100%);
+  padding: var(--header-pad-top) calc(var(--shell-pad) + var(--safe-r)) var(--header-pad-bot) calc(var(--shell-pad) + var(--safe-l));
+  position:relative; overflow:hidden;
+}
+.profile-manager .page-header::after {
+  content:''; position:absolute; inset:0;
+  background-image: radial-gradient(circle at 85% 20%, var(--gold-trace) 0%, transparent 55%);
+}
+.profile-manager .page-header-container { max-width: var(--shell-maxw); margin:0 auto; position:relative; z-index:1; }
+
+.profile-manager .header-content {
+  display:flex;
+  align-items:center;
+  gap:clamp(10px, 1.5vw, 18px);
+  flex-wrap: nowrap;
+}
+
+.profile-manager .header-icon {
+  width:clamp(38px, 3.5vw + 20px, 52px); height:clamp(38px, 3.5vw + 20px, 52px);
+  border-radius:50%; flex-shrink:0;
+  border:1px solid var(--gold-dim);
+  display:flex; align-items:center; justify-content:center;
+  color: var(--gold-bright); font-size:clamp(.85rem, .5vw + .7rem, 1.15rem);
+}
+
+.profile-manager .header-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.profile-manager .page-title { font-family:var(--font-display); font-weight:600; font-size: var(--fs-page-title); color:#fff; letter-spacing:.2px; line-height:1.15; overflow-wrap:anywhere; }
+.profile-manager .title-accent { color: var(--gold-bright); font-style:italic; }
+.profile-manager .page-subtitle { font-family:var(--font-mono); font-size:clamp(.62rem, .3vw + .55rem, .72rem); letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-top:4px; }
+
+/* ── Logout bar ──────────────────────────────── */
+
+.profile-manager .pl-logout-bar {
+  display:flex;
+  justify-content:flex-end;
+  flex: 0 0 auto;
+}
+
+.profile-manager .pl-logout-link {
+  display:inline-flex; align-items:center; gap:.55rem; padding:.6rem 1.2rem;
+  background:#fff; border:1.5px solid rgba(200,16,46,.28); border-radius:10px;
+  color:var(--ruby); font-weight:700; font-size:.85rem; box-shadow:var(--shadow-xs);
+  min-height:44px; white-space:nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+}
+.profile-manager .pl-logout-link:hover { background:#fef2f2; border-color:rgba(200,16,46,.55); transform:translateY(-2px); box-shadow:0 6px 16px rgba(200,16,46,.16); }
+.profile-manager .pl-logout-link:active { transform:translateY(0); }
+
+/* ── Django messages ─────────────────────────── */
+.profile-manager .settings-messages {
+  max-width: var(--shell-maxw); margin:18px auto 0;
+  padding:0 calc(var(--shell-pad) + var(--safe-r)) 0 calc(var(--shell-pad) + var(--safe-l));
+  display:flex; flex-direction:column; gap:8px;
+}
+.profile-manager .settings-msg {
+  padding:12px 16px; border-radius:var(--r-sm); font-size:.9rem; font-weight:600;
+  border-left:3px solid; display:flex; align-items:flex-start; gap:10px;
+}
+.profile-manager .settings-msg.success { background:var(--emerald-bg); color:var(--emerald); border-color:var(--emerald); }
+.profile-manager .settings-msg.error { background:#fef2f2; color:var(--ruby-dim); border-color:var(--ruby); }
+.profile-manager .settings-msg.info,
+.profile-manager .settings-msg.debug { background:var(--sapphire-bg); color:var(--sapphire); border-color:var(--sapphire); }
+.profile-manager .settings-msg.warning { background:var(--amber-bg); color:var(--amber); border-color:var(--amber); }
+
+/* ── Shell: sidebar + content ────────────────── */
+.profile-manager .settings-shell {
+  max-width: var(--shell-maxw);
+  margin: var(--shell-pull-up) auto 60px;
+  padding:0 calc(var(--shell-pad) + var(--safe-r)) 0 calc(var(--shell-pad) + var(--safe-l));
+  display:grid; grid-template-columns:280px 1fr; gap:28px; align-items:start; position:relative; z-index:2;
+}
+@media (min-width: 901px) and (min-height: 480px) {
+  .profile-manager .settings-shell > .settings-aside {
+    position:sticky; top:calc(var(--header-h, 64px) + 16px);
+    max-height:calc(100vh - var(--header-h, 64px) - 32px); overflow-y:auto;
+  }
+}
+.profile-manager .settings-aside {
+  min-width: 0;
+}
+/* ── Sidebar nav (default = original vertical list, large screens) ── */
+.profile-manager .settings-nav-scroll {
+  /* No scroll behavior by default; enabled only in small-screen media queries below */
+  min-width: 0;
+  max-width: 100%;
+}
+.profile-manager .settings-nav {
+  list-style:none; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.profile-manager .settings-nav li + li { border-top:1px solid var(--border); }
+.profile-manager .nav-btn {
+  width:100%; display:flex; align-items:center; gap:12px; padding:14px 18px;
+  font-size:.9rem; font-weight:600; color:var(--ink-2); text-align:left; min-height:44px;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.profile-manager .nav-btn i { width:18px; color:var(--ink-4); transition:color var(--t-fast); flex-shrink:0; }
+.profile-manager .nav-btn:hover { background:var(--surface-2); }
+.profile-manager .nav-btn.active { background:var(--ink); color:#fff; }
+.profile-manager .nav-btn.active i { color:var(--gold-bright); }
+.profile-manager .nav-btn:focus-visible { outline:2px solid var(--gold); outline-offset:-2px; }
+
+/* ── Content panels ──────────────────────────── */
+.profile-manager .panel { display:none; min-width:0; }
+.profile-manager .panel.active { display:block; animation:pmFadeIn .28s var(--ease); }
+@keyframes pmFadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+.profile-manager .card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm); padding:clamp(18px, 1.5vw + 10px, 30px) clamp(14px, 2vw + 8px, 32px);
+  margin-bottom:22px;
+}
+.profile-manager .card + .card { margin-top:0; }
+.profile-manager .card-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:clamp(14px, 1.5vw, 22px); padding-bottom:clamp(12px, 1vw, 16px); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.profile-manager .card-title { font-family:var(--font-display); font-weight:700; font-size: var(--fs-card-title); }
+.profile-manager .card-desc { font-size:.82rem; color:var(--ink-3); margin-top:4px; }
+
+.profile-manager .stat-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:clamp(10px, 1vw, 14px); margin-bottom:24px; }
+.profile-manager .stat-card { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:clamp(12px, 1vw, 16px) clamp(14px, 1.2vw, 18px); min-width:0; }
+.profile-manager .stat-card .num { font-family:var(--font-display); font-weight:700; font-size: var(--fs-stat-num); }
+.profile-manager .stat-card .lbl { font-family:var(--font-mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-top:2px; overflow-wrap:anywhere; }
+
+/* ── Forms ───────────────────────────────────── */
+.profile-manager .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 20px; }
+.profile-manager .form-grid.single { grid-template-columns:1fr; }
+.profile-manager .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-manager .field.span-2 { grid-column: span 2; }
+.profile-manager .field label { font-size:.78rem; font-weight:700; color:var(--ink-2); letter-spacing:.01em; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.profile-manager .field .hint { font-size:.72rem; color:var(--ink-4); font-weight:400; }
+.profile-manager .field input[type="text"],
+.profile-manager .field input[type="email"],
+.profile-manager .field input[type="url"],
+.profile-manager .field input[type="tel"],
+.profile-manager .field input[type="date"],
+.profile-manager .field input[type="password"],
+.profile-manager .field select,
+.profile-manager .field textarea {
+  width:100%; padding:11px 13px; border:1px solid var(--border-2); border-radius:var(--r-sm);
+  color:var(--ink); background:var(--surface); min-height:44px;
+  transition:border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.profile-manager .field textarea { resize:vertical; min-height:90px; }
+.profile-manager .field input:focus,
+.profile-manager .field select:focus,
+.profile-manager .field textarea:focus {
+  outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-trace);
+}
+.profile-manager .field input[type="file"] { font-size:.82rem; padding:8px 0; min-height:auto; }
+
+.profile-manager .form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:24px; flex-wrap:wrap; }
+.profile-manager .form-actions.align-start { justify-content:flex-start; }
+
+.profile-manager .btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 22px; border-radius:var(--r-sm);
+  font-weight:700; font-size:.85rem; min-height:44px;
+  transition:transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  white-space:nowrap;
+}
+.profile-manager .btn-primary { background:var(--ink); color:#fff; box-shadow:var(--shadow-xs); }
+.profile-manager .btn-primary:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); background:#000; }
+.profile-manager .btn-gold { background:linear-gradient(135deg, var(--gold), var(--gold-bright)); color:#fff; }
+.profile-manager .btn-gold:hover { transform:translateY(-1px); box-shadow:0 6px 16px var(--gold-dim); }
+.profile-manager .btn-ghost { background:transparent; border:1.5px solid var(--border-2); color:var(--ink-2); }
+.profile-manager .btn-ghost:hover { border-color:var(--ink-3); }
+.profile-manager .btn-danger { background:transparent; border:1.5px solid rgba(200,16,46,.4); color:var(--ruby); }
+.profile-manager .btn-danger:hover { background:#fef2f2; border-color:var(--ruby); }
+.profile-manager .btn-danger.solid { background:var(--ruby); color:#fff; border-color:var(--ruby); }
+.profile-manager .btn-danger.solid:hover { background:var(--ruby-dim); }
+.profile-manager .btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+/* ── Toggle switches ─────────────────────────── */
+.profile-manager .toggle-list { display:flex; flex-direction:column; }
+.profile-manager .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; }
+.profile-manager .toggle-row + .toggle-row { border-top:1px solid var(--border); }
+.profile-manager .toggle-copy { min-width:0; }
+.profile-manager .toggle-copy .t-label { font-weight:700; font-size:.9rem; }
+.profile-manager .toggle-copy .t-desc { font-size:.78rem; color:var(--ink-3); margin-top:2px; max-width:46ch; }
+.profile-manager .switch { position:relative; width:44px; height:25px; flex-shrink:0; }
+.profile-manager .switch input { opacity:0; width:0; height:0; position:absolute; }
+.profile-manager .switch .track { position:absolute; inset:0; background:var(--border-2); border-radius:20px; cursor:pointer; transition:background var(--t-fast); }
+.profile-manager .switch .track::before {
+  content:''; position:absolute; width:19px; height:19px; left:3px; top:3px; background:#fff; border-radius:50%;
+  box-shadow:var(--shadow-xs); transition:transform var(--t-fast);
+}
+.profile-manager .switch input:checked + .track { background:var(--gold); }
+.profile-manager .switch input:checked + .track::before { transform:translateX(19px); }
+.profile-manager .switch input:focus-visible + .track { box-shadow:0 0 0 3px var(--gold-trace); }
+@media (hover: none), (pointer: coarse) {
+  .profile-manager .switch { width:48px; height:28px; }
+}
+
+/* ── Badges & alerts ─────────────────────────── */
+.profile-manager .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; letter-spacing:.03em; white-space:nowrap; }
+.profile-manager .badge.ok { background:var(--emerald-bg); color:var(--emerald); }
+.profile-manager .badge.warn { background:var(--amber-bg); color:var(--amber); }
+.profile-manager .badge.danger { background:#fef2f2; color:var(--ruby-dim); }
+.profile-manager .inline-alert { display:flex; gap:10px; align-items:flex-start; padding:14px 16px; border-radius:var(--r-sm); font-size:.85rem; margin-bottom:20px; }
+.profile-manager .inline-alert.warn { background:var(--amber-bg); color:var(--amber); border-left:3px solid var(--amber); }
+.profile-manager .inline-alert.info { background:var(--sapphire-bg); color:var(--sapphire); border-left:3px solid var(--sapphire); }
+
+.profile-manager .account-meta { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+.profile-manager .meta-item { padding:14px 16px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); min-width:0; }
+.profile-manager .meta-item .m-label { font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3); }
+.profile-manager .meta-item .m-value { font-weight:700; margin-top:3px; font-size:.92rem; word-break:break-word; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+
+/* ── Activity list ────────────────────────────── */
+.profile-manager .viewer-list { list-style:none; }
+.profile-manager .viewer-row { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
+.profile-manager .viewer-row + .viewer-row { border-top:1px solid var(--border); }
+.profile-manager .viewer-row img { width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.profile-manager .viewer-name { font-weight:700; font-size:.88rem; min-width:0; overflow-wrap:anywhere; }
+.profile-manager .viewer-time { font-family:var(--font-mono); font-size:.7rem; color:var(--ink-3); margin-left:auto; white-space:nowrap; }
+.profile-manager .empty-state { text-align:center; padding:40px 20px; color:var(--ink-3); }
+.profile-manager .empty-state i { font-size:1.6rem; color:var(--border-2); margin-bottom:10px; display:block; }
+
+/* ── Danger zone ─────────────────────────────── */
+.profile-manager .danger-card { border-color:rgba(200,16,46,.3); }
+.profile-manager .danger-card .card-title { color:var(--ruby-dim); }
+.profile-manager .danger-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; flex-wrap:wrap; }
+.profile-manager .danger-row + .danger-row { border-top:1px solid var(--border); }
+.profile-manager .danger-row .d-label { font-weight:700; font-size:.9rem; }
+.profile-manager .danger-row .d-desc { font-size:.78rem; color:var(--ink-3); margin-top:2px; max-width:50ch; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS — 1400+ / 1199 / 1023 / 900 / 767 / 480 / 360
+   plus landscape, foldable, hi-dpi and print handling.
+   ═══════════════════════════════════════════════ */
+@media (min-width: 1400px) {
+  .profile-manager .settings-shell { grid-template-columns:300px 1fr; gap:32px; }
+}
+@media (max-width: 1199px) {
+  .profile-manager .settings-shell { grid-template-columns:240px 1fr; gap:22px; }
+}
+@media (max-width: 1023px) {
+  .profile-manager .settings-shell { grid-template-columns:210px 1fr; gap:18px; }
+}
+
+@media (max-width: 900px) {
+  .profile-manager .settings-shell { grid-template-columns:1fr; }
+  .profile-manager .settings-shell > .settings-aside { position:static; max-height:none; }
+
+  .profile-manager .settings-nav-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .profile-manager .settings-nav-scroll::-webkit-scrollbar { display: none; }
+
+  .profile-manager .settings-nav {
+    display:flex; flex-direction:row; flex-wrap:nowrap; gap:2px;
+    width:max-content; min-width:100%; padding:6px;
+  }
+  .profile-manager .settings-nav li { flex:0 0 auto; }
+  .profile-manager .settings-nav li + li { border-top:none; }
+  .profile-manager .nav-btn {
+    padding:10px 16px; border-radius:var(--r-sm); white-space:nowrap; width:auto;
+    scroll-snap-align: start;
+  }
+  .profile-manager .nav-btn.active { border-radius:var(--r-sm); }
+
+  .profile-manager .form-grid { grid-template-columns:1fr 1fr; }
+}
+
+@media (max-width: 767px) {
+  .profile-manager .form-grid { grid-template-columns:1fr; }
+  .profile-manager .field.span-2 { grid-column: span 1; }
+  .profile-manager .account-meta { grid-template-columns:1fr 1fr; }
+  .profile-manager .stat-cards { grid-template-columns:repeat(2, 1fr); }
+}
+
+
+@media (max-width: 480px) {
+  .profile-manager .toggle-row { align-items:flex-start; gap:12px; padding:14px 0; }
+  .profile-manager .toggle-copy .t-desc { max-width:100%; }
+  .profile-manager .switch { margin-top:2px; }
+  .profile-manager .form-actions { flex-direction:column-reverse; }
+  .profile-manager .form-actions .btn { width:100%; }
+  .profile-manager .danger-row { flex-direction:column; align-items:flex-start; gap:12px; }
+  .profile-manager .danger-row form { width:100%; }
+  .profile-manager .danger-row form .btn { width:100%; }
+  .profile-manager .account-meta { grid-template-columns:1fr; }
+  .profile-manager .meta-item .m-value { font-size:.88rem; }
+  .profile-manager .viewer-row { gap:10px; }
+  .profile-manager .viewer-time { flex-basis:100%; margin-left:46px; }
+}
+@media (max-width: 360px) {
+  .profile-manager .stat-cards { grid-template-columns:1fr 1fr; gap:10px; }
+  .profile-manager .nav-btn { padding:9px 13px; font-size:.85rem; }
+  .profile-manager .btn { padding:10px 16px; font-size:.82rem; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .profile-manager .page-header { padding-top:16px; padding-bottom:28px; }
+  .profile-manager .header-content { gap:10px; }
+  .profile-manager .settings-shell { margin-top:-16px; }
+  .profile-manager .card { padding-top:16px; padding-bottom:16px; }
+  .profile-manager .toggle-row { padding:10px 0; }
+}
+
+@media (min-width: 901px) and (max-aspect-ratio: 3/4) {
+  .profile-manager .settings-shell { grid-template-columns:1fr; }
+  .profile-manager .settings-shell > .settings-aside { position:static; }
+  .profile-manager .settings-nav {
+    display:flex; flex-direction:row; overflow-x:auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width:none;
+  }
+  .profile-manager .settings-nav::-webkit-scrollbar { display:none; }
+  .profile-manager .settings-nav li + li { border-top:none; }
+  .profile-manager .nav-btn { width:auto; white-space:nowrap; }
+}
+
+@media (min-resolution: 2dppx) {
+  .profile-manager .card,
+  .profile-manager .settings-nav,
+  .profile-manager .stat-card,
+  .profile-manager .meta-item { border-width: 1px; }
+}
+@media print {
+.profile-manager .page-header,
+  .profile-manager .pl-logout-bar,
+  .profile-manager .settings-nav-scroll,
+  .profile-manager .form-actions { display:none !important; }
+  .profile-manager .settings-shell { grid-template-columns:1fr; margin:0; padding:0; }
+  .profile-manager .panel { display:block !important; }
+  .profile-manager .card { box-shadow:none; border:1px solid #000; break-inside:avoid; page-break-inside:avoid; margin-bottom:12px; }
+}
+  
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+<div class="profile-manager">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-container">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+            <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5"/>
+            <path d="M18.5 13.2v1.2M18.5 19.6v1.2M21.4 14.9l-1 .6M16.6 17.5l-1 .6M21.4 19.1l-1-.6M16.6 15.5l-1-.6"/>
+            <circle cx="18.5" cy="17" r="1.6"/>
+        </svg>
+      </div>
+        <div class="header-text">
+          <h1 class="page-title"><span class="title-accent">Account Manager</span></h1>
+          <p class="page-subtitle">Manage your profile &amp; business</p>
+        </div>
+        <div class="pl-logout-bar">
+          <a href="{% url 'customer:logout' %}" class="pl-logout-link js-logout-btn" role="button" aria-label="Log out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+  <div class="settings-messages">
+    {% for message in messages %}
+      <div class="settings-msg {{ message.tags }}">
+        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="settings-shell">
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <aside class="settings-aside">
+      <div class="settings-nav-scroll">
+        <ul class="settings-nav js-settings-nav">
+          <li><button type="button" class="nav-btn active" data-tab="profile"><i class="fa-solid fa-user"></i> Profile</button></li>
+          {% if is_dealer %}
+          <li><button type="button" class="nav-btn" data-tab="business"><i class="fa-solid fa-store"></i> Business</button></li>
+          {% endif %}
+          <li><button type="button" class="nav-btn" data-tab="social"><i class="fa-solid fa-share-nodes"></i> Social Links</button></li>
+          <li><button type="button" class="nav-btn" data-tab="privacy"><i class="fa-solid fa-lock"></i> Privacy</button></li>
+          <li><button type="button" class="nav-btn" data-tab="notifications"><i class="fa-solid fa-bell"></i> Notifications</button></li>
+          <li><button type="button" class="nav-btn" data-tab="account"><i class="fa-solid fa-id-card"></i> Account</button></li>
+          <li><button type="button" class="nav-btn" data-tab="security"><i class="fa-solid fa-shield-halved"></i> Security</button></li>
+          <li><button type="button" class="nav-btn" data-tab="activity"><i class="fa-solid fa-eye"></i> Activity</button></li>
+          <li><button type="button" class="nav-btn" data-tab="danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</button></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- ═══════════════ CONTENT ═══════════════ -->
+    <main class="js-panels-wrap">
+
+      <!-- PROFILE -->
+      <section class="panel active" data-panel="profile">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Profile</div><p class="card-desc">How you appear across PIELAM.</p></div>
+          </div>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
+            <div class="form-grid">
+              <div class="field"><label>Display name</label><input type="text" name="profile_name" value="{{ profile_info.profile_name|default:'' }}"></div>
+              <div class="field"><label>Tagline</label><input type="text" name="profile_tagline" maxlength="100" value="{{ profile_info.profile_tagline|default:'' }}"></div>
+              <div class="field span-2"><label>Bio</label><textarea name="profile_bio" maxlength="500">{{ profile_info.profile_bio|default:'' }}</textarea></div>
+              <div class="field">
+                <label>Gender</label>
+                <select name="profile_gender">
+                  <option value="">Prefer not to say</option>
+                  {% for value, label in profile_info.Gender.choices %}
+                    <option value="{{ value }}" {% if profile_info.profile_gender == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field"><label>Date of birth</label><input type="date" name="profile_dob" value="{{ profile_info.profile_dob|date:'Y-m-d' }}"></div>
+              <div class="field"><label>Phone</label><input type="tel" name="profile_phone" value="{{ profile_info.profile_phone|default:'' }}"></div>
+              <div class="field">
+                <label>Preferred language</label>
+                <input type="text" name="profile_language" value="{{ profile_info.profile_language|default:'' }}" placeholder="e.g. en, bn">
+              </div>
+              <div class="field"><label>Country</label><input type="text" name="profile_country" maxlength="2" placeholder="ISO code, e.g. BD" value="{{ profile_info.profile_country|default:'' }}"></div>
+              <div class="field"><label>State / Province</label><input type="text" name="profile_state" value="{{ profile_info.profile_state|default:'' }}"></div>
+              <div class="field"><label>City</label><input type="text" name="profile_city" value="{{ profile_info.profile_city|default:'' }}"></div>
+              <div class="field"><label>Postal code</label><input type="text" name="profile_postal_code" value="{{ profile_info.profile_postal_code|default:'' }}"></div>
+              <div class="field span-2"><label>Street address</label><input type="text" name="profile_address" value="{{ profile_info.profile_address|default:'' }}"></div>
+              <div class="field"><label>Profile photo</label><input type="file" name="profile_photo" accept="image/*"></div>
+              <div class="field"><label>Cover photo</label><input type="file" name="profile_cover_photo" accept="image/*"></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save profile</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- BUSINESS (dealer only) -->
+      {% if is_dealer %}
+      <section class="panel" data-panel="business">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Business</div><p class="card-desc">Shown to buyers on your dealer storefront.</p></div>
+          </div>
+          <div class="stat-cards">
+            <div class="stat-card"><div class="num">{{ products_listed_count }}</div><div class="lbl">Listed products</div></div>
+            <div class="stat-card"><div class="num">{{ active_products_count }}</div><div class="lbl">Active products</div></div>
+            <div class="stat-card"><div class="num">{{ brands_count }}</div><div class="lbl">Brands on PIELAM</div></div>
+            <div class="stat-card"><div class="num">{{ categories_count }}</div><div class="lbl">Categories</div></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_business">
+            <div class="form-grid">
+              <div class="field"><label>Business name</label><input type="text" name="business_name" value="{{ profile_info.business_name|default:'' }}"></div>
+              <div class="field"><label>Business type</label><input type="text" name="business_type" value="{{ profile_info.business_type|default:'' }}" placeholder="Retail, Wholesale…"></div>
+              <div class="field"><label>Registration number</label><input type="text" name="business_registration" value="{{ profile_info.business_registration|default:'' }}"></div>
+              <div class="field"><label>Tax ID</label><input type="text" name="business_tax_id" value="{{ profile_info.business_tax_id|default:'' }}"></div>
+              <div class="field"><label>Website</label><input type="url" name="business_website" value="{{ profile_info.business_website|default:'' }}"></div>
+              <div class="field"><label>Business email</label><input type="email" name="business_email" value="{{ profile_info.business_email|default:'' }}"></div>
+              <div class="field"><label>Business phone</label><input type="tel" name="business_phone" value="{{ profile_info.business_phone|default:'' }}"></div>
+              <div class="field span-2"><label>Description</label><textarea name="business_description" maxlength="1000">{{ profile_info.business_description|default:'' }}</textarea></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save business info</button>
+            </div>
+          </form>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- SOCIAL -->
+      <section class="panel" data-panel="social">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Social links</div><p class="card-desc">Link out to your other profiles.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_social">
+            <div class="form-grid">
+              <div class="field"><label><i class="fa-brands fa-facebook"></i> Facebook</label><input type="url" name="social_facebook" value="{{ profile_info.social_facebook|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-x-twitter"></i> Twitter / X</label><input type="url" name="social_twitter" value="{{ profile_info.social_twitter|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-instagram"></i> Instagram</label><input type="url" name="social_instagram" value="{{ profile_info.social_instagram|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-linkedin"></i> LinkedIn</label><input type="url" name="social_linkedin" value="{{ profile_info.social_linkedin|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-youtube"></i> YouTube</label><input type="url" name="social_youtube" value="{{ profile_info.social_youtube|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-tiktok"></i> TikTok</label><input type="url" name="social_tiktok" value="{{ profile_info.social_tiktok|default:'' }}"></div>
+              <div class="field"><label><i class="fa-brands fa-whatsapp"></i> WhatsApp</label><input type="tel" name="social_whatsapp" value="{{ profile_info.social_whatsapp|default:'' }}"></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save links</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- PRIVACY -->
+      <section class="panel" data-panel="privacy">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Privacy</div><p class="card-desc">Control what others can see and do.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_privacy">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Public profile</div><div class="t-desc">Anyone can find and view your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="is_profile_public" {% if profile_info.is_profile_public %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show email</div><div class="t-desc">Display your email address publicly.</div></div>
+                <label class="switch"><input type="checkbox" name="show_email" {% if profile_info.show_email %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show phone</div><div class="t-desc">Display your phone number publicly.</div></div>
+                <label class="switch"><input type="checkbox" name="show_phone" {% if profile_info.show_phone %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show date of birth</div><div class="t-desc">Display your birthdate on your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="show_dob" {% if profile_info.show_dob %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show age</div><div class="t-desc">Display your calculated age instead of full DOB.</div></div>
+                <label class="switch"><input type="checkbox" name="show_age" {% if profile_info.show_age %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show location</div><div class="t-desc">Display your city and country.</div></div>
+                <label class="switch"><input type="checkbox" name="show_location" {% if profile_info.show_location %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show followers</div><div class="t-desc">Display your follower count.</div></div>
+                <label class="switch"><input type="checkbox" name="show_followers" {% if profile_info.show_followers %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show following</div><div class="t-desc">Display who you follow.</div></div>
+                <label class="switch"><input type="checkbox" name="show_following" {% if profile_info.show_following %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow messages</div><div class="t-desc">Let other users message you directly.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_messages" {% if profile_info.allow_messages %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow follows</div><div class="t-desc">Let other users follow your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_follow" {% if profile_info.allow_follow %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save privacy settings</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="panel" data-panel="notifications">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Notifications</div><p class="card-desc">Choose what PIELAM lets you know about.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_notifications">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">New followers</div><div class="t-desc">Someone starts following you.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_follow" {% if profile_info.notify_on_follow %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">New messages</div><div class="t-desc">You receive a direct message.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_message" {% if profile_info.notify_on_message %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">New comments</div><div class="t-desc">Someone comments on your content.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_comment" {% if profile_info.notify_on_comment %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Mentions</div><div class="t-desc">Someone mentions you.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_mention" {% if profile_info.notify_on_mention %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Email notifications</div><div class="t-desc">Receive these updates by email.</div></div>
+                <label class="switch"><input type="checkbox" name="email_notifications" {% if profile_info.email_notifications %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">SMS notifications</div><div class="t-desc">Receive these updates by SMS.</div></div>
+                <label class="switch"><input type="checkbox" name="sms_notifications" {% if profile_info.sms_notifications %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save notification settings</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Marketing</div><p class="card-desc">Occasional offers and product news.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_marketing_consent">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="t-label">Marketing emails</div>
+                  <div class="t-desc">{% if user.marketing_consent_date %}Consent given {{ user.marketing_consent_date|date:"M j, Y" }}.{% else %}You haven't opted in yet.{% endif %}</div>
+                </div>
+                <label class="switch"><input type="checkbox" name="marketing_consent" {% if user.marketing_consent %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-ghost">Save preference</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ACCOUNT -->
+      <section class="panel" data-panel="account">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Account</div><p class="card-desc">Core identity &amp; regional preferences.</p></div>
+          </div>
+
+          <div class="account-meta">
+            <div class="meta-item"><div class="m-label">Login ID</div><div class="m-value">{{ user.email_or_phone }}</div></div>
+            <div class="meta-item">
+              <div class="m-label">Email</div>
+              <div class="m-value">{{ user.email|default:"—" }} {% if user.email %}{% if user.email_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Unverified</span>{% endif %}{% endif %}</div>
+            </div>
+            <div class="meta-item">
+              <div class="m-label">Phone</div>
+              <div class="m-value">{{ user.phone|default:"—" }} {% if user.phone %}{% if user.phone_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Unverified</span>{% endif %}{% endif %}</div>
+            </div>
+            <div class="meta-item"><div class="m-label">Role</div><div class="m-value">{{ user.get_role_display }}</div></div>
+          </div>
+
+          {% if needs_password_rotation %}
+          <div class="inline-alert warn"><i class="fa-solid fa-triangle-exclamation"></i> Your password is over 90 days old — consider updating it in the Security tab.</div>
+          {% endif %}
+          {% if is_locked %}
+          <div class="inline-alert warn"><i class="fa-solid fa-lock"></i> Your account is temporarily locked due to failed sign-in attempts.</div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_account">
+            <div class="form-grid">
+              <div class="field">
+                <label>Language</label>
+                <select name="language">
+                  <option value="en" {% if user.language == "en" %}selected{% endif %}>English</option>
+                  <option value="bn" {% if user.language == "bn" %}selected{% endif %}>Bengali</option>
+                  <option value="es" {% if user.language == "es" %}selected{% endif %}>Spanish</option>
+                  <option value="fr" {% if user.language == "fr" %}selected{% endif %}>French</option>
+                  <option value="de" {% if user.language == "de" %}selected{% endif %}>German</option>
+                  <option value="zh" {% if user.language == "zh" %}selected{% endif %}>Chinese</option>
+                  <option value="ar" {% if user.language == "ar" %}selected{% endif %}>Arabic</option>
+                  <option value="hi" {% if user.language == "hi" %}selected{% endif %}>Hindi</option>
+                </select>
+              </div>
+              <div class="field"><label>Country</label><input type="text" name="country" maxlength="2" placeholder="ISO code" value="{{ user.country|default:'' }}"></div>
+              <div class="field"><label>Currency</label><input type="text" name="currency" maxlength="3" placeholder="ISO code, e.g. USD" value="{{ user.currency }}"></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save account settings</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- SECURITY -->
+      <section class="panel" data-panel="security">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Password</div><p class="card-desc">Use at least 8 characters.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+            <div class="form-grid">
+              <div class="field span-2"><label>Current password</label><input type="password" name="current_password" required></div>
+              <div class="field"><label>New password</label><input type="password" name="new_password" minlength="8" required></div>
+              <div class="field"><label>Confirm new password</label><input type="password" name="confirm_password" minlength="8" required></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Change password</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Two-factor authentication</div>
+              <p class="card-desc">{% if user.mfa_enabled %}Enabled via {{ user.get_mfa_method_display }}.{% else %}Add an extra layer of protection.{% endif %}</p>
+            </div>
+            {% if user.mfa_enabled %}<span class="badge ok">Enabled</span>{% else %}<span class="badge warn">Disabled</span>{% endif %}
+          </div>
+
+          {% if user.mfa_enabled %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="disable_mfa">
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-danger">Disable two-factor authentication</button>
+            </div>
+          </form>
+          {% else %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="enable_mfa">
+            <div class="form-grid single">
+              <div class="field">
+                <label>Method</label>
+                <select name="mfa_method">
+                  <option value="totp">Authenticator app (TOTP)</option>
+                  <option value="sms">SMS</option>
+                  <option value="email">Email</option>
+                  <option value="backup_codes">Backup codes</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-shield"></i> Enable two-factor authentication</button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- ACTIVITY -->
+      <section class="panel" data-panel="activity">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Who viewed your profile</div><p class="card-desc">Most recent, identifiable visitors.</p></div>
+          </div>
+          {% if recent_viewers %}
+          <ul class="viewer-list">
+            {% for view in recent_viewers %}
+            <li class="viewer-row">
+              <img src="{{ view.viewer.profileinfo.get_profile_photo_url }}" alt="">
+              <span class="viewer-name">{{ view.viewer.profileinfo.profile_name|default:view.viewer.email_or_phone }}</span>
+              <span class="viewer-time">{{ view.viewed_at|timesince }} ago</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="empty-state"><i class="fa-solid fa-eye-slash"></i>No visits yet — once someone views your profile, they'll show up here.</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- DANGER ZONE -->
+      <section class="panel" data-panel="danger">
+        <div class="card danger-card">
+          <div class="card-head">
+            <div><div class="card-title">Danger zone</div><p class="card-desc">These actions affect your entire account.</p></div>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <div class="d-label">Deactivate account</div>
+              <div class="d-desc">Hides your profile and signs you out. You can reach out to support to reactivate later.</div>
+            </div>
+            <form method="post" class="js-confirm-form" data-confirm="Deactivate your account now?">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="deactivate_account">
+              <button type="submit" class="btn btn-danger">Deactivate</button>
+            </form>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <div class="d-label">Delete account</div>
+              <div class="d-desc">Permanently removes your email and phone from this account. This can't be undone. Type <strong>{{ user.email_or_phone }}</strong> to confirm.</div>
+            </div>
+          </div>
+          <form method="post" class="js-confirm-form" data-confirm="This permanently deletes your account. Continue?">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_account">
+            <div class="form-grid single">
+              <div class="field">
+                <input type="text" name="confirm_delete" placeholder="Type {{ user.email_or_phone }} to confirm">
+              </div>
+            </div>
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-danger solid"><i class="fa-solid fa-trash"></i> Permanently delete account</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</div><!-- /.profile-manager -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var root = document.querySelector('.profile-manager');
+  if (!root) return;
+
+  var buttons = root.querySelectorAll('.nav-btn');
+  var panels = root.querySelectorAll('.panel');
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = btn.getAttribute('data-tab');
+      buttons.forEach(function (b) { b.classList.remove('active'); });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      var panel = root.querySelector('.panel[data-panel="' + target + '"]');
+      if (panel) panel.classList.add('active');
+      history.replaceState(null, '', '#' + target);
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+  });
+
+  var hash = window.location.hash.replace('#', '');
+  if (hash) {
+    var initial = root.querySelector('.nav-btn[data-tab="' + hash + '"]');
+    if (initial) initial.click();
+  }
+
+  var logoutBtn = root.querySelector('.js-logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function (e) {
+      if (!window.confirm('Are you sure you want to log out?')) e.preventDefault();
+    });
+  }
+
+  root.querySelectorAll('.js-confirm-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (!window.confirm(form.getAttribute('data-confirm'))) e.preventDefault();
+    });
+  });
+})();
+</script>
+{% endblock %}

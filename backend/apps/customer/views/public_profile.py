@@ -212,7 +212,11 @@ def PublicProfileView(request, username):
 # FOLLOW / UNFOLLOW
 # ────────────────────────────────────────────────────────────────────
 from apps.ponno.views.discovery_engine_views import invalidate_user_feed  # already exists
+from apps.notify.services import notice
+from apps.notify.models.ring_bell import Notification
+
 # apps/customer/views/public_profile.py
+from django.urls import reverse
 @require_POST
 @login_required(login_url='/customer/signin/')
 def follow(request, username):
@@ -230,11 +234,19 @@ def follow(request, username):
     invalidate_user_feed(request.user.id)
     invalidate_user_feed(user_to_follow.id)
 
+    notice(
+        recipient=user_to_follow,
+        actor=request.user,
+        notification_type=Notification.NotificationType.FOLLOW,
+        title=f"{request.user.email_or_phone} started following you",
+        action_url=reverse('customer:profile_view', kwargs={'username': request.user.email_or_phone}),
+        image=current_profile.get_profile_photo_url(),
+        priority=Notification.Priority.NORMAL,
+    )
     return JsonResponse({
         "following":      True,
         "follower_count": target_profile.follower_count,
     })
-
 
 @require_POST
 @login_required(login_url='/customer/signin/')

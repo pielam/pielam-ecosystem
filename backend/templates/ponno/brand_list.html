@@ -1,27 +1,21 @@
-{% include "base.html" %}
-{% include "search.html" %}
-
-
+{% extends "base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% block title %}{% if query %}{{ query }} — {% endif %}PIELAM{% endblock %}
+
+{% block extra_css %}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <title>{% if query %}{{ query }} — {% endif %}PIELAM</title>
 
   <style>
-    
     /* ═══════════════════════════════════════════════
-       GLOBAL — Design Tokens, Reset, Base
+       BRAND LIST — page-scoped tokens & reset
+       Scoped to .page-wrapper so they never leak into
+       base.html's header/drawer (which already owns
+       --accent, --shadow-*, --ease, --header-h, etc.)
     ═══════════════════════════════════════════════ */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
-
-    :root {
+    .page-wrapper {
       --ink:        #0f0f0f;
       --ink-2:      #3a3a3a;
       --ink-3:      #6b6b6b;
@@ -31,8 +25,8 @@
       --surface-3:  #eeede9;
       --border:     #e4e3df;
       --border-2:   #d0cfc9;
-      --accent:     #c8102e;
-      --accent-2:   #a00d24;
+      --bl-accent:  #c8102e;
+      --bl-accent-2:#a00d24;
       --gold:       #b8860b;
       --gold-2:     #8b6508;
       --green:      #1a6b3a;
@@ -56,36 +50,26 @@
       --bg-tertiary:     #edf2f7;
       --border-light:    #e2e8f0;
       --border-medium:   #cbd5e0;
-      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
-      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
-      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
-      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
-      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --bl-shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --bl-shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --bl-shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --bl-shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --bl-shadow-xl: 0 20px 50px rgba(10,37,64,.2);
       --font-display: 'Cormorant Garamond', serif;
       --font-body:    'Syne', sans-serif;
       --f-mono:       'JetBrains Mono', monospace;
       --f-display:    'Cormorant Garamond', serif;
       --f-body:       'Syne', sans-serif;
-      --header-h:          124px;
-      --nav-h:             64px;
       --bottom-bar-height: 68px;
       --r-sm:  8px;
       --r-md:  14px;
       --r-lg:  20px;
       --r-xl:  28px;
-      --ease:            cubic-bezier(.4,0,.2,1);
+      --bl-ease:         cubic-bezier(.4,0,.2,1);
       --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
       --transition-fast: .15s ease;
       --transition-base: .25s ease;
       --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
-      --t-primary:   #0f0f0f;
-      --t-secondary: #3a3a3a;
-      --t-muted:     #6b6b6b;
-      --t-ghost:     #9b9b9b;
-      --rim:         #e4e3df;
-      --raised:      #f5f5f3;
-      --overlay:     #eeede9;
-      --abyss:       #0f0f0f;
       --gold-pure:   #b8860b;
       --gold-dim:    rgba(184,134,11,0.40);
       --gold-trace:  rgba(184,134,11,0.08);
@@ -94,915 +78,543 @@
       --amber:    #92400e;
       --ruby:     #c8102e;
       --sapphire: #1e3a8a;
-    }
 
-    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
-    body {
-      font-family: 'roboto';
-      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-      color: var(--ink);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: clip;
-      padding-top:    var(--header-h);
+      position: relative;
+      z-index: 1;
       padding-bottom: var(--bottom-bar-height);
     }
-    body::before {
+
+    .page-wrapper *,
+    .page-wrapper *::before,
+    .page-wrapper *::after {
+      box-sizing: border-box;
+    }
+
+    .page-wrapper a      { text-decoration: none; color: inherit; }
+    .page-wrapper img    { max-width: 100%; display: block; }
+    .page-wrapper button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+
+    .page-wrapper::before {
       content: '';
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background-image:
         radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
       pointer-events: none;
-      z-index: 0;
+      z-index: -1;
     }
-    a      { text-decoration:none; color:inherit; }
-    img    { max-width:100%; display:block; }
-    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
-    ::-webkit-scrollbar       { width:8px; }
-    ::-webkit-scrollbar-track { background:var(--surface-3); }
-    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
-    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
-    .hide-mobile { display:none; }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration:0.01ms !important;
-        animation-iteration-count:1 !important;
-        transition-duration:0.01ms !important;
-        scroll-behavior:auto !important;
-      }
 
+    /* ── STATS BAR ── */
+    .bl-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .bl-stat {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 1.5px solid var(--border-light);
+      background: #fff; font-size: 12px; font-weight: 600;
+      color: var(--text-secondary); white-space: nowrap;
+      box-shadow: var(--bl-shadow-xs);
+    }
+    .bl-stat i { font-size: 13px; }
+    .bl-stat.s-gold   { background: #fffbeb; border-color: rgba(212,175,55,.4);  color: #92400e; }
+    .bl-stat.s-blue   { background: #dbeafe; border-color: #bfdbfe;              color: #1e40af; }
+    .bl-stat.s-green  { background: #d1fae5; border-color: #a7f3d0;              color: #065f46; }
+    .bl-stat.s-purple { background: #ede9fe; border-color: #c4b5fd;              color: #5b21b6; }
+
+    /* ── TOOLBAR ── */
+    .bl-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .bl-search {
+      flex: 1; min-width: 200px; max-width: 400px;
+      display: flex; align-items: center;
+      background: #fff; border: 1.5px solid var(--border-medium);
+      border-radius: var(--r-md); overflow: hidden;
+      transition: border-color var(--transition-base), box-shadow var(--transition-base);
+    }
+    .bl-search:focus-within {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 3px rgba(13,71,161,.08);
+    }
+    .bl-search i { padding: 0 10px; font-size: 15px; color: var(--text-muted); }
+    .bl-search input {
+      flex: 1; border: none; outline: none;
+      font-family: var(--font-body); font-size: 13px;
+      padding: 9px 0; background: transparent; color: var(--text-primary);
+    }
+    .bl-search input::placeholder { color: var(--text-muted); font-size: 12px; }
+
+    .bl-select {
+      padding: 9px 28px 9px 12px;
+      border: 1.5px solid var(--border-medium);
+      border-radius: var(--r-md);
+      background: #fff;
+      font-family: var(--font-body);
+      font-size: 12px; font-weight: 600; color: var(--text-primary);
+      cursor: pointer; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      transition: border-color var(--transition-base);
+    }
+    .bl-select:focus { border-color: var(--primary-blue); }
+
+    .bl-view-btns { display: flex; gap: 4px; margin-left: auto; }
+    .bl-vbtn {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--border-medium); border-radius: var(--r-md);
+      background: #fff; cursor: pointer; font-size: 15px; color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+    .bl-vbtn.active, .bl-vbtn:hover {
+      background: var(--primary-dark); color: #fff; border-color: var(--primary-dark);
+    }
+
+    /* ── FILTER TABS ── */
+    .bl-tabs {
+      display: flex; gap: 6px; margin-bottom: 1rem;
+      flex-wrap: nowrap; overflow-x: auto;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
+    }
+    .bl-tabs::-webkit-scrollbar { display: none; }
+    .bl-tab {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 1.5px solid var(--border-medium); background: #fff;
+      color: var(--text-secondary); font-family: var(--font-body);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      transition: all var(--transition-base);
+      box-shadow: var(--bl-shadow-xs);
+    }
+    .bl-tab:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-1px); }
+    .bl-tab.active {
+      background: var(--primary-dark); color: #fff; border-color: transparent;
+      box-shadow: 0 3px 10px rgba(10,37,64,.2);
+    }
+    .bl-tab .tc {
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+      background: rgba(0,0,0,.06); color: inherit; font-weight: 700;
+    }
+    .bl-tab.active .tc { background: rgba(255,255,255,.22); }
+
+    /* ── RESULTS BAR ── */
+    .bl-results {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.875rem; flex-wrap: wrap; gap: 6px;
+    }
+    .bl-results-left { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .bl-results-left strong { color: var(--primary-blue); font-weight: 700; }
+    .bl-sort-info { font-size: 11px; color: var(--text-muted); }
+
+    /* ── HIGHLIGHT CALLOUT ── */
+    .highlight-callout {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; margin-bottom: 1rem;
+      background: var(--warn-bg); border: 1px solid rgba(212,175,55,.4);
+      border-radius: var(--r-md); font-size: 12px; color: var(--warn);
+    }
+    .highlight-callout a { margin-left: auto; font-weight: 600; color: var(--primary-blue); }
+
+    /* ── GRID — adaptive 2 → 3 → 4 columns ── */
+    .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+    /* ── CARD ── */
+    .brand-card {
+      background: #fff; border-radius: var(--r-lg);
+      border: 1.5px solid var(--border-light);
+      box-shadow: var(--bl-shadow-sm);
+      overflow: hidden; display: flex; flex-direction: column;
+      cursor: pointer; position: relative;
+      transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
+    }
+    .brand-card:hover { transform: translateY(-5px); box-shadow: var(--bl-shadow-lg); border-color: var(--border-medium); }
+    .brand-card:focus-visible { outline: 3px solid var(--primary-blue); outline-offset: 2px; }
+    .brand-card.highlighted { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(212,175,55,.22), var(--bl-shadow-lg); }
+
+    .bc-logo {
+      height: 110px; background: var(--bg-secondary);
+      display: flex; align-items: center; justify-content: center;
+      border-bottom: 1px solid var(--border-light); padding: 1rem;
+      position: relative; overflow: hidden;
+    }
+    .bc-logo img { max-width: 100%; max-height: 70px; object-fit: contain; transition: transform var(--transition-slow); }
+    .brand-card:hover .bc-logo img { transform: scale(1.07); }
+
+    .bc-logo-placeholder {
+      width: 56px; height: 56px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+    }
+
+    .bc-badges { position: absolute; top: 7px; left: 7px; display: flex; flex-wrap: wrap; gap: 3px; z-index: 2; }
+    .bc-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 6px; border-radius: 999px; font-size: 9px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .bc-badge i { font-size: 9px; }
+    .bdg-v  { background: #d1fae5; color: #065f46; }
+    .bdg-f  { background: #fef3c7; color: #92400e; }
+    .bdg-t  { background: #fee2e2; color: #991b1b; }
+    .bdg-o  { background: #dbeafe; color: #1e40af; }
+    .bdg-tr { background: #ede9fe; color: #5b21b6; }
+
+    .bc-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .bc-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .bc-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bc-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 999px;
+      background: var(--bg-secondary); border: 1px solid var(--border-light);
+      font-size: 9px; color: var(--text-muted); font-weight: 600;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .bc-chip i { font-size: 9px; }
+
+    .bc-tagline { font-size: 11px; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+
+    .bc-mini-stats { display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+    .bc-ms { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-secondary); }
+    .bc-ms i      { font-size: 10px; color: var(--text-muted); }
+    .bc-ms strong { color: var(--text-primary); font-weight: 600; }
+
+    .bc-pop { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .bc-pop-label { font-size: 9px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+    .bc-pop-track { flex: 1; height: 3px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; }
+    .bc-pop-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary-dark), var(--primary-light)); transition: width 0.4s ease; }
+    .bc-pop-val { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 22px; text-align: right; flex-shrink: 0; }
+
+    .bc-meta {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding-top: 8px; margin-top: auto; border-top: 1px solid var(--border-light);
+      font-size: 10px; color: var(--text-muted); flex-wrap: wrap;
+    }
+    .bc-meta span { display: flex; align-items: center; gap: 3px; }
+    .bc-meta i    { font-size: 10px; }
+
+    .bc-cta {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      margin-top: 8px; padding: 7px 0; width: 100%;
+      background: var(--primary-dark); color: #fff; border-radius: var(--r-sm);
+      font-family: var(--font-body); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2px; border: none; cursor: pointer;
+      transition: background var(--transition-base); text-decoration: none;
+    }
+    .bc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
+    .brand-card:hover .bc-cta   { background: var(--primary-blue); }
+    .brand-card:hover .bc-cta i { transform: translateX(3px); }
+
+    /* ── LIST MODE ── */
+    .brand-grid.list-mode { grid-template-columns: 1fr; }
+    .brand-grid.list-mode .brand-card { flex-direction: row; align-items: stretch; }
+    .brand-grid.list-mode .bc-logo {
+      width: 100px; height: auto; min-height: 80px; flex-shrink: 0;
+      border-bottom: none; border-right: 1px solid var(--border-light);
+    }
+    .brand-grid.list-mode .bc-body { flex-direction: row; align-items: center; gap: 16px; padding: 10px 14px; }
+    .brand-grid.list-mode .bc-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .brand-grid.list-mode .bc-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .brand-grid.list-mode .bc-pop   { width: 140px; }
+    .brand-grid.list-mode .bc-cta   { width: auto; padding: 6px 14px; margin: 0; }
+    .brand-grid.list-mode .bc-meta  { border: none; padding: 0; flex-wrap: nowrap; }
+
+    /* ── EMPTY STATE ── */
+    .bl-empty { grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
+    .bl-empty-icon {
+      width: 72px; height: 72px; border-radius: 50%; background: var(--bg-tertiary);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;
+    }
+    .bl-empty i   { font-size: 2rem; opacity: 0.25; }
+    .bl-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
+    .bl-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
+    .bl-empty-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; background: var(--primary-dark); color: #fff;
+      border: none; border-radius: var(--r-md);
+      font-family: var(--font-body); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background var(--transition-base);
+    }
+    .bl-empty-btn:hover { background: var(--primary-blue); }
+
+    /* ── INFINITE SCROLL ── */
+    .inf-loader {
+      display: none; align-items: center; justify-content: center; gap: 8px;
+      padding: 1.25rem 0; font-size: 12px; color: var(--text-muted);
+    }
+    .inf-loader.visible { display: flex; }
+    .inf-spinner {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid var(--border-light); border-top-color: var(--primary-blue);
+      animation: bl-spin 0.7s linear infinite;
+    }
+    @keyframes bl-spin { to { transform: rotate(360deg); } }
+    .inf-end {
+      display: none; align-items: center; justify-content: center; gap: 6px;
+      padding: 1.25rem 0; font-size: 11px; color: var(--text-muted);
+    }
+    .inf-end.visible { display: flex; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .bl-toolbar { gap: 6px; }
+      .bl-search  { min-width: 0; flex: 1 1 55%; }
+      .bl-select  { font-size: 11px; }
+      .brand-grid { gap: 10px; }
+      .bc-logo    { height: 96px; }
+      .bc-name    { font-size: 12px; }
+      .bc-tagline { font-size: 10px; }
+    }
+    @media (max-width: 600px) {
+      .brand-grid { gap: 8px; }
+      .bc-logo    { height: 88px; padding: 0.875rem; }
+      .bc-body    { padding: 8px 10px 10px; }
+      .bc-name    { font-size: 11px; }
+      .bc-cta     { font-size: 10px; padding: 6px 0; }
+    }
+    @media (max-width: 480px) {
+      .bl-toolbar   { flex-direction: column; align-items: stretch; }
+      .bl-search    { max-width: 100%; flex: none; }
+      .bl-select    { width: 100%; }
+      .bl-view-btns { margin-left: 0; }
+      .brand-grid   { gap: 6px; }
+      .bc-logo      { height: 80px; padding: 0.75rem; }
+      .bc-tagline, .bc-chip { display: none; }
+      .bc-pop       { display: none; }
+      .bc-meta      { font-size: 9px; gap: 6px; }
+      .bc-badge     { font-size: 8px; padding: 1px 5px; }
+    }
+    @media (max-width: 360px) {
+      .bc-logo { height: 70px; }
+      .bc-name { font-size: 10px; }
+      .bc-cta  { font-size: 9px; padding: 5px 0; border-radius: 6px; }
+      .bl-tab  { font-size: 11px; padding: 5px 10px; }
+      .bl-stat { font-size: 11px; padding: 5px 10px; }
+    }
+    @media (max-width: 320px) {
+      .bc-meta { display: none; }
+      .bc-logo { height: 60px; padding: 0.5rem; }
+      .bc-name { font-size: 9px; }
+      .bc-cta  { font-size: 8px; border-radius: 4px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-card, .brand-card:hover, .bc-logo img, .brand-card:hover .bc-logo img,
+      .bc-cta, .bc-cta i, .brand-card:hover .bc-cta i, .bl-tab, .bl-vbtn, .bc-pop-fill {
+        transition: none; transform: none; animation: none;
+      }
+      .inf-spinner { animation: none; border-color: var(--primary-blue); }
     }
   </style>
-</head>
+{% endblock %}
 
-<body>
+{% block content %}
 
+  {% include "search.html" %}
 
+  <div class="page-wrapper">
 
-<style>
-/* ════════════════════════════════════════════════════════════════
-   BRAND LIST — Enterprise CSS
-   Drop inside your <head> after your global design tokens.
-   ════════════════════════════════════════════════════════════════ */
-
-/* ── STATS BAR ── */
-.bl-stats {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-.bl-stat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-light);
-  background: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  box-shadow: var(--shadow-xs);
-}
-.bl-stat i { font-size: 13px; }
-.bl-stat.s-gold   { background: #fffbeb; border-color: rgba(212,175,55,.4);  color: #92400e; }
-.bl-stat.s-blue   { background: #dbeafe; border-color: #bfdbfe;              color: #1e40af; }
-.bl-stat.s-green  { background: #d1fae5; border-color: #a7f3d0;              color: #065f46; }
-.bl-stat.s-purple { background: #ede9fe; border-color: #c4b5fd;              color: #5b21b6; }
-
-/* ── TOOLBAR ── */
-.bl-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-.bl-search {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
-}
-.bl-search:focus-within {
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(13,71,161,.08);
-}
-.bl-search i {
-  padding: 0 10px;
-  font-size: 15px;
-  color: var(--text-muted);
-}
-.bl-search input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-family: var(--font-body);
-  font-size: 13px;
-  padding: 9px 0;
-  background: transparent;
-  color: var(--text-primary);
-}
-.bl-search input::placeholder { color: var(--text-muted); font-size: 12px; }
-
-.bl-select {
-  padding: 9px 28px 9px 12px;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  background: #fff;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 9px center;
-  transition: border-color var(--transition-base);
-}
-.bl-select:focus { border-color: var(--primary-blue); }
-
-.bl-view-btns {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.bl-vbtn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--r-md);
-  background: #fff;
-  cursor: pointer;
-  font-size: 15px;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-}
-.bl-vbtn.active,
-.bl-vbtn:hover {
-  background: var(--primary-dark);
-  color: #fff;
-  border-color: var(--primary-dark);
-}
-
-/* ── FILTER TABS ── */
-.bl-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 1rem;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-.bl-tabs::-webkit-scrollbar { display: none; }
-
-.bl-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-medium);
-  background: #fff;
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all var(--transition-base);
-  box-shadow: var(--shadow-xs);
-}
-.bl-tab:hover {
-  border-color: var(--primary-blue);
-  color: var(--primary-blue);
-  transform: translateY(-1px);
-}
-.bl-tab.active {
-  background: var(--primary-dark);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 3px 10px rgba(10,37,64,.2);
-}
-.bl-tab .tc {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.06);
-  color: inherit;
-  font-weight: 700;
-}
-.bl-tab.active .tc { background: rgba(255,255,255,.22); }
-
-/* ── RESULTS BAR ── */
-.bl-results {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.875rem;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.bl-results-left {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.bl-results-left strong { color: var(--primary-blue); font-weight: 700; }
-.bl-sort-info { font-size: 11px; color: var(--text-muted); }
-
-/* ── GRID — adaptive 2 → 3 → 4 columns ── */
-.brand-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-/* ── CARD ── */
-.brand-card {
-  background: #fff;
-  border-radius: var(--r-lg);
-  border: 1.5px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  position: relative;
-  transition:
-    transform var(--transition-base),
-    box-shadow var(--transition-base),
-    border-color var(--transition-base);
-}
-.brand-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--border-medium);
-}
-.brand-card:focus-visible {
-  outline: 3px solid var(--primary-blue);
-  outline-offset: 2px;
-}
-.brand-card.highlighted {
-  border-color: var(--accent-gold);
-  box-shadow: 0 0 0 3px rgba(212,175,55,.22), var(--shadow-lg);
-}
-
-/* Logo area */
-.bc-logo {
-  height: 110px;
-  background: var(--bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--border-light);
-  padding: 1rem;
-  position: relative;
-  overflow: hidden;
-}
-.bc-logo img {
-  max-width: 100%;
-  max-height: 70px;
-  object-fit: contain;
-  transition: transform var(--transition-slow);
-}
-.brand-card:hover .bc-logo img { transform: scale(1.07); }
-
-.bc-logo-placeholder {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--r-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* Badges */
-.bc-badges {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  z-index: 2;
-}
-.bc-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.bc-badge i { font-size: 9px; }
-.bdg-v  { background: #d1fae5; color: #065f46; }
-.bdg-f  { background: #fef3c7; color: #92400e; }
-.bdg-t  { background: #fee2e2; color: #991b1b; }
-.bdg-o  { background: #dbeafe; color: #1e40af; }
-.bdg-tr { background: #ede9fe; color: #5b21b6; }
-
-/* Body */
-.bc-body {
-  padding: 10px 12px 12px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.bc-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.bc-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  font-size: 9px;
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.bc-chip i { font-size: 9px; }
-
-.bc-tagline {
-  font-size: 11px;
-  color: var(--text-muted);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-}
-
-/* Mini stats row */
-.bc-mini-stats {
-  display: flex;
-  gap: 10px;
-  margin-top: 2px;
-  flex-wrap: wrap;
-}
-.bc-ms {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 10px;
-  color: var(--text-secondary);
-}
-.bc-ms i      { font-size: 10px; color: var(--text-muted); }
-.bc-ms strong { color: var(--text-primary); font-weight: 600; }
-
-/* Popularity bar */
-.bc-pop {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-.bc-pop-label {
-  font-size: 9px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.bc-pop-track {
-  flex: 1;
-  height: 3px;
-  background: var(--bg-tertiary);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.bc-pop-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--primary-dark), var(--primary-light));
-  transition: width 0.4s ease;
-}
-.bc-pop-val {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-muted);
-  min-width: 22px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* Meta row */
-.bc-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding-top: 8px;
-  margin-top: auto;
-  border-top: 1px solid var(--border-light);
-  font-size: 10px;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-}
-.bc-meta span { display: flex; align-items: center; gap: 3px; }
-.bc-meta i    { font-size: 10px; }
-
-/* CTA button */
-.bc-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 7px 0;
-  width: 100%;
-  background: var(--primary-dark);
-  color: #fff;
-  border-radius: var(--r-sm);
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  border: none;
-  cursor: pointer;
-  transition: background var(--transition-base);
-  text-decoration: none;
-}
-.bc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
-.brand-card:hover .bc-cta   { background: var(--primary-blue); }
-.brand-card:hover .bc-cta i { transform: translateX(3px); }
-
-/* ── LIST MODE ── */
-.brand-grid.list-mode { grid-template-columns: 1fr; }
-
-.brand-grid.list-mode .brand-card {
-  flex-direction: row;
-  align-items: stretch;
-}
-.brand-grid.list-mode .bc-logo {
-  width: 100px;
-  height: auto;
-  min-height: 80px;
-  flex-shrink: 0;
-  border-bottom: none;
-  border-right: 1px solid var(--border-light);
-}
-.brand-grid.list-mode .bc-body {
-  flex-direction: row;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 14px;
-}
-.brand-grid.list-mode .bc-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.brand-grid.list-mode .bc-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.brand-grid.list-mode .bc-pop   { width: 140px; }
-.brand-grid.list-mode .bc-cta   { width: auto; padding: 6px 14px; margin: 0; }
-.brand-grid.list-mode .bc-meta  { border: none; padding: 0; flex-wrap: nowrap; }
-
-/* ── EMPTY STATE ── */
-.bl-empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 4rem 1rem;
-  color: var(--text-muted);
-}
-.bl-empty-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--bg-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-}
-.bl-empty i   { font-size: 2rem; opacity: 0.25; }
-.bl-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
-.bl-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
-.bl-empty-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 18px;
-  background: var(--primary-dark);
-  color: #fff;
-  border: none;
-  border-radius: var(--r-md);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--transition-base);
-}
-.bl-empty-btn:hover { background: var(--primary-blue); }
-
-/* ── INFINITE SCROLL ── */
-.inf-loader {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 1.25rem 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.inf-loader.visible { display: flex; }
-
-.inf-spinner {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--border-light);
-  border-top-color: var(--primary-blue);
-  animation: bl-spin 0.7s linear infinite;
-}
-@keyframes bl-spin { to { transform: rotate(360deg); } }
-
-.inf-end {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 1.25rem 0;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.inf-end.visible { display: flex; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .bl-toolbar       { gap: 6px; }
-  .bl-search        { min-width: 0; flex: 1 1 55%; }
-  .bl-select        { font-size: 11px; }
-  .brand-grid       { gap: 10px; }
-  .bc-logo          { height: 96px; }
-  .bc-name          { font-size: 12px; }
-  .bc-tagline       { font-size: 10px; }
-}
-
-@media (max-width: 600px) {
-  .brand-grid       { gap: 8px; }
-  .bc-logo          { height: 88px; padding: 0.875rem; }
-  .bc-body          { padding: 8px 10px 10px; }
-  .bc-name          { font-size: 11px; }
-  .bc-cta           { font-size: 10px; padding: 6px 0; }
-}
-
-@media (max-width: 480px) {
-  .bl-toolbar       { flex-direction: column; align-items: stretch; }
-  .bl-search        { max-width: 100%; flex: none; }
-  .bl-select        { width: 100%; }
-  .bl-view-btns     { margin-left: 0; }
-  .brand-grid       { gap: 6px; }
-  .bc-logo          { height: 80px; padding: 0.75rem; }
-  .bc-tagline,
-  .bc-chip          { display: none; }
-  .bc-pop           { display: none; }
-  .bc-meta          { font-size: 9px; gap: 6px; }
-  .bc-badge         { font-size: 8px; padding: 1px 5px; }
-}
-
-@media (max-width: 360px) {
-  .bc-logo          { height: 70px; }
-  .bc-name          { font-size: 10px; }
-  .bc-cta           { font-size: 9px; padding: 5px 0; border-radius: 6px; }
-  .bl-tab           { font-size: 11px; padding: 5px 10px; }
-  .bl-stat          { font-size: 11px; padding: 5px 10px; }
-}
-
-@media (max-width: 320px) {
-  .bc-meta          { display: none; }
-  .bc-logo          { height: 60px; padding: 0.5rem; }
-  .bc-name          { font-size: 9px; }
-  .bc-cta           { font-size: 8px; border-radius: 4px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .brand-card,
-  .brand-card:hover,
-  .bc-logo img,
-  .brand-card:hover .bc-logo img,
-  .bc-cta,
-  .bc-cta i,
-  .brand-card:hover .bc-cta i,
-  .bl-tab,
-  .bl-vbtn,
-  .bc-pop-fill {
-    transition: none;
-    transform: none;
-    animation: none;
-  }
-  .inf-spinner {
-    animation: none;
-    border-color: var(--primary-blue);
-  }
-}
-
-
-</style>
-
-
-<div class="page-wrapper">
-
-  
-  {# ── FILTER TABS ── #}
-  <div class="bl-tabs" role="tablist" aria-label="Filter by brand type">
-    {% for tab in filter_tabs %}
-      <a
-        href="{% url 'ponno:brand_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}"
-        class="bl-tab {% if tab.active %}active{% endif %}"
-        role="tab"
-        aria-selected="{% if tab.active %}true{% else %}false{% endif %}"
-      >
-        {% if   tab.value == 'all'      %}<i class="fa-solid fa-border-all"></i>
-        {% elif tab.value == 'verified' %}<i class="fa-solid fa-circle-check"></i>
-        {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
-        {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
-        {% elif tab.value == 'official' %}<i class="fa-solid fa-shield-halved"></i>
-        {% elif tab.value == 'trusted'  %}<i class="fa-solid fa-medal"></i>
-        {% endif %}
-        {{ tab.label }}
-        <span class="tc">{{ tab.count }}</span>
-      </a>
-    {% endfor %}
-  </div>
-
-  {# ── RESULTS BAR ── #}
-  {% if brands %}
-  <div class="bl-results">
-    <div class="bl-results-left">
-      Showing
-      <strong id="resShowing">{{ brands|length }}</strong>
-      of
-      <strong>{{ total_count }}</strong>
-      brand{% if total_count != 1 %}s{% endif %}
-      {% if current_filter != 'all' %}&mdash; {{ current_filter|capfirst }} only{% endif %}
-    </div>
-    <div class="bl-sort-info">
-      Sorted by
-      {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
-      {% if query %}
-        &nbsp;&middot;&nbsp;
+    {# ── FILTER TABS ── #}
+    <div class="bl-tabs" role="tablist" aria-label="Filter by brand type">
+      {% for tab in filter_tabs %}
         <a
-          href="{% url 'ponno:brand_list' %}{% if current_filter != 'all' %}?type={{ current_filter }}{% endif %}"
-          style="color:var(--primary-blue);font-weight:600;"
+          href="{% url 'ponno:brand_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}"
+          class="bl-tab {% if tab.active %}active{% endif %}"
+          role="tab"
+          aria-selected="{% if tab.active %}true{% else %}false{% endif %}"
         >
-          <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
+          {% if   tab.value == 'all'      %}<i class="fa-solid fa-border-all"></i>
+          {% elif tab.value == 'verified' %}<i class="fa-solid fa-circle-check"></i>
+          {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
+          {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
+          {% elif tab.value == 'official' %}<i class="fa-solid fa-shield-halved"></i>
+          {% elif tab.value == 'trusted'  %}<i class="fa-solid fa-medal"></i>
+          {% endif %}
+          {{ tab.label }}
+          <span class="tc">{{ tab.count }}</span>
         </a>
-      {% endif %}
+      {% endfor %}
     </div>
-  </div>
-  {% endif %}
 
-  {# ── HIGHLIGHTED BRAND CALLOUT ── #}
-  {% if highlighted_brand %}
-  <div class="highlight-callout">
-    <i class="fa-solid fa-bolt"></i>
-    Showing <strong>{{ highlighted_brand.brand_name }}</strong> at the top of results.
-    <a href="{% url 'ponno:brand_list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
-      <i class="fa-solid fa-xmark"></i> Remove highlight
-    </a>
-  </div>
-  {% endif %}
-
-  {# ── BRAND GRID ── #}
-  <div class="brand-grid" id="brandGrid">
-
-    {% for brand in brands %}
-    <a
-      href="{% url 'ponno:brand_products' brand_slug=brand.slug %}"
-      class="brand-card {% if brand.highlighted %}highlighted{% endif %}"
-      aria-label="{{ brand.name }}{% if brand.tagline %} — {{ brand.tagline }}{% endif %}"
-      tabindex="0"
-    >
-
-      {# Badges #}
-      <div class="bc-badges">
-        {% if brand.is_verified %}
-          <span class="bc-badge bdg-v"><i class="fa-solid fa-circle-check"></i>Verified</span>
-        {% endif %}
-        {% if brand.is_featured %}
-          <span class="bc-badge bdg-f"><i class="fa-solid fa-star"></i>Featured</span>
-        {% endif %}
-        {% if brand.is_trending %}
-          <span class="bc-badge bdg-t"><i class="fa-solid fa-fire"></i>Trending</span>
-        {% endif %}
-        {% if brand.is_official %}
-          <span class="bc-badge bdg-o"><i class="fa-solid fa-shield-halved"></i>Official</span>
-        {% endif %}
-        {% if brand.is_trusted %}
-          <span class="bc-badge bdg-tr"><i class="fa-solid fa-medal"></i>Trusted</span>
-        {% endif %}
+    {# ── RESULTS BAR ── #}
+    {% if brands %}
+    <div class="bl-results">
+      <div class="bl-results-left">
+        Showing
+        <strong id="resShowing">{{ brands|length }}</strong>
+        of
+        <strong>{{ total_count }}</strong>
+        brand{% if total_count != 1 %}s{% endif %}
+        {% if current_filter != 'all' %}&mdash; {{ current_filter|capfirst }} only{% endif %}
       </div>
-
-      {# Logo #}
-      <div class="bc-logo">
-        <img
-          src="{{ brand.logo }}"
-          alt="{{ brand.name }} logo"
-          loading="lazy"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-        >
-        {# Fallback initials placeholder — hidden until img errors #}
-        <div class="bc-logo-placeholder" style="display:none;background:#e0e7ff;color:#3730a3">
-          {{ brand.name|slice:":2"|upper }}
-        </div>
-      </div>
-
-      {# Body #}
-      <div class="bc-body">
-
-        {# Grid mode body (default) #}
-        <div class="bc-name-row">
-          <div class="bc-name">{{ brand.name }}</div>
-          {% if brand.type %}
-          <span class="bc-chip">
-            {% if   brand.type == 'manufacturer' %}<i class="fa-solid fa-industry"></i>
-            {% elif brand.type == 'distributor'  %}<i class="fa-solid fa-truck"></i>
-            {% elif brand.type == 'retailer'     %}<i class="fa-solid fa-store"></i>
-            {% else                              %}<i class="fa-solid fa-tag"></i>
-            {% endif %}
-            {{ brand.type|capfirst }}
-          </span>
-          {% endif %}
-        </div>
-
-        {% if brand.tagline %}
-          <div class="bc-tagline">{{ brand.tagline }}</div>
-        {% endif %}
-
-        <div class="bc-mini-stats">
-          <span class="bc-ms">
-            <i class="fa-solid fa-box"></i>
-            <strong>{{ brand.product_count }}</strong>&nbsp;products
-          </span>
-          <span class="bc-ms">
-            <i class="fa-solid fa-eye"></i>
-            <strong>{{ brand.view_count }}</strong>&nbsp;views
-          </span>
-          {% if brand.country %}
-            <span class="bc-ms">
-              <i class="fa-solid fa-location-dot"></i>
-              <strong>{{ brand.country }}</strong>
-            </span>
-          {% endif %}
-        </div>
-
-        <div class="bc-pop">
-          <span class="bc-pop-label">Popularity</span>
-          <div class="bc-pop-track">
-            <div class="bc-pop-fill" style="width:{{ brand.popularity_score|floatformat:0 }}%"></div>
-          </div>
-          <span class="bc-pop-val">{{ brand.popularity_score|floatformat:0 }}</span>
-        </div>
-
-        <div class="bc-meta">
-          <span><i class="fa-solid fa-box"></i>{{ brand.product_count }} product{% if brand.product_count != 1 %}s{% endif %}</span>
-          <span><i class="fa-solid fa-eye"></i>{{ brand.view_count }} views</span>
-          {% if brand.country %}
-            <span><i class="fa-solid fa-location-dot"></i>{{ brand.country }}</span>
-          {% endif %}
-        </div>
-
-        <div class="bc-cta">
-          View products <i class="fa-solid fa-arrow-right"></i>
-        </div>
-
-      </div>{# /bc-body #}
-    </a>
-
-    {% empty %}
-    <div class="bl-empty">
-      <div class="bl-empty-icon">
-        <i class="fa-solid fa-registered"></i>
-      </div>
-      <h3>No brands found</h3>
-      <p>
+      <div class="bl-sort-info">
+        Sorted by
+        {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
         {% if query %}
-          No brands matched &ldquo;<strong>{{ query }}</strong>&rdquo;.
-          Try a different keyword or clear the search.
-        {% else %}
-          No brands match the selected filter.
-          Try switching to &ldquo;All&rdquo;.
+          &nbsp;&middot;&nbsp;
+          <a
+            href="{% url 'ponno:brand_list' %}{% if current_filter != 'all' %}?type={{ current_filter }}{% endif %}"
+            style="color:var(--primary-blue);font-weight:600;"
+          >
+            <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
+          </a>
         {% endif %}
-      </p>
-      <a href="{% url 'ponno:brand_list' %}" class="bl-empty-btn">
-        <i class="fa-solid fa-rotate-left"></i> View all brands
+      </div>
+    </div>
+    {% endif %}
+
+    {# ── HIGHLIGHTED BRAND CALLOUT ── #}
+    {% if highlighted_brand %}
+    <div class="highlight-callout">
+      <i class="fa-solid fa-bolt"></i>
+      Showing <strong>{{ highlighted_brand.brand_name }}</strong> at the top of results.
+      <a href="{% url 'ponno:brand_list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
+        <i class="fa-solid fa-xmark"></i> Remove highlight
       </a>
     </div>
-    {% endfor %}
-
-    {# Infinite scroll sentinel #}
-    <div id="inf-sentinel" style="grid-column:1/-1;height:1px"></div>
-
-  </div>{# /brand-grid #}
-
-  {# Infinite scroll loader + end message (outside the grid) #}
-  <div class="inf-loader" id="infLoader">
-    <div class="inf-spinner"></div> Loading more brands…
-  </div>
-  <div class="inf-end" id="infEnd">
-    <i class="fa-solid fa-check"></i> All brands loaded
-  </div>
-
-  {# ── PAGINATION (no-JS fallback; hidden when infinite scroll is active) ── #}
-  {% if page_obj.paginator.num_pages > 1 %}
-  <nav
-    class="pagination-wrapper"
-    id="staticPagination"
-    aria-label="Brand page navigation"
-    style="display:none"
-  >
-    {% if page_obj.has_previous %}
-      <a class="page-link"
-         href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-        <i class="fa-solid fa-chevron-left"></i> Previous
-      </a>
     {% endif %}
 
-    {% for num in page_obj.paginator.page_range %}
-      {% if page_obj.number == num %}
-        <span class="page-item active"><span class="page-link">{{ num }}</span></span>
-      {% elif num == 1 or num == page_obj.paginator.num_pages %}
-        <a class="page-link page-number"
-           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          {{ num }}
+    {# ── BRAND GRID ── #}
+    <div class="brand-grid" id="brandGrid">
+
+      {% for brand in brands %}
+      <a
+        href="{% url 'ponno:brand_products' brand_slug=brand.slug %}"
+        class="brand-card {% if brand.highlighted %}highlighted{% endif %}"
+        aria-label="{{ brand.name }}{% if brand.tagline %} — {{ brand.tagline }}{% endif %}"
+        tabindex="0"
+      >
+
+        <div class="bc-badges">
+          {% if brand.is_verified %}<span class="bc-badge bdg-v"><i class="fa-solid fa-circle-check"></i>Verified</span>{% endif %}
+          {% if brand.is_featured %}<span class="bc-badge bdg-f"><i class="fa-solid fa-star"></i>Featured</span>{% endif %}
+          {% if brand.is_trending %}<span class="bc-badge bdg-t"><i class="fa-solid fa-fire"></i>Trending</span>{% endif %}
+          {% if brand.is_official %}<span class="bc-badge bdg-o"><i class="fa-solid fa-shield-halved"></i>Official</span>{% endif %}
+          {% if brand.is_trusted %}<span class="bc-badge bdg-tr"><i class="fa-solid fa-medal"></i>Trusted</span>{% endif %}
+        </div>
+
+        <div class="bc-logo">
+          <img
+            src="{{ brand.logo }}"
+            alt="{{ brand.name }} logo"
+            loading="lazy"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          >
+          <div class="bc-logo-placeholder" style="display:none;background:#e0e7ff;color:#3730a3">
+            {{ brand.name|slice:":2"|upper }}
+          </div>
+        </div>
+
+        <div class="bc-body">
+
+          <div class="bc-name-row">
+            <div class="bc-name">{{ brand.name }}</div>
+            {% if brand.type %}
+            <span class="bc-chip">
+              {% if   brand.type == 'manufacturer' %}<i class="fa-solid fa-industry"></i>
+              {% elif brand.type == 'distributor'  %}<i class="fa-solid fa-truck"></i>
+              {% elif brand.type == 'retailer'     %}<i class="fa-solid fa-store"></i>
+              {% else                              %}<i class="fa-solid fa-tag"></i>
+              {% endif %}
+              {{ brand.type|capfirst }}
+            </span>
+            {% endif %}
+          </div>
+
+          {% if brand.tagline %}
+            <div class="bc-tagline">{{ brand.tagline }}</div>
+          {% endif %}
+
+          <div class="bc-mini-stats">
+            <span class="bc-ms"><i class="fa-solid fa-box"></i><strong>{{ brand.product_count }}</strong>&nbsp;products</span>
+            <span class="bc-ms"><i class="fa-solid fa-eye"></i><strong>{{ brand.view_count }}</strong>&nbsp;views</span>
+            {% if brand.country %}
+              <span class="bc-ms"><i class="fa-solid fa-location-dot"></i><strong>{{ brand.country }}</strong></span>
+            {% endif %}
+          </div>
+
+          <div class="bc-pop">
+            <span class="bc-pop-label">Popularity</span>
+            <div class="bc-pop-track">
+              <div class="bc-pop-fill" style="width:{{ brand.popularity_score|floatformat:0 }}%"></div>
+            </div>
+            <span class="bc-pop-val">{{ brand.popularity_score|floatformat:0 }}</span>
+          </div>
+
+          <div class="bc-meta">
+            <span><i class="fa-solid fa-box"></i>{{ brand.product_count }} product{% if brand.product_count != 1 %}s{% endif %}</span>
+            <span><i class="fa-solid fa-eye"></i>{{ brand.view_count }} views</span>
+            {% if brand.country %}
+              <span><i class="fa-solid fa-location-dot"></i>{{ brand.country }}</span>
+            {% endif %}
+          </div>
+
+          <div class="bc-cta">View products <i class="fa-solid fa-arrow-right"></i></div>
+
+        </div>
+      </a>
+
+      {% empty %}
+      <div class="bl-empty">
+        <div class="bl-empty-icon"><i class="fa-solid fa-registered"></i></div>
+        <h3>No brands found</h3>
+        <p>
+          {% if query %}
+            No brands matched &ldquo;<strong>{{ query }}</strong>&rdquo;.
+            Try a different keyword or clear the search.
+          {% else %}
+            No brands match the selected filter.
+            Try switching to &ldquo;All&rdquo;.
+          {% endif %}
+        </p>
+        <a href="{% url 'ponno:brand_list' %}" class="bl-empty-btn">
+          <i class="fa-solid fa-rotate-left"></i> View all brands
         </a>
-      {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
-        <span class="page-ellipsis">&hellip;</span>
-      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-        <a class="page-link page-number"
-           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          {{ num }}
+      </div>
+      {% endfor %}
+
+      <div id="inf-sentinel" style="grid-column:1/-1;height:1px"></div>
+
+    </div>{# /brand-grid #}
+
+    <div class="inf-loader" id="infLoader">
+      <div class="inf-spinner"></div> Loading more brands…
+    </div>
+    <div class="inf-end" id="infEnd">
+      <i class="fa-solid fa-check"></i> All brands loaded
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="pagination-wrapper" id="staticPagination" aria-label="Brand page navigation" style="display:none">
+      {% if page_obj.has_previous %}
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+          <i class="fa-solid fa-chevron-left"></i> Previous
         </a>
       {% endif %}
-    {% endfor %}
 
-    {% if page_obj.has_next %}
-      <a class="page-link"
-         href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-        Next <i class="fa-solid fa-chevron-right"></i>
-      </a>
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="page-item active"><span class="page-link">{{ num }}</span></span>
+        {% elif num == 1 or num == page_obj.paginator.num_pages %}
+          <a class="page-link page-number" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">{{ num }}</a>
+        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+          <span class="page-ellipsis">&hellip;</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a class="page-link page-number" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
+          Next <i class="fa-solid fa-chevron-right"></i>
+        </a>
+      {% endif %}
+    </nav>
     {% endif %}
-  </nav>
-  {% endif %}
 
-</div>{# /page-wrapper #}
+  </div>{# /page-wrapper #}
 
-{% comment %} {# Inject server-rendered data for the JS layer #}
-{{ page_obj.paginator.num_pages|json_script:"bl-total-pages" }}
-{{ page_obj.number|json_script:"bl-current-page" }}
-{{ current_filter|json_script:"bl-current-filter" }}
-{{ current_sort|json_script:"bl-current-sort" }}
-{{ query|json_script:"bl-query" }}
- {% endcomment %}
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function applySort(value) {
   const url = new URL(window.location.href);
@@ -1011,6 +623,4 @@ function applySort(value) {
   window.location.href = url.toString();
 }
 </script>
-
-</body>
-</html>
+{% endblock %}

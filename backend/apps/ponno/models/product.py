@@ -298,28 +298,54 @@ class Product(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         help_text=_("Manufacturer's price")
     )
+    is_brand_price_visible = models.BooleanField(
+        _("Show Brand Price"),
+        default=True,
+        blank=True,
+        null=True,
+        help_text=_("Display manufacturer's price (MRP) to customers")
+    )
     
     buying_price = models.DecimalField(
         _("Buying Price"),
         max_digits=12,
         decimal_places=2,
+        null=True,
+        blank=True,
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text=_("Cost price")
+    )
+    is_buying_price_visible = models.BooleanField(
+        _("Show Buying Price"),
+        default=False,
+        blank=True,
+        null=True,
+        help_text=_("Display cost price (usually internal-only, keep hidden from customers)")
     )
     
     selling_price = models.DecimalField(
         _("Selling Price"),
         max_digits=12,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))],
+        validators=[MinValueValidator(Decimal('0.00'))],
         help_text=_("Selling price")
+    )    
+
+    is_selling_price_visible = models.BooleanField(
+        _("Show Selling Price"),
+        default=True,
+        blank=True,
+        null=True,
+        help_text=_("Display selling price to customers")
     )
-    
+
     discount_percentage = models.DecimalField(
         _("Discount %"),
         max_digits=5,
         decimal_places=2,
         default=0,
+        null=True,
+        blank=True,
         validators=[
             MinValueValidator(Decimal('0.00')),
             MaxValueValidator(Decimal('100.00'))
@@ -707,7 +733,7 @@ class Product(models.Model):
     @property
     def profit_margin(self) -> Decimal:
         """Calculate profit margin"""
-        if self.buying_price > 0:
+        if self.buying_price:
             profit = self.selling_price - self.buying_price
             return (profit / self.buying_price) * 100
         return Decimal('0.00')
@@ -768,8 +794,9 @@ class Product(models.Model):
     def calculate_profit(self) -> Decimal:
         """Calculate profit per unit"""
         price = self.final_price or self.selling_price
+        if not self.buying_price:
+            return Decimal('0.00')
         return price - self.buying_price
-    
     # ================================================================
     # INVENTORY METHODS
     # ================================================================
@@ -934,7 +961,7 @@ class Product(models.Model):
         super().clean()
         
         # Validate pricing
-        if self.selling_price < self.buying_price:
+        if self.buying_price is not None and self.selling_price < self.buying_price:
             raise ValidationError(
                 _("Selling price cannot be less than buying price")
             )
