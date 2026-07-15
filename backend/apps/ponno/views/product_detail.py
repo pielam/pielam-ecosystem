@@ -145,18 +145,22 @@ def _format_product_prices(product: Product) -> dict:
 
 def _annotate_card_prices(products: list) -> list:
     """
-    Attach  .fmt_selling_price  and  .fmt_final_price  directly onto each
-    product object in a list so the existing card HTML works unchanged.
-
-    We deliberately set attributes rather than returning a new structure
-    so all existing template references ({{ related.selling_price }}, etc.)
-    keep working while the formatted variants are available alongside them.
+    Attach  .fmt_selling_price, .fmt_final_price, .fmt_brand_price,
+    .show_brand_price, .show_selling_price, and .price_hidden  directly
+    onto each product object in a list so the card HTML can react to
+    per-product price-visibility flags without extra template lookups.
     """
     for p in products:
-        p.fmt_selling_price = format_price(p.selling_price)
-        p.fmt_final_price   = format_price(p.final_price)
-    return products
+        show_selling = bool(getattr(p, "is_selling_price_visible", True))
+        show_brand   = bool(getattr(p, "is_brand_price_visible", True))
 
+        p.fmt_selling_price = format_price(p.selling_price) if show_selling else None
+        p.fmt_final_price   = format_price(p.final_price) if show_selling else None
+        p.fmt_brand_price   = format_price(p.brand_price) if (show_brand and p.brand_price) else None
+        p.show_selling_price = show_selling
+        p.show_brand_price    = show_brand
+        p.price_hidden        = not (show_selling or show_brand)
+    return products
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Internal utilities
@@ -197,6 +201,7 @@ def _get_product(slug: str) -> Optional[Product]:
             .only(
                 "product_id", "product_name", "product_title", "slug", "sku",
                 "selling_price", "buying_price", "brand_price",
+                "is_brand_price_visible", "is_buying_price_visible", "is_selling_price_visible",
                 "discount_percentage", "final_price", "tax_rate", "currency",
                 "stock", "stock_status", "low_stock_threshold",
                 "allow_backorder", "track_inventory",
@@ -248,6 +253,8 @@ def _get_related_products(product: Product) -> list:
             .only(
                 "product_id", "product_name", "slug", "selling_price",
                 "final_price", "discount_percentage", "image",
+                "brand_price",
+                "is_brand_price_visible", "is_selling_price_visible",
                 "rating_average", "review_count", "stock_status",
                 "brand_id", "category_id",
             )
@@ -269,6 +276,8 @@ def _get_dealer_products(product: Product) -> list:
             .only(
                 "product_id", "product_name", "slug", "selling_price",
                 "final_price", "discount_percentage", "image",
+                "brand_price",
+                "is_brand_price_visible", "is_selling_price_visible",
                 "rating_average", "stock_status",
                 "brand_id", "category_id",
             )
@@ -276,7 +285,6 @@ def _get_dealer_products(product: Product) -> list:
         )
         cache.set(cache_key, dealer_prods, _ttl_with_jitter(RELATED_CACHE_TTL))
     return dealer_prods
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Non-blocking analytics
@@ -379,6 +387,8 @@ def _build_structured_data(request, product: Product) -> dict:
         except Exception:
             pass
 
+    show_selling_price = bool(product.is_selling_price_visible)
+
     data: dict = {
         "@context": "https://schema.org/",
         "@type":    "Product",
@@ -390,7 +400,14 @@ def _build_structured_data(request, product: Product) -> dict:
             "@type": "Brand",
             "name":  product.brand.brand_name if product.brand else "Unknown",
         },
-        "offers": {
+    }
+
+    # Only advertise a price to search engines when it's actually shown to buyers.
+    # Omitting "offers" entirely (rather than sending price "0") avoids Google
+    # interpreting the product as free or flagging a structured-data mismatch
+    # against what a visitor sees on the page.
+    if show_selling_price:
+        data["offers"] = {
             "@type":           "Offer",
             "url":             request.build_absolute_uri(),
             "priceCurrency":   product.currency,
@@ -402,14 +419,13 @@ def _build_structured_data(request, product: Product) -> dict:
                 if product.stock > 0
                 else "https://schema.org/OutOfStock"
             ),
-        },
-    }
+        }
 
-    profileinfo = getattr(product.dealer, "profileinfo", None)
-    if profileinfo:
-        seller_name = profileinfo.business_name or profileinfo.profile_name or ""
-        if seller_name:
-            data["offers"]["seller"] = {"@type": "Organization", "name": seller_name}
+        profileinfo = getattr(product.dealer, "profileinfo", None)
+        if profileinfo:
+            seller_name = profileinfo.business_name or profileinfo.profile_name or ""
+            if seller_name:
+                data["offers"]["seller"] = {"@type": "Organization", "name": seller_name}
 
     if product.review_count > 0:
         data["aggregateRating"] = {
@@ -458,6 +474,8 @@ def _get_suggested_products(product: Product, user, limit: int = 12) -> list:
         .only(
             "product_id", "product_name", "slug",
             "selling_price", "final_price", "discount_percentage",
+            "brand_price",
+            "is_brand_price_visible", "is_selling_price_visible",
             "image", "rating_average", "review_count", "stock_status",
             "is_featured", "is_verified", "is_trending",
             "wishlist_count", "total_sales", "view_count",
@@ -518,7 +536,6 @@ def _get_suggested_products(product: Product, user, limit: int = 12) -> list:
     cache.set(cache_key, pool, _ttl_with_jitter(RELATED_CACHE_TTL))
     return pool
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # Main view
 # ──────────────────────────────────────────────────────────────────────────────
@@ -550,9 +567,17 @@ def ProductDetailView(request, slug: str):
     _annotate_card_prices(dealer_products)
     _annotate_card_prices(suggested_products)
 
-    # ── 6. Derived values ─────────────────────────────────────────────────────
+# ── 6. Derived values ─────────────────────────────────────────────────────
+    show_brand_price   = bool(product.is_brand_price_visible)
+    show_buying_price  = bool(product.is_buying_price_visible)
+    show_selling_price = bool(product.is_selling_price_visible)
+
     savings = savings_pct = 0
-    if product.brand_price and product.selling_price and product.brand_price > 0:
+    if (
+        show_brand_price and show_selling_price
+        and product.brand_price and product.selling_price
+        and product.brand_price > 0
+    ):
         savings     = product.brand_price - product.selling_price
         savings_pct = float(savings / product.brand_price * 100)
 
@@ -593,20 +618,20 @@ def ProductDetailView(request, slug: str):
             pass
 
     # ── 11. Pre-format main product prices ────────────────────────────────────
-    #
-    #  We build a FormattedPrices proxy so the HTML keeps using
-    #  {{ product.selling_price }} style tags but gets "1,23,456 Tk"
-    #  strings instead of raw Decimal values.
-    #
-    #  Strategy: monkey-patch formatted strings onto the product instance
-    #  under the names the template already uses, but with a "fmt_" prefix
-    #  so the originals remain accessible for the WhatsApp link, JSON-LD, etc.
-    #
-    product.fmt_selling_price = format_price(product.selling_price)
-    product.fmt_final_price   = format_price(product.final_price)
-    product.fmt_brand_price   = format_price(product.brand_price)
+
+    product.fmt_selling_price = format_price(product.selling_price) if show_selling_price else None
+    product.fmt_final_price   = format_price(product.final_price) if show_selling_price else None
+    product.fmt_brand_price   = format_price(product.brand_price) if (show_brand_price and product.brand_price) else None
+    product.fmt_buying_price = format_price(product.buying_price) if (show_buying_price and product.buying_price) else None
     product.fmt_shipping_cost = format_price(product.shipping_cost)
-    product.fmt_savings       = format_price(savings)
+    product.fmt_savings       = format_price(savings) if (show_brand_price and show_selling_price) else None
+    product.price_hidden      = not (show_selling_price or show_brand_price)
+
+    # ⬇ ADD THESE — the template's price block reads product.show_brand_price /
+    # product.show_selling_price, but only price_hidden was ever attached above.
+    product.show_brand_price   = show_brand_price
+    product.show_buying_price  = show_buying_price
+    product.show_selling_price = show_selling_price
 
     # ── 12. Context ───────────────────────────────────────────────────────────
     context = {
@@ -621,6 +646,11 @@ def ProductDetailView(request, slug: str):
         "savings":             savings,
         "fmt_savings":         format_price(savings),
         "savings_percentage":  round(savings_pct, 1),
+
+        "show_brand_price":    show_brand_price,
+        "show_buying_price":   show_buying_price,
+        "show_selling_price":  show_selling_price,
+        "price_hidden":        product.price_hidden,
 
         **meta,
         "og_image":            og_image,

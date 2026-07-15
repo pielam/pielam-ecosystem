@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit {{ brand.brand_name }} — Dealer Panel{% endblock %}
+
+{% block content %}
+<style>
+  .be-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  .be-breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .be-breadcrumb a { color: #6b7280; text-decoration: none; }
+  .be-breadcrumb a:hover { text-decoration: underline; }
+  .be-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+  .be-header__eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; margin-bottom: 4px; }
+  .be-header__title { font-size: 24px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 10px; }
+  .be-status-pill { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+  .be-status-pill.active { background: #dcfce7; color: #166534; }
+  .be-status-pill.inactive { background: #fee2e2; color: #991b1b; }
+
+  .be-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+  .be-section__title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+  .be-section__hint { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+
+  .be-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .be-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+  .be-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .be-field--full { grid-column: 1 / -1; }
+  .be-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .be-label .req { color: #dc2626; }
+  .be-hint { font-size: 12px; color: #9ca3af; }
+
+  .be-input, .be-select, .be-textarea {
+    border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 12px;
+    font-size: 14px; color: #111827; background: #fff; width: 100%;
+    font-family: inherit;
+  }
+  .be-input:focus, .be-select:focus, .be-textarea:focus {
+    outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  }
+  .be-textarea { resize: vertical; min-height: 80px; }
+
+  .be-media-row { display: flex; align-items: center; gap: 14px; }
+  .be-media-preview {
+    width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+    border: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;
+  }
+  .be-media-preview--empty {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #9ca3af; text-align: center;
+  }
+
+  .be-toggle-row { display: flex; align-items: center; gap: 10px; }
+  .be-toggle-row input[type="checkbox"] { width: 18px; height: 18px; }
+
+  .be-submit-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-top: 24px; flex-wrap: wrap;
+  }
+  .be-submit-bar__actions { display: flex; gap: 10px; }
+  .be-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 10px 20px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .be-btn--primary { background: #4f46e5; color: #fff; }
+  .be-btn--primary:hover { background: #4338ca; }
+  .be-btn--ghost { background: #fff; border-color: #d1d5db; color: #374151; }
+  .be-btn--ghost:hover { background: #f9fafb; }
+
+  @media (max-width: 640px) {
+    .be-grid, .be-grid--3 { grid-template-columns: 1fr; }
+    .be-submit-bar { flex-direction: column; align-items: stretch; }
+    .be-submit-bar__actions { flex-direction: column; }
+    .be-btn { justify-content: center; }
+  }
+</style>
+
+<div class="be-page">
+
+  <nav class="be-breadcrumb">
+    <a href="{% url 'ponno:home' %}">Home</a> &raquo;
+    <a href="{% url 'ponno:brand_products' brand_slug=brand.brand_slug %}">{{ brand.brand_name }}</a> &raquo;
+    <span>Edit</span>
+  </nav>
+
+  <div class="be-header">
+    <div>
+      <div class="be-header__eyebrow">Catalog management</div>
+      <div class="be-header__title">
+        Edit {{ brand.brand_name }}
+        <span class="be-status-pill {% if brand.is_active %}active{% else %}inactive{% endif %}">
+          {% if brand.is_active %}Active{% else %}Inactive{% endif %}
+        </span>
+      </div>
+    </div>
+    <a href="{% url 'ponno:brand_products' brand_slug=brand.brand_slug %}" class="be-btn be-btn--ghost">View brand page</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ===== BASIC INFO ===== -->
+    <div class="be-section">
+      <div class="be-section__title">Basic information</div>
+      <div class="be-section__hint">Core details shown across the storefront.</div>
+
+      <div class="be-grid">
+        <div class="be-field">
+          <label class="be-label" for="brand_name">Brand name <span class="req">*</span></label>
+          <input type="text" id="brand_name" name="brand_name" class="be-input"
+                 value="{{ form_data.brand_name|default:brand.brand_name }}" required minlength="2">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="brand_type">Brand type <span class="req">*</span></label>
+          <select id="brand_type" name="brand_type" class="be-select">
+            {% for value, label in brand_types %}
+              <option value="{{ value }}"
+                {% if form_data.brand_type|default:brand.brand_type == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="be-field be-field--full">
+          <label class="be-label" for="brand_tagline">Tagline</label>
+          <input type="text" id="brand_tagline" name="brand_tagline" class="be-input"
+                 value="{{ form_data.brand_tagline|default:brand.brand_tagline|default:'' }}">
+        </div>
+
+        <div class="be-field be-field--full">
+          <label class="be-label" for="brand_description">Description</label>
+          <textarea id="brand_description" name="brand_description" class="be-textarea">{{ form_data.brand_description|default:brand.brand_description|default:'' }}</textarea>
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="company_name">Parent company</label>
+          <input type="text" id="company_name" name="company_name" class="be-input"
+                 value="{{ form_data.company_name|default:brand.company_name|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="founded_year">Founded year</label>
+          <input type="number" id="founded_year" name="founded_year" class="be-input"
+                 min="1800" max="2100"
+                 value="{{ form_data.founded_year|default:brand.founded_year|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="country_of_origin">Country of origin</label>
+          <input type="text" id="country_of_origin" name="country_of_origin" class="be-input"
+                 maxlength="2" placeholder="e.g. BD"
+                 value="{{ form_data.country_of_origin|default:brand.country_of_origin|default:'' }}">
+          <span class="be-hint">2-letter ISO code</span>
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="headquarters">Headquarters</label>
+          <input type="text" id="headquarters" name="headquarters" class="be-input"
+                 value="{{ form_data.headquarters|default:brand.headquarters|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CONTACT ===== -->
+    <div class="be-section">
+      <div class="be-section__title">Contact &amp; web</div>
+      <div class="be-section__hint">How customers and support can reach this brand.</div>
+
+      <div class="be-grid">
+        <div class="be-field be-field--full">
+          <label class="be-label" for="brand_website">Website</label>
+          <input type="url" id="brand_website" name="brand_website" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.brand_website|default:brand.brand_website|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="brand_email">Brand email</label>
+          <input type="email" id="brand_email" name="brand_email" class="be-input"
+                 value="{{ form_data.brand_email|default:brand.brand_email|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="brand_phone">Brand phone</label>
+          <input type="text" id="brand_phone" name="brand_phone" class="be-input"
+                 value="{{ form_data.brand_phone|default:brand.brand_phone|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="support_email">Support email</label>
+          <input type="email" id="support_email" name="support_email" class="be-input"
+                 value="{{ form_data.support_email|default:brand.support_email|default:'' }}">
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="support_phone">Support phone</label>
+          <input type="text" id="support_phone" name="support_phone" class="be-input"
+                 value="{{ form_data.support_phone|default:brand.support_phone|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SOCIAL ===== -->
+    <div class="be-section">
+      <div class="be-section__title">Social profiles</div>
+      <div class="be-section__hint">Optional — leave blank if not applicable.</div>
+
+      <div class="be-grid">
+        <div class="be-field">
+          <label class="be-label" for="social_facebook">Facebook</label>
+          <input type="url" id="social_facebook" name="social_facebook" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.social_facebook|default:brand.social_facebook|default:'' }}">
+        </div>
+        <div class="be-field">
+          <label class="be-label" for="social_instagram">Instagram</label>
+          <input type="url" id="social_instagram" name="social_instagram" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.social_instagram|default:brand.social_instagram|default:'' }}">
+        </div>
+        <div class="be-field">
+          <label class="be-label" for="social_twitter">Twitter / X</label>
+          <input type="url" id="social_twitter" name="social_twitter" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.social_twitter|default:brand.social_twitter|default:'' }}">
+        </div>
+        <div class="be-field">
+          <label class="be-label" for="social_linkedin">LinkedIn</label>
+          <input type="url" id="social_linkedin" name="social_linkedin" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.social_linkedin|default:brand.social_linkedin|default:'' }}">
+        </div>
+        <div class="be-field">
+          <label class="be-label" for="social_youtube">YouTube</label>
+          <input type="url" id="social_youtube" name="social_youtube" class="be-input"
+                 placeholder="https://"
+                 value="{{ form_data.social_youtube|default:brand.social_youtube|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEDIA ===== -->
+    <div class="be-section">
+      <div class="be-section__title">Media</div>
+      <div class="be-section__hint">Uploading a new file replaces the current one. Leave blank to keep existing.</div>
+
+      <div class="be-grid be-grid--3">
+        <div class="be-field">
+          <label class="be-label" for="brand_logo">Logo</label>
+          <div class="be-media-row">
+            {% if brand.brand_logo %}
+              <img src="{{ brand.brand_logo.url }}" alt="Current logo" class="be-media-preview">
+            {% else %}
+              <div class="be-media-preview be-media-preview--empty">No logo</div>
+            {% endif %}
+            <input type="file" id="brand_logo" name="brand_logo" accept="image/*">
+          </div>
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="brand_banner">Banner</label>
+          <div class="be-media-row">
+            {% if brand.brand_banner %}
+              <img src="{{ brand.brand_banner.url }}" alt="Current banner" class="be-media-preview">
+            {% else %}
+              <div class="be-media-preview be-media-preview--empty">No banner</div>
+            {% endif %}
+            <input type="file" id="brand_banner" name="brand_banner" accept="image/*">
+          </div>
+        </div>
+
+        <div class="be-field">
+          <label class="be-label" for="brand_icon">Icon</label>
+          <div class="be-media-row">
+            {% if brand.brand_icon %}
+              <img src="{{ brand.brand_icon.url }}" alt="Current icon" class="be-media-preview">
+            {% else %}
+              <div class="be-media-preview be-media-preview--empty">No icon</div>
+            {% endif %}
+            <input type="file" id="brand_icon" name="brand_icon" accept="image/*">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SEO ===== -->
+    <div class="be-section">
+      <div class="be-section__title">SEO</div>
+      <div class="be-section__hint">Controls how this brand page appears in search results.</div>
+
+      <div class="be-field be-field--full">
+        <label class="be-label" for="meta_title">Meta title</label>
+        <input type="text" id="meta_title" name="meta_title" class="be-input" maxlength="60"
+               value="{{ form_data.meta_title|default:brand.meta_title|default:'' }}">
+        <span class="be-hint">Up to 60 characters</span>
+      </div>
+
+      <div class="be-field be-field--full">
+        <label class="be-label" for="meta_description">Meta description</label>
+        <textarea id="meta_description" name="meta_description" class="be-textarea" maxlength="160">{{ form_data.meta_description|default:brand.meta_description|default:'' }}</textarea>
+        <span class="be-hint">Up to 160 characters</span>
+      </div>
+
+      <div class="be-field be-field--full">
+        <label class="be-label" for="meta_keywords">Meta keywords</label>
+        <input type="text" id="meta_keywords" name="meta_keywords" class="be-input"
+               placeholder="comma, separated, keywords"
+               value="{{ form_data.meta_keywords|default:brand.meta_keywords|default:'' }}">
+      </div>
+    </div>
+
+    <!-- ===== STATUS ===== -->
+    <div class="be-section">
+      <div class="be-section__title">Status</div>
+      <div class="be-toggle-row">
+        <input type="checkbox" id="is_active" name="is_active"
+               {% if form_data %}{% if form_data.is_active %}checked{% endif %}{% elif brand.is_active %}checked{% endif %}>
+        <label class="be-label" for="is_active" style="margin:0;">Brand is active and visible</label>
+      </div>
+    </div>
+
+    <div class="be-submit-bar">
+      <a href="{% url 'ponno:brand_products' brand_slug=brand.brand_slug %}" class="be-btn be-btn--ghost">Cancel</a>
+      <div class="be-submit-bar__actions">
+        <button type="submit" class="be-btn be-btn--primary">Save changes</button>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

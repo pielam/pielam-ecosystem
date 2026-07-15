@@ -1,494 +1,312 @@
 # engine/business_engine/personal_engine.py
+#
+# Public "engine" feed:
+#   - one post per publicly-connected ConnectedService, pulled from every
+#     user on the platform (a single connected URL can carry many images,
+#     videos, and links — this is the feed that surfaces them).
+#   - EngineView renders the first page server-side.
+#   - engine_feed_api serves subsequent pages as JSON for infinite scroll.
+#
+# ═══════════════════════════════════════════════════════════════════
+# SCALE NOTES — read this before touching the caching below
+# ═══════════════════════════════════════════════════════════════════
+#
+# No single Django process gets you to millions of req/s. This file
+# only optimizes the layers Django actually controls. The rest is
+# infra sitting in front of it:
+#
+#   1. CDN (Cloudflare / Fastly / CloudFront) in front of
+#      `engine_feed_api` and `EngineView`, honoring the Cache-Control
+#      headers set below. This is where >99% of traffic should be
+#      answered — Django should see a small fraction of real hits.
+#
+#   2. This feed is public content but the views below still require
+#      login. That's fine for the authenticated app shell, but it
+#      means the CDN can't cache the response per-anonymous-visitor.
+#      If you want CDN caching to actually work at this scale, split
+#      this into:
+#        - a fully public, unauthenticated JSON endpoint serving the
+#          cacheable feed payload (what's cached below), and
+#        - the authenticated page shell that fetches it client-side.
+#      Left as login_required here since that's the existing contract;
+#      flagging it because it caps how much this can be edge-cached.
+#
+#   3. Read replica: point this view's DB reads at a replica, not
+#      primary. A global public feed is 100% read traffic.
+#
+#   4. PgBouncer (or equivalent) in transaction-pooling mode — at high
+#      concurrency, Django's per-request connections exhaust Postgres
+#      max_connections long before you hit "millions/s" territory.
+#
+#   5. DB index to support the feed query directly:
+#        CREATE INDEX CONCURRENTLY idx_connectedservice_public_feed
+#          ON megamind_connectedservice
+#          (status, is_connected, fetch_status, created_at DESC, id DESC)
+#          WHERE status = 'public' AND is_connected = true
+#            AND fetch_status = 'success';
+#      (Partial index — matches the filter exactly, keeps it small.)
+#
+#   6. Serve via async workers (uvicorn/gunicorn+uvicorn workers) if
+#      any I/O in the request path is async-capable, so worker threads
+#      aren't blocked on network calls.
+#
+# What actually changed in this file vs. the previous version:
+#
+#   - Serialized media (images/videos/links) is no longer recomputed
+#     on every request. It's precomputed once via `refresh_feed_cache()`
+#     — call this from wherever ConnectedService.extracted_* fields get
+#     written (the scraper/service_fetcher save path), not from the
+#     request path. The request path now just reads `cached_payload`.
+#   - `_fetch_page` results are cached in Redis for FEED_CACHE_TTL
+#     seconds per (cursor, limit, media_type) key, so a burst of
+#     identical requests between CDN cache expiries collapses into
+#     one DB hit instead of one-per-request.
+#   - HTTP Cache-Control / Vary headers added so any CDN/reverse proxy
+#     sitting in front can cache the response independently.
 
-# Standard Library
-import json
+import base64
 import logging
-import random
-import threading
-from typing import Any
-from urllib.parse import urlparse
+from datetime import datetime
 
-# Django
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
-from django.utils import timezone
-from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.vary import vary_on_cookie
-
-# Local Apps
-from apps.customer.models.profile_info import ProfileInfo
-from megamind.models.connected_service import ConnectedService
-from megamind.services.scraper import scrape_url
-from megamind.utils.service_fetcher import fetch_service_data
-
-logger = logging.getLogger(__name__)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# TTLs
-# ═══════════════════════════════════════════════════════════════════
-
-ENGINE_CACHE_TTL  = 60 * 5    # 5 min  — full engine context
-PROFILE_CACHE_TTL = 60 * 10   # 10 min — profile info (changes rarely)
-ERROR_BACKOFF_TTL = 60 * 10   # 10 min — cooldown after a failed fetch
-STALE_AFTER       = 3600      # 1 hour — refetch if older than this
-
-
-# ═══════════════════════════════════════════════════════════════════
-# CACHE KEY HELPERS
-# ═══════════════════════════════════════════════════════════════════
-
-def _key_engine(uid: int)  -> str: return f"engine:ctx:{uid}"
-def _key_profile(uid: int) -> str: return f"engine:profile:{uid}"
-
-
-def _jittered_ttl(ttl: int, spread: float = 0.10) -> int:
-    delta = int(ttl * spread)
-    return ttl + random.randint(-delta, delta) if delta else ttl
-
-
-# ═══════════════════════════════════════════════════════════════════
-# CACHE INVALIDATION
-# ═══════════════════════════════════════════════════════════════════
-
-def invalidate_engine_cache(user_id: int) -> None:
-    """Call this from post_save signals on ConnectedService."""
-    cache.delete_many([_key_engine(user_id), _key_profile(user_id)])
-
-
-# ═══════════════════════════════════════════════════════════════════
-# STALENESS CHECK
-# ═══════════════════════════════════════════════════════════════════
-
-def _should_fetch(service: ConnectedService) -> bool:
-    """
-    True  → service data is missing or older than STALE_AFTER.
-    False → data is fresh, or in error cooldown (10 min backoff).
-    Never blocks — caller is responsible for spawning a thread.
-    """
-    if service.last_fetch_time is None:
-        return True
-    age = (timezone.now() - service.last_fetch_time).total_seconds()
-    if service.fetch_status == 'error':
-        return age > ERROR_BACKOFF_TTL   # don't hammer failing hosts
-    return age > STALE_AFTER
-
-
-# ═══════════════════════════════════════════════════════════════════
-# BACKGROUND REFRESH
-# ═══════════════════════════════════════════════════════════════════
-
-def _background_refresh(service_id: int, user_id: int) -> None:
-    """
-    Fetches one service in a daemon thread so the view never blocks.
-    Busts the engine cache on success so the next request sees fresh data.
-
-    Replace threading.Thread with a Celery task when available:
-        refresh_connected_service.delay(service_id, user_id)
-    """
-    try:
-        service = ConnectedService.objects.get(pk=service_id)
-        fetch_service_data(service)
-        # Bust engine cache so next request reloads from DB
-        cache.delete(_key_engine(user_id))
-        logger.info(
-            "Background refresh complete service_id=%s uid=%s status=%s",
-            service_id, user_id, service.fetch_status,
-        )
-    except Exception:
-        logger.exception(
-            "Background refresh failed service_id=%s uid=%s",
-            service_id, user_id,
-        )
-
-
-def _spawn_refresh(service_id: int, user_id: int) -> None:
-    t = threading.Thread(
-        target=_background_refresh,
-        args=(service_id, user_id),
-        daemon=True,
-    )
-    t.start()
-
-
-# ═══════════════════════════════════════════════════════════════════
-# SERIALISER  (plain dicts — pickle-safe for Redis)
-# ═══════════════════════════════════════════════════════════════════
-
-def _serialize_service(service: ConnectedService) -> dict[str, Any]:
-    """
-    Flatten a ConnectedService into a plain dict.
-    Falls back to last_fetched_data for services that were saved before
-    the flat OG/extracted columns existed.
-    """
-    # ── OG fields ────────────────────────────────────────────────
-    og_title       = service.og_title       or ""
-    og_description = service.og_description or ""
-    og_thumbnail   = service.og_thumbnail   or ""
-    og_site_name   = service.og_site_name   or ""
-    og_type        = service.og_type        or ""
-
-    # ── Extracted media ───────────────────────────────────────────
-    images = service.extracted_images or []
-    videos = service.extracted_videos or []
-    links  = service.extracted_links  or []
-    text   = service.extracted_text   or ""
-
-    # ── Fallback: pull from raw cache blob ────────────────────────
-    raw = service.last_fetched_data or {}
-    if raw and not og_title:
-        og_title       = raw.get("title")       or raw.get("og_title")       or ""
-        og_description = raw.get("description") or raw.get("og_description") or ""
-        og_thumbnail   = (raw.get("og_image")   or raw.get("og_thumbnail")
-                          or raw.get("thumbnail") or "")
-        og_site_name   = raw.get("site_name")   or raw.get("og_site_name")   or ""
-        og_type        = raw.get("og_type")     or raw.get("type")           or ""
-    if raw and not images:
-        images = [_coerce_image(i) for i in (raw.get("images") or []) if i]
-    if raw and not videos:
-        videos = [_coerce_video(v) for v in (raw.get("videos") or []) if v]
-    if raw and not links:
-        links  = [_coerce_link(l)  for l in (raw.get("links")  or []) if l]
-    if raw and not text:
-        text = (raw.get("full_content") or raw.get("text_content")
-                or raw.get("content")   or raw.get("text") or "")
-
-    domain = urlparse(service.service_url).netloc
-
-    return {
-        # Identity
-        "id":            service.id,
-        "service_name":  service.service_name,
-        "service_url":   service.service_url,
-        "service_type":  service.service_type,
-        "service_domain": domain,
-        "status":        service.status,
-        "is_connected":  service.is_connected,
-
-        # OG / meta
-        "og_title":       og_title,
-        "og_description": og_description,
-        "og_thumbnail":   og_thumbnail,
-        "og_site_name":   og_site_name or domain,
-        "og_type":        og_type,
-
-        # Extracted media
-        "extracted_images": images,
-        "extracted_videos": videos,
-        "extracted_links":  links,
-        "extracted_text":   text,
-
-        # Counts (cheap to pre-compute here, avoids |length in template)
-        "images_count": len(images),
-        "videos_count": len(videos),
-        "links_count":  len(links),
-        "has_text":     bool(text.strip()),
-
-        # Fetch metadata
-        "fetch_status":    service.fetch_status,
-        "fetch_error":     service.fetch_error or "",
-        "last_fetch_time": (
-            service.last_fetch_time.isoformat()
-            if service.last_fetch_time else None
-        ),
-        "is_stale": _should_fetch(service),
-    }
-
-
-# ── Coercion helpers (handles both dict and bare-string payloads) ──
-
-def _coerce_image(img) -> dict:
-    if isinstance(img, dict):
-        return {
-            "url": img.get("url") or img.get("src") or "",
-            "alt": img.get("alt") or "",
-            "href": img.get("href") or "",
-        }
-    return {"url": str(img), "alt": "", "href": ""}
-
-
-def _coerce_video(v) -> dict:
-    if isinstance(v, dict):
-        return {
-            "url":  v.get("url") or v.get("src") or "",
-            "type": v.get("type") or "",
-        }
-    return {"url": str(v), "type": ""}
-
-
-def _coerce_link(lnk) -> dict:
-    if isinstance(lnk, dict):
-        return {
-            "href": lnk.get("href") or lnk.get("url")   or "",
-            "text": lnk.get("text") or lnk.get("title") or "",
-        }
-    return {"href": str(lnk), "text": ""}
-
-
-# ═══════════════════════════════════════════════════════════════════
-# DATA LOADERS
-# ═══════════════════════════════════════════════════════════════════
-
-def _load_profile(user) -> dict[str, Any]:
-    """Serialise ProfileInfo to a plain dict. Critical — raises on miss."""
-    p = get_object_or_404(ProfileInfo.objects.select_related('user'), user=user)
-    return {
-        "profile_name":          p.profile_name,
-        "profile_name_slug":     p.profile_name_slug,
-        "profile_photo":         p.get_profile_photo_url(),
-        "profile_cover_photo":   p.get_profile_cover_photo_url(),
-        "profile_tagline":       p.profile_tagline,
-        "profile_type":          p.profile_type,
-        "profile_type_display":  p.get_profile_type_display(),
-        "profile_bio":           p.profile_bio,
-        "location_display":      p.location_display,
-        "is_profile_verified":   p.is_profile_verified,
-        "verification_level":    p.verification_level,
-        "completion_percentage": p.completion_percentage,
-        "follower_count":        p.follower_count,
-        "following_count":       p.following_count,
-        "engagement_score":      round(p.get_engagement_score(), 1),
-        # Business
-        "business_name":         p.business_name,
-        "business_type":         p.business_type,
-        "business_website":      p.business_website,
-        "business_email":        p.business_email,
-        "business_phone":        p.business_phone,
-        "business_description":  p.business_description,
-        # Social
-        "social_facebook":       p.social_facebook,
-        "social_twitter":        p.social_twitter,
-        "social_instagram":      p.social_instagram,
-        "social_linkedin":       p.social_linkedin,
-        "social_youtube":        p.social_youtube,
-        "social_tiktok":         p.social_tiktok,
-        "social_whatsapp":       p.social_whatsapp,
-    }
-
-
-def _load_engine(user) -> dict[str, Any]:
-    """
-    Load all connected services from DB and build the engine context.
-    Never fetches — fetching is always done in a background thread.
-    """
-    services = list(
-        ConnectedService.objects
-        .filter(user=user)
-        .only(
-            'service_name', 'service_url', 'service_type', 'status',
-            'is_connected', 'og_title', 'og_description', 'og_thumbnail',
-            'og_site_name', 'og_type', 'extracted_images', 'extracted_videos',
-            'extracted_links', 'extracted_text', 'last_fetched_data',
-            'fetch_status', 'fetch_error', 'last_fetch_time',
-        )
-    )
-
-    serialized      = [_serialize_service(s) for s in services]
-    connected       = [s for s in serialized if s['is_connected']]
-    all_images      = []
-    all_videos      = []
-    all_links       = []
-    all_texts       = []
-
-    for svc in connected:
-        meta = {
-            'service_name':   svc['service_name'],
-            'service_url':    svc['service_url'],
-            'service_type':   svc['service_type'],
-            'service_domain': svc['service_domain'],
-            'fetch_status':   svc['fetch_status'],
-            'last_fetch_time':svc['last_fetch_time'],
-            'og_thumbnail':   svc['og_thumbnail'],
-            'og_description': svc['og_description'],
-        }
-
-        for img in svc['extracted_images']:
-            all_images.append({**meta, **img, 'title': svc['og_title'] or svc['service_name']})
-
-        for vid in svc['extracted_videos']:
-            all_videos.append({**meta, **vid, 'title': svc['og_title'] or svc['service_name']})
-
-        for lnk in svc['extracted_links']:
-            all_links.append({
-                **meta,
-                'url':    lnk['href'],
-                'title':  lnk['text'] or svc['og_title'] or svc['service_name'],
-                'domain': urlparse(lnk['href']).netloc or svc['service_domain'],
-            })
-
-        if svc['has_text']:
-            all_texts.append({
-                **meta,
-                'title':   svc['og_title'] or svc['service_name'],
-                'content': svc['extracted_text'],
-            })
-
-    return {
-        # Full service list (all, not just connected)
-        'services':           serialized,
-        'connected_services': connected,
-        'total_services':     len(serialized),
-        'connected_count':    len(connected),
-
-        # Status summary for sidebar dots
-        'success_count': sum(1 for s in serialized if s['fetch_status'] == 'success'),
-        'error_count':   sum(1 for s in serialized if s['fetch_status'] == 'error'),
-        'pending_count': sum(1 for s in serialized if s['fetch_status'] == 'pending'),
-
-        # Aggregated media (all connected services merged)
-        'extracted_images': all_images,
-        'extracted_videos': all_videos,
-        'extracted_links':  all_links,
-        'extracted_texts':  all_texts,
-
-        # Counts
-        'images_count': len(all_images),
-        'videos_count': len(all_videos),
-        'links_count':  len(all_links),
-        'text_count':   len(all_texts),
-
-        # JSON blob for JS (lightweight — no images/videos/links/text)
-        'services_json': json.dumps([
-            {
-                'id':           s['id'],
-                'service_name': s['service_name'],
-                'service_url':  s['service_url'],
-                'service_type': s['service_type'],
-                'is_connected': s['is_connected'],
-                'og_thumbnail': s['og_thumbnail'],
-                'og_title':     s['og_title'],
-                'fetch_status': s['fetch_status'],
-                'is_stale':     s['is_stale'],
-            }
-            for s in serialized
-        ], ensure_ascii=False),
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════
-# VIEW
-# ═══════════════════════════════════════════════════════════════════
-# engine/business_engine/personal_engine.py
-
-import logging
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Prefetch
 from django.shortcuts import render
-from django.views.decorators.cache import cache_control
-from django.views.decorators.vary import vary_on_cookie
+from django.utils.cache import patch_cache_control
+from django.views.decorators.http import require_GET
 
-from apps.customer.models.account import User
-from apps.customer.models.profile_info import ProfileInfo
 from megamind.models.connected_service import ConnectedService
+from megamind.utils.feed_cache import refresh_feed_cache
 
 logger = logging.getLogger(__name__)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PAGINATION + CACHE SETTINGS
+# ═══════════════════════════════════════════════════════════════════
+
+DEFAULT_PAGE_SIZE = 12
+MAX_PAGE_SIZE     = 30
+VALID_MEDIA_TYPES = ('all', 'image', 'video', 'link')
+
+# Server-side (Redis) cache for fully-built pages. Short TTL — this
+# isn't meant to serve staleness for minutes, just to collapse
+# concurrent duplicate requests and absorb CDN cache-miss bursts.
+FEED_CACHE_TTL = getattr(settings, 'ENGINE_FEED_CACHE_TTL', 5)  # seconds
+
+# What the CDN/browser is told to do with the response. Longer than
+# the Redis TTL is fine — s-maxage governs shared/CDN caches, the
+# CDN can be purged early on new posts if you want tighter freshness.
+CDN_MAX_AGE = getattr(settings, 'ENGINE_FEED_CDN_MAX_AGE', 5)  # seconds
+
+
+def _clamp_limit(raw, default: int = DEFAULT_PAGE_SIZE, maximum: int = MAX_PAGE_SIZE) -> int:
+    try:
+        limit = int(raw)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(limit, maximum))
+
+
+def _clean_media_type(raw) -> str:
+    return raw if raw in VALID_MEDIA_TYPES else 'all'
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CURSOR  (opaque, encodes "created_at|pk" of the last row on a page)
+# ═══════════════════════════════════════════════════════════════════
+
+def _encode_cursor(created_at, pk) -> str:
+    raw = f"{created_at.isoformat()}|{pk}"
+    return base64.urlsafe_b64encode(raw.encode()).decode()
+
+
+def _decode_cursor(cursor: str):
+    """Returns (created_at, pk) or (None, None) if the cursor is invalid."""
+    try:
+        raw = base64.urlsafe_b64decode(cursor.encode()).decode()
+        ts_str, pk_str = raw.rsplit('|', 1)
+        return datetime.fromisoformat(ts_str), int(pk_str)
+    except Exception:
+        return None, None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# QUERY
+# ═══════════════════════════════════════════════════════════════════
+
+def _get_public_feed_queryset(cursor: str = None):
+    """
+    Base queryset for the global engine feed:
+      - status='public'        → respects the per-service privacy toggle
+      - is_connected=True      → the user hasn't disconnected it
+      - fetch_status='success' → only show services with real scraped data
+      - profile is public too  → defensive second privacy check, in case a
+                                  user's profile is private even though a
+                                  service on it is marked public
+    Raises ValueError if `cursor` is provided but malformed.
+
+    NOTE: pairs with the partial index described in the module
+    docstring — filter order/columns here should match it so Postgres
+    can actually use it.
+
+    NOTE: route this queryset at a read replica in production
+    (e.g. `.using('replica')`) — this file leaves the alias unset so
+    it stays environment-agnostic; wire it via a DB router or
+    `settings.ENGINE_FEED_DB_ALIAS` if you have one.
+    """
+    qs = (
+        ConnectedService.objects
+        .filter(status='public', is_connected=True, fetch_status='success')
+        .filter(
+            Q(user__profileinfo__isnull=True) |
+            Q(user__profileinfo__is_profile_public=True)
+        )
+        .select_related('user', 'user__profileinfo')
+        .order_by('-created_at', '-id')
+    )
+
+    if cursor:
+        created_at, pk = _decode_cursor(cursor)
+        if created_at is None:
+            raise ValueError('invalid cursor')
+        qs = qs.filter(Q(created_at__lt=created_at) | Q(created_at=created_at, id__lt=pk))
+
+    return qs
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SERIALIZER
+# ═══════════════════════════════════════════════════════════════════
+#
+# NOTE: payload construction (image/video/link normalization,
+# attribution) now lives in `megamind.utils.feed_cache.refresh_feed_cache`,
+# called from the scraper/service_fetcher save path. This file only
+# reads the precomputed result.
+
+def _serialize_post(svc: ConnectedService, media_type: str = 'all') -> dict:
+    """
+    Reads the precomputed payload instead of recomputing it. Falls back
+    to a live build only if a row somehow has no cached payload yet
+    (e.g. mid-migration/backfill) so the feed never 500s on stale data.
+    """
+    payload = svc.cached_feed_payload
+    if not payload:
+        logger.warning('engine feed: no cached_feed_payload for service %s, building live', svc.pk)
+        payload = refresh_feed_cache(svc)
+
+    post = dict(payload)  # shallow copy — don't mutate the cached dict in place
+
+    if media_type == 'image':
+        post = {**post, 'videos': [], 'links': []}
+    elif media_type == 'video':
+        post = {**post, 'images': [], 'links': []}
+    elif media_type == 'link':
+        post = {**post, 'images': [], 'videos': []}
+
+    return post
+
+
+def _fetch_page(cursor: str, limit: int, media_type: str):
+    """
+    Shared page-fetch logic used by both EngineView and engine_feed_api.
+    Wrapped in a short-TTL Redis cache keyed on the exact query params,
+    so a burst of concurrent/duplicate requests (a CDN cache-miss
+    stampede, multiple pods, etc.) collapses into a single DB read.
+    """
+    cache_key = f'engine:feed:{cursor or "-"}:{limit}:{media_type}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    qs = _get_public_feed_queryset(cursor=cursor)
+    rows = list(qs[:limit + 1])       # fetch one extra row to detect has_more
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
+    feed = [_serialize_post(svc, media_type) for svc in rows]
+    next_cursor = feed[-1]['cursor'] if feed and has_more else None
+
+    result = (feed, has_more, next_cursor)
+    cache.set(cache_key, result, FEED_CACHE_TTL)
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════
+# VIEWS
+# ═══════════════════════════════════════════════════════════════════
+
+@login_required(login_url='/customer/signin/')
+def EngineView(request):
+    """
+    Global engine feed page. Renders the first page of public posts
+    server-side; the page's JS calls `engine_feed_api` for infinite scroll.
+    """
+    limit      = _clamp_limit(request.GET.get('limit'))
+    media_type = _clean_media_type(request.GET.get('type', 'all'))
+
+    try:
+        feed, has_more, next_cursor = _fetch_page(cursor=None, limit=limit, media_type=media_type)
+    except ValueError:
+        feed, has_more, next_cursor = [], False, None
+
+    context = {
+        'feed':         feed,
+        'feed_count':   len(feed),
+        'has_more':     has_more,
+        'next_cursor':  next_cursor,
+        'media_type':   media_type,
+        'limit':        limit,
+        'feed_api_url': '/engine/api/feed/',
+    }
+    response = render(request, 'business/engine.html', context)
+    # First-page HTML is the same for everyone at a given moment — let a
+    # CDN cache it briefly. `private` would be needed instead if this
+    # ever starts including anything user-specific beyond auth-gating.
+    patch_cache_control(response, public=True, max_age=CDN_MAX_AGE, s_maxage=CDN_MAX_AGE)
+    return response
 
 
 @login_required(login_url='/customer/signin/')
-@vary_on_cookie
-@cache_control(private=True, max_age=0, must_revalidate=True)
-def EngineView(request):
+@require_GET
+def engine_feed_api(request):
     """
-    Global engine feed — shows ALL users with their profile info
-    and every connected service's extracted data.
-    Each 'post' = one ConnectedService attached to a user+profile.
+    JSON pagination endpoint for the engine feed (infinite scroll).
+
+    GET params:
+        cursor - opaque cursor from a previous response's `next_cursor`
+        limit  - page size, 1-30 (default 12)
+        type   - 'all' | 'image' | 'video' | 'link'
     """
+    limit      = _clamp_limit(request.GET.get('limit'))
+    media_type = _clean_media_type(request.GET.get('type', 'all'))
+    cursor     = request.GET.get('cursor') or None
 
-    # Fetch all connected services that have been successfully fetched,
-    # prefetch their user and profile in one query trip.
-    services = (
-        ConnectedService.objects
-        .filter(is_connected=True)
-        .select_related(
-            'user',
-            'user__profileinfo',   # OneToOne reverse
-        )
-        .order_by('-created_at')
-    )
+    try:
+        feed, has_more, next_cursor = _fetch_page(cursor=cursor, limit=limit, media_type=media_type)
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'invalid_cursor'}, status=400)
 
-    # Build feed posts — one entry per connected service
-    feed = []
-    for svc in services:
-        user = svc.user
-        try:
-            profile = user.profileinfo
-        except ProfileInfo.DoesNotExist:
-            profile = None
+    response = JsonResponse({
+        'success':     True,
+        'results':     feed,
+        'count':       len(feed),
+        'has_more':    has_more,
+        'next_cursor': next_cursor,
+    })
+    # Same payload for every visitor requesting this exact page — safe
+    # for a CDN to cache and serve without hitting Django at all.
+    patch_cache_control(response, public=True, max_age=CDN_MAX_AGE, s_maxage=CDN_MAX_AGE)
+    response['Vary'] = 'Accept-Encoding'  # do NOT vary on Cookie/Authorization here —
+                                           # doing so would make the CDN cache per-user
+                                           # and defeat the point. See module docstring
+                                           # note #2 about splitting auth from payload.
+    return response
 
-        feed.append({
-            # ── User info ──────────────────────────────────
-            'user_id':          user.pk,
-            'user_uuid':        str(user.uuid),
-            'user_role':        user.role,
-            'user_email':       user.email or user.email_or_phone,
-
-            # ── Profile info ───────────────────────────────
-            'profile_name':     profile.profile_name if profile else user.email_or_phone,
-            'profile_photo':    profile.get_profile_photo_url() if profile else '/static/defaults/default-profile-picture.png',
-            'profile_tagline':  profile.profile_tagline if profile else '',
-            'profile_location': profile.location_display if profile else '',
-            'profile_verified': profile.is_profile_verified if profile else False,
-            'profile_type':     profile.profile_type if profile else 'personal',
-            'profile_url':      profile.profile_url if profile else f'/profile/{user.uuid}/',
-            'follower_count':   profile.follower_count if profile else 0,
-
-            # ── Service info ───────────────────────────────
-            'svc_id':           svc.pk,
-            'svc_name':         svc.service_name,
-            'svc_url':          svc.service_url,
-            'svc_type':         svc.service_type,
-            'svc_status':       svc.status,           # public / private
-            'fetch_status':     svc.fetch_status,
-
-            # ── OG / meta ──────────────────────────────────
-            'og_title':         svc.og_title or svc.service_name,
-            'og_description':   svc.og_description or '',
-            'og_thumbnail':     svc.og_thumbnail or '',
-            'og_site_name':     svc.og_site_name or '',
-            'og_type':          svc.og_type or '',
-
-            # ── Extracted content ──────────────────────────
-            'images':           svc.extracted_images or [],
-            'videos':           svc.extracted_videos or [],
-            'links':            svc.extracted_links  or [],
-            'text':             svc.extracted_text   or '',
-
-            # ── Counts ─────────────────────────────────────
-            'images_count':     len(svc.extracted_images or []),
-            'links_count':      len(svc.extracted_links  or []),
-            'has_text':         bool((svc.extracted_text or '').strip()),
-
-            # ── Timestamps ─────────────────────────────────
-            'posted_at':        svc.created_at,
-            'last_fetch':       svc.last_fetch_time,
-        })
-
-    # Global stats for header strip
-    all_users_count     = User.objects.filter(is_active=True, deleted_at__isnull=True).count()
-    total_services      = ConnectedService.objects.filter(is_connected=True).count()
-    total_images        = sum(p['images_count'] for p in feed)
-    total_links         = sum(p['links_count']  for p in feed)
-
-    context = {
-        'current_user':   request.user,
-        'feed':           feed,
-        'total_users':    all_users_count,
-        'total_services': total_services,
-        'total_images':   total_images,
-        'total_links':    total_links,
-        'feed_count':     len(feed),
-    }
-
-    return render(request, 'business/engine.html', context)
 
 @login_required(login_url='/customer/signin/')
 def PersonalEngineView(request):
-
-    context = {
-
-    }
-    return render(request, "business/personal_engine.html", context)
-
+    context = {}
+    return render(request, 'business/personal_engine.html', context)

@@ -1,0 +1,407 @@
+{% include "base.html" %}
+
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if profile.display_name %}{{ profile.display_name }}{% else %}{{ user.display_name }}{% endif %} — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F7;
+    --surface:#FFFFFF;
+    --surface-2:#FAFBFC;
+    --ink:#12141C;
+    --ink-soft:#666B7A;
+    --ink-faint:#9A9FAE;
+    --rule:#E4E6EB;
+    --accent:#155EEF;
+    --accent-soft:#EAF0FF;
+    --positive:#0E9F6E;
+    --positive-soft:#E7F8F1;
+    --negative:#E6484D;
+    --amber:#B8860B;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit; text-decoration:none;}
+  .mono{
+    font-family:'IBM Plex Mono', monospace;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:-0.02em;
+  }
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 32px 64px;
+  }
+
+  /* ---------------- Topbar ---------------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px; gap:16px; flex-wrap:wrap;
+  }
+  .topbar-title{display:flex; align-items:center; gap:10px;}
+  .topbar-title .mark{
+    width:30px; height:30px; border-radius:7px;
+    background:var(--ink); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:13px;
+  }
+  .topbar-title h1{font-size:16px; font-weight:700; letter-spacing:-0.01em;}
+  .topbar-title .sub{font-size:12px; color:var(--ink-soft);}
+  .topbar-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .range-toggle{
+    display:flex; background:var(--surface); border:1px solid var(--rule);
+    border-radius:8px; overflow:hidden;
+  }
+  .range-toggle button{
+    border:none; background:none; font:inherit; font-size:12px; font-weight:500;
+    color:var(--ink-soft); padding:7px 12px; cursor:pointer;
+  }
+  .range-toggle button.active{background:var(--ink); color:#fff;}
+  .status-chip{
+    font-size:12px; color:var(--ink-soft);
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface); border:1px solid var(--rule);
+    border-radius:8px; padding:7px 11px;
+  }
+  .status-dot{width:6px; height:6px; border-radius:50%; background:var(--positive); flex-shrink:0;}
+
+  /* ---------------- Identity strip ---------------- */
+  .identity-strip{
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:20px 24px;
+    margin-bottom:16px;
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  }
+  .avatar-fallback{
+    width:52px; height:52px; border-radius:10px; flex-shrink:0;
+    background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:600; color:#fff;
+    overflow:hidden;
+  }
+  .avatar-fallback img{width:100%; height:100%; object-fit:cover;}
+  .identity-block{flex:1; min-width:220px;}
+  .identity-name-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:2px;}
+  .identity-name-row .display-name{font-size:16px; font-weight:700; letter-spacing:-0.01em;}
+  .verified-seal{display:inline-flex; align-items:center; color:var(--accent); flex-shrink:0;}
+  .verified-seal svg{width:15px; height:15px;}
+  .profile-type-badge{
+    font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--accent);
+    background:var(--accent-soft); border:1px solid transparent;
+    padding:2px 8px; border-radius:5px;
+  }
+  .identity-sub{font-size:12.5px; color:var(--ink-soft);}
+
+  .stat-cluster{display:flex; gap:28px; flex-wrap:wrap;}
+  .stat-cluster .stat{min-width:76px;}
+  .stat-cluster .stat .n{display:block; font-size:18px; font-weight:600;}
+  .stat-cluster .stat .l{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;}
+
+  /* ---------------- KPI strip ---------------- */
+  .kpi-strip{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;
+    margin-bottom:16px;
+  }
+  .kpi-card{
+    background:var(--surface); border:1px solid var(--rule); border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .kpi-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .kpi-label{font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .kpi-value{font-size:26px; font-weight:700; margin-top:10px; letter-spacing:-0.02em;}
+  .kpi-bottom{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:8px;}
+  .kpi-note{font-size:11.5px; color:var(--ink-faint);}
+
+  /* ---------------- Panels ---------------- */
+  .panel{
+    background:var(--surface); border:1px solid var(--rule); border-radius:var(--radius);
+    padding:20px 22px; margin-bottom:16px;
+  }
+  .panel-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;}
+  .panel-head h2{font-size:14px; font-weight:700; letter-spacing:-0.01em;}
+  .panel-head .meta{font-size:11.5px; color:var(--ink-soft);}
+  .empty-state{font-size:12.5px; color:var(--ink-faint); padding:12px 0;}
+
+  /* ---------------- Recent viewers ---------------- */
+  .viewer-summary{display:flex; align-items:baseline; gap:8px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--rule);}
+  .viewer-summary .v-count{font-size:22px; font-weight:700;}
+  .viewer-summary .v-label{font-size:12px; color:var(--ink-soft);}
+  .viewer-list{display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:2px 18px;}
+  .viewer-row{display:flex; align-items:center; gap:10px; padding:8px 0;}
+  .viewer-row .v-fallback{
+    width:28px; height:28px; border-radius:7px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600;
+    background:var(--surface-2); border:1px solid var(--rule); color:var(--ink-soft);
+    overflow:hidden;
+  }
+  .viewer-row .v-fallback img{width:100%; height:100%; object-fit:cover;}
+  .viewer-row .v-info{flex:1; min-width:0;}
+  .viewer-row .v-name{font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .viewer-row .v-time{font-size:11px; color:var(--ink-faint);}
+  .viewer-row .v-tag{font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--accent); background:var(--accent-soft); padding:1px 5px; border-radius:4px; margin-left:6px;}
+
+  /* ---------------- Trending products (ranked, data-dense) ---------------- */
+  .rank-row{
+    display:grid;
+    grid-template-columns:22px 1fr 90px 130px 60px;
+    align-items:center; gap:14px;
+    padding:11px 0; border-bottom:1px solid var(--rule);
+  }
+  .rank-row:last-child{border-bottom:none;}
+  .rank-row.head{
+    padding-bottom:9px; border-bottom:1px solid var(--ink);
+  }
+  .rank-row.head span{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;}
+  .rank-num{font-size:11.5px; color:var(--ink-faint); font-weight:600;}
+  .rank-product{display:flex; align-items:center; gap:10px; min-width:0;}
+  .rank-thumb{
+    width:34px; height:34px; border-radius:7px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:#fff;
+    overflow:hidden;
+  }
+  .rank-thumb img{width:100%; height:100%; object-fit:cover;}
+  .rank-name{min-width:0;}
+  .rank-name .p-name{font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .rank-name .p-price-row{font-size:11px; color:var(--ink-soft); margin-top:1px; display:flex; gap:6px; align-items:center;}
+  .rank-name .p-discount{color:var(--positive); font-weight:600;}
+  .rank-bar-cell{display:flex; flex-direction:column; gap:3px;}
+  .rank-bar-track{height:5px; border-radius:3px; background:var(--surface-2); overflow:hidden;}
+  .rank-bar-fill{height:100%; border-radius:3px; background:var(--accent);}
+  .rank-bar-label{font-size:10.5px; color:var(--ink-soft); display:flex; justify-content:space-between;}
+  .rank-rating{font-size:12px; font-weight:600; display:flex; align-items:center; gap:3px; color:var(--amber); justify-content:flex-end;}
+  .rank-rating svg{width:11px; height:11px;}
+
+  /* ---------------- Footer note ---------------- */
+  .cache-note{
+    display:flex; justify-content:space-between; font-size:11px; color:var(--ink-faint);
+    margin-top:6px; padding:0 4px; flex-wrap:wrap; gap:6px;
+  }
+
+  @media (max-width: 860px){
+    main{padding:18px;}
+    .kpi-strip{grid-template-columns:repeat(2, 1fr);}
+    .rank-row{grid-template-columns:20px 1fr 74px 44px; }
+    .rank-row .rank-bar-cell:nth-child(4){display:none;}
+    .rank-row.head span:nth-child(4){display:none;}
+    .stat-cluster{gap:18px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="topbar">
+    <div class="topbar-title">
+      <div class="mark">{{ user.display_name|default:"?"|slice:":2"|upper }}</div>
+      <div>
+        <h1>Performance Dashboard</h1>
+        
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="range-toggle">
+        <button>7D</button>
+        <button class="active">30D</button>
+        <button>90D</button>
+      </div>
+      <div class="status-chip">
+        <span class="status-dot"></span>
+        Refreshed {{ cache_age_seconds }}s ago · TTL {{ shell_ttl }}s
+      </div>
+    </div>
+  </div>
+
+  {% if user.is_authenticated %}
+  <section class="identity-strip">
+    <div class="avatar-fallback">
+      {% if profile.photo %}
+        <img src="{{ profile.photo }}" alt="{{ profile.display_name }}">
+      {% else %}
+        {{ profile.display_name|default:user.display_name|default:"?"|slice:":1"|upper }}
+      {% endif %}
+    </div>
+    <div class="identity-block">
+      <div class="identity-name-row">
+        <span class="display-name">{{ profile.display_name|default:user.display_name }}</span>
+        {% if profile.is_verified %}
+        <span class="verified-seal" title="Verified {% if profile.verification_level %}({{ profile.verification_level }}){% endif %}">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5 14.6 4l3.6-.5 1 3.5 3 2-1.5 3.4 1.5 3.4-3 2-1 3.5-3.6-.5L12 22.5 9.4 20l-3.6.5-1-3.5-3-2 1.5-3.4L1.8 8.2l3-2 1-3.5 3.6.5L12 1.5Z" opacity=".12"/><path d="M8.5 12.3 11 14.8l4.8-5.6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        {% endif %}
+        {% if profile.is_business %}
+        <span class="profile-type-badge">Business</span>
+        {% endif %}
+      </div>
+      <div class="identity-sub">
+        {% if profile.location %}{{ profile.location }} · {% endif %}Member since {{ user.date_joined|date:"Y" }}
+      </div>
+    </div>
+    <div class="stat-cluster">
+      <div class="stat">
+        <span class="n mono">{{ profile.follower_count|default:0|intcomma }}</span>
+        <span class="l">Followers</span>
+      </div>
+      <div class="stat">
+        <span class="n mono">{{ profile.following_count|default:0|intcomma }}</span>
+        <span class="l">Following</span>
+      </div>
+      <div class="stat">
+        <span class="n mono">{{ profile.profile_views|default:0|intcomma }}</span>
+        <span class="l">Profile views</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Wishlist items</span>
+      </div>
+      <div class="kpi-value mono">{{ activity.wishlist_count|intcomma }}</div>
+      <div class="kpi-bottom">
+        <span class="kpi-note">Saved by customers</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Orders</span>
+      </div>
+      <div class="kpi-value mono">{{ activity.order_count|intcomma }}</div>
+      <div class="kpi-bottom">
+        <span class="kpi-note">All-time total</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Connected services</span>
+      </div>
+      <div class="kpi-value mono">{{ engine.connected_services|length }}</div>
+      <div class="kpi-bottom">
+        <span class="kpi-note">Linked accounts</span>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-label">Media synced</span>
+      </div>
+      <div class="kpi-value mono">{{ engine.images_count|add:engine.videos_count|intcomma }}</div>
+      <div class="kpi-bottom">
+        <span class="kpi-note">Images + videos pulled in</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Recent viewers</h2>
+      <span class="meta">Most recently active</span>
+    </div>
+    <div class="viewer-summary">
+      <span class="v-count mono">{{ viewers.unique_viewer_count|default:0|intcomma }}</span>
+      <span class="v-label">people have viewed your profile</span>
+    </div>
+    {% if viewers.recent %}
+    <div class="viewer-list">
+      {% for v in viewers.recent %}
+      <div class="viewer-row">
+        <div class="v-fallback">
+          {% if v.photo %}
+            <img src="{{ v.photo }}" alt="{{ v.name }}">
+          {% else %}
+            {{ v.name|default:"?"|slice:":1"|upper }}
+          {% endif %}
+        </div>
+        <div class="v-info">
+          <div class="v-name">{{ v.name }}{% if v.is_business %} <span class="v-tag">Business</span>{% endif %}</div>
+          <div class="v-time">{{ v.viewed_at|timesince }} ago</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No recent profile views yet.</div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Trending products</h2>
+      <span class="meta">Ranked by views &amp; sales</span>
+    </div>
+
+    {% if trending_products %}
+    <div class="rank-row head">
+      <span></span>
+      <span>Product</span>
+      <span>Sales</span>
+      <span>Views</span>
+      <span style="text-align:right">Rating</span>
+    </div>
+
+    {% for p in trending_products %}
+    <div class="rank-row">
+      <span class="rank-num mono">{{ forloop.counter|stringformat:"02d" }}</span>
+      <div class="rank-product">
+        <div class="rank-thumb" style="background:{% cycle '#155EEF' '#0E9F6E' '#B8860B' '#8A5CF6' '#E6484D' %};">
+          {% if p.image %}
+            <img src="{{ p.image }}" alt="{{ p.name }}">
+          {% else %}
+            {{ p.name|slice:":2"|upper }}
+          {% endif %}
+        </div>
+        <div class="rank-name">
+          <a href="/products/{{ p.slug }}/" class="p-name">{{ p.name }}</a>
+          <div class="p-price-row">
+            <span class="mono">৳{{ p.price|intcomma }}</span>
+            {% if p.discount_pct and p.discount_pct != "0" %}<span class="p-discount">-{{ p.discount_pct }}%</span>{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="rank-bar-cell">
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:{% widthratio p.sales trending_products.0.sales 100 %}%;"></div></div>
+        <div class="rank-bar-label"><span class="mono">{{ p.sales|intcomma }}</span></div>
+      </div>
+      <div class="rank-bar-cell">
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:{% widthratio p.views trending_products.0.views 100 %}%; background:var(--ink-faint);"></div></div>
+        <div class="rank-bar-label"><span class="mono">{{ p.views|intcomma }}</span></div>
+      </div>
+      <div class="rank-rating"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z"/></svg><span class="mono">{{ p.rating }}</span></div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">No trending product data available right now.</div>
+    {% endif %}
+  </section>
+
+  <div class="cache-note">
+    <span>Cache version {{ cache_version }} · shell TTL {{ shell_ttl }}s</span>
+    <span>Shell generated {{ generated_at|date:"Y-m-d H:i:s" }} UTC</span>
+  </div>
+
+</main>
+</body>
+</html>

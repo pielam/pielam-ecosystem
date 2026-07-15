@@ -7,11 +7,15 @@ class ConnectedService(models.Model):
     SERVICE_TYPES = [
         ('education', 'Education'),
         ('product', 'Product'),
+        ('brand', 'Brand'),
+        ('category', 'Category'),
+        ('subcategory', 'SubCategory'),  # ← new
         ('news', 'News'),
         ('location', 'Location'),
         ('api', 'API Endpoint'),
         ('person', 'Person'),
         ('business', 'Business'),
+        ('entertainment', 'Entertainment'),
     ]
 
     STATUS_CHOICES = [
@@ -29,7 +33,7 @@ class ConnectedService(models.Model):
     profile = models.ForeignKey(ProfileInfo, blank=True, null=True, on_delete=models.CASCADE, related_name='connected_services_profile')
     service_name = models.CharField(max_length=200)
     service_url = models.URLField(max_length=500)
-    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='other')
+    service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='product')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='private')
     is_connected = models.BooleanField(default=False)
 
@@ -59,6 +63,8 @@ class ConnectedService(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    cached_feed_payload = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']

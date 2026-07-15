@@ -1,0 +1,940 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink:        #0f0f0f;
+    --ink-2:      #3a3a3a;
+    --ink-3:      #6b6b6b;
+    --ink-4:      #9b9b9b;
+    --surface:    #ffffff;
+    --surface-2:  #f5f5f3;
+    --surface-3:  #eeede9;
+    --border:     #e4e3df;
+    --border-2:   #d0cfc9;
+    --gold:       #b8860b;
+    --gold-2:     #8b6508;
+    --green:      #1a6b3a;
+    --green-bg:   #edf7f1;
+    --warn:       #92400e;
+    --warn-bg:    #fffbeb;
+    --blue:       #1e3a8a;
+    --blue-light: #3b82f6;
+    --primary-dark:    #0a2540;
+    --primary-blue:    #0d47a1;
+    --primary-light:   #1976d2;
+    --accent-gold:     #d4af37;
+    --accent-amber:    #ffb300;
+    --success-emerald: #00b894;
+    --danger-crimson:  #e74c3c;
+    --text-primary:    #1a202c;
+    --text-secondary:  #4a5568;
+    --text-muted:      #718096;
+    --bg-primary:      #ffffff;
+    --bg-secondary:    #f7fafc;
+    --bg-tertiary:     #edf2f7;
+    --border-light:    #e2e8f0;
+    --border-medium:   #cbd5e0;
+    --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+    --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+    --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+    --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+    --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body:    'Syne', sans-serif;
+    --f-mono:       'JetBrains Mono', monospace;
+    --f-display:    'Cormorant Garamond', serif;
+    --f-body:       'Syne', sans-serif;
+    --bottom-bar-height: 68px;
+    --r-sm:  8px;
+    --r-md:  14px;
+    --r-lg:  20px;
+    --r-xl:  28px;
+    --transition-fast: .15s ease;
+    --transition-base: .25s ease;
+    --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+  }
+
+  body {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding-bottom: var(--bottom-bar-height);
+  }
+  a   { text-decoration:none; color:inherit; }
+  img { max-width:100%; display:block; }
+
+  /* ═══════════════════════════════════════════════
+     SUBCATEGORY PRODUCTS — Enterprise CSS
+  ═══════════════════════════════════════════════ */
+
+  /* ── BREADCRUMB ── */
+  .sp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+  .sp-breadcrumb a {
+    color: var(--text-secondary);
+    font-weight: 600;
+    transition: color var(--transition-fast);
+  }
+  .sp-breadcrumb a:hover { color: var(--primary-blue); }
+  .sp-breadcrumb .sp-crumb-current {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+  .sp-breadcrumb i { font-size: 9px; color: var(--text-muted); }
+
+  /* ── HERO / HEADER BANNER ── */
+  .sp-hero {
+    position: relative;
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+    box-shadow: var(--shadow-md);
+  }
+  .sp-hero-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  .sp-hero-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--r-md);
+    background: rgba(255,255,255,.14);
+    border: 1.5px solid rgba(255,255,255,.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sp-hero-icon img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+  .sp-hero-icon i { font-size: 26px; color: #fff; }
+
+  .sp-hero-text { flex: 1; min-width: 0; }
+  .sp-hero-title {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 4px;
+  }
+  .sp-hero-desc {
+    font-size: 12.5px;
+    color: rgba(255,255,255,.78);
+    max-width: 560px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .sp-hero-badges {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .sp-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background: rgba(255,255,255,.16);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.25);
+  }
+  .sp-hero-badge.bg-gold  { background: rgba(212,175,55,.28); border-color: rgba(212,175,55,.5); }
+  .sp-hero-badge.bg-fire  { background: rgba(231,76,60,.28);  border-color: rgba(231,76,60,.5); }
+
+  .sp-hero-stats {
+    display: flex;
+    gap: 18px;
+    flex-shrink: 0;
+  }
+  .sp-hero-stat { text-align: center; }
+  .sp-hero-stat strong {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .sp-hero-stat span {
+    font-size: 10px;
+    color: rgba(255,255,255,.7);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  /* ── TOOLBAR ── */
+  .sp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .sp-search {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  }
+  .sp-search:focus-within {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(13,71,161,.08);
+  }
+  .sp-search i {
+    padding: 0 10px;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+  .sp-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 9px 0;
+    background: transparent;
+    color: var(--text-primary);
+  }
+  .sp-search input::placeholder { color: var(--text-muted); font-size: 12px; }
+
+  .sp-select {
+    padding: 9px 28px 9px 12px;
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--r-md);
+    background: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    transition: border-color var(--transition-base);
+  }
+  .sp-select:focus { border-color: var(--primary-blue); }
+
+  /* ── EXTRA FILTER CONTROLS (brand / price / stock) ── */
+  .sp-price-range {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .sp-price-input {
+    width: 76px;
+    padding: 9px 8px;
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--r-md);
+    background: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition-base);
+  }
+  .sp-price-input:focus { border-color: var(--primary-blue); }
+  .sp-price-range span { font-size: 11px; color: var(--text-muted); }
+
+  .sp-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--r-md);
+    background: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .sp-checkbox input { accent-color: var(--primary-blue); cursor: pointer; }
+
+  .sp-view-btns {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .sp-vbtn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--r-md);
+    background: #fff;
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+  }
+  .sp-vbtn.active,
+  .sp-vbtn:hover {
+    background: var(--primary-dark);
+    color: #fff;
+    border-color: var(--primary-dark);
+  }
+
+  /* ── RESULTS BAR ── */
+  .sp-results {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.875rem;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sp-results-left {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .sp-results-left strong { color: var(--primary-blue); font-weight: 700; }
+  .sp-sort-info { font-size: 11px; color: var(--text-muted); }
+  .sp-sort-info a { color: var(--primary-blue); font-weight: 600; }
+
+  /* ── PRODUCT GRID ── */
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  /* ── PRODUCT CARD ── */
+  .pc-card {
+    background: #fff;
+    border-radius: var(--r-lg);
+    border: 1.5px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    transition:
+      transform var(--transition-base),
+      box-shadow var(--transition-base),
+      border-color var(--transition-base);
+  }
+  .pc-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-medium);
+  }
+  .pc-card:focus-visible {
+    outline: 3px solid var(--primary-blue);
+    outline-offset: 2px;
+  }
+
+  .pc-image {
+    height: 160px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--border-light);
+    position: relative;
+    overflow: hidden;
+  }
+  .pc-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-slow);
+  }
+  .pc-card:hover .pc-image img { transform: scale(1.06); }
+
+  .pc-image-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--r-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+
+  .pc-badges {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    z-index: 2;
+  }
+  .pc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .pc-badge i { font-size: 9px; }
+  .bdg-new  { background: #dbeafe; color: #1e40af; }
+  .bdg-sale { background: #fee2e2; color: #991b1b; }
+  .bdg-out  { background: #f3f4f6; color: #6b7280; }
+
+  .pc-wishlist {
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    font-size: 13px;
+    color: var(--text-muted);
+    box-shadow: var(--shadow-xs);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+  }
+  .pc-wishlist:hover { transform: scale(1.1); color: var(--danger-crimson); }
+  .pc-wishlist.active { color: var(--danger-crimson); }
+
+  .pc-body {
+    padding: 10px 12px 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .pc-brand {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .pc-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+    min-height: 2.6em;
+  }
+
+  .pc-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .pc-rating i { font-size: 10px; color: var(--accent-amber); }
+  .pc-rating strong { color: var(--text-primary); font-weight: 700; }
+
+  .pc-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+  }
+  .pc-price {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .pc-price-old {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+  .pc-discount {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--danger-crimson);
+  }
+
+  .pc-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 7px 0;
+    width: 100%;
+    background: var(--primary-dark);
+    color: #fff;
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border: none;
+    cursor: pointer;
+    transition: background var(--transition-base);
+    text-decoration: none;
+  }
+  .pc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
+  .pc-card:hover .pc-cta   { background: var(--primary-blue); }
+  .pc-card:hover .pc-cta i { transform: translateX(3px); }
+
+  .pc-card.out-of-stock .pc-image img { opacity: 0.5; filter: grayscale(.4); }
+  .pc-card.out-of-stock .pc-cta { background: var(--text-muted); pointer-events: none; }
+
+  /* ── LIST MODE ── */
+  .product-grid.list-mode { grid-template-columns: 1fr; }
+  .product-grid.list-mode .pc-card { flex-direction: row; align-items: stretch; }
+  .product-grid.list-mode .pc-image {
+    width: 130px; height: auto; min-height: 100px; flex-shrink: 0;
+    border-bottom: none; border-right: 1px solid var(--border-light);
+  }
+  .product-grid.list-mode .pc-body {
+    flex-direction: row; align-items: center; gap: 16px; padding: 10px 14px;
+  }
+  .product-grid.list-mode .pc-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .product-grid.list-mode .pc-name { min-height: 0; -webkit-line-clamp: 1; }
+  .product-grid.list-mode .pc-cta  { width: auto; padding: 6px 14px; margin: 0; }
+
+  /* ── EMPTY STATE ── */
+  .sp-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-muted);
+  }
+  .sp-empty-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+  .sp-empty i   { font-size: 2rem; opacity: 0.25; }
+  .sp-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
+  .sp-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
+  .sp-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: var(--primary-dark);
+    color: #fff;
+    border: none;
+    border-radius: var(--r-md);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-base);
+  }
+  .sp-empty-btn:hover { background: var(--primary-blue); }
+
+  /* ── PAGINATION ── */
+  .pagination-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 1.75rem;
+  }
+  .pagination-wrapper .page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 12px;
+    border-radius: var(--r-sm);
+    border: 1.5px solid var(--border-medium);
+    background: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+  }
+  .pagination-wrapper .page-link:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+  .pagination-wrapper .page-item.active .page-link {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: #fff;
+  }
+  .pagination-wrapper .page-ellipsis { padding: 0 4px; color: var(--text-muted); font-size: 12px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .sp-hero-inner    { flex-wrap: wrap; }
+    .sp-hero-stats    { width: 100%; justify-content: flex-start; }
+    .sp-toolbar       { gap: 6px; }
+    .sp-search        { min-width: 0; flex: 1 1 55%; }
+    .product-grid     { gap: 10px; }
+    .pc-image         { height: 140px; }
+  }
+
+  @media (max-width: 600px) {
+    .sp-hero-title    { font-size: 1.35rem; }
+    .sp-hero-icon     { width: 52px; height: 52px; }
+    .product-grid     { gap: 8px; }
+    .pc-image         { height: 120px; }
+    .pc-body          { padding: 8px 10px 10px; }
+    .pc-name          { font-size: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .sp-toolbar       { flex-direction: column; align-items: stretch; }
+    .sp-search        { max-width: 100%; flex: none; }
+    .sp-select        { width: 100%; }
+    .sp-price-range   { width: 100%; }
+    .sp-price-input   { flex: 1; width: auto; }
+    .sp-checkbox      { width: 100%; justify-content: center; }
+    .sp-view-btns     { margin-left: 0; }
+    .product-grid     { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .pc-image         { height: 110px; }
+    .pc-rating        { display: none; }
+  }
+
+  @media (max-width: 360px) {
+    .sp-hero-title    { font-size: 1.15rem; }
+    .pc-name          { font-size: 11px; }
+    .pc-cta           { font-size: 9px; padding: 5px 0; border-radius: 6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pc-card, .pc-card:hover, .pc-image img, .pc-card:hover .pc-image img,
+    .pc-cta, .pc-cta i, .pc-card:hover .pc-cta i, .pc-wishlist {
+      transition: none;
+      transform: none;
+      animation: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+  {# ── BREADCRUMB ── #}
+  <div class="sp-breadcrumb">
+    <a href="{% url 'ponno:home' %}"><i class="fa-solid fa-house"></i></a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <a href="{% url 'ponno:category_products' category_slug=category.category_slug %}">{{ category.category_name }}</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <span class="sp-crumb-current">{{ subcategory.sub_category_name }}</span>
+  </div>
+
+  {# ── HERO BANNER ── #}
+  <div class="sp-hero">
+    <div class="sp-hero-inner">
+      <div class="sp-hero-icon">
+        {% if subcategory.sub_category_icon %}
+          <img src="{{ subcategory.icon_url }}" alt="{{ subcategory.sub_category_name }} icon">
+        {% else %}
+          <i class="fa-solid {{ subcategory.icon_class|default:'fa-sitemap' }}"></i>
+        {% endif %}
+      </div>
+      <div class="sp-hero-text">
+        <div class="sp-hero-title">{{ subcategory.sub_category_name }}</div>
+        {% if subcategory.sub_category_description %}
+          <div class="sp-hero-desc">{{ subcategory.sub_category_description }}</div>
+        {% endif %}
+        <div class="sp-hero-badges">
+          {% if subcategory.is_featured %}
+            <span class="sp-hero-badge bg-gold"><i class="fa-solid fa-star"></i> Featured</span>
+          {% endif %}
+          {% if subcategory.is_trending %}
+            <span class="sp-hero-badge bg-fire"><i class="fa-solid fa-fire"></i> Trending</span>
+          {% endif %}
+          {% if subcategory.sub_category_type %}
+            <span class="sp-hero-badge">{{ subcategory.sub_category_type|capfirst }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="sp-hero-stats">
+        <div class="sp-hero-stat">
+          <strong>{{ total_count }}</strong>
+          <span>Products</span>
+        </div>
+        <div class="sp-hero-stat">
+          <strong>{{ stats.in_stock }}</strong>
+          <span>In stock</span>
+        </div>
+        <div class="sp-hero-stat">
+          <strong>{{ subcategory.view_count }}</strong>
+          <span>Views</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form class="sp-toolbar" method="get" role="search">
+    <div class="sp-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        type="text"
+        name="q"
+        value="{{ query|default:'' }}"
+        placeholder="Search in {{ subcategory.sub_category_name }}…"
+      >
+    </div>
+
+    <input type="hidden" name="sort" value="{{ current_sort }}">
+
+    {% if brands %}
+    <select class="sp-select" name="brand" onchange="this.form.submit()">
+      <option value="">All brands</option>
+      {% for b in brands %}
+        <option value="{{ b.brand_slug }}" {% if selected_brand and selected_brand.brand_slug == b.brand_slug %}selected{% endif %}>
+          {{ b.brand_name }}
+        </option>
+      {% endfor %}
+    </select>
+    {% endif %}
+
+    <div class="sp-price-range">
+      <input class="sp-price-input" type="number" min="0" step="0.01" name="min_price" placeholder="Min" value="{{ min_price|default:'' }}">
+      <span>—</span>
+      <input class="sp-price-input" type="number" min="0" step="0.01" name="max_price" placeholder="Max" value="{{ max_price|default:'' }}">
+    </div>
+
+    <label class="sp-checkbox">
+      <input type="checkbox" name="in_stock" value="1" {% if in_stock_only %}checked{% endif %} onchange="this.form.submit()">
+      In stock only
+    </label>
+
+    <select class="sp-select" onchange="applySort(this.value)">
+      {% for opt in sort_options %}
+        <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="sp-view-btns">
+      <button type="button" class="sp-vbtn active" data-view="grid" aria-label="Grid view">
+        <i class="fa-solid fa-grip"></i>
+      </button>
+      <button type="button" class="sp-vbtn" data-view="list" aria-label="List view">
+        <i class="fa-solid fa-list"></i>
+      </button>
+    </div>
+  </form>
+
+  {# ── RESULTS BAR ── #}
+  {% if products %}
+  <div class="sp-results">
+    <div class="sp-results-left">
+      Showing
+      <strong>{{ products|length }}</strong>
+      of
+      <strong>{{ total_count }}</strong>
+      product{{ total_count|pluralize }}
+    </div>
+    <div class="sp-sort-info">
+      Sorted by
+      {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
+      {% if query %}
+        &nbsp;&middot;&nbsp;
+        <a href="{% url 'ponno:subcategory_products' category_slug=subcategory.sub_category_slug %}">
+          <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── PRODUCT GRID ── #}
+  <div class="product-grid" id="productGrid">
+
+    {% for product in products %}
+    <a
+      href="{{ product.product_url }}"
+      class="pc-card {% if not product.is_in_stock %}out-of-stock{% endif %}"
+      aria-label="{{ product.name }}"
+    >
+      <div class="pc-image">
+        <div class="pc-badges">
+          {% if product.is_featured %}
+            <span class="pc-badge bdg-new"><i class="fa-solid fa-star"></i>Featured</span>
+          {% endif %}
+          {% if product.is_on_sale %}
+            <span class="pc-badge bdg-sale"><i class="fa-solid fa-tag"></i>-{{ product.discount_percentage|floatformat:0 }}%</span>
+          {% endif %}
+          {% if not product.is_in_stock %}
+            <span class="pc-badge bdg-out"><i class="fa-solid fa-ban"></i>Out of stock</span>
+          {% endif %}
+        </div>
+
+        <button type="button" class="pc-wishlist" aria-label="Add to wishlist" data-product-id="{{ product.id }}">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+
+        <img
+          src="{{ product.image }}"
+          alt="{{ product.name }}"
+          loading="lazy"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+        >
+        <div class="pc-image-placeholder" style="display:none">
+          {{ product.name|slice:":2"|upper }}
+        </div>
+      </div>
+
+      <div class="pc-body">
+        <div class="pc-left">
+          {% if product.brand_name %}
+            <div class="pc-brand">{{ product.brand_name }}</div>
+          {% endif %}
+
+          <div class="pc-name">{{ product.name }}</div>
+
+          {% if product.rating_average > 0 %}
+          <div class="pc-rating">
+            <i class="fa-solid fa-star"></i>
+            <strong>{{ product.rating_average|floatformat:1 }}</strong>
+            ({{ product.review_count }})
+          </div>
+          {% endif %}
+
+          <div class="pc-price-row">
+            <span class="pc-price">{{ product.currency }} {{ product.final_price|floatformat:2 }}</span>
+            {% if product.is_on_sale %}
+              <span class="pc-price-old">{{ product.currency }} {{ product.selling_price|floatformat:2 }}</span>
+              <span class="pc-discount">-{{ product.discount_percentage|floatformat:0 }}%</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="pc-cta">
+          {% if product.is_in_stock %}View product{% else %}Sold out{% endif %} <i class="fa-solid fa-arrow-right"></i>
+        </div>
+      </div>
+    </a>
+
+    {% empty %}
+    <div class="sp-empty">
+      <div class="sp-empty-icon">
+        <i class="fa-solid fa-box-open"></i>
+      </div>
+      <h3>No products found</h3>
+      <p>
+        {% if query %}
+          No products matched &ldquo;<strong>{{ query }}</strong>&rdquo; in {{ subcategory.sub_category_name }}.
+        {% else %}
+          There are no products in this subcategory yet.
+        {% endif %}
+      </p>
+      <a href="{% url 'ponno:subcategory_products' category_slug=subcategory.sub_category_slug %}" class="sp-empty-btn">
+        <i class="fa-solid fa-rotate-left"></i> Reset filters
+      </a>
+    </div>
+    {% endfor %}
+
+  </div>{# /product-grid #}
+
+  {# ── PAGINATION ── #}
+  {% if page_obj.paginator.num_pages > 1 %}
+  {% with base_qs='&sort='|add:current_sort %}
+  <nav class="pagination-wrapper" aria-label="Product page navigation">
+    {% if page_obj.has_previous %}
+      <a class="page-link"
+         href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{{ base_qs }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+        <i class="fa-solid fa-chevron-left"></i> Previous
+      </a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="page-item active"><span class="page-link">{{ num }}</span></span>
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a class="page-link page-number"
+           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}{{ base_qs }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+          {{ num }}
+        </a>
+      {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+        <span class="page-ellipsis">&hellip;</span>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a class="page-link page-number"
+           href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}{{ base_qs }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+          {{ num }}
+        </a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a class="page-link"
+         href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}{{ base_qs }}{% if selected_brand %}&brand={{ selected_brand.brand_slug }}{% endif %}{% if in_stock_only %}&in_stock=1{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">
+        Next <i class="fa-solid fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </nav>
+  {% endwith %}
+  {% endif %}
+
+</div>{# /page-wrapper #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function applySort(value) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('sort', value);
+  url.searchParams.delete('page');
+  window.location.href = url.toString();
+}
+
+document.querySelectorAll('.sp-vbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sp-vbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const grid = document.getElementById('productGrid');
+    grid.classList.toggle('list-mode', btn.dataset.view === 'list');
+  });
+});
+</script>
+{% endblock %}

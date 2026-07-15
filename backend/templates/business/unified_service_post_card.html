@@ -1,0 +1,71 @@
+{% load static %}
+<article class="ue-card ue-post" data-service-id="{{ post.id }}" data-kind="service_post" data-cursor="{{ post.cursor }}">
+  <div class="ue-card__header">
+    <a href="{{ post.attribution.url|default:'#' }}" class="ue-card__avatar-link" aria-hidden="true" tabindex="-1">
+      <img class="ue-card__avatar" src="{{ post.attribution.avatar|default:'/static/defaults/default-profile-picture.png' }}" alt="" loading="lazy">
+    </a>
+    <div class="ue-card__identity">
+      <a href="{{ post.attribution.url|default:'#' }}" class="ue-card__name">
+        {{ post.attribution.name }}
+        {% if post.attribution.verified %}<span class="ue-card__verified" title="Verified">✓</span>{% endif %}
+      </a>
+
+      {% if post.attribution.tagline or post.attribution.location %}
+        <div class="ue-card__subline">
+          {% if post.attribution.tagline %}{{ post.attribution.tagline }}{% endif %}
+          {% if post.attribution.tagline and post.attribution.location %} · {% endif %}
+          {% if post.attribution.location %}{{ post.attribution.location }}{% endif %}
+        </div>
+      {% endif %}
+
+      {% comment %}
+      posted_at arrives as an ISO string, not a datetime object, so Django's
+      |date filter would silently render empty. Kept semantic via <time> and
+      formatted client-side (see ue-format-timestamps in extra_js), the same
+      way infinite-scroll cards are — so both render identically.
+      {% endcomment %}
+      <time class="ue-card__meta" datetime="{{ post.posted_at }}" data-timestamp="{{ post.posted_at }}">{{ post.posted_at }}</time>
+    </div>
+  </div>
+
+  {% if post.images %}
+    <div class="ue-post__media-grid">
+      {% for url in post.images|slice:":4" %}
+        <img src="{{ url }}" alt="{{ post.source.og_title|default:post.source.service_name }}" loading="lazy">
+      {% endfor %}
+      {% if post.images_count > 4 %}
+        <div class="ue-post__media-more">+{{ post.images_count|add:"-4" }}</div>
+      {% endif %}
+    </div>
+  {% elif post.videos %}
+    {% comment %}
+    Images take priority when both are present (matches the grid's 4-tile
+    layout); videos only render here when there are no images at all —
+    previously post.videos was never rendered under any condition.
+    {% endcomment %}
+    <div class="ue-post__media-grid">
+      {% for url in post.videos|slice:":4" %}
+        <video src="{{ url }}" muted loop playsinline preload="metadata"></video>
+      {% endfor %}
+      {% if post.videos_count > 4 %}
+        <div class="ue-post__media-more">+{{ post.videos_count|add:"-4" }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="ue-post__body">
+    <span class="ue-post__tag">
+      {% if post.source.service_type %}{{ post.source.service_type|title }}{% else %}Connected service{% endif %}
+    </span>
+    <h3 class="ue-post__title">{{ post.source.og_title|default:post.source.service_name }}</h3>
+    {% if post.source.og_description %}
+      <p class="ue-post__desc">{{ post.source.og_description }}</p>
+    {% endif %}
+    <a href="{{ post.source.service_url }}" target="_blank" rel="noopener noreferrer nofollow" class="ue-post__source">
+      {{ post.source.og_site_name|default:post.source.service_name }} ↗
+      · {{ post.images_count }} images
+      · {{ post.videos_count }} videos
+      · {{ post.links_count }} links
+    </a>
+  </div>
+</article>

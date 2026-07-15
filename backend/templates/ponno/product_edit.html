@@ -1,3 +1,5 @@
+{% include "base.html" %}
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en" data-role="{{ role }}">
@@ -1441,198 +1443,7 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════
-     SIDE DRAWER OVERLAY
-════════════════════════════════ -->
-<div id="drawerOverlay"></div>
-
-<!-- ═══════════════════════════════
-     SIDE DRAWER
-════════════════════════════════ -->
-<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
-    <div class="drawer-header">
-        <span class="drawer-brand">PIELAM</span>
-        <button id="drawerClose" aria-label="Close menu">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-
-    <nav class="drawer-nav">
-        <!-- Primary links -->
-        <a href="{% url 'ponno:home' %}" class="drawer-link">
-            <i class="fa-solid fa-house"></i>
-            Home
-        </a>
-        <a href="{% url 'ponno:discovery_engine' %}" class="drawer-link">
-            <i class="fa-solid fa-compass"></i>
-            Discover
-        </a>
-        <a href="{% url 'notify:notification' %}" class="drawer-link">
-            <i class="fa-solid fa-bell"></i>
-            Notifications
-        </a>
-        <a href="{% url 'customer:profile' %}" class="drawer-link">
-            <i class="fa-solid fa-circle-user"></i>
-            My Profile
-        </a>
-        <a href="#" class="drawer-link">
-            <i class="fa-solid fa-gear"></i>
-            Settings
-        </a>
-
-        <!-- Divider -->
-        <div class="drawer-divider"></div>
-
-        <!-- Secondary links (formerly footer links) -->
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-circle-info"></i>
-            About Us
-        </a>
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-shield-halved"></i>
-            Privacy Policy
-        </a>
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-file-contract"></i>
-            Terms of Service
-        </a>
-    </nav>
-</aside>
-
-<!-- ═══════════════════════════════
-     NAVIGATION BAR
-════════════════════════════════ -->
-<nav class="menu-top" role="navigation" aria-label="Main navigation">
-    <div class="navbar-container">
-        <div class="navbar-glow"></div>
-        <div class="menu">
-            <div class="logo-left">
-                <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
-                    <i class="fa-solid fa-bars"></i>
-                </div>
-                <div class="logo-brand">
-                    <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
-                        <span class="navbar-brand">PIELAM</span>
-                    </a>
-                </div>
-            </div>
-            <div class="menu-links">
-                <a href="{% url 'ponno:home' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Home</span>
-                </a>
-                <a href="{% url 'notify:notification' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
-                    <i class="fa-solid fa-bell"></i>
-                    <span>Notifications</span>
-                </a>
-                <a href="{% url 'customer:profile' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-                    <i class="fa-solid fa-circle-user"></i>
-                    <span>Profile</span>
-                </a>
-            </div>
-        </div>
-    </div>
-</nav>
-<!-- ═══════════════════════════════
-     JAVASCRIPT
-════════════════════════════════ -->
-<script>
-// ── Tabs ─────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + target).classList.add('active');
-    });
-});
-
-// ── Image zoom ────────────────────────────
-const mainImg = document.getElementById('mainImg');
-if (mainImg) {
-    mainImg.addEventListener('click', () => mainImg.classList.toggle('zoomed'));
-}
-
-// ── Share button ──────────────────────────
-document.getElementById('shareBtn')?.addEventListener('click', async () => {
-    const shareData = {
-        title: "{{ product.product_name|escapejs }}",
-        text: "Check out this product on PIELAM!",
-        url: window.location.href
-    };
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            await navigator.clipboard.writeText(window.location.href);
-            const btn = document.getElementById('shareBtn');
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied!</span>';
-            btn.style.background = 'rgba(26,107,58,.9)';
-            btn.style.color = '#fff';
-            setTimeout(() => {
-                btn.innerHTML = orig;
-                btn.style.background = '';
-                btn.style.color = '';
-            }, 2000);
-        }
-    } catch(e) {}
-});
-
-// ── Side Drawer ───────────────────────────
-const drawer      = document.getElementById('sideDrawer');
-const overlay     = document.getElementById('drawerOverlay');
-const menuToggle  = document.getElementById('menuToggle');
-const drawerClose = document.getElementById('drawerClose');
-
-function openDrawer() {
-    overlay.style.display = 'block';
-    requestAnimationFrame(() => {
-        overlay.style.opacity = '1';
-        drawer.style.transform = 'translateX(0)';
-    });
-    document.body.style.overflow = 'hidden';
-}
-
-function closeDrawer() {
-    overlay.style.opacity = '0';
-    drawer.style.transform = 'translateX(-100%)';
-    setTimeout(() => { overlay.style.display = 'none'; }, 350);
-    document.body.style.overflow = '';
-}
-
-menuToggle.addEventListener('click', openDrawer);
-drawerClose.addEventListener('click', closeDrawer);
-overlay.addEventListener('click', closeDrawer);
-
-// Keyboard support for menu toggle
-menuToggle.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
-});
-
-// Close on Escape key
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeDrawer();
-});
-
-// ── Performance monitoring ────────────────
-if ('PerformanceObserver' in window) {
-    try {
-        const obs = new PerformanceObserver(list => {
-            for (const entry of list.getEntries()) {
-                console.log('LCP:', entry.startTime);
-            }
-        });
-        obs.observe({ entryTypes: ['largest-contentful-paint'] });
-    } catch(e) {}
-}
-</script>
-
-
+  
 <!-- ══ PAGE LAYOUT ══════════════════════════════════════════════ -->
 <div class="page-wrap">
 
@@ -2047,8 +1858,7 @@ if ('PerformanceObserver' in window) {
 
         </div>
       </div>
-
-      <!-- ══ 5. PRICING ══════════════════════════════════════════ -->
+<!-- ══ 5. PRICING ══════════════════════════════════════════ -->
       <div class="form-section" id="sec-pricing">
         <div class="form-section-head">
           <div class="section-icon"><i class="fas fa-tag"></i></div>
@@ -2112,6 +1922,45 @@ if ('PerformanceObserver' in window) {
             </div>
           </div>
 
+          <!-- ── Price Visibility ── -->
+          <div class="toggle-group" style="margin-top:16px;">
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Show Brand Price (MRP)</div>
+                <div class="toggle-sub">Display the manufacturer's price as a struck-through comparison price to buyers.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_brand_price_visible" id="fShowBrandPrice"
+                  {% if product.is_brand_price_visible %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Show Buying Price</div>
+                <div class="toggle-sub">Your cost price — normally kept internal. Only enable if you intend buyers to see it.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_buying_price_visible" id="fShowBuyingPrice"
+                  {% if product.is_buying_price_visible %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <div class="toggle-label">Show Selling Price</div>
+                <div class="toggle-sub">Display the final price to buyers. If hidden along with Brand Price, the product shows "Contact Seller" instead.</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" name="is_selling_price_visible" id="fShowSellingPrice"
+                  {% if product.is_selling_price_visible %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
           <!-- Live price preview -->
           <div class="price-preview" id="pricePreview">
             <div class="price-preview-item">
@@ -2147,7 +1996,6 @@ if ('PerformanceObserver' in window) {
 
         </div>
       </div>
-
       <!-- ══ 6. INVENTORY ════════════════════════════════════════ -->
       <div class="form-section" id="sec-inventory">
         <div class="form-section-head">
@@ -2849,5 +2697,105 @@ if ('PerformanceObserver' in window) {
   /* ── page load ── */
   calcPrices();
 </script>
+
+
+
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+// ── Tabs ─────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + target).classList.add('active');
+    });
+});
+
+// ── Image zoom ────────────────────────────
+const mainImg = document.getElementById('mainImg');
+if (mainImg) {
+    mainImg.addEventListener('click', () => mainImg.classList.toggle('zoomed'));
+}
+
+// ── Share button ──────────────────────────
+document.getElementById('shareBtn')?.addEventListener('click', async () => {
+    const shareData = {
+        title: "{{ product.product_name|escapejs }}",
+        text: "Check out this product on PIELAM!",
+        url: window.location.href
+    };
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(window.location.href);
+            const btn = document.getElementById('shareBtn');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied!</span>';
+            btn.style.background = 'rgba(26,107,58,.9)';
+            btn.style.color = '#fff';
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.background = '';
+                btn.style.color = '';
+            }, 2000);
+        }
+    } catch(e) {}
+});
+
+// ── Side Drawer ───────────────────────────
+const drawer      = document.getElementById('sideDrawer');
+const overlay     = document.getElementById('drawerOverlay');
+const menuToggle  = document.getElementById('menuToggle');
+const drawerClose = document.getElementById('drawerClose');
+
+function openDrawer() {
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        drawer.style.transform = 'translateX(0)';
+    });
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+    overlay.style.opacity = '0';
+    drawer.style.transform = 'translateX(-100%)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    document.body.style.overflow = '';
+}
+
+menuToggle.addEventListener('click', openDrawer);
+drawerClose.addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+// Keyboard support for menu toggle
+menuToggle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
+});
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeDrawer();
+});
+
+// ── Performance monitoring ────────────────
+if ('PerformanceObserver' in window) {
+    try {
+        const obs = new PerformanceObserver(list => {
+            for (const entry of list.getEntries()) {
+                console.log('LCP:', entry.startTime);
+            }
+        });
+        obs.observe({ entryTypes: ['largest-contentful-paint'] });
+    } catch(e) {}
+}
+</script>
+
+
 </body>
 </html>

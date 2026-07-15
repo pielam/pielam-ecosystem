@@ -284,22 +284,26 @@ def _load_dealer_context(user, profile_info) -> dict:
     # ── 4. SubCategories ─────────────────────────────────────────
     sub_categories = list(
         SubCategory.objects
-        .filter(brand__created_by=user, deleted_at__isnull=True)
+        .filter(created_by=user, deleted_at__isnull=True)
         .select_related('category', 'brand')
         .only(
-            'id', 'sub_category_name', 'sub_category_slug', 'sub_category_type',
-            'sub_category_image', 'sub_category_icon',
+            'id', 'uuid', 'sub_category_name', 'sub_category_slug', 'sub_category_type',
+            'sub_category_image', 'sub_category_icon', 'sub_category_thumbnail',
             'icon_class', 'color_code',
             'is_active', 'is_featured', 'is_trending',
-            'category', 'product_count', 'view_count',
+            'is_visible_in_menu', 'is_visible_on_homepage',
+            'category', 'category__category_name', 'category__category_slug',
+            'brand', 'brand__brand_name',
+            'product_count', 'view_count', 'popularity_score',
             'display_order', 'sub_category_created_at',
-            'brand',
         )
         .order_by('display_order', 'sub_category_name')
     )
 
-    total_sub_categories  = len(sub_categories)
-    active_sub_categories = sum(1 for s in sub_categories if s.is_active)
+    total_sub_categories    = len(sub_categories)
+    active_sub_categories   = sum(1 for s in sub_categories if s.is_active)
+    featured_sub_categories = sum(1 for s in sub_categories if s.is_featured)
+    trending_sub_categories = sum(1 for s in sub_categories if s.is_trending)
 
     # ── 5. Stock summary ─────────────────────────────────────────
     stock_stats = base_qs.filter(is_active=True).aggregate(

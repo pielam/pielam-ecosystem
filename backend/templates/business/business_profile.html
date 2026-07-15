@@ -394,12 +394,23 @@
 
 <style>
 
-  
+/* ═══════════════════════════════════════════════════════
+   VARIABLE ALIASES — map theme names used below to the
+   actual tokens declared in the page's :root.
+═══════════════════════════════════════════════════════ */
+:root {
+  --role-color: var(--primary-blue);   /* #0d47a1 */
+  --border-h:   var(--border-medium);  /* #cbd5e0 */
+  --text:       var(--text-primary);   /* #1a202c */
+  --text-2:     var(--text-secondary); /* #4a5568 */
+  --muted:      var(--text-muted);     /* #718096 */
+  --red:        var(--danger-crimson); /* #e74c3c */
+  --font-mono:  var(--f-mono);         /* JetBrains Mono */
+}
+
 /* ═══════════════════════════════════════════════════════
    EXCLUSIVE BUSINESS PROFILE — DESIGN SYSTEM
 ═══════════════════════════════════════════════════════ */
-
-
 
 /* ═══════════════════════════════════════════════════════
    MAIN GRID
@@ -416,19 +427,16 @@
    TABS
 ═══════════════════════════════════════════════════════ */
 
-/* Wrapper replaces .main-grid */
 .profile-body {
     padding: 0 32px 40px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Tab bar */
 .tab-bar {
     display: flex;
     gap: 4px;
     background: white;
-    
     border: 1px solid #d4af37;
     border-radius: var(--r-lg);
     padding: 5px;
@@ -440,7 +448,6 @@
 
 .tab-bar::-webkit-scrollbar { display: none; }
 
-/* Gold shimmer top edge */
 .tab-bar::before {
     content: '';
     position: absolute;
@@ -490,24 +497,18 @@
 
 .tab-btn.active {
     background: var(--role-color);
-    color: blue;
+    color: #fff; /* was 'blue' placeholder */
     box-shadow: 0 4px 14px color-mix(in srgb, var(--role-color) 40%, transparent);
 }
 
 .tab-btn.active i { opacity: 1; }
 
-/* Tab panels */
 .tab-panel { display: none; animation: fadeUp 0.3s ease both; }
 .tab-panel.active { display: block; }
 
-/* Products section — always visible below tabs */
 .products-section {
     margin-top: 28px;
 }
-
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
     .profile-body { padding: 0 16px 32px; }
@@ -518,6 +519,7 @@
     .profile-body { padding: 0 12px 24px; }
     .tab-btn { font-size: 10.5px; padding: 8px 11px; gap: 5px; }
 }
+
 /* ═══════════════════════════════════════════════════════
    CARDS
 ═══════════════════════════════════════════════════════ */
@@ -667,7 +669,7 @@
 
 .prog-track {
     height: 4px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(0,0,0,0.06); /* was rgba(255,255,255,.05) — invisible on light bg */
     border-radius: 4px;
     overflow: hidden;
 }
@@ -685,7 +687,6 @@
     position: relative;
 }
 
-/* glow on fill end */
 .prog-fill::after {
     content: '';
     position: absolute;
@@ -967,12 +968,13 @@
 .section-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 12px;
     margin-bottom: 16px;
 }
 
 .section-title {
-    font-family: var(--font-display);
+    font-family: 'roboto', sans-serif;
     font-size: 13px;
     font-weight: 800;
     color: var(--text);
@@ -981,18 +983,118 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .section-title i { color: var(--role-color); font-size: 12px; }
 
 .section-count {
-    font-family: var(--font-mono);
+    font-family: 'roboto', sans-serif;
     font-size: 11px;
     color: var(--muted);
     background: var(--surface-2);
     border: 1px solid var(--border);
     padding: 3px 10px;
     border-radius: 100px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.section-head > .section-link,
+.section-head > .btn {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION LINK
+   (previously defined twice with conflicting styles —
+   a white/blue sheen version, then a role-color pill
+   version. The pill version always won the cascade, so
+   the sheen version has been removed as dead code. This
+   is the single, final definition.)
+═══════════════════════════════════════════════════════ */
+
+.section-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    border-radius: 100px;
+    background: color-mix(in srgb, var(--role-color) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--role-color) 25%, transparent);
+    color: var(--role-color);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.section-link i {
+    font-size: 11px;
+    transition: transform 0.2s ease;
+}
+
+.section-link:hover {
+    background: var(--role-color);
+    border-color: var(--role-color);
+    color: #fff;
+}
+
+.section-link:hover i {
+    transform: rotate(90deg);
+}
+
+.section-link:active { transform: scale(0.96); }
+
+.section-link:focus-visible {
+    outline: 2px solid var(--role-color);
+    outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — section-head + section-link
+   (merged: was previously two conflicting media blocks)
+═══════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .section-head {
+        gap: 10px 12px;
+    }
+
+    .section-title {
+        font-size: 12px;
+        order: 1;
+    }
+
+    .section-count {
+        font-size: 10.5px;
+        padding: 2px 9px;
+        order: 2;
+        margin-left: auto;
+    }
+
+    .section-head > .section-link,
+    .section-head > .btn {
+        order: 3;
+        flex-basis: 100%;
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    .section-link {
+        font-size: 11.5px;
+        padding: 9px 15px;
+    }
+
+    .section-link i { font-size: 10px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1094,7 +1196,7 @@
 .p-badge-featured  { background: rgba(245,158,11,0.85); color: #fff; }
 .p-badge-verified  { background: rgba(46,204,113,0.85); color: #fff; }
 .p-badge-ship      { background: rgba(59,130,246,0.85); color: #fff; }
-.p-badge-condition { background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border-h); }
+.p-badge-condition { background: rgba(0,0,0,0.06); color: var(--text); border: 1px solid var(--border-h); }
 .p-badge-sold-out  { background: rgba(239,68,68,0.85);  color: #fff; }
 .p-badge-low-stock { background: rgba(245,158,11,0.85); color: #fff; }
 
@@ -1155,7 +1257,6 @@
 .stock-low { color: var(--amber); }
 .stock-out { color: var(--red); }
 
-/* ── Product edit overlay ── */
 .product-edit-overlay {
     position: absolute;
     inset: 0;
@@ -1249,7 +1350,7 @@
 .btn-ghost:hover {
     border-color: var(--border-h);
     color: var(--text);
-    background: rgba(255,255,255,0.04);
+    background: rgba(0,0,0,0.03);
 }
 
 .btn-danger {
@@ -1261,14 +1362,14 @@
 .btn-sm { padding: 5px 13px; font-size: 11px; }
 
 /* ═══════════════════════════════════════════════════════
-   NODE BLOCK (JWT key)
+   NODE BLOCK (e.g. API key / token display)
 ═══════════════════════════════════════════════════════ */
 
 .node-block {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.04);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 9px 12px;
@@ -1301,8 +1402,6 @@
     color: var(--text);
 }
 
-
-
 </style>
 
 
@@ -1316,12 +1415,11 @@
         
     </button>
 
-    {% if show_business_section %}
+    
     <button class="tab-btn" data-tab="business" role="tab" aria-selected="false">
         <i class="fas fa-store"></i> Brands
     </button>
-    {% endif %}
-
+    
     <button class="tab-btn" data-tab="bio" role="tab" aria-selected="false">
         <i class="fas fa-feather"></i> Category
     </button>
@@ -1341,7 +1439,12 @@
             <i class="fas fa-box"></i> Products
         </div>
         <span class="section-count">{{ total_products }} total · {{ active_products }} active</span>
+      
+        <a href="{% url 'ponno:product_upload' %}" class="section-link">
+          <i class="fas fa-plus"></i> New Product
+        </a>
     </div>
+    
 
     {% if total_products > 0 %}
     <div class="products-grid">
@@ -1450,12 +1553,12 @@
   <div class="section-title">
     <i class="fas fa-tag"></i> Brands
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
+  
     <span class="section-count">{{ total_brands }} total · {{ active_brands }} active · {{ verified_brands_count }} verified</span>
-    <a href="{% url 'ponno:brand_create' %}" class="btn btn-primary btn-sm">
+    <a href="{% url 'ponno:brand_create' %}" class="section-link">
       <i class="fas fa-plus"></i> New Brand
     </a>
-  </div>
+  
 </div>
 
   {% if total_brands > 0 %}
@@ -1561,7 +1664,7 @@
       <i class="fas fa-layer-group"></i> Categories
     </div>
     <span class="section-count">{{ total_categories }} total · {{ active_categories }} active · {{ root_categories }} root</span>
-    <a href="{% url 'ponno:category_create' %}" class="btn btn-primary btn-sm">
+    <a href="{% url 'ponno:category_create' %}" class="section-link">
       <i class="fas fa-plus"></i> New Category
     </a>
   </div>
@@ -1664,9 +1767,15 @@
       <i class="fas fa-list-ul"></i> Sub Categories
     </div>
     <span class="section-count">{{ total_sub_categories }} total · {{ active_sub_categories }} active</span>
+
+      <a href="{% url 'ponno:subcategory_create' %}" class="section-link">
+      <i class="fas fa-plus"></i> New SubCategory
+    </a>
+
   </div>
 
-  {% if total_sub_categories > 0 %}
+
+ {% if total_sub_categories > 0 %}
   <div class="products-grid">
     {% for sub in dealer_sub_categories %}
     <div class="product-card">
@@ -1701,7 +1810,7 @@
         </div>
 
         <div class="product-edit-overlay">
-          <a href="{% url 'ponno:sub_category_edit' slug=sub.sub_category_slug %}" class="product-edit-btn">
+          <a href="{% url 'ponno:subcategory_edit' slug=sub.sub_category_slug %}" class="product-edit-btn">
             <i class="fas fa-pen"></i> Edit
           </a>
         </div>
@@ -1710,7 +1819,7 @@
       <div class="product-info">
         <div class="product-title-row">
           {% if sub.is_active %}
-            <a href="{% url 'ponno:sub_category_detail' slug=sub.sub_category_slug %}" class="product-title">
+            <a href="{% url 'ponno:subcategory_products' category_slug=sub.sub_category_slug %}" class="product-title">
               {{ sub.sub_category_name }}
             </a>
           {% else %}
@@ -1737,15 +1846,14 @@
     {% endfor %}
   </div>
 
-  {% else %}
+{% else %}
   <div class="card">
     <div class="empty-state">
       <i class="fas fa-list-ul"></i>
       No sub categories created yet.
     </div>
   </div>
-  {% endif %}
-
+{% endif %}
 </div>
 <!-- ▸ END SUB CATEGORY TAB -->
 

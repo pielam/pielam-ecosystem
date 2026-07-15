@@ -245,7 +245,7 @@ def _apply_post_data(product, data, files, privileged=False):
         product.image = files["image"]
     product.video_url = (data.get("video_url") or "").strip() or None
 
-    # ── Pricing ──────────────────────────────────────────────────────
+# ── Pricing ──────────────────────────────────────────────────────
     product.brand_price          = _parse_optional_decimal(data.get("brand_price"))
     product.buying_price         = _parse_decimal(data.get("buying_price"),  product.buying_price)
     product.selling_price        = _parse_decimal(data.get("selling_price"), product.selling_price)
@@ -255,6 +255,13 @@ def _apply_post_data(product, data, files, privileged=False):
     currency = (data.get("currency") or product.currency or "BDT").strip().upper()
     if currency:
         product.currency = currency
+
+    # Price visibility — independent toggles, any/all can be hidden.
+    # Unchecked checkboxes are simply absent from POST data, so each
+    # one defaults to False (hidden) unless explicitly checked "on".
+    product.is_brand_price_visible   = _parse_bool(data.get("is_brand_price_visible"))
+    product.is_buying_price_visible  = _parse_bool(data.get("is_buying_price_visible"))
+    product.is_selling_price_visible = _parse_bool(data.get("is_selling_price_visible"))
 
     # ── Inventory ────────────────────────────────────────────────────
     product.stock               = _parse_int(data.get("stock", product.stock), minimum=0)

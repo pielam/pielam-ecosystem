@@ -185,6 +185,23 @@ class SubCategory(models.Model):
         help_text=_("Type of subcategory")
     )
 
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='subcategory_creator',
+        help_text=_("User who created this subcategory")
+    )
+
+    managed_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='managed_subcategories',
+        blank=True,
+        null=True,
+        help_text=_("Users who can manage this SubCategory")
+    )
+
     # ================================================================
     # PARENT RELATIONSHIP
     # ================================================================
@@ -682,7 +699,7 @@ class SubCategory(models.Model):
         self.deleted_at = None
         self.deleted_by = None
         self.deletion_reason = None
-        self.is_active = True
+        self.is_active = True 
 
         if save:
             self.save()

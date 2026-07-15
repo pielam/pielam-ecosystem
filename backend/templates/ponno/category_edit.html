@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit {{ category.category_name }} — Dealer Panel{% endblock %}
+
+{% block content %}
+<style>
+  .ce-page { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  .ce-breadcrumb { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+  .ce-breadcrumb a { color: #6b7280; text-decoration: none; }
+  .ce-breadcrumb a:hover { text-decoration: underline; }
+  .ce-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+  .ce-header__eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; margin-bottom: 4px; }
+  .ce-header__title { font-size: 24px; font-weight: 700; color: #111827; }
+
+  .ce-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+  .ce-section__title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+  .ce-section__hint { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+
+  .ce-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ce-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+  .ce-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .ce-field--full { grid-column: 1 / -1; }
+  .ce-label { font-size: 13px; font-weight: 600; color: #374151; }
+  .ce-label .req { color: #dc2626; }
+  .ce-hint { font-size: 12px; color: #9ca3af; }
+
+  .ce-input, .ce-select, .ce-textarea {
+    border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 12px;
+    font-size: 14px; color: #111827; background: #fff; width: 100%;
+    font-family: inherit;
+  }
+  .ce-input:focus, .ce-select:focus, .ce-textarea:focus {
+    outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+  }
+  .ce-textarea { resize: vertical; min-height: 80px; }
+
+  .ce-color-row { display: flex; align-items: center; gap: 10px; }
+  .ce-color-swatch {
+    width: 38px; height: 38px; border-radius: 8px; border: 1px solid #d1d5db;
+    padding: 0; cursor: pointer; flex-shrink: 0;
+  }
+
+  .ce-media-row { display: flex; align-items: center; gap: 14px; }
+  .ce-media-preview {
+    width: 64px; height: 64px; border-radius: 10px; object-fit: cover;
+    border: 1px solid #e5e7eb; background: #f9fafb; flex-shrink: 0;
+  }
+  .ce-media-preview--empty {
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #9ca3af; text-align: center;
+  }
+
+  .ce-toggle-list { display: flex; flex-direction: column; gap: 12px; }
+  .ce-toggle-row { display: flex; align-items: center; gap: 10px; }
+  .ce-toggle-row input[type="checkbox"] { width: 18px; height: 18px; }
+
+  .ce-submit-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-top: 24px; flex-wrap: wrap;
+  }
+  .ce-submit-bar__actions { display: flex; gap: 10px; }
+  .ce-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 10px 20px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; border: 1px solid transparent;
+    text-decoration: none;
+  }
+  .ce-btn--primary { background: #4f46e5; color: #fff; }
+  .ce-btn--primary:hover { background: #4338ca; }
+  .ce-btn--ghost { background: #fff; border-color: #d1d5db; color: #374151; }
+  .ce-btn--ghost:hover { background: #f9fafb; }
+
+  @media (max-width: 640px) {
+    .ce-grid, .ce-grid--3 { grid-template-columns: 1fr; }
+    .ce-submit-bar { flex-direction: column; align-items: stretch; }
+    .ce-submit-bar__actions { flex-direction: column; }
+    .ce-btn { justify-content: center; }
+  }
+</style>
+
+<div class="ce-page">
+
+  <nav class="ce-breadcrumb">
+    <a href="{% url 'ponno:home' %}">Home</a> &raquo;
+    <a href="{% url 'ponno:category_products' category_slug=category.category_slug %}">{{ category.category_name }}</a> &raquo;
+    <span>Edit</span>
+  </nav>
+
+  <div class="ce-header">
+    <div>
+      <div class="ce-header__eyebrow">Catalog management</div>
+      <div class="ce-header__title">Edit {{ category.category_name }}</div>
+    </div>
+    <a href="{% url 'ponno:category_products' category_slug=category.category_slug %}" class="ce-btn ce-btn--ghost">View category page</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ===== BASIC INFO ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">Basic information</div>
+      <div class="ce-section__hint">Core details for how this category is identified and organized.</div>
+
+      <div class="ce-grid">
+        <div class="ce-field">
+          <label class="ce-label" for="category_name">Category name <span class="req">*</span></label>
+          <input type="text" id="category_name" name="category_name" class="ce-input"
+                 value="{{ form_data.category_name|default:category.category_name }}" required minlength="2">
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="category_type">Category type <span class="req">*</span></label>
+          <select id="category_type" name="category_type" class="ce-select">
+            {% for value, label in category_types %}
+              <option value="{{ value }}"
+                {% if form_data.category_type|default:category.category_type == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="ce-field ce-field--full">
+          <label class="ce-label" for="parent">Parent category</label>
+          <select id="parent" name="parent" class="ce-select">
+            <option value="">— None (top-level) —</option>
+            {% for opt in parent_options %}
+              <option value="{{ opt.pk }}"
+                {% if form_data.parent|default_if_none:'' == opt.pk|stringformat:'s' or category.parent_id == opt.pk and not form_data %}selected{% endif %}>
+                {{ opt.category_name }}
+              </option>
+            {% endfor %}
+          </select>
+          <span class="ce-hint">A category cannot be its own parent or a descendant of itself.</span>
+        </div>
+
+        <div class="ce-field ce-field--full">
+          <label class="ce-label" for="category_short_description">Short description</label>
+          <input type="text" id="category_short_description" name="category_short_description" class="ce-input"
+                 maxlength="200"
+                 value="{{ form_data.category_short_description|default:category.category_short_description|default:'' }}">
+        </div>
+
+        <div class="ce-field ce-field--full">
+          <label class="ce-label" for="category_description">Description</label>
+          <textarea id="category_description" name="category_description" class="ce-textarea">{{ form_data.category_description|default:category.category_description|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== APPEARANCE ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">Appearance</div>
+      <div class="ce-section__hint">Icon, color, and layout for this category.</div>
+
+      <div class="ce-grid">
+        <div class="ce-field">
+          <label class="ce-label" for="icon_class">Icon class</label>
+          <input type="text" id="icon_class" name="icon_class" class="ce-input"
+                 placeholder="fa fa-laptop" maxlength="50"
+                 value="{{ form_data.icon_class|default:category.icon_class|default:'' }}">
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="color_code">Theme color</label>
+          <div class="ce-color-row">
+            <input type="color" id="color_code_picker" class="ce-color-swatch"
+                   value="{{ form_data.color_code|default:category.color_code|default:'#6366f1' }}"
+                   oninput="document.getElementById('color_code').value = this.value">
+            <input type="text" id="color_code" name="color_code" class="ce-input"
+                   placeholder="#FF5733" maxlength="7"
+                   value="{{ form_data.color_code|default:category.color_code|default:'' }}">
+          </div>
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="display_style">Display style <span class="req">*</span></label>
+          <select id="display_style" name="display_style" class="ce-select">
+            {% for value, label in display_styles %}
+              <option value="{{ value }}"
+                {% if form_data.display_style|default:category.display_style == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="display_order">Display order</label>
+          <input type="number" id="display_order" name="display_order" class="ce-input"
+                 min="0"
+                 value="{{ form_data.display_order|default:category.display_order }}">
+          <span class="ce-hint">Lower number = higher priority</span>
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="products_per_page">Products per page</label>
+          <input type="number" id="products_per_page" name="products_per_page" class="ce-input"
+                 min="1"
+                 value="{{ form_data.products_per_page|default:category.products_per_page }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== VISIBILITY ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">Visibility</div>
+      <div class="ce-toggle-list">
+        <div class="ce-toggle-row">
+          <input type="checkbox" id="show_subcategories" name="show_subcategories"
+                 {% if form_data %}{% if form_data.show_subcategories %}checked{% endif %}{% elif category.show_subcategories %}checked{% endif %}>
+          <label class="ce-label" for="show_subcategories" style="margin:0;">Show subcategories on this category's page</label>
+        </div>
+        <div class="ce-toggle-row">
+          <input type="checkbox" id="is_visible_in_menu" name="is_visible_in_menu"
+                 {% if form_data %}{% if form_data.is_visible_in_menu %}checked{% endif %}{% elif category.is_visible_in_menu %}checked{% endif %}>
+          <label class="ce-label" for="is_visible_in_menu" style="margin:0;">Visible in navigation menu</label>
+        </div>
+        <div class="ce-toggle-row">
+          <input type="checkbox" id="is_visible_on_homepage" name="is_visible_on_homepage"
+                 {% if form_data %}{% if form_data.is_visible_on_homepage %}checked{% endif %}{% elif category.is_visible_on_homepage %}checked{% endif %}>
+          <label class="ce-label" for="is_visible_on_homepage" style="margin:0;">Visible on homepage</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== COMMISSION & PRICING ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">Commission &amp; pricing</div>
+      <div class="ce-section__hint">Marketplace overrides for products in this category.</div>
+
+      <div class="ce-grid ce-grid--3">
+        <div class="ce-field">
+          <label class="ce-label" for="commission_rate">Commission rate (%)</label>
+          <input type="number" id="commission_rate" name="commission_rate" class="ce-input"
+                 step="0.01" min="0" max="100"
+                 value="{{ form_data.commission_rate|default:category.commission_rate }}">
+        </div>
+        <div class="ce-field">
+          <label class="ce-label" for="min_price">Minimum price</label>
+          <input type="number" id="min_price" name="min_price" class="ce-input"
+                 step="0.01" min="0"
+                 value="{{ form_data.min_price|default:category.min_price|default:'' }}">
+        </div>
+        <div class="ce-field">
+          <label class="ce-label" for="max_price">Maximum price</label>
+          <input type="number" id="max_price" name="max_price" class="ce-input"
+                 step="0.01" min="0"
+                 value="{{ form_data.max_price|default:category.max_price|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEDIA ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">Media</div>
+      <div class="ce-section__hint">Uploading a new file replaces the current one. Leave blank to keep existing.</div>
+
+      <div class="ce-grid ce-grid--3">
+        <div class="ce-field">
+          <label class="ce-label" for="category_image">Image</label>
+          <div class="ce-media-row">
+            {% if category.category_image %}
+              <img src="{{ category.category_image.url }}" alt="Current image" class="ce-media-preview">
+            {% else %}
+              <div class="ce-media-preview ce-media-preview--empty">No image</div>
+            {% endif %}
+            <input type="file" id="category_image" name="category_image" accept="image/*">
+          </div>
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="category_icon">Icon image</label>
+          <div class="ce-media-row">
+            {% if category.category_icon %}
+              <img src="{{ category.category_icon.url }}" alt="Current icon" class="ce-media-preview">
+            {% else %}
+              <div class="ce-media-preview ce-media-preview--empty">No icon</div>
+            {% endif %}
+            <input type="file" id="category_icon" name="category_icon" accept="image/*">
+          </div>
+        </div>
+
+        <div class="ce-field">
+          <label class="ce-label" for="category_thumbnail">Thumbnail</label>
+          <div class="ce-media-row">
+            {% if category.category_thumbnail %}
+              <img src="{{ category.category_thumbnail.url }}" alt="Current thumbnail" class="ce-media-preview">
+            {% else %}
+              <div class="ce-media-preview ce-media-preview--empty">No thumbnail</div>
+            {% endif %}
+            <input type="file" id="category_thumbnail" name="category_thumbnail" accept="image/*">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SEO ===== -->
+    <div class="ce-section">
+      <div class="ce-section__title">SEO</div>
+      <div class="ce-section__hint">Controls how this category page appears in search results.</div>
+
+      <div class="ce-field ce-field--full">
+        <label class="ce-label" for="meta_title">Meta title</label>
+        <input type="text" id="meta_title" name="meta_title" class="ce-input" maxlength="60"
+               value="{{ form_data.meta_title|default:category.meta_title|default:'' }}">
+        <span class="ce-hint">Up to 60 characters</span>
+      </div>
+
+      <div class="ce-field ce-field--full">
+        <label class="ce-label" for="meta_description">Meta description</label>
+        <textarea id="meta_description" name="meta_description" class="ce-textarea" maxlength="160">{{ form_data.meta_description|default:category.meta_description|default:'' }}</textarea>
+        <span class="ce-hint">Up to 160 characters</span>
+      </div>
+
+      <div class="ce-field ce-field--full">
+        <label class="ce-label" for="meta_keywords">Meta keywords</label>
+        <input type="text" id="meta_keywords" name="meta_keywords" class="ce-input"
+               placeholder="comma, separated, keywords" maxlength="255"
+               value="{{ form_data.meta_keywords|default:category.meta_keywords|default:'' }}">
+      </div>
+    </div>
+
+    <div class="ce-submit-bar">
+      <a href="{% url 'ponno:category_products' category_slug=category.category_slug %}" class="ce-btn ce-btn--ghost">Cancel</a>
+      <div class="ce-submit-bar__actions">
+        <button type="submit" class="ce-btn ce-btn--primary">Save changes</button>
+      </div>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

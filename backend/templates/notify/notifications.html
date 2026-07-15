@@ -1,0 +1,633 @@
+{% extends "base.html" %}
+{% load static %}
+
+{# ============================================================
+   apps/notify/templates/notify/notifications.html
+   Rendered by NotificationView (apps/notify/views/pulse.py)
+
+   Design concept: a "pulse rail" — notifications read as a live
+   activity log, each entry strung along a vertical signal line.
+   Unread items carry a filled, glowing node; read items are hollow.
+   A small colored dot per item encodes its notification type.
+
+   Assumes a base.html providing blocks: title, content, extra_css, extra_js.
+   Adjust the extends path / block names to match your project
+   if they differ.
+============================================================ #}
+
+{% block title %}Notifications{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,340;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     TOKENS
+     --bg          page background, cool paper-gray
+     --surface     card / node fill
+     --ink         primary text
+     --ink-muted   secondary text
+     --signal      primary accent — "the pulse" (brand blue)
+     --signal-soft tint of signal for washes/badges
+     --live        unread / live-activity accent (teal)
+     --alert       high-priority accent (warm red)
+     --alert-soft  tint of alert
+     --border      hairlines
+  ============================================================ */
+  .ntf {
+    --bg: #F5F6F9;
+    --surface: #FFFFFF;
+    --ink: #14171F;
+    --ink-muted: #676E7A;
+    --signal: #2E5EAA;
+    --signal-soft: #E7EEFB;
+    --live: #16A38A;
+    --alert: #D64545;
+    --alert-soft: #FBE9E9;
+    --border: #E3E6EC;
+
+    max-width: 720px;
+    margin: 0 auto;
+    padding: clamp(28px, 5vw, 56px) 20px 96px;
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .ntf *, .ntf *::before, .ntf *::after { box-sizing: border-box; }
+
+  /* ---------------------------------------------------------
+     HEADER
+  --------------------------------------------------------- */
+  .ntf__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    margin-bottom: 26px;
+  }
+
+  .ntf__heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .ntf__title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-size: clamp(1.7rem, 1.15rem + 2.4vw, 2.4rem);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .ntf__pulse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--signal-soft);
+    color: var(--signal);
+    font: 600 12px/1 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+    padding: 6px 11px 6px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .ntf__pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--live);
+    box-shadow: 0 0 0 0 rgba(22, 163, 138, 0.55);
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(22, 163, 138, 0.55); }
+    70%  { box-shadow: 0 0 0 7px rgba(22, 163, 138, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22, 163, 138, 0); }
+  }
+
+  .ntf__mark-all {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--ink-muted);
+    font: 600 13px 'Inter', sans-serif;
+    padding: 9px 15px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+
+  .ntf__mark-all:hover:not(:disabled) {
+    border-color: var(--signal);
+    color: var(--signal);
+    background: var(--signal-soft);
+  }
+
+  .ntf__mark-all:disabled { opacity: .45; cursor: default; }
+
+  .ntf__mark-all:focus-visible,
+  .ntf__chip:focus-visible,
+  .ntf__item-title a:focus-visible,
+  .ntf__dismiss:focus-visible,
+  .ntf__pagination a:focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ---------------------------------------------------------
+     FILTERS — underline tabs, horizontally scrollable
+  --------------------------------------------------------- */
+  .ntf__filters {
+    display: flex;
+    gap: 22px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ntf__filters::-webkit-scrollbar { display: none; }
+
+  .ntf__chip {
+    flex: 0 0 auto;
+    display: inline-block;
+    font: 500 13px 'Inter', sans-serif;
+    color: var(--ink-muted);
+    text-decoration: none;
+    padding: 10px 1px 12px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  .ntf__chip:hover { color: var(--ink); }
+
+  .ntf__chip--active {
+    color: var(--ink);
+    font-weight: 600;
+    border-bottom-color: var(--signal);
+  }
+
+  /* ---------------------------------------------------------
+     LIST — the pulse rail
+  --------------------------------------------------------- */
+  .ntf__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ntf__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 4px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    border-radius: 10px;
+    transition: background-color .15s ease;
+  }
+
+  .ntf__item:hover { background: rgba(20, 23, 31, 0.025); }
+
+  .ntf__item--unread {
+    background: linear-gradient(100deg, var(--signal-soft) 0%, rgba(231,238,251,0) 60%);
+  }
+
+  .ntf__item--unread:hover {
+    background: linear-gradient(100deg, var(--signal-soft) 0%, rgba(231,238,251,0.35) 60%);
+  }
+
+  /* rail + node column */
+  .ntf__rail {
+    flex: 0 0 18px;
+    align-self: stretch;
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .ntf__rail::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .ntf__item:first-child .ntf__rail::before { top: 50%; }
+  .ntf__item:last-child .ntf__rail::before { bottom: 50%; }
+
+  .ntf__node {
+    position: relative;
+    top: 5px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    z-index: 1;
+  }
+
+  .ntf__item--unread .ntf__node {
+    background: var(--signal);
+    border-color: var(--signal);
+    box-shadow: 0 0 0 0 rgba(46, 94, 170, 0.35);
+    animation: node-pulse 2.4s ease-out infinite;
+  }
+
+  @keyframes node-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(46, 94, 170, 0.35); }
+    70%  { box-shadow: 0 0 0 6px rgba(46, 94, 170, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 94, 170, 0); }
+  }
+
+  /* avatar */
+  .ntf__avatar {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-top: 2px;
+  }
+
+  /* type dot, colored per notification_type */
+  .ntf__type-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 7px;
+    background: var(--ink-muted);
+    vertical-align: middle;
+    flex: 0 0 auto;
+  }
+
+  .ntf__item[data-type="follow"]   .ntf__type-dot,
+  .ntf__item[data-type="mention"]  .ntf__type-dot { background: var(--signal); }
+  .ntf__item[data-type="message"]  .ntf__type-dot,
+  .ntf__item[data-type="comment"]  .ntf__type-dot { background: var(--live); }
+  .ntf__item[data-type="order"]    .ntf__type-dot { background: var(--alert); }
+
+  .ntf__body { flex: 1 1 auto; min-width: 0; }
+
+  .ntf__row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .ntf__item-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.4;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .ntf__item-title span.ntf__title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ntf__item-title a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .ntf__item-title a:hover span.ntf__title-text { text-decoration: underline; }
+
+  .ntf__time {
+    flex: 0 0 auto;
+    font: 500 11.5px 'IBM Plex Mono', monospace;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+  }
+
+  .ntf__message {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.55;
+  }
+
+  .ntf__meta {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .ntf__badge {
+    font: 600 10.5px 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--alert-soft);
+    color: var(--alert);
+  }
+
+  .ntf__dismiss {
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    font: 500 12.5px 'Inter', sans-serif;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--border);
+  }
+
+  .ntf__dismiss:hover { color: var(--signal); text-decoration-color: var(--signal); }
+
+  /* ---------------------------------------------------------
+     EMPTY STATE
+  --------------------------------------------------------- */
+  .ntf__empty {
+    padding: 72px 4px 56px;
+    text-align: center;
+    color: var(--ink-muted);
+  }
+
+  .ntf__empty svg { margin: 0 auto 18px; display: block; }
+
+  .ntf__empty-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 21px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+
+  .ntf__empty p:last-child { margin: 0; font-size: 14px; }
+
+  /* ---------------------------------------------------------
+     PAGINATION
+  --------------------------------------------------------- */
+  .ntf__pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    margin-top: 30px;
+    font: 500 12.5px 'IBM Plex Mono', monospace;
+  }
+
+  .ntf__pagination a { color: var(--signal); text-decoration: none; }
+  .ntf__pagination a:hover { text-decoration: underline; }
+  .ntf__pagination span { color: var(--ink-muted); }
+
+  /* ---------------------------------------------------------
+     RESPONSIVE
+  --------------------------------------------------------- */
+  @media (max-width: 700px) {
+    .ntf { padding: 24px 14px 80px; }
+    .ntf__header { margin-bottom: 20px; }
+  }
+
+  @media (max-width: 480px) {
+    .ntf { padding: 20px 10px 72px; }
+
+    .ntf__header {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ntf__mark-all { align-self: flex-start; padding: 8px 13px; font-size: 12px; }
+
+    .ntf__item { gap: 8px; padding: 15px 2px; }
+
+    .ntf__rail { flex-basis: 14px; }
+
+    .ntf__avatar { width: 32px; height: 32px; }
+
+    .ntf__row-top {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+    }
+
+    .ntf__item-title { font-size: 14px; }
+    .ntf__message { font-size: 13.5px; }
+    .ntf__time { font-size: 11px; }
+
+    .ntf__pagination { gap: 12px; font-size: 12px; }
+  }
+
+  @media (max-width: 340px) {
+    .ntf__title { font-size: 1.5rem; }
+    .ntf__avatar { width: 28px; height: 28px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ntf__item,
+    .ntf__chip,
+    .ntf__mark-all { transition: none; }
+
+    .ntf__pulse-dot,
+    .ntf__item--unread .ntf__node {
+      animation: none;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ntf">
+  <div class="ntf__header">
+    <div class="ntf__heading">
+      <h1 class="ntf__title">Notifications</h1>
+      {% if unread_count %}
+        <span class="ntf__pulse-badge">
+          <span class="ntf__pulse-dot" aria-hidden="true"></span>
+          {{ unread_count }} new
+        </span>
+      {% endif %}
+    </div>
+    <button
+      type="button"
+      class="ntf__mark-all"
+      id="ntf-mark-all"
+      {% if not unread_count %}disabled{% endif %}
+    >
+      Mark all as read
+    </button>
+  </div>
+
+  <nav class="ntf__filters" aria-label="Filter notifications">
+    <a href="{% url 'notify:notifications' %}" class="ntf__chip {% if not selected_type and not request.GET.unread %}ntf__chip--active{% endif %}">All</a>
+    <a href="?unread=1" class="ntf__chip {% if request.GET.unread == '1' %}ntf__chip--active{% endif %}">Unread</a>
+    {% for value, label in notification_types %}
+      <a href="?type={{ value }}" class="ntf__chip {% if selected_type == value %}ntf__chip--active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if notifications %}
+    <ul class="ntf__list" id="ntf-list">
+      {% for notification in notifications %}
+        <li
+          class="ntf__item {% if not notification.is_read %}ntf__item--unread{% endif %}"
+          data-uuid="{{ notification.uuid }}"
+          data-type="{{ notification.notification_type }}"
+        >
+          <span class="ntf__rail" aria-hidden="true"><span class="ntf__node"></span></span>
+
+          {% if notification.image %}
+            <img class="ntf__avatar" src="{{ notification.image }}" alt="" width="38" height="38" loading="lazy">
+          {% endif %}
+
+          <div class="ntf__body">
+            <div class="ntf__row-top">
+              <p class="ntf__item-title">
+                <a href="{% url 'notify:go' notification.slug %}">
+                  <span class="ntf__type-dot" aria-hidden="true"></span>
+                  <span class="ntf__title-text">{{ notification.title }}</span>
+                </a>
+              </p>
+              <time class="ntf__time" datetime="{{ notification.created_at|date:'c' }}">
+                {{ notification.created_at|timesince }} ago
+              </time>
+            </div>
+
+            {% if notification.message %}
+              <p class="ntf__message">{{ notification.message }}</p>
+            {% endif %}
+
+            <div class="ntf__meta">
+              {% if notification.is_high_priority %}
+                <span class="ntf__badge">{{ notification.get_priority_display }}</span>
+              {% endif %}
+              {% if not notification.is_read %}
+                <button type="button" class="ntf__dismiss" data-mark-read="{{ notification.uuid }}">
+                  Mark as read
+                </button>
+              {% endif %}
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="ntf__pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}">← Newer</a>
+      {% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}">Older →</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="ntf__empty">
+      <svg width="120" height="28" viewBox="0 0 120 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 14H40L46 4L54 24L60 14H120" stroke="#C9CED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p class="ntf__empty-title">All quiet</p>
+      <p>New activity will appear here the moment it happens.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  function csrfToken() {
+    var match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+  }
+
+  function post(url) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken() },
+    }).then(function (res) {
+      if (!res.ok) throw new Error('Request failed');
+      return res.json();
+    });
+  }
+
+  function markItemRead(li) {
+    li.classList.remove('ntf__item--unread');
+    var dismissBtn = li.querySelector('[data-mark-read]');
+    if (dismissBtn) dismissBtn.remove();
+  }
+
+  function refreshUnreadUI(count) {
+    var markAllBtn = document.getElementById('ntf-mark-all');
+    if (markAllBtn) markAllBtn.disabled = count === 0;
+
+    var badge = document.querySelector('.ntf__pulse-badge');
+    if (badge) {
+      if (count > 0) {
+        badge.lastChild.textContent = ' ' + count + ' new';
+      } else {
+        badge.remove();
+      }
+    }
+  }
+
+  // The notification title links to notify:go, which marks the
+  // notification read server-side and redirects — so only the explicit
+  // "Mark as read" dismiss button needs a client-side fetch handler.
+  document.addEventListener('click', function (event) {
+    var dismissBtn = event.target.closest('[data-mark-read]');
+    if (!dismissBtn) return;
+
+    var li = dismissBtn.closest('.ntf__item');
+    if (!li || !li.classList.contains('ntf__item--unread')) return;
+
+    var uuid = li.dataset.uuid;
+
+    post('/notifications/' + uuid + '/read/')
+      .then(function (data) {
+        markItemRead(li);
+        refreshUnreadUI(data.unread_count);
+      })
+      .catch(function () { /* leave state as-is on failure */ });
+  });
+
+  var markAllBtn = document.getElementById('ntf-mark-all');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', function () {
+      markAllBtn.disabled = true;
+      post('/notifications/read-all/')
+        .then(function (data) {
+          document.querySelectorAll('.ntf__item--unread').forEach(markItemRead);
+          refreshUnreadUI(data.unread_count);
+        })
+        .catch(function () { markAllBtn.disabled = false; });
+    });
+  }
+})();
+</script>
+{% endblock %}
