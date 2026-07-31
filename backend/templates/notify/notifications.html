@@ -48,11 +48,13 @@
     --border: #E3E6EC;
 
     max-width: 720px;
+    width: 100%;
     margin: 0 auto;
     padding: clamp(28px, 5vw, 56px) 20px 96px;
     color: var(--ink);
     font-family: 'Inter', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   .ntf *, .ntf *::before, .ntf *::after { box-sizing: border-box; }
@@ -85,6 +87,7 @@
     font-size: clamp(1.7rem, 1.15rem + 2.4vw, 2.4rem);
     letter-spacing: -0.01em;
     margin: 0;
+    overflow-wrap: anywhere;
   }
 
   .ntf__pulse-badge {
@@ -273,9 +276,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    margin-right: 7px;
+    margin-top: 6px;
     background: var(--ink-muted);
-    vertical-align: middle;
     flex: 0 0 auto;
   }
 
@@ -294,31 +296,38 @@
     gap: 10px;
   }
 
+  /* ---- Notification title: wraps to multiple lines instead of
+     truncating with an ellipsis, so the full text (e.g. an email
+     address + action) is always visible. ---- */
   .ntf__item-title {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     font-weight: 600;
     font-size: 15px;
     line-height: 1.4;
     margin: 0;
     min-width: 0;
-  }
-
-  .ntf__item-title span.ntf__title-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    width: 100%;
   }
 
   .ntf__item-title a {
     color: inherit;
     text-decoration: none;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    gap: 7px;
     min-width: 0;
+    width: 100%;
   }
 
   .ntf__item-title a:hover span.ntf__title-text { text-decoration: underline; }
+
+  .ntf__item-title span.ntf__title-text {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    flex: 1 1 auto;
+  }
 
   .ntf__time {
     flex: 0 0 auto;
@@ -333,6 +342,7 @@
     font-size: 14px;
     color: var(--ink-muted);
     line-height: 1.55;
+    overflow-wrap: anywhere;
   }
 
   .ntf__meta {
@@ -394,11 +404,13 @@
   --------------------------------------------------------- */
   .ntf__pagination {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 18px;
+    gap: 10px 18px;
     margin-top: 30px;
     font: 500 12.5px 'IBM Plex Mono', monospace;
+    text-align: center;
   }
 
   .ntf__pagination a { color: var(--signal); text-decoration: none; }
@@ -407,12 +419,30 @@
 
   /* ---------------------------------------------------------
      RESPONSIVE
+     Breakpoint ladder: 1440+ (large desktop) → 1024 (laptop)
+     → 700 (tablet) → 480 (large phone) → 400 (small phone)
+     → 340 (compact phone) → 280 (ultra-compact) → 240 (min)
   --------------------------------------------------------- */
+
+  /* ---- Large desktop / wide monitors: give the rail room to breathe ---- */
+  @media (min-width: 1440px) {
+    .ntf { max-width: 780px; padding-top: 64px; }
+    .ntf__avatar { width: 42px; height: 42px; }
+    .ntf__item { padding: 22px 4px; }
+  }
+
+  /* ---- Laptop / small desktop ---- */
+  @media (min-width: 1024px) and (max-width: 1439px) {
+    .ntf { max-width: 740px; }
+  }
+
+  /* ---- Tablet ---- */
   @media (max-width: 700px) {
     .ntf { padding: 24px 14px 80px; }
     .ntf__header { margin-bottom: 20px; }
   }
 
+  /* ---- Large phone / small tablet ---- */
   @media (max-width: 480px) {
     .ntf { padding: 20px 10px 72px; }
 
@@ -433,19 +463,80 @@
     .ntf__row-top {
       flex-direction: column;
       align-items: flex-start;
-      gap: 3px;
+      gap: 4px;
     }
 
-    .ntf__item-title { font-size: 14px; }
+    .ntf__item-title { width: 100%; font-size: 14px; }
     .ntf__message { font-size: 13.5px; }
-    .ntf__time { font-size: 11px; }
+    .ntf__time { font-size: 11px; margin-top: 1px; }
 
     .ntf__pagination { gap: 12px; font-size: 12px; }
   }
 
+  /* ---- Small phone (e.g. iPhone SE / Mini widths) ---- */
+  @media (max-width: 400px) {
+    .ntf__pulse-badge { font-size: 11.5px; padding: 5px 10px 5px 8px; }
+    .ntf__filters { gap: 18px; }
+    .ntf__chip { font-size: 12.5px; padding: 9px 1px 11px; }
+    .ntf__meta { gap: 8px; }
+    .ntf__badge { font-size: 10px; padding: 2px 6px; }
+  }
+
+  /* ---- Compact phone ---- */
   @media (max-width: 340px) {
     .ntf__title { font-size: 1.5rem; }
     .ntf__avatar { width: 28px; height: 28px; }
+    .ntf__pulse-badge { font-size: 11px; padding: 5px 9px 5px 8px; }
+    .ntf__filters { gap: 16px; }
+    .ntf__chip { font-size: 12px; }
+  }
+
+  /* ---- Ultra-compact phone / foldable cover screens ---- */
+  @media (max-width: 280px) {
+    .ntf { padding: 16px 8px 64px; }
+    .ntf__item { gap: 6px; padding: 12px 1px; }
+    .ntf__rail { flex-basis: 10px; }
+    .ntf__avatar { display: none; }
+    .ntf__item-title { font-size: 13px; }
+    .ntf__message { font-size: 13px; }
+    .ntf__pagination { gap: 8px 12px; font-size: 11px; }
+  }
+
+  /* ---- Absolute floor: very small foldables / smartwatches-in-browser ---- */
+  @media (max-width: 240px) {
+    .ntf { padding: 12px 6px 56px; }
+    .ntf__title { font-size: 1.25rem; }
+    .ntf__pulse-badge { display: none; }
+    .ntf__header { gap: 8px; }
+    .ntf__mark-all { padding: 6px 10px; font-size: 11px; }
+    .ntf__filters { gap: 12px; }
+    .ntf__chip { font-size: 11px; padding: 8px 1px 9px; }
+    .ntf__rail { flex-basis: 8px; }
+    .ntf__node { width: 8px; height: 8px; }
+    .ntf__item-title { font-size: 12px; }
+    .ntf__message { font-size: 12px; }
+    .ntf__time { font-size: 10px; }
+    .ntf__badge { font-size: 9px; padding: 2px 5px; }
+  }
+
+  /* ---- Short viewports (landscape phones, small laptops) ----
+     Prevents excessive vertical padding from pushing content
+     below the fold when height is constrained. */
+  @media (max-height: 480px) and (orientation: landscape) {
+    .ntf { padding-top: 16px; padding-bottom: 40px; }
+    .ntf__header { margin-bottom: 14px; }
+    .ntf__item { padding-top: 10px; padding-bottom: 10px; }
+  }
+
+  /* ---- Coarse pointer (touch) devices: bigger hit targets ---- */
+  @media (hover: none) and (pointer: coarse) {
+    .ntf__mark-all,
+    .ntf__dismiss {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .ntf__chip { padding-top: 12px; padding-bottom: 14px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -457,6 +548,13 @@
     .ntf__item--unread .ntf__node {
       animation: none;
     }
+  }
+
+  /* ---- High contrast / forced colors mode (Windows) ---- */
+  @media (forced-colors: active) {
+    .ntf__node { forced-color-adjust: none; }
+    .ntf__chip--active { border-bottom-color: CanvasText; }
+    .ntf__pulse-dot { forced-color-adjust: none; }
   }
 </style>
 {% endblock %}
@@ -539,11 +637,11 @@
 
     <div class="ntf__pagination">
       {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}">← Newer</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if request.GET.unread == '1' %}&unread=1{% endif %}">← Newer</a>
       {% endif %}
       <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
       {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}">Older →</a>
+        <a href="?page={{ page_obj.next_page_number }}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if request.GET.unread == '1' %}&unread=1{% endif %}">Older →</a>
       {% endif %}
     </div>
   {% else %}

@@ -3,6 +3,7 @@
 # Standard Library
 import json
 import logging
+import threading
 
 # Django
 from django.contrib.auth.decorators import login_required
@@ -24,6 +25,9 @@ from apps.customer.models.profile_info import ProfileInfo
 from megamind.models.connected_service import ConnectedService
 from megamind.services.scraper import scrape_url
 from megamind.utils.service_fetcher import fetch_service_data
+from megamind.utils.feed_cache import refresh_feed_cache
+from megamind.utils.media_info import normalize_images, normalize_links
+from megamind.utils.video_info import get_video_info_cached
 
 logger = logging.getLogger(__name__)
 
@@ -68,25 +72,31 @@ class ConnectedServiceWriteSerializer(serializers.ModelSerializer):
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _coerce_image(img) -> dict:
-    if isinstance(img, dict):
-        return {"url": img.get("url", img.get("src", "")), "alt": img.get("alt", "")}
-    return {"url": str(img), "alt": ""}
+def _normalize_videos_for_display(raw_videos, limit: int = None) -> list:
+    """
+    Mirrors megamind.utils.feed_cache._normalize_videos — kept in sync
+    on purpose so a video looks and plays identically on the profile
+    page as it does in the public engine feed, regardless of which
+    producer (scraper.py / service_fetcher.py) wrote extracted_videos.
 
-
-def _coerce_video(v) -> dict:
-    if isinstance(v, dict):
-        return {"url": v.get("url", v.get("src", "")), "type": v.get("type", "")}
-    return {"url": str(v), "type": ""}
-
-
-def _coerce_link(lnk) -> dict:
-    if isinstance(lnk, dict):
-        return {
-            "href": lnk.get("href", lnk.get("url", "")),
-            "text": lnk.get("text", lnk.get("title", "")),
-        }
-    return {"href": str(lnk), "text": ""}
+    Accepts scraper dicts like {"url": ..., "type": "video/*"|"embed"},
+    bare URL strings, or already-normalized video_info dicts — anything
+    get_video_info_cached() can resolve a URL out of.
+    """
+    normalized = []
+    for v in raw_videos or []:
+        if isinstance(v, dict):
+            url = v.get('url') or v.get('embed_url') or v.get('src')
+        else:
+            url = v
+        if not url:
+            continue
+        info = get_video_info_cached(url)
+        if info:
+            normalized.append(info)
+        if limit and len(normalized) >= limit:
+            break
+    return normalized
 
 
 def _serialize_service(service: ConnectedService) -> dict:
@@ -94,16 +104,22 @@ def _serialize_service(service: ConnectedService) -> dict:
     Serialize a service to a dict.
     Reads new flat fields first, falls back to last_fetched_data for
     backwards compatibility.
+
+    Images/links/videos are run through the same shared normalizers
+    used by the public engine feed (megamind.utils.media_info,
+    megamind.utils.video_info) instead of ad-hoc per-view coercion, so
+    this page's media renders identically to the feed regardless of
+    which producer (scraper.py vs service_fetcher.py) wrote the raw
+    extracted_* fields, and videos come back embed-ready
+    (platform/embed_url/watch_url/thumbnail/type) rather than the raw
+    {"url", "type"} shape.
     """
     og_title       = service.og_title       or ""
     og_description = service.og_description or ""
     og_thumbnail   = service.og_thumbnail   or ""
     og_site_name   = service.og_site_name   or ""
     og_type        = service.og_type        or ""
-    images         = service.extracted_images or []
-    videos         = service.extracted_videos or []
-    links          = service.extracted_links  or []
-    text           = service.extracted_text   or ""
+    text           = service.extracted_text or ""
 
     raw = service.last_fetched_data or {}
     if raw and not og_title:
@@ -114,15 +130,19 @@ def _serialize_service(service: ConnectedService) -> dict:
         og_site_name   = raw.get("site_name")   or raw.get("og_site_name")   or ""
         og_type        = raw.get("og_type")     or raw.get("type")           or ""
 
-    if raw and not images:
-        images = [_coerce_image(i) for i in (raw.get("images") or []) if i]
-    if raw and not videos:
-        videos = [_coerce_video(v) for v in (raw.get("videos") or []) if v]
-    if raw and not links:
-        links  = [_coerce_link(l) for l in (raw.get("links") or []) if l]
-    if raw and not text:
+    # Prefer the flat extracted_* fields; fall back to the raw scrape
+    # dump only when the flat field is empty (older rows / partial writes).
+    images_source = service.extracted_images or (raw.get("images") if raw else []) or []
+    videos_source = service.extracted_videos or (raw.get("videos") if raw else []) or []
+    links_source  = service.extracted_links  or (raw.get("links")  if raw else []) or []
+
+    if not text and raw:
         text = (raw.get("full_content") or raw.get("text_content")
                 or raw.get("content")   or raw.get("text") or "")
+
+    images = normalize_images(images_source)
+    videos = _normalize_videos_for_display(videos_source)
+    links  = normalize_links(links_source)
 
     return {
         "id":               service.id,
@@ -159,6 +179,22 @@ def _should_fetch(service: ConnectedService, max_age_seconds: int = 3600) -> boo
     if service.fetch_status == 'error':
         return age > 600   # 10-minute cooldown after errors / timeouts
     return age > max_age_seconds
+
+
+def _trigger_background_refresh(service_id: int, user_id: int) -> None:
+    """
+    Fire-and-forget background thread.
+    Replace with Celery task if available:
+        refresh_service_task.delay(service_id)
+    """
+    try:
+        svc = ConnectedService.objects.get(pk=service_id)
+        fetch_service_data(svc)
+    except Exception:
+        logger.exception(
+            "Background refresh failed service_id=%s uid=%s", service_id, user_id
+        )
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Main View
@@ -222,34 +258,10 @@ def CrawlEngineView(request):
     }
 
     # ── Services ──────────────────────────────────────────────────────────
+    # Never fetch inside a view; serve stale (already-serialized) data
+    # and trigger a background refresh only when stale.
     services = ConnectedService.objects.filter(user=user)
     connected_services = services.filter(is_connected=True)
-
-    services_data = []
-
-    # FIXED — never fetch inside a view; serve stale data, trigger
-    # background refresh if needed
-
-    import threading
-
-    def _trigger_background_refresh(service_id: int, user_id: int) -> None:
-        """
-        Fire-and-forget background thread.
-        Replace with Celery task if available:
-            refresh_service_task.delay(service_id)
-        """
-        try:
-            from megamind.models.connected_service import ConnectedService
-            svc = ConnectedService.objects.get(pk=service_id)
-            fetch_service_data(svc)
-        except Exception:
-            logger.exception(
-                "Background refresh failed service_id=%s uid=%s", service_id, user_id
-            )
-
-
-    # Inside CrawlEngineView, replace the fetch loop with:
-    services = ConnectedService.objects.filter(user=user)
 
     services_data = []
     for service in services:
@@ -293,10 +305,22 @@ def add_service(request):
         data = json.loads(request.body)
         service_name = data.get('service_name')
         service_url  = data.get('service_url')
-        service_type = data.get('service_type', 'other')
+        # 'other' isn't a valid ConnectedService.SERVICE_TYPES choice —
+        # fall back to the model's own default ('product') instead of
+        # silently writing an invalid value that later chokes anything
+        # keyed on service_type (e.g. video_info.FALLBACK_VIDEOS pools,
+        # feed_cache attribution).
+        service_type = data.get('service_type') or 'product'
 
         if not service_name or not service_url:
             return JsonResponse({'success': False, 'error': 'Service name and URL are required'}, status=400)
+
+        valid_types = {choice[0] for choice in ConnectedService.SERVICE_TYPES}
+        if service_type not in valid_types:
+            return JsonResponse(
+                {'success': False, 'error': f"Invalid service_type '{service_type}'"},
+                status=400,
+            )
 
         service = ConnectedService.objects.create(
             user=request.user,
@@ -496,6 +520,22 @@ class ConnectedServiceViewSet(ModelViewSet):
             "last_fetched_data", "last_fetch_time", "fetch_status", "fetch_error",
             "updated_at",
         ])
+
+        # This is the other producer path that writes extracted_images/
+        # extracted_videos/extracted_links (alongside service_fetcher.
+        # fetch_service_data, which already does this). Without this
+        # call, any service refreshed via /fetch/ or /refresh/ on the
+        # DRF endpoint would leave cached_feed_payload stale until the
+        # next fetch_service_data-driven update — same "never let
+        # feed-cache bookkeeping fail the actual fetch" contract as
+        # fetch_service_data.
+        try:
+            refresh_feed_cache(service)
+        except Exception:
+            logger.exception(
+                "refresh_feed_cache failed for service %s after successful scrape",
+                service.pk,
+            )
 
         return True, Response(
             {"success": True, **ConnectedServiceSerializer(service).data},

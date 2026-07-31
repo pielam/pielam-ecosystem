@@ -2,1530 +2,925 @@
 {% load static %}
 
 {% block extra_css %}
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 
 <style>
-/* ============================================================
-   PIELAM — PUBLIC PROFILE (page-specific styles)
-   Note: navbar / drawer / header styles now come from base.html
-============================================================ */
-
-*, *::before, *::after {
-    box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 :root {
-    --ink:          #0f0f0f;
-    --ink-2:        #3a3a3a;
-    --ink-3:        #6b6b6b;
-    --ink-4:        #9b9b9b;
-    --surface:      #ffffff;
-    --surface-2:    #f5f5f3;
-    --surface-3:    #eeede9;
-    --border:       #e4e3df;
-    --border-2:     #d0cfc9;
-    --accent:       #c8102e;
-    --accent-2:     #a00d24;
-    --gold:         #b8860b;
-    --gold-2:       #8b6508;
-    --green:        #1a6b3a;
-    --green-bg:     #edf7f1;
-    --warn:         #92400e;
-    --warn-bg:      #fffbeb;
-    --blue:         #1e3a8a;
-    --blue-light:   #3b82f6;
+  --r: 12px; --r-sm: 8px;
+  --ink: #0f0f0f; --ink-2: #3a3a3a; --ink-3: #6b6b6b; --ink-4: #9b9b9b;
+  --surface: #ffffff; --surface-2: #f5f5f3; --surface-3: #eeede9;
+  --border: #e4e3df; --border-2: #d0cfc9;
 
-    --primary-dark:     #0a2540;
-    --primary-blue:     #0d47a1;
-    --primary-light:    #1976d2;
-    --accent-gold:      #d4af37;
-    --accent-amber:     #ffb300;
-    --success-emerald:  #00b894;
-    --danger-crimson:   #e74c3c;
-    --text-primary:     #1a202c;
-    --text-secondary:   #4a5568;
-    --text-muted:       #718096;
-    --bg-primary:       #ffffff;
-    --bg-secondary:     #f7fafc;
-    --bg-tertiary:      #edf2f7;
-    --border-light:     #e2e8f0;
-    --border-medium:    #cbd5e0;
-    --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
-    --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
-    --shadow-md:  0 4px 12px rgba(10,37,64,.12);
-    --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
-    --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
-    --font-display: 'DM Serif Display', 'Playfair Display', serif;
-    --font-body:    'DM Sans', 'Outfit', sans-serif;
-    --font-mono:    'JetBrains Mono', monospace;
-    --font-serif:   'Instrument Serif', serif;
+  /* Gold — matches base.html's drawer/logo gold gradient */
+  --gold: #d4af37; --gold-2: #8b6a00; --gold-bright: #ffe680;
+  --gold-dim: rgba(212,175,55,.40); --gold-trace: rgba(212,175,55,.08);
 
-    --r-sm:     8px;
-    --r-md:     14px;
-    --r-lg:     20px;
-    --r-xl:     28px;
-    --ease:     cubic-bezier(.4,0,.2,1);
-    --transition-fast: .15s ease;
-    --transition-base: .25s ease;
-    --transition-slow: .4s cubic-bezier(.4,0,.2,1);
-    --bottom-bar-height: 68px;
+  --green: #1a6b3a; --green-bg: #edf7f1;
+  --red: #dc2626; --red-bg: #fef2f2;
+  --amber: #ca8a04; --amber-bg: #fffbeb;
+
+  /* Blue — matches base.html's navbar gradient + accent */
+  --blue: #1565c0; --blue-light: #4a90e2; --blue-bg: #eff6ff;
+
+  --purple: #7c3aed;
+  --sig-image: #4a90e2; --sig-video: #8b5cf6;
+  --shadow-xs: 0 1px 3px rgba(10,37,64,.05);
+  --shadow-sm: 0 2px 6px rgba(10,37,64,.08);
+  --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+  --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+  --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+  --font-display: 'roboto', serif;
+  --font-body: 'roboto', sans-serif;
+  --font-accent: 'roboto', sans-serif;
+  --font-mono: 'roboto', monospace;
+  --header-h: 64px;
+  --bottom-bar-height: 68px;
+  --ease-out-expo: cubic-bezier(.16, 1, .3, 1);
+
+  /* Aliases so the Engine post-card CSS below (ported 1:1 from the
+     home feed) can reference the same variable names it does there,
+     instead of redefining a second palette. */
+  --line: var(--border);
+  --muted: var(--ink-3);
+  --faint: var(--ink-4);
+  --verified: var(--blue-light);
+  --warn: var(--amber);
+  --warn-bg: var(--amber-bg);
+  --danger: var(--red);
+  --danger-bg: var(--red-bg);
+  --radius: var(--r);
 }
 
 body {
-    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-    color: var(--ink);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: clip;
-    padding-bottom: var(--bottom-bar-height);
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  color: var(--ink); font-family: var(--font-body); line-height: 1.6;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden; padding-bottom: var(--bottom-bar-height);
 }
-
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
 img { max-width: 100%; display: block; }
 
-/* Scrollbar (page content only) */
-.page ::-webkit-scrollbar { width: 8px; }
-.page ::-webkit-scrollbar-track { background: var(--surface-3); }
-.page ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
-.page ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
-
-/* ══════════════════════════════════════════════
-   COVER PHOTO
-══════════════════════════════════════════════ */
-.cover {
-  position: relative;
-  height: clamp(180px, 28vw, 280px);
-  overflow: hidden;
-}
-
-.cover-img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  filter: brightness(.75) saturate(1.1);
-}
-
-.cover-gradient {
-  width: 100%; height: 100%;
-  background: linear-gradient(135deg, #090909 0%, #121212 45%, #1f1f1f 100%);
-}
-
-.cover::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 1;
-  background:
-    radial-gradient(ellipse 70% 80% at 15% 50%, rgba(254,44,85,.18) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 70% at 85% 40%, rgba(37,244,238,.14) 0%, transparent 65%);
-}
-
-.cover::after {
-  content: '';
-  position: absolute; inset: 0; z-index: 2;
-  background: linear-gradient(to bottom, transparent 30%, var(--ink) 100%);
-}
-
-/* ══════════════════════════════════════════════
-   PAGE WRAPPER
-══════════════════════════════════════════════ */
-.page {
-  max-width: 1160px;
-  margin: 0 auto;
-  padding: 0 clamp(14px, 4vw, 32px) 80px;
-}
-
-/* ══════════════════════════════════════════════
-   PROFILE CARD
-══════════════════════════════════════════════ */
-.profile-card {
-  position: relative; z-index: 10;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  padding: clamp(16px, 4vw, 28px);
-  margin-top: clamp(-56px, -8vw, -72px);
-  box-shadow: 0 8px 40px rgba(0,0,0,.6), 0 0 0 1px var(--border);
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(14px, 3vw, 24px);
-  align-items: flex-start;
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute; top: 0; left: 16px; right: 16px; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan, var(--accent-gold)) 30%, var(--gold) 70%, transparent);
-  opacity: .6;
-  border-radius: 999px;
-}
-
-/* ── Avatar ───────────────────────────────── */
-.avatar-col { flex-shrink: 0; }
-
-.avatar-ring {
-  position: relative;
-  width: clamp(80px, 14vw, 110px);
-  height: clamp(80px, 14vw, 110px);
-  border-radius: 50%;
-  padding: 3px;
-  background: linear-gradient(135deg, var(--cyan, var(--accent-gold)), var(--gold));
-  box-shadow:
-    0 0 0 3px var(--surface),
-    0 0 20px rgba(254,44,85,.4),
-    0 0 40px rgba(37,244,238,.2);
-}
-
-.avatar-inner {
-  width: 100%; height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--surface-3);
-  display: flex; align-items: center; justify-content: center;
-}
-
-.avatar-inner img { width: 100%; height: 100%; object-fit: cover; }
-
-.avatar-initials {
-  font-family: var(--font-display);
-  font-size: clamp(24px, 5vw, 36px);
-  font-weight: 800;
-  color: var(--gold);
-}
-
-.online-dot {
-  position: absolute; bottom: 5px; right: 5px;
-  width: 14px; height: 14px;
-  background: var(--green);
-  border-radius: 50%;
-  border: 2.5px solid var(--surface);
-  box-shadow: 0 0 8px rgba(34,197,94,.5);
-  animation: pulseGreen 2.5s infinite;
-}
-
-@keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,.5); }
-  50%       { box-shadow: 0 0 16px rgba(34,197,94,.7); }
-}
-
-/* ── Info block ───────────────────────────── */
-.info-col { flex: 1; min-width: 0; }
-
-.profile-name {
-  font-family: var(--font-display);
-  font-size: clamp(20px, 4.5vw, 30px);
-  font-weight: 800;
-  color: var(--ink);
-  line-height: 1.15;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.profile-handle {
-  font-family: var(--font-mono);
-  font-size: clamp(10px, 2vw, 12px);
-  color: var(--ink-3);
-  margin-top: 3px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-.badges {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  margin-top: 12px;
-}
-
-.badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 11px;
-  border-radius: 99px;
-  font-size: 10px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
-  font-family: var(--font-display);
-  border: 1px solid;
-}
-
-.badge-role {
-  background: rgba(184,134,11,.1);
-  border-color: rgba(184,134,11,.3);
-  color: var(--gold);
-}
-
-.badge-verified {
-  background: rgba(34,197,94,.1);
-  border-color: rgba(34,197,94,.25);
-  color: var(--green);
-}
-
-.badge-location {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--ink-3);
-  font-weight: 400;
-  text-transform: none;
-  font-family: var(--font-body);
-  font-size: 11px;
-}
-
-/* ── Action buttons ───────────────────────── */
-.actions-col {
-  display: flex; gap: 8px; flex-wrap: wrap;
-  align-items: flex-start;
-  width: 100%;
-}
-
-/* ══════════════════════════════════════════════
-   BUTTONS
-══════════════════════════════════════════════ */
-.btn {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 9px 20px;
-  border-radius: var(--r-sm);
-  font-family: var(--font-display);
-  font-weight: 700; font-size: 12px;
-  letter-spacing: .04em;
-  cursor: pointer; border: none;
-  text-decoration: none;
-  transition: var(--ease);
-  white-space: nowrap;
-}
-.btn:active { transform: scale(.96); }
-
-.btn-primary {
-  background: var(--gold);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(184,134,11,.4);
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  background: var(--gold-2);
-  box-shadow: 0 8px 28px rgba(184,134,11,.55);
-}
-
-.btn-ghost {
-  background: rgba(0,0,0,.04);
-  border: 1px solid var(--border);
-  color: var(--ink-2);
-}
-.btn-ghost:hover {
-  background: rgba(0,0,0,.08);
-  border-color: var(--border-2);
-  color: var(--ink);
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background: rgba(239,68,68,.12);
-  border: 1px solid rgba(239,68,68,.22);
-  color: #dc2626;
-}
-.btn-danger:hover { background: rgba(239,68,68,.2); }
-
-/* ══════════════════════════════════════════════
-   STATS STRIP
-══════════════════════════════════════════════ */
-.stats-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  margin-top: 20px;
-}
-
-.stat {
-  background: var(--surface);
-  padding: clamp(14px, 3vw, 20px) 12px;
-  text-align: center;
-  transition: background var(--ease);
-  position: relative;
-}
-
-.stat::after {
-  content: '';
-  position: absolute; top: 10px; right: 10px;
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--gold);
-  opacity: 0;
-  transition: var(--ease);
-}
-
-.stat:hover { background: var(--surface-2); }
-.stat:hover::after { opacity: .6; }
-
-.stat-n {
-  font-family: var(--font-display);
-  font-size: clamp(20px, 4vw, 28px);
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(135deg, var(--gold), #ff6b8a);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-l {
-  font-size: 11px; color: var(--ink-3);
-  margin-top: 4px; letter-spacing: .04em; text-transform: uppercase;
-  font-family: var(--font-display); font-weight: 600;
-}
-
-/* ══════════════════════════════════════════════
-   BIO CARD
-══════════════════════════════════════════════ */
-.bio-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: clamp(18px, 4vw, 28px);
-  margin-top: 20px;
-  position: relative; overflow: hidden;
-}
-
-.bio-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
-  background: linear-gradient(180deg, var(--cyan, var(--accent-gold)), var(--gold));
-}
-
-.bio-tagline {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: clamp(14px, 2.5vw, 16px);
-  color: var(--gold);
-  margin-bottom: 10px;
-  line-height: 1.5;
-}
-.bio-tagline::before { content: '\201C'; }
-.bio-tagline::after  { content: '\201D'; }
-
-.bio-text {
-  font-size: clamp(13px, 2vw, 14px);
-  color: var(--ink-2); line-height: 1.75;
-}
-
-.meta-row {
-  display: flex; flex-wrap: wrap; gap: 16px;
-  margin-top: 16px; padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-
-.meta-item {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--ink-3);
-}
-.meta-item i { color: var(--gold); font-size: 10px; }
-.meta-item a { color: var(--ink-3); text-decoration: none; transition: color var(--ease); }
-.meta-item a:hover { color: var(--gold); }
-
-.social-row {
-  display: flex; flex-wrap: wrap; gap: 8px;
-  margin-top: 14px;
-}
-
-.social-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 13px;
-  border-radius: 99px;
-  border: 1px solid var(--border);
-  font-size: 12px; color: var(--ink-3);
-  text-decoration: none;
-  transition: var(--ease);
-  font-family: var(--font-body);
-}
-.social-pill:hover {
-  border-color: var(--border-2);
-  color: var(--gold);
-  background: rgba(184,134,11,.08);
-}
-
-/* ══════════════════════════════════════════════
-   SECTION HEADING
-══════════════════════════════════════════════ */
-.sec-head {
-  display: flex; align-items: center; gap: 10px;
-  margin: 28px 0 14px;
-}
-
-.sec-title {
-  font-family: var(--font-display);
-  font-size: 11px; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-
-.sec-line {
-  flex: 1; height: 1px;
-  background: linear-gradient(90deg, var(--border), transparent);
-}
-
-/* ══════════════════════════════════════════════
-   TWO-COLUMN GRID
-══════════════════════════════════════════════ */
-.two-col {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-}
-
-/* ══════════════════════════════════════════════
-   CARD COMPONENT
-══════════════════════════════════════════════ */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  margin-bottom: 16px;
-  animation: riseUp .4s ease both;
-}
-.card:nth-child(2) { animation-delay: .07s; }
-.card:nth-child(3) { animation-delay: .14s; }
-
-@keyframes riseUp {
-  from { opacity:0; transform:translateY(12px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-}
-
-.card-title {
-  font-family: var(--font-display);
-  font-size: 12px; font-weight: 700;
-  letter-spacing: .04em;
-  color: var(--ink-2);
-  display: flex; align-items: center; gap: 8px;
-}
-.card-title i { color: var(--gold); }
-
-.card-badge {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--ink-3);
-  background: var(--surface-3);
-  padding: 2px 8px; border-radius: 99px;
-}
-
-.card-body { padding: 16px 18px; }
-
-/* ── Info Rows ────────────────────────────── */
-.info-list { display: flex; flex-direction: column; }
-
-.info-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-.info-row:last-child { border-bottom: none; }
-
-.info-icon {
-  width: 30px; height: 30px;
-  border-radius: 8px;
-  background: rgba(184,134,11,.1);
-  border: 1px solid rgba(184,134,11,.2);
-  color: var(--gold);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; flex-shrink: 0;
-}
-
-.info-label {
-  font-size: 10px; color: var(--ink-3);
-  text-transform: uppercase; letter-spacing: .06em;
-  font-family: var(--font-display); font-weight: 600;
-}
-
-.info-value { font-size: 13px; color: var(--ink-2); margin-top: 1px; }
-.info-value a { color: var(--gold); text-decoration: none; }
-.info-value a:hover { text-decoration: underline; }
-
-/* ── User List Items ──────────────────────── */
-.user-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  text-decoration: none;
-  transition: var(--ease);
-}
-.user-item:last-child { border-bottom: none; }
-.user-item:hover { padding-left: 4px; }
-
-.user-thumb {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 1.5px solid var(--border);
-  background: var(--surface-3);
-  overflow: hidden; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-weight: 700;
-  font-size: 12px; color: var(--gold);
-  transition: border-color var(--ease);
-}
-.user-item:hover .user-thumb { border-color: var(--gold-2); }
-.user-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-.user-name  { font-size: 13px; color: var(--ink-2); }
-.user-handle { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 1px; }
-
-/* ══════════════════════════════════════════════
-   PRODUCTS GRID
-══════════════════════════════════════════════ */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.product-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  transition: var(--ease);
-  position: relative;
-  animation: riseUp .4s ease both;
-}
-.product-card:nth-child(2) { animation-delay: .05s; }
-.product-card:nth-child(3) { animation-delay: .10s; }
-.product-card:nth-child(4) { animation-delay: .15s; }
-.product-card:nth-child(5) { animation-delay: .20s; }
-.product-card:nth-child(6) { animation-delay: .25s; }
-.product-card:nth-child(7) { animation-delay: .30s; }
-.product-card:nth-child(8) { animation-delay: .35s; }
-
-.product-card:hover {
-  border-color: var(--border-2);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0,0,0,.15), 0 0 20px rgba(184,134,11,.1);
-}
-
-.product-link { text-decoration: none; display: block; color: inherit; }
-
-/* ── Thumbnail ────────────────────────────── */
-.product-thumbnail {
-  position: relative;
-  aspect-ratio: 16/10;
-  overflow: hidden;
-  background: var(--surface-2);
-}
-
-.product-thumbnail img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  transition: transform .4s ease;
-}
-
-.product-card:hover .product-thumbnail img { transform: scale(1.06); }
-
-.product-thumb-placeholder {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--ink-3); font-size: 32px;
-}
-
-/* ── Overlay Badges ───────────────────────── */
-.product-badges {
-  position: absolute; top: 8px; left: 8px;
-  display: flex; flex-direction: column; gap: 4px;
-  z-index: 2;
-}
-
-.p-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 4px;
-  font-size: 9px; font-weight: 700; letter-spacing: .04em;
-  font-family: var(--font-display);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.p-badge-discount  { background: var(--gold);          color: #fff; }
-.p-badge-featured  { background: rgba(251,191,36,.9);  color: #1a1a1a; }
-.p-badge-verified  { background: rgba(34,197,94,.9);   color: #fff; }
-.p-badge-shipping  { background: rgba(59,130,246,.9);  color: #fff; }
-.p-badge-sold-out  { background: rgba(239,68,68,.9);   color: #fff; }
-.p-badge-low-stock { background: rgba(245,158,11,.9);  color: #fff; }
-.p-badge-condition { background: rgba(139,92,246,.85); color: #fff; }
-
-/* ── Price Badge ──────────────────────────── */
-.product-price-badge {
-  position: absolute; bottom: 8px; right: 8px;
-  background: rgba(0,0,0,.78);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: var(--gold);
-  font-family: var(--font-display);
-  font-size: 12px; font-weight: 800;
-  padding: 4px 9px; border-radius: 6px;
-  display: flex; flex-direction: column; align-items: flex-end;
-  line-height: 1.2;
-}
-
-.product-price-badge .price-original {
-  font-size: 9px;
-  font-weight: 400;
-  text-decoration: line-through;
-  opacity: .55;
-  color: #ccc;
-  line-height: 1;
-  margin-bottom: 1px;
-}
-
-/* ── Product Info Row ─────────────────────── */
-.product-info {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 10px 12px 6px;
-}
-
-.seller-avatar {
-  position: relative; flex-shrink: 0;
-  width: 34px; height: 34px; border-radius: 50%;
-  border: 1.5px solid var(--border);
-  background: var(--surface-3);
-  overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-weight: 700;
-  font-size: 13px; color: var(--gold);
-}
-
-.seller-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.seller-verified-badge {
-  position: absolute; bottom: -2px; right: -2px;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--green);
-  border: 1.5px solid var(--surface);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 7px; color: #fff;
-}
-
-.product-meta { flex: 1; min-width: 0; }
-
-.product-title {
-  font-size: 13px; font-weight: 600; color: var(--ink-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4; margin: 0;
-}
-
-.seller-name-label {
-  font-size: 11px; color: var(--ink-3); margin-top: 3px;
-  font-family: var(--font-mono);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-/* ── Product Stats Row ────────────────────── */
-.product-stats {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
-  padding: 0 12px 10px;
-  font-size: 10px; color: var(--ink-3);
-  font-family: var(--font-display); font-weight: 600;
-  letter-spacing: .03em;
-}
-
-.stat-item { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.stat-item i { font-size: 9px; }
-.stat-sep { opacity: .35; flex-shrink: 0; }
-
-.stat-item.in-stock     { color: var(--green); }
-.stat-item.low-stock    { color: var(--warn); }
-.stat-item.out-of-stock { color: #dc2626; }
-.stat-item.stat-rating  { color: var(--warn); }
-
-/* ── Empty State ──────────────────────────── */
-.empty {
-  text-align: center; padding: 32px 20px;
-  color: var(--ink-3);
-}
-.empty-icon {
-  width: 52px; height: 52px; border-radius: 14px;
-  background: var(--surface-2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: var(--ink-3);
-  margin: 0 auto 12px;
-}
-.empty p { font-size: 13px; }
-
-/* ── Main column ──────────────────────────── */
-main { min-width: 0; }
-
-/* ══════════════════════════════════════════════
-   MOBILE ORDER BAR
-══════════════════════════════════════════════ */
-.mob-order-bar {
-  position: fixed;
-  bottom: 0; left: 0;
-  width: 100%;
-  display: flex;
-  z-index: 1500;
-  border-top: 1px solid var(--border);
-  background: rgba(9,9,9,.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.order-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 0;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-decoration: none;
-  transition: var(--ease);
-  cursor: pointer;
-}
-
-.order-btn:active { opacity: .8; transform: scale(.98); }
-
-.order-btn.whatsapp {
-  background: rgba(37,211,102,.1);
-  color: #25d366;
-  border-right: 1px solid var(--border);
-}
-.order-btn.whatsapp:hover { background: rgba(37,211,102,.2); }
-
-.order-btn.call {
-  background: rgba(59,130,246,.1);
-  color: var(--blue);
-}
-.order-btn.call:hover { background: rgba(59,130,246,.2); }
-
-.order-btn i { font-size: 18px; }
-
-body:has(.mob-order-bar) .page {
-  padding-bottom: calc(80px + 56px);
-}
-
-/* ── TAB STATS ──────────────────────────────────────────── */
-.tab-stat {
-  cursor: pointer;
-  position: relative;
-  transition: background .2s;
-}
-.tab-stat::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--gold), #ff6b8a);
-  border-radius: 2px 2px 0 0;
-  opacity: 0;
-  transition: opacity .2s;
-}
-.tab-stat.active { background: var(--surface-2); }
-.tab-stat.active::after { opacity: 1; }
-.tab-stat:hover:not(.active) { background: var(--surface-2); }
-
-/* ── TAB PANELS ─────────────────────────────────────────── */
-.tab-panel { display: none; animation: riseUp .3s ease both; }
-.tab-panel.active { display: block; }
-
-/* ── TOASTS ─────────────────────────────────────────────── */
-#toast-wrap {
-  position: fixed;
-  bottom: calc(var(--bottom-bar-height) + 12px);
-  right: 16px;
-  z-index: 3000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.toast {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--ink);
-  color: #fff;
-  padding: 10px 16px;
-  border-radius: var(--r-sm);
-  font-size: 13px;
-  box-shadow: var(--shadow-lg);
-  animation: riseUp .25s ease both;
-}
-.toast.success i { color: var(--green); }
-.toast.error i   { color: #ef4444; }
-.toast.info i    { color: var(--gold); }
-.toast.leaving   { opacity: 0; transition: opacity .3s; }
-
-/* ══════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  .product-title { font-size: 1.7rem; }
-}
-
-@media (min-width: 580px) {
-  .actions-col {
-    width: auto;
-    align-self: flex-start;
-    margin-left: auto;
-  }
-}
-
-@media (min-width: 760px) {
-  .two-col {
-    grid-template-columns: minmax(260px, 300px) 1fr;
-    align-items: start;
-  }
-  main { overflow: hidden; }
-}
-
-@media (min-width: 1024px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  }
-}
+/* COVER */
+.profile-cover { position: relative; width: 100%; height: 320px; overflow: hidden; background-color: #1a1a2e; }
+.cover-image { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform .6s var(--ease-out-expo); }
+.profile-cover:hover .cover-image { transform: scale(1.03); }
+.cover-gradient { width: 100%; height: 100%; background: linear-gradient(135deg, #0a2540 0%, #0d47a1 55%, #1976d2 100%); }
+.cover-gradient::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 20% 30%, rgba(212,175,55,.10) 0%, transparent 55%), radial-gradient(circle at 80% 70%, rgba(255,255,255,.06) 0%, transparent 50%);
+}
+@media (max-width: 1024px) { .profile-cover { height: 260px; } }
+@media (max-width: 768px)  { .profile-cover { height: 200px; } }
+@media (max-width: 480px)  { .profile-cover { height: 160px; } }
+
+/* IDENTITY */
+.profile-identity-section { background: #fff; padding: 0 24px 20px; border-top: 3px solid #fff; box-shadow: 0 -1px 0 var(--border); }
+.profile-identity-row { display: flex; align-items: flex-end; gap: 16px; margin-top: -28px; flex-wrap: wrap; }
+.profile-avatar-wrap { position: relative; flex-shrink: 0; width: 102px; height: 102px; }
+.avatar-glow-ring { position: absolute; inset: -4px; border-radius: 50%; background: conic-gradient(from 0deg, var(--gold-bright), var(--gold), var(--purple), var(--gold-bright)); filter: blur(6px); opacity: .55; animation: avatarSpin 6s linear infinite; z-index: 0; }
+.avatar-glow-ring.simple { background: var(--border-2); filter: none; opacity: .6; animation: none; }
+@keyframes avatarSpin { to { transform: rotate(360deg); } }
+.profile-avatar {
+  position: relative; z-index: 1; width: 102px; height: 102px; border-radius: 50%; object-fit: cover;
+  display: flex; align-items: center; justify-content: center; border: 4px solid #fff; background-color: var(--surface-3);
+  font-size: 34px; font-weight: 800; color: var(--gold); font-family: var(--font-accent); transition: transform .35s var(--ease-out-expo);
+}
+.profile-avatar-wrap:hover .profile-avatar { transform: scale(1.03); }
+.online-dot { position: absolute; bottom: 6px; right: 6px; z-index: 2; width: 16px; height: 16px; border-radius: 50%; background: var(--green); border: 2.5px solid #fff; box-shadow: 0 0 0 2px rgba(26,107,58,.15); }
+.profile-identity-main { flex: 1; min-width: 0; padding-bottom: 6px; }
+.profile-name-block { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.profile-fullname { font-family: var(--font-accent); font-size: 22px; font-weight: 700; margin: 0; color: #111827; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 10px; }
+.profile-pills-row { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.profile-pills-row::-webkit-scrollbar { display: none; }
+.profile-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: whitesmoke; color: #1a202c; }
+.profile-pill.verified { background: var(--green-bg); color: var(--green); }
+.profile-pill i { font-size: 12px; }
+
+/* ACTIONS */
+.profile-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 12px; }
+.profile-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid transparent; white-space: nowrap; transition: background .2s, color .2s, border-color .2s, transform .15s; }
+.profile-action-btn:active { transform: scale(.97); }
+.btn-follow { background: var(--gold); color: #fff; }
+.btn-follow:hover { background: var(--gold-2); }
+.btn-unfollow { background: var(--red-bg); color: var(--red); border-color: #fecaca; }
+.btn-unfollow:hover { background: #fee2e2; }
+.btn-ghost { background: transparent; color: #374151; border-color: #d1d5db; }
+.btn-ghost:hover { background: #f3f4f6; border-color: #9ca3af; color: #111827; }
 
 @media (max-width: 768px) {
-  .order-section { display: none; }
-  .mob-order-bar { display: flex; }
-  .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .tab-panel { padding: 20px 0 0; }
+  .profile-identity-section { padding: 0 16px 16px; }
+  .profile-identity-row { margin-top: -22px; }
+  .profile-avatar-wrap, .profile-avatar { width: 82px; height: 82px; }
+  .profile-avatar { border-width: 3px; font-size: 26px; }
+  .profile-fullname { font-size: 18px; }
 }
-
-@media (max-width: 760px) {
-  .products-grid { grid-template-columns: 1fr; }
-  .product-thumbnail { aspect-ratio: 16/9; }
-}
-
 @media (max-width: 480px) {
-  .products-grid { grid-template-columns: repeat(2,1fr); }
+  .profile-identity-section { padding: 0 12px 14px; }
+  .profile-identity-row { margin-top: -18px; }
+  .profile-avatar-wrap, .profile-avatar { width: 72px; height: 72px; }
+  .profile-fullname { font-size: 16px; }
+  .profile-pill { font-size: 11px; padding: 3px 9px; }
 }
 
-@media (max-width: 380px) {
-  .btn { padding: 8px 14px; font-size: 11px; }
+/* TAB BAR */
+.profile-tabs-bar { position: sticky; top: var(--header-h); z-index: 100; background: #fff; border-radius: 1rem; border: 1px solid #8b6a00; box-shadow: 0 2px 8px rgba(13,15,26,.06); margin: 12px 24px 0; }
+.profile-tabs-inner { padding: 0 1.5rem; display: flex; align-items: center; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; }
+.profile-tabs-inner::-webkit-scrollbar { display: none; }
+.tab-btn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 14px clamp(10px, 2.5vw, 16px); border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; color: #718096; font-weight: 600; font-size: .86rem; cursor: pointer; background: none; white-space: nowrap; transition: color .2s, border-color .2s, background .2s; border-radius: 8px 8px 0 0; letter-spacing: .01em; }
+.tab-btn:hover { background: #f0f2f5; color: #4a5568; }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+.tab-btn i { font-size: .8rem; opacity: .8; }
+.tab-btn.active i { opacity: 1; }
+.tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; background: var(--blue-bg); color: var(--blue); border-radius: 10px; font-size: .65rem; font-weight: 800; }
+.tab-btn.active .tab-count { background: var(--blue); color: #fff; }
+
+@media (max-width: 768px) {
+  .profile-tabs-bar { margin: 12px 16px 0; }
+  .tab-btn { padding: 12px clamp(8px, 2vw, 14px); font-size: .82rem; }
+}
+@media (max-width: 480px) {
+  .profile-tabs-bar { margin: 10px 12px 0; }
+  .tab-btn { padding: 11px clamp(8px, 3vw, 12px); font-size: .78rem; gap: 5px; }
+  .tab-btn i { font-size: .75rem; }
+}
+@media (max-width: 360px) {
+  .tab-btn { padding: 10px 9px; font-size: .74rem; gap: 4px; }
 }
 
-@media print {
-  .mob-order-bar { display: none !important; }
-  body { padding-bottom: 0; background: white; }
-  body::before { display: none; }
+/* CONTENT WRAP */
+.profile-content { max-width: 1160px; margin: 0 auto; padding: 0 24px 60px; }
+@media (max-width: 768px) { .profile-content { padding: 0 16px 60px; } }
+
+.card { background: transparent; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-top: 16px; }
+.card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.card-title { font-family: var(--font-accent); font-size: 15px; font-weight: 700; color: #1a202c; display: flex; align-items: center; gap: 8px; }
+.card-title i { color: var(--gold); }
+.card-badge { font-size: 11px; color: var(--ink-3); background: var(--surface-3); padding: 3px 9px; border-radius: 99px; font-weight: 600; }
+.section-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 0; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.empty-state { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; }
+.empty-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--ink-3); margin-bottom: 14px; }
+.empty-title { font-size: 15px; font-weight: 600; color: #1a202c; margin-bottom: 6px; }
+.empty-text { font-size: 13px; color: var(--ink-3); max-width: 280px; line-height: 1.5; }
+
+/* PRODUCT CARD */
+.product-grid-v2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding: 16px 18px 20px; }
+
+.feed-product-card { background: var(--surface); border-radius: 14px; border: 1.5px solid var(--border); overflow: hidden; box-shadow: var(--shadow-xs); transition: box-shadow .2s, border-color .2s, transform .2s; cursor: pointer; display: flex; flex-direction: column; text-decoration: none; color: inherit; }
+.feed-product-card:hover { box-shadow: var(--shadow-md); border-color: var(--blue-light); transform: translateY(-2px); }
+
+.card-img-wrap { position: relative; aspect-ratio: 4/3; background: var(--surface); overflow: hidden; }
+.card-img-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 12px; transition: transform .4s ease; }
+.feed-product-card:hover .card-img-wrap img { transform: scale(1.04); }
+
+.card-top-row { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-start; }
+.badge-stack { display: flex; flex-direction: column; gap: 3px; }
+.img-badge { display: inline-flex; align-items: center; gap: 3px; font-size: .56rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: .3px; }
+.badge-sale  { color: #dc2626; }
+.badge-trend { color: #b45309; }
+.badge-ship  { color: #1d4ed8; }
+.badge-stock { color: #c2410c; }
+.badge-verified-icon { color: var(--green); }
+
+.stat-cluster { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat-cluster span { font-size: .54rem; font-weight: 700; color: var(--ink-3); }
+
+/* Video block — real embed only, no custom overlay/UI of any kind.
+   .native-video is a plain <video controls>; .video-wrapper iframe is
+   the actual platform embed (YouTube/Vimeo/etc.) with its own native
+   controls. Nothing here is decorative or fake. */
+.card-video { }
+.video-file-wrapper, .video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; }
+.native-video { width: 100%; height: 100%; display: block; }
+.video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; border-radius: 12px; }
+
+.card-info { padding: .65rem .85rem .85rem; display: flex; flex-direction: column; gap: .28rem; flex: 1; }
+.card-title-link { font-size: .82rem; font-weight: 700; color: var(--ink); line-height: 1.35; text-decoration: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-brand { display: flex; align-items: center; gap: .3rem; font-size: .66rem; font-weight: 600; color: var(--blue); }
+.brand-dot { width: 14px; height: 14px; border-radius: 3px; background: var(--surface-3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: .45rem; font-weight: 800; color: var(--ink-3); }
+.card-sub-desc { font-size: .68rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.card-rating-row { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: .4rem; }
+.stars i { font-size: .52rem; color: #f59e0b; }
+.stars i.empty { color: #d1d5db; }
+.rating-val { font-size: .65rem; font-weight: 700; color: #f59e0b; }
+.price { font-size: .95rem; font-weight: 800; color: #16a34a; }
+.price-block { display: flex; align-items: baseline; gap: .35rem; }
+.price-mrp { font-size: .72rem; font-weight: 600; color: var(--ink-4); text-decoration: line-through; }
+.price-contact { font-size: .78rem; font-weight: 700; color: var(--blue); background: var(--blue-bg); border-radius: 20px; padding: 3px 10px; }
+
+@media (max-width: 1024px) { .product-grid-v2 { grid-template-columns: repeat(3, 1fr); gap: 12px; } }
+@media (max-width: 768px) {
+  .product-grid-v2 { grid-template-columns: repeat(1, 1fr); gap: 10px; padding: 12px 14px 16px; }
+  .card-title-link { font-size: .78rem; }
+  .card-img-wrap { aspect-ratio: 1/1; }
 }
+@media (max-width: 480px) {
+  .product-grid-v2 { grid-template-columns: repeat(1, 1fr); gap: 8px; padding: 10px; }
+  .card-info { padding: .5rem .65rem .7rem; gap: .22rem; }
+  .card-title-link { font-size: .74rem; }
+  .price { font-size: .8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-product-card, .card-img-wrap img { transition: none !important; }
+  .feed-product-card:hover { transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ENGINE CARD — full parity with the home feed's post-card:
+   same data shape (media mosaic, per-platform video embeds, links
+   preview, text preview, details modal), same visual language.
+
+   NOTE: the per-card profile attribution row (avatar + name) used
+   on the home feed's multi-poster cards has been intentionally
+   removed here — every card on this page belongs to the same
+   profile_user, so repeating their photo/name on every card was
+   redundant. `.post-card-head` now only holds the signal bars.
+   ══════════════════════════════════════════════════════════════ */
+
+.service-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px; padding: 16px 18px 20px; align-items: start; }
+@media (min-width: 769px)  { .service-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1025px) { .service-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.post-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow .15s ease; }
+.post-card:hover { box-shadow: 0 8px 24px rgba(15,31,54,.08); }
+
+.post-card-head { display: flex; align-items: flex-start; justify-content: flex-end; flex-wrap: wrap; gap: .75rem; padding: .9rem 1.1rem; }
+.post-card-head-right { display: flex; align-items: center; gap: .7rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+.signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+.signal-bars i { display: block; width: 4px; border-radius: 2px; background: var(--line); min-height: 3px; }
+.signal-bars i.on.image { background: var(--sig-image); }
+.signal-bars i.on.video { background: var(--sig-video); }
+
+.stamp { display: inline-flex; align-items: center; gap: 6px; margin: 0 1.1rem .7rem; padding: 3px 10px 3px 8px; border: 1.5px solid currentColor; border-radius: 999px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; }
+.stamp::before { content: "●"; font-size: 7px; }
+.post-card[data-service-type="product"]       .stamp { color: #0e6b55; }
+.post-card[data-service-type="brand"]         .stamp { color: #8f5f12; }
+.post-card[data-service-type="category"]      .stamp { color: var(--verified); }
+.post-card[data-service-type="subcategory"]   .stamp { color: #7a5aa6; }
+.post-card[data-service-type="education"]     .stamp { color: var(--verified); }
+.post-card[data-service-type="news"]          .stamp { color: var(--danger); }
+.post-card[data-service-type="location"]      .stamp { color: #0e6b55; }
+.post-card[data-service-type="api"]           .stamp { color: #8f5f12; }
+.post-card[data-service-type="person"]        .stamp { color: #0e6b55; }
+.post-card[data-service-type="business"]      .stamp { color: #7a5aa6; }
+.post-card[data-service-type="entertainment"] .stamp { color: var(--danger); }
+
+.post-card-body { padding: 0 1.1rem 1rem; }
+.post-card-title { font-weight: 700; color: var(--ink); margin: 0 0 .3rem; font-size: .92rem; overflow-wrap: anywhere; word-break: break-word; }
+.post-card-title a { color: inherit; text-decoration: none; }
+.post-card-title a:hover { text-decoration: underline; }
+.post-card-desc { color: var(--muted); font-size: .82rem; line-height: 1.55; margin: 0 0 .8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; }
+
+.status-row { display: flex; align-items: center; gap: 8px; font-size: .74rem; padding: 8px 11px; margin-bottom: .8rem; border-radius: 10px; }
+.status-row.is-error   { background: var(--danger-bg); color: var(--danger); }
+.status-row.is-pending { background: var(--warn-bg);   color: var(--warn); }
+.status-row i.spin { animation: engineSpin .9s linear infinite; }
+@keyframes engineSpin { to { transform: rotate(360deg); } }
+.status-text { flex: 1; min-width: 0; }
+.retry-btn { flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; }
+.retry-btn:hover { background: rgba(0,0,0,.05); }
+.retry-btn[disabled] { opacity: .5; cursor: default; }
+
+.post-media { display: grid; gap: 4px; border-radius: 10px; overflow: hidden; margin-bottom: .8rem; aspect-ratio: var(--media-ar, 4 / 3); max-height: min(70vh, 560px); }
+.post-media img, .post-media video, .post-media iframe { border: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: var(--surface-3); }
+.post-media a.media-link { display: block; width: 100%; height: 100%; cursor: pointer; }
+
+.post-media.m-solo { grid-template-columns: 1fr; }
+.post-media.m-solo .cell { height: 100%; }
+.post-media[data-count="2"] { grid-template-columns: 1fr 1fr; aspect-ratio: 16 / 9; }
+.post-media[data-count="2"] .cell { height: 100%; }
+.post-media[data-count="3"] { grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 4 / 3; }
+.post-media[data-count="3"] .cell:nth-child(1) { grid-row: 1 / 3; height: 100%; }
+.post-media[data-count="3"] .cell:nth-child(2), .post-media[data-count="3"] .cell:nth-child(3) { height: 100%; }
+.post-media[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 1 / 1; }
+.post-media[data-count="4"] .cell { height: 100%; }
+.post-media .cell { position: relative; }
+.post-media .cell.more-overlay::after { content: attr(data-more); font-weight: 800; font-size: 1.1rem; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(15, 20, 32, .55); pointer-events: none; }
+.cell-gallery-btn { appearance: none; border: 0; padding: 0; margin: 0; width: 100%; height: 100%; display: block; background-size: cover; background-position: center; background-color: var(--surface-3); cursor: pointer; }
+
+.links-prev { display: flex; flex-direction: column; gap: 6px; margin-bottom: .8rem; }
+.link-row { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; text-decoration: none; color: inherit; transition: border-color .15s ease; }
+.link-row:hover { border-color: var(--blue-light); }
+.link-ico { width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0; background: var(--blue-bg); color: var(--blue-light); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.link-body { flex: 1; min-width: 0; }
+.link-text { font-size: 12.5px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.link-host { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); }
+
+.text-prev { background: rgba(10,37,64,.03); border: 1px solid var(--line); border-left: 3px solid var(--blue-light); border-radius: 9px; padding: 10px 12px; margin-bottom: .8rem; }
+.text-prev-body { font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; }
+.text-prev-expand { margin-top: 6px; font-size: 11.5px; font-weight: 700; color: var(--blue-light); background: none; border: none; padding: 0; cursor: pointer; }
+.text-prev-expand:hover { text-decoration: underline; }
+
+.post-card-counts { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; font-size: .72rem; color: var(--faint); }
+.post-card-counts .counts-left { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
+.post-card-counts button.count-pill { appearance: none; background: none; border: none; padding: 3px 4px; cursor: pointer; color: var(--faint); font-size: .72rem; display: flex; align-items: center; gap: .3rem; }
+.post-card-counts button.count-pill:hover { color: var(--blue-light); }
+.post-card-counts i.image { color: var(--sig-image); }
+.post-card-counts i.video { color: var(--sig-video); }
+
+.counts-right { display: flex; align-items: center; gap: .6rem; }
+.icon-btn { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--muted); cursor: pointer; font-size: 11px; }
+.icon-btn:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+.visit-source { color: var(--muted); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.visit-source:hover { color: var(--blue-light); }
+.favicon { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+.embed-with-fallback { display: flex; flex-direction: column; height: 100%; }
+.embed-with-fallback iframe { flex: 1; min-height: 0; }
+.embed-fallback-link { flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; font-size: 11.5px; font-weight: 700; text-decoration: none; color: #fff; background: rgba(15, 20, 32, .85); }
+.embed-fallback-link:hover { background: rgba(15, 20, 32, .95); }
+.embed-fallback-link.is-standalone { width: 100%; height: 100%; padding: 0; background-color: #0f1420; background-repeat: no-repeat; }
+.embed-fallback-link.is-standalone span { background: rgba(15, 20, 32, .78); padding: 6px 12px; border-radius: 999px; }
+
+@media (max-width: 768px) { .service-grid { padding: 12px 14px 16px; gap: 12px; } .post-media { max-height: 60vh; } }
+@media (max-width: 560px) {
+  .post-media[data-count="2"], .post-media[data-count="3"] { grid-template-columns: 1fr; grid-template-rows: none; aspect-ratio: unset; }
+  .post-media[data-count="2"] .cell, .post-media[data-count="3"] .cell { height: auto; aspect-ratio: 4 / 3; }
+  .post-media[data-count="3"] .cell:nth-child(1) { grid-row: auto; }
+  .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; }
+}
+
+/* Details modal (Media / Links / Text) — same behavior as the home feed */
+.gallery-modal { position: fixed; inset: 0; background: rgba(8, 12, 20, .78); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 2rem; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+.gallery-modal.open { opacity: 1; pointer-events: auto; }
+.gallery-body { max-width: 760px; width: 100%; max-height: 86vh; overflow: hidden; border-radius: 14px; background: var(--surface); display: flex; flex-direction: column; }
+.gallery-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 0; flex-shrink: 0; }
+.gallery-title { font-weight: 800; font-size: 15px; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gallery-close { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.gallery-close:hover { border-color: var(--blue-light); color: var(--blue-light); }
+.gallery-tabs { display: flex; gap: 4px; padding: 12px 18px 0; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.gallery-tab { padding: 7px 12px; font-size: 12px; font-weight: 700; color: var(--muted); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.gallery-tab.active { color: var(--blue-light); border-bottom-color: var(--blue-light); }
+.gallery-scroll { padding: 16px 18px 18px; overflow-y: auto; flex: 1; }
+.gallery-tabpanel { display: none; }
+.gallery-tabpanel.active { display: block; }
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.gallery-cell { position: relative; display: block; border-radius: 8px; overflow: hidden; background: #0f1420; aspect-ratio: 1 / 1; }
+.gallery-cell img, .gallery-cell video, .gallery-cell iframe { width: 100%; height: 100%; object-fit: cover; display: block; border: 0; }
+.gallery-empty { color: var(--faint); font-size: 12.5px; }
+.modal-text-body { font-size: 13.5px; line-height: 1.85; color: var(--ink); white-space: pre-line; margin: 0; overflow-wrap: anywhere; word-break: break-word; }
+.modal-copy-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; font-weight: 700; color: var(--blue-light); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.modal-copy-btn:hover { border-color: var(--blue-light); background: rgba(59,130,246,.06); }
+
+@media (max-width: 768px) { .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .gallery-modal { padding: 1rem; } }
+@media (max-width: 480px) { .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; } .gallery-body { max-height: 92vh; } .gallery-close { width: 38px; height: 38px; } }
+
+/* FILTER BAR */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 16px 18px 0; }
+.filter-bar select { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #1a202c; cursor: pointer; outline: none; }
+.filter-bar select:last-of-type { margin-left: auto; }
+.filter-submit { background: var(--gold); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s; }
+.filter-submit:hover { background: var(--gold-2); }
+.filter-clear { font-size: 11px; color: var(--ink-3); text-decoration: underline; padding: 4px; }
+
+/* FOLLOWING / FOLLOWERS GRID */
+.following-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 16px 18px 20px; }
+.following-card { display: flex; flex-direction: column; text-decoration: none; border-radius: 14px; border: 1px solid var(--border); background: #fff; overflow: hidden; transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+.following-card:hover { border-color: var(--blue); box-shadow: 0 8px 20px rgba(10,37,64,.12); transform: translateY(-3px); }
+
+.following-cover { height: 56px; background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+.following-cover-admin     { background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+.following-cover-dealer    { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+.following-cover-staff     { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+.following-cover-moderator { background: linear-gradient(135deg, #fefce8, #fef9c3); }
+.following-cover-customer  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+
+.following-avatar-wrap { position: relative; width: 64px; height: 64px; margin: -32px auto 0; }
+.following-avatar { position: relative; z-index: 1; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; background: var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; color: var(--gold); font-family: var(--font-accent); }
+.following-verified-badge { position: absolute; bottom: -1px; right: -1px; width: 19px; height: 19px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: .65rem; color: var(--blue); box-shadow: 0 0 0 2px #fff; }
+.following-info { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 12px 12px; text-align: center; }
+.following-name { font-size: .85rem; font-weight: 700; color: #1a202c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.following-card:hover .following-name { color: var(--blue); }
+.following-handle { font-size: .72rem; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; margin-bottom: 2px; }
+
+.following-role-pill { display: inline-flex; align-items: center; gap: 3px; font-size: .62rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; margin-top: 4px; white-space: nowrap; }
+.following-role-admin     { background: #fef2f2; color: #b91c1c; }
+.following-role-dealer    { background: #eff6ff; color: #1d4ed8; }
+.following-role-staff     { background: #f5f3ff; color: #6d28d9; }
+.following-role-moderator { background: #fefce8; color: #a16207; }
+.following-role-customer  { background: #f0fdf4; color: #15803d; }
+
+@media (max-width: 1024px) { .following-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px) { .following-grid { grid-template-columns: repeat(1, 1fr); gap: 10px; padding: 12px 14px 16px; } }
+@media (max-width: 640px) {
+  .following-grid { grid-template-columns: repeat(1, 1fr); gap: 10px; padding: 10px 12px; }
+  .following-avatar-wrap, .following-avatar { width: 54px; height: 54px; }
+  .following-name { font-size: .8rem; }
+}
+@media (max-width: 480px) {
+  .following-grid { grid-template-columns: repeat(1, 1fr); gap: 8px; padding: 9px 10px; }
+  .following-avatar-wrap, .following-avatar { width: 48px; height: 48px; }
+  .following-handle { display: none; }
+  .following-name { font-size: .76rem; }
+}
+@media (prefers-reduced-motion: reduce) { .following-card { transition: none; } .following-card:hover { transform: none; } }
+
+/* ABOUT */
+.info-blocks-wrap { padding: 4px 18px 16px; }
+.info-section-title { font-size: .7rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: .8px; padding: 14px 0 6px; border-bottom: 2px solid var(--blue-bg); margin-bottom: 2px; display: flex; align-items: center; gap: 7px; }
+.info-block { display: flex; align-items: flex-start; gap: 13px; padding: 12px 0; border-bottom: 1px solid #e2e8f0; transition: all .15s; }
+.info-block:last-child { border-bottom: none; }
+.info-block-icon { width: 40px; height: 40px; flex-shrink: 0; border-radius: 8px; background: #f0f2f5; border: 1px solid var(--border); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: .95rem; margin-top: 2px; transition: all .2s; }
+.info-block:hover .info-block-icon { background: var(--blue-bg); border-color: #bfdbfe; }
+.info-block-details { flex: 1; min-width: 0; }
+.info-block-label { font-size: .68rem; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: .6px; margin: 0 0 3px; }
+.info-block-value { font-size: .9rem; font-weight: 600; color: #1a202c; margin: 0; line-height: 1.4; word-break: break-word; }
+.info-block-value a { color: var(--blue); text-decoration: none; }
+.info-block-value a:hover { text-decoration: underline; }
+.bio-tagline { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: 1.15rem; color: var(--gold); margin-bottom: 8px; }
+.bio-text { font-size: .88rem; color: #374151; line-height: 1.7; }
+.social-links-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.social-link-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 4px 10px; border-radius: 8px; text-decoration: none; border: 1px solid var(--border); background: #f8fafc; color: #374151; transition: all .15s; }
+.social-link-btn:hover { background: var(--blue-bg); border-color: #bfdbfe; color: var(--blue); }
+
+@media (max-width: 768px) {
+  .info-blocks-wrap { padding: 4px 14px 14px; }
+  .info-block { gap: 11px; padding: 11px 0; }
+  .info-block-icon { width: 38px; height: 38px; font-size: .88rem; }
+  .info-block-value { font-size: .88rem; }
+}
+@media (max-width: 480px) {
+  .info-blocks-wrap { padding: 2px 10px 10px; }
+  .info-block-icon { width: 34px; height: 34px; font-size: .8rem; }
+  .info-block-value { font-size: .82rem; }
+}
+@media (prefers-reduced-motion: reduce) { .info-block, .info-block-icon { transition: none; } }
+
+/* MOBILE ORDER BAR */
+.mob-order-bar { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; z-index: 1500; border-top: 1px solid var(--border);  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.order-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 0; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; transition: background .2s; }
+.order-btn.whatsapp { background: white; color: #25d366; border: 1px solid gold; border-radius: 10px; }
+.order-btn.whatsapp:hover { background: rgba(37,211,102,.2); }
+.order-btn.call { background: whitesmoke; color: #3b82f6; border: 1px solid gold; border-radius: 10px; }
+.order-btn.call:hover { background: rgba(59,130,246,.2); }
+
+/* TOASTS */
+#toast-wrap { position: fixed; bottom: calc(var(--bottom-bar-height) + 12px); right: 16px; z-index: 3000; display: flex; flex-direction: column; gap: 8px; }
+.toast { display: flex; align-items: center; gap: 8px; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow-lg); }
+.toast.success i { color: var(--green); } .toast.error i { color: #ef4444; } .toast.info i { color: var(--gold); }
+.toast.leaving { opacity: 0; transition: opacity .3s; }
+
+/* INFINITE SCROLL */
+.scroll-sentinel { grid-column: 1/-1; display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.scroll-sentinel.hidden { display: none; }
+.scroll-spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--border); border-top-color: var(--gold); animation: scrollSpin .7s linear infinite; }
+@keyframes scrollSpin { to { transform: rotate(360deg); } }
+.end-of-list { font-size: 12px; color: var(--ink-3); padding: 8px 0; }
+
 </style>
 {% endblock %}
 
 
 {% block content %}
 
-<!-- ══ COVER ═════════════════════════════════════════════════ -->
-<div class="cover">
+<!-- COVER -->
+<div class="profile-cover">
   {% if profile_info.profile_cover_photo %}
-    <img class="cover-img" src="{{ profile_info.profile_cover_photo.url }}" alt="Cover photo">
+    <img src="{{ profile_info.profile_cover_photo.url }}" alt="Cover photo" class="cover-image" loading="lazy">
   {% else %}
     <div class="cover-gradient"></div>
   {% endif %}
 </div>
 
-<!-- ══ PAGE BODY ═════════════════════════════════════════════ -->
-<div class="page">
+<!-- IDENTITY ROW -->
+<div class="profile-identity-section">
+  <div class="profile-identity-row">
+    <div class="profile-avatar-wrap">
+      {% if profile_info.is_profile_verified %}
+        <div class="avatar-glow-ring"></div>
+      {% else %}
+        <div class="avatar-glow-ring simple"></div>
+      {% endif %}
+      {% if profile_info.profile_photo %}
+        <img src="{{ profile_info.profile_photo.url }}" alt="{{ profile_info.profile_name }}" class="profile-avatar" loading="lazy">
+      {% else %}
+        <div class="profile-avatar">{{ profile_info.profile_name|default:profile_user.email_or_phone|slice:":1"|upper }}</div>
+      {% endif %}
+      {% if profile_user.is_active %}<div class="online-dot" title="Active"></div>{% endif %}
+    </div>
 
-  <!-- ── PROFILE CARD ────────────────────────────────────── -->
-  <div class="profile-card">
-
-    <!-- Avatar -->
-    <div class="avatar-col">
-      <div class="avatar-ring">
-        <div class="avatar-inner">
-          {% if profile_info.profile_photo %}
-            <img src="{{ profile_info.profile_photo.url }}" alt="{{ profile_info.profile_name }}">
-          {% else %}
-            <div class="avatar-initials">
-              {{ profile_info.profile_name|default:profile_user.email_or_phone|slice:":1"|upper }}
-            </div>
+    <div class="profile-identity-main">
+      <div class="profile-name-block">
+        <h1 class="profile-fullname">
+          {{ profile_info.profile_name|default:profile_user.email_or_phone }}
+          {% if profile_info.is_profile_verified %}
+            <span class="verified-badge" title="Verified"><i class="fa-solid fa-check"></i></span>
+          {% endif %}
+        </h1>
+        <div class="profile-pills-row">
+          <span class="profile-pill">{{ follower_count }} Followers</span>
+          <span class="profile-pill">{{ following_count }} Following</span>
+          {% if profile_info.show_location and profile_info.location_display %}
+          <span class="profile-pill"><i class="fa-solid fa-location-dot"></i> {{ profile_info.location_display }}</span>
           {% endif %}
         </div>
-        {% if profile_user.is_active %}<div class="online-dot" title="Active"></div>{% endif %}
       </div>
     </div>
+  </div>
 
-    <!-- Info -->
-    <div class="info-col">
-      <div class="profile-name">{{ profile_info.profile_name|default:profile_user.email_or_phone }}</div>
-
-      <div class="badges">
-        <span class="badge badge-role">
-          {% if profile_user.role == 'dealer' %}<i class="fas fa-store"></i>
-          {% elif profile_user.role == 'admin' %}<i class="fas fa-crown"></i>
-          {% elif profile_user.role == 'staff' %}<i class="fas fa-users-cog"></i>
-          {% else %}<i class="fas fa-user"></i>{% endif %}
-          {{ profile_user.get_role_display }}
-        </span>
-        {% if profile_info.is_profile_verified %}
-          <span class="badge badge-verified"><i class="fas fa-circle-check"></i> Verified</span>
-        {% endif %}
-        {% if profile_info.profile_city or profile_info.profile_country %}
-          <span class="badge badge-location">
-            <i class="fas fa-location-dot"></i>
-            {{ profile_info.profile_city }}{% if profile_info.profile_city and profile_info.profile_country %}, {% endif %}{{ profile_info.profile_country }}
-          </span>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Actions -->
-    <div class="actions-col">
-      {% if profile_user != current_user %}
-        {% if is_following %}
-          <button class="btn btn-danger" id="followBtn"
-            data-username="{{ profile_user.email_or_phone }}"
-            data-following="true">
-            <i class="fas fa-user-minus"></i> Unfollow
-          </button>
-        {% else %}
-          <button class="btn btn-primary" id="followBtn"
-            data-username="{{ profile_user.email_or_phone }}"
-            data-following="false">
-            <i class="fas fa-user-plus"></i> Follow
-          </button>
-        {% endif %}
-      {% endif %}
-        <button class="btn btn-ghost" onclick="shareProfile()">
-          <i class="fas fa-share-nodes"></i> Share
+  <div class="profile-actions">
+    {% if profile_user != current_user %}
+      {% if is_following %}
+        <button class="profile-action-btn btn-unfollow" id="followBtn" data-username="{{ profile_user.email_or_phone }}" data-following="true">
+          <i class="fas fa-user-minus"></i> Unfollow
         </button>
-
-    </div>
-
-  </div><!-- /profile-card -->
-
-<!-- ── STATS / TAB BAR ─────────────────────────────────── -->
-<div class="stats-strip">
-  {% if profile_user.role == 'dealer' %}
-  <div class="stat tab-stat active" data-tab="products">
-    <div class="stat-n">{{ profile_user.products.count }}</div>
-    <div class="stat-l">Products</div>
-  </div>
-  {% endif %}
-
-  <div class="stat tab-stat" data-tab="followers">
-    <div class="stat-n" id="followerCount">{{ follower_count }}</div>
-    <div class="stat-l">Followers</div>
-  </div>
-
-  <div class="stat tab-stat" data-tab="following">
-    <div class="stat-n">{{ following_count }}</div>
-    <div class="stat-l">Following</div>
-  </div>
-
-  <div class="stat tab-stat" data-tab="about">
-    <div class="stat-n"><i class="fas fa-user" style="font-size:18px;"></i></div>
-    <div class="stat-l">About</div>
+      {% else %}
+        <button class="profile-action-btn btn-follow" id="followBtn" data-username="{{ profile_user.email_or_phone }}" data-following="false">
+          <i class="fas fa-user-plus"></i> Follow
+        </button>
+      {% endif %}
+    {% endif %}
+    <button class="profile-action-btn btn-ghost" onclick="shareProfile()">
+      <i class="fas fa-share-nodes"></i> Share
+    </button>
   </div>
 </div>
 
-<!-- ── TAB PANELS ──────────────────────────────────────── -->
-
-<!-- ══ PRODUCTS TAB ════════════════════════════════════════ -->
-{% if profile_user.role == 'dealer' %}
-<div class="tab-panel active" id="tab-products">
-
-  <div class="sec-head">
-    <span class="sec-title">Products</span>
-    <div class="sec-line"></div>
-    <span style="font-size:11px;color:var(--ink-3);white-space:nowrap;font-family:var(--font-mono);">
-      {{ total_products }} listing{{ total_products|pluralize }}
-    </span>
-  </div>
-
-  <form method="get" id="filterForm"
-        style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-
-    {% if dealer_brands %}
-    <select name="brand" onchange="this.form.submit()"
-            style="background:var(--surface);border:1px solid var(--border);
-                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
-                   color:var(--ink-2);font-family:var(--font-body);outline:none;cursor:pointer;">
-      <option value="">Brands</option>
-      {% for brand_id, brand_name in dealer_brands %}
-        <option value="{{ brand_id }}" {% if active_brand == brand_id|stringformat:"s" %}selected{% endif %}>
-          {{ brand_name }}
-        </option>
-      {% endfor %}
-    </select>
-    {% endif %}
-
-    {% if dealer_categories %}
-    <select name="category" onchange="this.form.submit()"
-            style="background:var(--surface);border:1px solid var(--border);
-                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
-                   color:var(--ink-2);font-family:var(--font-body);outline:none;cursor:pointer;">
-      <option value="">Categories</option>
-      {% for cat_id, cat_name in dealer_categories %}
-        <option value="{{ cat_id }}" {% if active_category == cat_id|stringformat:"s" %}selected{% endif %}>
-          {{ cat_name }}
-        </option>
-      {% endfor %}
-    </select>
-    {% endif %}
-
-    <select name="sort" onchange="this.form.submit()"
-            style="background:var(--surface);border:1px solid var(--border);
-                   border-radius:var(--r-sm);padding:8px 12px;font-size:12px;
-                   color:var(--ink-2);font-family:var(--font-body);outline:none;cursor:pointer;margin-left:auto;">
-      <option value="newest"     {% if active_sort == 'newest'     %}selected{% endif %}>Newest</option>
-      <option value="oldest"     {% if active_sort == 'oldest'     %}selected{% endif %}>Oldest</option>
-      <option value="price_asc"  {% if active_sort == 'price_asc'  %}selected{% endif %}>Price ↑</option>
-      <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>Price ↓</option>
-      <option value="popular"    {% if active_sort == 'popular'    %}selected{% endif %}>Most Viewed</option>
-      <option value="top_rated"  {% if active_sort == 'top_rated'  %}selected{% endif %}>Top Rated</option>
-      <option value="best_sell"  {% if active_sort == 'best_sell'  %}selected{% endif %}>Best Selling</option>
-    </select>
-
-    <button type="submit"
-            style="background:var(--gold);color:#fff;border:none;
-                   border-radius:var(--r-sm);padding:8px 16px;font-size:12px;
-                   font-family:var(--font-display);font-weight:700;cursor:pointer;">
-      <i class="fas fa-search"></i>
+<!-- TAB BAR -->
+<div class="profile-tabs-bar">
+  <nav class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
+    {% if profile_user.role == 'dealer' %}
+    <button class="tab-btn active" data-tab="products" role="tab" aria-selected="true">
+      <i class="fa-solid fa-box"></i> <span>Products</span>
     </button>
-
-    {% if search_query or active_category or active_brand or active_sort != 'newest' or active_stock %}
-    <a href="?" style="font-size:11px;color:var(--ink-3);white-space:nowrap;
-                       text-decoration:underline;padding:4px;">
-      <i class="fas fa-xmark"></i> Clear
-    </a>
     {% endif %}
-  </form>
+    <button class="tab-btn{% if profile_user.role != 'dealer' %} active{% endif %}" data-tab="services" role="tab">
+      <i class="fa-solid fa-plug"></i> <span>Engine</span>
+    </button>
+    <button class="tab-btn" data-tab="followers" role="tab">
+      <i class="fa-solid fa-users"></i> <span>Followers</span>
+    </button>
+    <button class="tab-btn" data-tab="following" role="tab">
+      <i class="fa-solid fa-user-group"></i> <span>Following</span>
+    </button>
+    <button class="tab-btn" data-tab="about" role="tab">
+      <i class="fa-solid fa-circle-info"></i> <span>About</span>
+    </button>
+  </nav>
+</div>
 
-  <div class="products-grid">
-    {% for product in products_page %}
-    <div class="product-card">
-      <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="product-link">
+<div class="profile-content">
+  <main>
 
-        <div class="product-thumbnail">
-          {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.product_name }}" loading="lazy">
-          {% else %}
-            <div class="product-thumb-placeholder"><i class="fas fa-box"></i></div>
-          {% endif %}
-
-          <div class="product-badges">
-            {% if product.discount_percentage > 0 %}
-              <span class="p-badge p-badge-discount">{{ product.discount_percentage|floatformat:0 }}% OFF</span>
-            {% endif %}
-            {% if product.is_featured %}
-              <span class="p-badge p-badge-featured"><i class="fa-solid fa-star"></i> Featured</span>
-            {% endif %}
-            {% if product.is_verified %}
-              <span class="p-badge p-badge-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
-            {% endif %}
-            {% if product.free_shipping %}
-              <span class="p-badge p-badge-shipping"><i class="fa-solid fa-truck"></i> Free Ship</span>
-            {% endif %}
-            {% if product.product_condition != 'new' %}
-              <span class="p-badge p-badge-condition">{{ product.get_product_condition_display }}</span>
-            {% endif %}
-            {% if product.stock == 0 %}
-              <span class="p-badge p-badge-sold-out">Out of Stock</span>
-            {% elif product.is_low_stock %}
-              <span class="p-badge p-badge-low-stock">Only {{ product.stock }} left</span>
-            {% endif %}
-          </div>
-
-          <span class="product-price-badge">
-            {% if product.discount_percentage > 0 and product.final_price %}
-              <span class="price-original">{{ product.currency }}{{ product.selling_price|floatformat:0 }}</span>
-              {{ product.currency }}{{ product.final_price|floatformat:0 }}
-            {% else %}
-              {{ product.currency }}{{ product.selling_price|floatformat:0 }}
-            {% endif %}
+    <!-- PRODUCTS TAB -->
+    {% if profile_user.role == 'dealer' %}
+    <div class="tab-panel active" id="tab-products" role="tabpanel">
+      <div class="card">
+        <div class="section-head">
+          <h2 class="card-title"><i class="fa-solid fa-box"></i> Products</h2>
+          <span style="font-size:.78rem;color:var(--ink-3);font-weight:600" id="productsCountLabel">
+            {{ total_products }} listing{{ total_products|pluralize }}
           </span>
         </div>
 
-        <div class="product-info">
-          <div class="seller-avatar">
-            {% if profile_info.profile_photo %}
-              <img src="{{ profile_info.profile_photo.url }}" alt="{{ profile_info.profile_name }}">
-            {% else %}
-              {{ profile_info.profile_name|default:profile_user.email_or_phone|slice:":1"|upper }}
-            {% endif %}
-            {% if profile_info.is_profile_verified %}
-              <span class="seller-verified-badge"><i class="fa-solid fa-circle-check"></i></span>
-            {% endif %}
-          </div>
-          <div class="product-meta">
-            <h3 class="product-title">{{ product.product_name }}</h3>
-            <div class="seller-name-label">
-              {{ profile_info.profile_name|default:profile_user.email_or_phone }}
+        <form method="get" id="filterForm" class="filter-bar">
+          {% if dealer_brands %}
+          <select name="brand" onchange="this.form.submit()">
+            <option value="">Brands</option>
+            {% for brand_id, brand_name in dealer_brands %}
+              <option value="{{ brand_id }}" {% if active_brand == brand_id|stringformat:"s" %}selected{% endif %}>{{ brand_name }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          {% if dealer_categories %}
+          <select name="category" onchange="this.form.submit()">
+            <option value="">Categories</option>
+            {% for cat_id, cat_name in dealer_categories %}
+              <option value="{{ cat_id }}" {% if active_category == cat_id|stringformat:"s" %}selected{% endif %}>{{ cat_name }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <select name="sort" onchange="this.form.submit()">
+            <option value="newest"     {% if active_sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="oldest"     {% if active_sort == 'oldest' %}selected{% endif %}>Oldest</option>
+            <option value="price_asc"  {% if active_sort == 'price_asc' %}selected{% endif %}>Price ↑</option>
+            <option value="price_desc" {% if active_sort == 'price_desc' %}selected{% endif %}>Price ↓</option>
+            <option value="popular"    {% if active_sort == 'popular' %}selected{% endif %}>Most Viewed</option>
+            <option value="top_rated"  {% if active_sort == 'top_rated' %}selected{% endif %}>Top Rated</option>
+            <option value="best_sell"  {% if active_sort == 'best_sell' %}selected{% endif %}>Best Selling</option>
+          </select>
+          <button type="submit" class="filter-submit"><i class="fas fa-search"></i></button>
+          {% if search_query or active_category or active_brand or active_sort != 'newest' or active_stock %}
+          <a href="?" class="filter-clear"><i class="fas fa-xmark"></i> Clear</a>
+          {% endif %}
+        </form>
+
+        <div class="product-grid-v2" id="productsGrid">
+          <div class="scroll-sentinel" id="productsSentinel"><div class="scroll-spinner"></div></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <!-- /PRODUCTS TAB -->
+
+    <!-- SERVICES / ENGINES TAB -->
+    <div class="tab-panel{% if profile_user.role != 'dealer' %} active{% endif %}" id="tab-services" role="tabpanel">
+      <div class="card">
+
+        {% if service_type_choices %}
+        <form method="get" id="serviceFilterForm" class="filter-bar">
+          <select name="service_type" onchange="this.form.submit()">
+            <option value="">All Types</option>
+            {% for value, label in service_type_choices %}
+              <option value="{{ value }}" {% if active_service_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="filter-submit"><i class="fas fa-search"></i></button>
+          {% if active_service_type %}
+          <a href="?" class="filter-clear"><i class="fas fa-xmark"></i> Clear</a>
+          {% endif %}
+        </form>
+        {% endif %}
+
+        <div class="service-grid" id="servicesGrid">
+          <div class="scroll-sentinel" id="servicesSentinel"><div class="scroll-spinner"></div></div>
+        </div>
+      </div>
+    </div>
+    <!-- /SERVICES / ENGINES TAB -->
+
+    <!-- FOLLOWERS TAB -->
+    <div class="tab-panel{% if profile_user.role != 'dealer' %} active{% endif %}" id="tab-followers" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fa-solid fa-users"></i> Followers</h2>
+          <span class="card-badge">{{ follower_count }}</span>
+        </div>
+        {% with followers_list=profile_info.followers.all|slice:":20" %}
+        {% if followers_list %}
+        <div class="following-grid">
+          {% for u in followers_list %}
+          <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="following-card">
+            <div class="following-cover following-cover-{{ u.role }}"></div>
+            <div class="following-avatar-wrap">
+              {% if u.profileinfo.profile_photo %}
+                <img src="{{ u.profileinfo.profile_photo.url }}" alt="" class="following-avatar" loading="lazy">
+              {% else %}
+                <div class="following-avatar">{{ u.email_or_phone|slice:":1"|upper }}</div>
+              {% endif %}
+              {% if u.profileinfo.is_profile_verified %}
+                <span class="following-verified-badge"><i class="fa-solid fa-circle-check"></i></span>
+              {% endif %}
+            </div>
+            <div class="following-info">
+              <span class="following-name">{{ u.profileinfo.profile_name|default:u.email_or_phone|truncatechars:16 }}</span>
+              <span class="following-handle">{{ u.email_or_phone|truncatechars:20 }}</span>
+              <span class="following-role-pill following-role-{{ u.role }}">
+                {% if u.role == 'admin' %}<i class="fa-solid fa-shield-halved"></i> Admin
+                {% elif u.role == 'dealer' %}<i class="fa-solid fa-briefcase"></i> Dealer
+                {% elif u.role == 'staff' %}<i class="fa-solid fa-user-tie"></i> Staff
+                {% elif u.role == 'moderator' %}<i class="fa-solid fa-star"></i> Moderator
+                {% else %}<i class="fa-solid fa-user"></i> Customer{% endif %}
+              </span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-users"></i></div>
+          <h3 class="empty-title">No followers yet</h3>
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+    <!-- /FOLLOWERS TAB -->
+
+    <!-- FOLLOWING TAB -->
+    <div class="tab-panel" id="tab-following" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title"><i class="fa-solid fa-user-check"></i> Following</h2>
+          <span class="card-badge">{{ following_count }}</span>
+        </div>
+        {% with following_list=profile_info.following.all|slice:":20" %}
+        {% if following_list %}
+        <div class="following-grid">
+          {% for u in following_list %}
+          <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="following-card">
+            <div class="following-cover following-cover-{{ u.role }}"></div>
+            <div class="following-avatar-wrap">
+              {% if u.profileinfo.profile_photo %}
+                <img src="{{ u.profileinfo.profile_photo.url }}" alt="" class="following-avatar" loading="lazy">
+              {% else %}
+                <div class="following-avatar">{{ u.email_or_phone|slice:":1"|upper }}</div>
+              {% endif %}
+              {% if u.profileinfo.is_profile_verified %}
+                <span class="following-verified-badge"><i class="fa-solid fa-circle-check"></i></span>
+              {% endif %}
+            </div>
+            <div class="following-info">
+              <span class="following-name">{{ u.profileinfo.profile_name|default:u.email_or_phone|truncatechars:16 }}</span>
+              <span class="following-handle">{{ u.email_or_phone|truncatechars:20 }}</span>
+              <span class="following-role-pill following-role-{{ u.role }}">
+                {% if u.role == 'admin' %}<i class="fa-solid fa-shield-halved"></i> Admin
+                {% elif u.role == 'dealer' %}<i class="fa-solid fa-briefcase"></i> Dealer
+                {% elif u.role == 'staff' %}<i class="fa-solid fa-user-tie"></i> Staff
+                {% elif u.role == 'moderator' %}<i class="fa-solid fa-star"></i> Moderator
+                {% else %}<i class="fa-solid fa-user"></i> Customer{% endif %}
+              </span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-user-slash"></i></div>
+          <h3 class="empty-title">Not following anyone yet</h3>
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+    <!-- /FOLLOWING TAB -->
+
+    <!-- ABOUT TAB -->
+    <div class="tab-panel" id="tab-about" role="tabpanel">
+      <div class="card">
+        <div class="card-header"><h2 class="card-title"><i class="fa-solid fa-circle-info"></i> About</h2></div>
+        <div class="info-blocks-wrap">
+
+          {% if profile_info.profile_bio or profile_info.profile_tagline %}
+          <p class="info-section-title"><i class="fa-solid fa-quote-left"></i> Bio</p>
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-feather"></i></div>
+            <div class="info-block-details">
+              {% if profile_info.profile_tagline %}<p class="bio-tagline">"{{ profile_info.profile_tagline }}"</p>{% endif %}
+              {% if profile_info.profile_bio %}<p class="bio-text">{{ profile_info.profile_bio }}</p>{% endif %}
             </div>
           </div>
-        </div>
+          {% endif %}
 
-        <div class="product-stats">
-          <span class="stat-item"><i class="fa-solid fa-eye"></i> {{ product.view_count }}</span>
-          {% if product.review_count > 0 %}
-            <span class="stat-sep">•</span>
-            <span class="stat-item stat-rating">
-              <i class="fa-solid fa-star"></i>
-              {{ product.rating_average|floatformat:1 }} ({{ product.review_count }})
-            </span>
-          {% endif %}
-          {% if product.total_sales > 0 %}
-            <span class="stat-sep">•</span>
-            <span class="stat-item"><i class="fa-solid fa-bag-shopping"></i> {{ product.total_sales }} sold</span>
-          {% endif %}
-          <span class="stat-sep">•</span>
-          <span class="stat-item
-            {% if product.stock == 0 %}out-of-stock
-            {% elif product.is_low_stock %}low-stock
-            {% else %}in-stock{% endif %}">
-            <i class="fa-solid fa-box"></i> {{ product.stock }}
-          </span>
-          {% if product.category %}
-            <span class="stat-sep">•</span>
-            <span class="stat-item">{{ product.category.category_name }}</span>
-          {% endif %}
-          {% if product.brand %}
-            <span class="stat-sep">•</span>
-            <span class="stat-item">{{ product.brand.brand_name }}</span>
-          {% endif %}
-        </div>
+          <p class="info-section-title"><i class="fa-solid fa-id-card"></i> Profile</p>
 
-      </a>
-    </div>
-    {% empty %}
-      <div class="card" style="grid-column:1/-1;margin-bottom:0;">
-        <div class="empty">
-          <div class="empty-icon"><i class="fas fa-box-open"></i></div>
-          {% if search_query or active_category or active_brand or active_stock %}
-            <p>No products match your filters.</p>
-            <a href="?" style="font-size:12px;color:var(--gold);margin-top:8px;display:inline-block;">Clear filters</a>
-          {% else %}
-            <p>No products listed yet.</p>
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-user-tag"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Profile Type</p>
+              <p class="info-block-value">{{ profile_info.get_profile_type_display|default:"—" }}</p>
+            </div>
+          </div>
+
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-eye"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Profile Views</p>
+              <p class="info-block-value">{{ profile_info.profile_views }}</p>
+            </div>
+          </div>
+
+          {% if profile_info.profile_gender %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-venus-mars"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Gender</p>
+              <p class="info-block-value">{{ profile_info.get_profile_gender_display }}</p>
+            </div>
+          </div>
           {% endif %}
+
+          {% if profile_info.show_location and profile_info.location_display %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Location</p>
+              <p class="info-block-value">{{ profile_info.location_display }}</p>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if profile_info.show_email and profile_user.email %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-envelope"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Email</p>
+              <p class="info-block-value">{{ profile_user.email }}</p>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-calendar-check"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Member Since</p>
+              <p class="info-block-value">{{ profile_user.date_joined|date:"M d, Y" }}</p>
+            </div>
+          </div>
+
+          {% if profile_user.role == 'dealer' and profile_info.business_name %}
+          <p class="info-section-title"><i class="fa-solid fa-briefcase"></i> Business</p>
+
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-building"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Business Name</p>
+              <p class="info-block-value">{{ profile_info.business_name }}</p>
+            </div>
+          </div>
+
+          {% if profile_info.business_type %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-industry"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Business Type</p>
+              <p class="info-block-value">{{ profile_info.business_type }}</p>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if profile_info.business_email %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Business Email</p>
+              <p class="info-block-value"><a href="mailto:{{ profile_info.business_email }}">{{ profile_info.business_email }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if profile_info.business_phone %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-phone"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Business Phone</p>
+              <p class="info-block-value"><a href="tel:{{ profile_info.business_phone }}">{{ profile_info.business_phone }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if profile_info.business_website %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-globe"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Website</p>
+              <p class="info-block-value"><a href="{{ profile_info.business_website }}" target="_blank" rel="noopener">{{ profile_info.business_website }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if profile_info.business_description %}
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-align-left"></i></div>
+            <div class="info-block-details">
+              <p class="info-block-label">Description</p>
+              <p class="info-block-value" style="font-weight:500;color:#374151">{{ profile_info.business_description }}</p>
+            </div>
+          </div>
+          {% endif %}
+          {% endif %}
+
+          {% with pi=profile_info %}
+          {% if pi.social_facebook or pi.social_twitter or pi.social_instagram or pi.social_linkedin or pi.social_youtube or pi.social_tiktok %}
+          <p class="info-section-title"><i class="fa-solid fa-share-nodes"></i> Social Media</p>
+          <div class="info-block">
+            <div class="info-block-icon"><i class="fa-solid fa-link"></i></div>
+            <div class="info-block-details">
+              <div class="social-links-row">
+                {% if pi.social_facebook %}<a class="social-link-btn" href="{{ pi.social_facebook }}" target="_blank" rel="noopener"><i class="fa-brands fa-facebook" style="color:#1877f2"></i> Facebook</a>{% endif %}
+                {% if pi.social_twitter %}<a class="social-link-btn" href="{{ pi.social_twitter }}" target="_blank" rel="noopener"><i class="fa-brands fa-x-twitter"></i> X</a>{% endif %}
+                {% if pi.social_instagram %}<a class="social-link-btn" href="{{ pi.social_instagram }}" target="_blank" rel="noopener"><i class="fa-brands fa-instagram" style="color:#e1306c"></i> Instagram</a>{% endif %}
+                {% if pi.social_linkedin %}<a class="social-link-btn" href="{{ pi.social_linkedin }}" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin" style="color:#0a66c2"></i> LinkedIn</a>{% endif %}
+                {% if pi.social_youtube %}<a class="social-link-btn" href="{{ pi.social_youtube }}" target="_blank" rel="noopener"><i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube</a>{% endif %}
+                {% if pi.social_tiktok %}<a class="social-link-btn" href="{{ pi.social_tiktok }}" target="_blank" rel="noopener"><i class="fa-brands fa-tiktok"></i> TikTok</a>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
         </div>
       </div>
-    {% endfor %}
-  </div>
+    </div>
+    <!-- /ABOUT TAB -->
 
-  {% if products_page.paginator.num_pages > 1 %}
-  <div style="display:flex;align-items:center;justify-content:center;
-              gap:6px;flex-wrap:wrap;margin:20px 0 8px;">
-    {% with base_params="q="|add:search_query|add:"&sort="|add:active_sort|add:"&category="|add:active_category|add:"&brand="|add:active_brand|add:"&stock="|add:active_stock %}
-    {% if products_page.has_previous %}
-      <a href="?{{ base_params }}&page={{ products_page.previous_page_number }}"
-         style="display:inline-flex;align-items:center;justify-content:center;
-                width:34px;height:34px;border-radius:var(--r-sm);
-                border:1px solid var(--border);background:var(--surface);
-                color:var(--ink-2);font-size:13px;text-decoration:none;">
-        <i class="fas fa-chevron-left"></i>
-      </a>
-    {% endif %}
-    {% for num in products_page.paginator.page_range %}
-      {% if products_page.number == num %}
-        <span style="display:inline-flex;align-items:center;justify-content:center;
-                     width:34px;height:34px;border-radius:var(--r-sm);
-                     background:var(--gold);color:#fff;
-                     font-size:13px;font-family:var(--font-display);font-weight:700;">
-          {{ num }}
-        </span>
-      {% elif num == 1 or num == products_page.paginator.num_pages or num >= products_page.number|add:"-2" and num <= products_page.number|add:"2" %}
-        <a href="?{{ base_params }}&page={{ num }}"
-           style="display:inline-flex;align-items:center;justify-content:center;
-                  width:34px;height:34px;border-radius:var(--r-sm);
-                  border:1px solid var(--border);background:var(--surface);
-                  color:var(--ink-2);font-size:13px;text-decoration:none;">
-          {{ num }}
-        </a>
-      {% elif num == products_page.number|add:"-3" or num == products_page.number|add:"3" %}
-        <span style="color:var(--ink-3);font-size:13px;padding:0 4px;">…</span>
-      {% endif %}
-    {% endfor %}
-    {% if products_page.has_next %}
-      <a href="?{{ base_params }}&page={{ products_page.next_page_number }}"
-         style="display:inline-flex;align-items:center;justify-content:center;
-                width:34px;height:34px;border-radius:var(--r-sm);
-                border:1px solid var(--border);background:var(--surface);
-                color:var(--ink-2);font-size:13px;text-decoration:none;">
-        <i class="fas fa-chevron-right"></i>
-      </a>
-    {% endif %}
-    {% endwith %}
-    <span style="font-size:11px;color:var(--ink-3);margin-left:4px;
-                 font-family:var(--font-mono);white-space:nowrap;">
-      Page {{ products_page.number }} of {{ products_page.paginator.num_pages }}
-    </span>
-  </div>
-  {% endif %}
-
+  </main>
 </div>
-{% endif %}
-<!-- /PRODUCTS TAB -->
 
-
-<!-- ══ FOLLOWERS TAB ════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-followers">
-  <div class="sec-head"><span class="sec-title">Followers</span><div class="sec-line"></div></div>
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title"><i class="fas fa-users"></i> Followers</div>
-      <span class="card-badge">{{ follower_count }}</span>
-    </div>
-    <div class="card-body">
-      {% for u in profile_info.followers.select_related|slice:":20" %}
-        <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="user-item">
-          <div class="user-thumb">
-            {% if u.profileinfo.profile_photo %}
-              <img src="{{ u.profileinfo.profile_photo.url }}" alt="">
-            {% else %}
-              {{ u.email_or_phone|slice:":1"|upper }}
-            {% endif %}
-          </div>
-          <div>
-            <div class="user-name">{{ u.profileinfo.profile_name|default:u.email_or_phone }}</div>
-            <div class="user-handle">{{ u.email_or_phone }}</div>
-          </div>
-        </a>
-      {% empty %}
-        <div class="empty">
-          <div class="empty-icon"><i class="fas fa-users"></i></div>
-          <p>No followers yet.</p>
-        </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-<!-- /FOLLOWERS TAB -->
-
-<!-- ══ FOLLOWING TAB ════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-following">
-  <div class="sec-head"><span class="sec-title">Following</span><div class="sec-line"></div></div>
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title"><i class="fas fa-user-check"></i> Following</div>
-      <span class="card-badge">{{ following_count }}</span>
-    </div>
-    <div class="card-body">
-      {% for u in profile_info.following.all|slice:":20" %}
-        <a href="{% url 'customer:profile_view' username=u.email_or_phone %}" class="user-item">
-          <div class="user-thumb">
-            {% if u.profileinfo.profile_photo %}
-              <img src="{{ u.profileinfo.profile_photo.url }}" alt="">
-            {% else %}
-              {{ u.email_or_phone|slice:":1"|upper }}
-            {% endif %}
-          </div>
-          <div>
-            <div class="user-name">{{ u.profileinfo.profile_name|default:u.email_or_phone }}</div>
-            <div class="user-handle">{{ u.email_or_phone }}</div>
-          </div>
-        </a>
-      {% empty %}
-        <div class="empty">
-          <div class="empty-icon"><i class="fas fa-user-slash"></i></div>
-          <p>Not following anyone yet.</p>
-        </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-<!-- /FOLLOWING TAB -->
-
-<!-- ══ ABOUT TAB ════════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-about">
-
-  {% if profile_info.profile_bio or profile_info.profile_tagline %}
-  <div class="sec-head"><span class="sec-title">Bio</span><div class="sec-line"></div></div>
-  <div class="bio-card">
-    {% if profile_info.profile_tagline %}
-      <div class="bio-tagline">{{ profile_info.profile_tagline }}</div>
-    {% endif %}
-    {% if profile_info.profile_bio %}
-      <div class="bio-text">{{ profile_info.profile_bio }}</div>
-    {% endif %}
-    <div class="meta-row">
-      <span class="meta-item">
-        <i class="fas fa-calendar"></i>
-        Joined {{ profile_user.date_joined|date:"M Y" }}
-      </span>
-      {% if profile_info.profile_language %}
-      <span class="meta-item">
-        <i class="fas fa-language"></i>
-        {{ profile_info.profile_language|upper }}
-      </span>
-      {% endif %}
-      {% if profile_info.business_website %}
-      <span class="meta-item">
-        <i class="fas fa-globe"></i>
-        <a href="{{ profile_info.business_website }}" target="_blank" rel="noopener">
-          {{ profile_info.business_website }}
-        </a>
-      </span>
-      {% endif %}
-    </div>
-    {% with pi=profile_info %}
-    {% if pi.social_facebook or pi.social_twitter or pi.social_instagram or pi.social_linkedin or pi.social_youtube or pi.social_tiktok %}
-    <div class="social-row">
-      {% if pi.social_facebook %}<a class="social-pill" href="{{ pi.social_facebook }}" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>{% endif %}
-      {% if pi.social_twitter  %}<a class="social-pill" href="{{ pi.social_twitter  }}" target="_blank"><i class="fab fa-x-twitter"></i> X</a>{% endif %}
-      {% if pi.social_instagram%}<a class="social-pill" href="{{ pi.social_instagram}}" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>{% endif %}
-      {% if pi.social_linkedin %}<a class="social-pill" href="{{ pi.social_linkedin }}" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>{% endif %}
-      {% if pi.social_youtube  %}<a class="social-pill" href="{{ pi.social_youtube  }}" target="_blank"><i class="fab fa-youtube"></i> YouTube</a>{% endif %}
-      {% if pi.social_tiktok   %}<a class="social-pill" href="{{ pi.social_tiktok   }}" target="_blank"><i class="fab fa-tiktok"></i> TikTok</a>{% endif %}
-    </div>
-    {% endif %}
-    {% endwith %}
-  </div>
-  {% endif %}
-
-  <div class="sec-head"><span class="sec-title">Details</span><div class="sec-line"></div></div>
-  <div class="card">
-    <div class="card-body">
-      <div class="info-list">
-
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-eye"></i></div>
-          <div>
-            <div class="info-label">Profile views</div>
-            <div class="info-value">{{ profile_info.profile_views }}</div>
-          </div>
-        </div>
-
-        {% if profile_user.role == 'dealer' and profile_info.business_name %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-building"></i></div>
-          <div>
-            <div class="info-label">Business</div>
-            <div class="info-value">{{ profile_info.business_name }}</div>
-          </div>
-        </div>
-        {% if profile_info.business_type %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-tag"></i></div>
-          <div>
-            <div class="info-label">Type</div>
-            <div class="info-value">{{ profile_info.business_type }}</div>
-          </div>
-        </div>
-        {% endif %}
-        {% if profile_info.business_email %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-envelope"></i></div>
-          <div>
-            <div class="info-label">Business email</div>
-            <div class="info-value">{{ profile_info.business_email }}</div>
-          </div>
-        </div>
-        {% endif %}
-        {% if profile_info.business_phone %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-phone"></i></div>
-          <div>
-            <div class="info-label">Business phone</div>
-            <div class="info-value">{{ profile_info.business_phone }}</div>
-          </div>
-        </div>
-        {% endif %}
-        {% endif %}
-
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-id-badge"></i></div>
-          <div>
-            <div class="info-label">Profile type</div>
-            <div class="info-value">{{ profile_info.get_profile_type_display }}</div>
-          </div>
-        </div>
-
-        {% if profile_info.profile_gender %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-venus-mars"></i></div>
-          <div>
-            <div class="info-label">Gender</div>
-            <div class="info-value">{{ profile_info.get_profile_gender_display }}</div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if profile_info.show_location and profile_info.location_display %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-location-dot"></i></div>
-          <div>
-            <div class="info-label">Location</div>
-            <div class="info-value">{{ profile_info.location_display }}</div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if profile_info.show_email and profile_user.email %}
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-envelope"></i></div>
-          <div>
-            <div class="info-label">Email</div>
-            <div class="info-value">{{ profile_user.email }}</div>
-          </div>
-        </div>
-        {% endif %}
-
-        <div class="info-row">
-          <div class="info-icon"><i class="fas fa-calendar"></i></div>
-          <div>
-            <div class="info-label">Member since</div>
-            <div class="info-value">{{ profile_user.date_joined|date:"d M Y" }}</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  {% if profile_user.role == 'dealer' and profile_info.business_description %}
-  <div class="sec-head"><span class="sec-title">About the business</span><div class="sec-line"></div></div>
-  <div class="card">
-    <div class="card-body">
-      <p style="font-size:14px;color:var(--ink-2);line-height:1.75;">
-        {{ profile_info.business_description }}
-      </p>
-    </div>
-  </div>
-  {% endif %}
-
-</div>
-<!-- /ABOUT TAB -->
-
-</div><!-- /page -->
-
-
-<!-- ═══════════════════════════════
-     MOBILE FIXED ORDER BAR
-════════════════════════════════ -->
+<!-- MOBILE ORDER BAR -->
 {% if profile_user.role == 'dealer' %}
 {% with pi=profile_info %}
 {% if pi.social_whatsapp or pi.show_phone and pi.profile_phone %}
 <div class="mob-order-bar" id="mobBar">
-
   {% if pi.social_whatsapp %}
-  <a href="https://wa.me/{{ pi.social_whatsapp }}?text=Hi,%20I%20found%20your%20profile%20on%20PIELAM"
-     target="_blank"
-     class="order-btn whatsapp"
-     rel="noopener noreferrer">
-    <i class="fa-brands fa-whatsapp"></i>
-    <span>WhatsApp</span>
+  <a href="https://wa.me/{{ pi.social_whatsapp }}?text=Hi,%20I%20found%20your%20profile%20on%20PIELAM" target="_blank" class="order-btn whatsapp" rel="noopener noreferrer">
+    <i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span>
   </a>
   {% endif %}
-
   {% if pi.show_phone and pi.profile_phone %}
-  <a href="tel:{{ pi.profile_phone }}"
-     class="order-btn call">
-    <i class="fa-solid fa-phone"></i>
-    <span>Call</span>
+  <a href="tel:{{ pi.profile_phone }}" class="order-btn call">
+    <i class="fa-solid fa-phone"></i><span>Call</span>
   </a>
   {% endif %}
-
 </div>
 {% endif %}
 {% endwith %}
@@ -1533,33 +928,94 @@ body:has(.mob-order-bar) .page {
 
 <div id="toast-wrap"></div>
 
+<!-- ENGINE DETAILS MODAL (Media / Links / Text) — mirrors the home feed's modal -->
+<div class="gallery-modal" id="engine-gallery-modal" role="dialog" aria-modal="true" aria-label="Engine details">
+  <div class="gallery-body">
+    <div class="gallery-head">
+      <span class="gallery-title" id="engine-gallery-title">Engine details</span>
+      <button class="gallery-close" id="engine-gallery-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="gallery-tabs">
+      <button class="gallery-tab active" data-tab="media" type="button">Media</button>
+      <button class="gallery-tab" data-tab="links" type="button">Links</button>
+      <button class="gallery-tab" data-tab="text" type="button">Text</button>
+    </div>
+    <div class="gallery-scroll">
+      <div class="gallery-tabpanel active" data-panel="media"><div class="gallery-grid" id="engine-gallery-grid"></div></div>
+      <div class="gallery-tabpanel" data-panel="links"><div id="engine-gallery-links"></div></div>
+      <div class="gallery-tabpanel" data-panel="text">
+        <p class="modal-text-body" id="engine-gallery-text"></p>
+        <button type="button" class="modal-copy-btn" id="engine-gallery-copy-text">
+          <i class="fa-regular fa-copy"></i> Copy text
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARD TEMPLATES -->
+
+<template id="productCardTemplate">
+  <article class="feed-product-card" data-uuid="">
+    <div class="card-img-wrap" data-role="img-wrap">
+      <img data-role="product-image" alt="" loading="lazy">
+      <div class="card-top-row">
+        <div class="badge-stack" data-role="badge-stack"></div>
+        <div class="stat-cluster">
+          <i class="fa-solid fa-heart" style="color:#ef4444;font-size:.75rem"></i>
+          <span data-role="wishlist-count">0</span>
+          <i class="fa-regular fa-eye" style="color:#34d399;font-size:.7rem"></i>
+          <span data-role="view-count">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video block: filled with a REAL <video> or <iframe> embed by
+         JS below. No thumbnail, no fake play button, no custom
+         overlay UI — identical to how the product detail page embeds
+         it. Hidden entirely when the product has no video. -->
+    <div class="card-video" data-role="video-container" style="display:none" onclick="event.stopPropagation()"></div>
+
+    <div class="card-info">
+      <a href="#" class="card-title-link" data-role="product-title"></a>
+      <div class="card-brand">
+        <div class="brand-dot" data-role="brand-initial">—</div>
+        <span data-role="brand-name">No Brand</span>
+        <i class="fa-solid fa-circle-check" style="font-size:.5rem;color:#0891b2;display:none" data-role="brand-verified"></i>
+      </div>
+      <p class="card-sub-desc" data-role="sub-desc" style="display:none"></p>
+
+      <div class="card-rating-row">
+        <div class="stars" data-role="stars">
+          <span class="rating-val" data-role="rating-val">0.00</span>
+        </div>
+        <span class="price-contact" data-role="price-contact" style="display:none">Contact Seller</span>
+        <span class="price-block" data-role="price-block">
+          <span class="price-mrp" data-role="price-mrp" style="display:none"></span>
+          <span class="price" data-role="price-final"></span>
+        </span>
+      </div>
+    </div>
+  </article>
+</template>
+
+<template id="cardEmptyStateTemplate">
+  <div style="grid-column:1/-1">
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
+      <h3 class="empty-title">Nothing here yet</h3>
+    </div>
+  </div>
+</template>
+
+{{ products_initial_json|json_script:"products-initial-data" }}
+{{ services_initial_json|json_script:"services-initial-data" }}
+
 {% endblock %}
 
 
 {% block extra_js %}
 <script>
-// ── Tabs (content tabs, e.g. product detail — kept for compatibility) ──
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + target).classList.add('active');
-    });
-});
-
-// ── STAT TABS (profile page tabs) ────────────────────────
-document.querySelectorAll('.tab-stat').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab-stat').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    const panel = document.getElementById('tab-' + tab.dataset.tab);
-    if (panel) panel.classList.add('active');
-  });
-});
-
 const getCsrf = () =>
   document.cookie.split(';').map(c => c.trim())
     .find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
@@ -1568,21 +1024,83 @@ function toast(msg, type = 'info') {
   const icons = { success: 'circle-check', error: 'circle-xmark', info: 'circle-info' };
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.innerHTML = `<i class="fas fa-${icons[type] || 'circle-info'}"></i><span>${msg}</span>`;
+  el.innerHTML = `<i class="fas fa-${icons[type] || 'circle-info'}"></i><span></span>`;
+  el.querySelector('span').textContent = msg;
   document.getElementById('toast-wrap').appendChild(el);
   setTimeout(() => { el.classList.add('leaving'); setTimeout(() => el.remove(), 300); }, 3200);
 }
 
-// ── FOLLOW / UNFOLLOW ──────────────────────────────────────
+function esc(s) {
+  return (s === null || s === undefined ? '' : String(s)).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+function domainOf(url, fallback) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return fallback || ''; }
+}
+function faviconUrl(domainOrUrl) {
+  const host = domainOrUrl && domainOrUrl.indexOf('/') === -1 ? domainOrUrl : domainOf(domainOrUrl);
+  return host ? 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=64' : '';
+}
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-' + target);
+    if (panel) panel.classList.add('active');
+    btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
+});
+
+// Tab bar horizontal scrolling — works with vertical mouse wheel/trackpad
+// input (not just touch swipe) and supports click-and-drag on desktop,
+// so the tabs are scrollable left/right on every input method.
+(function () {
+  const tabsInner = document.querySelector('.profile-tabs-inner');
+  if (!tabsInner) return;
+
+  tabsInner.addEventListener('wheel', (e) => {
+    if (tabsInner.scrollWidth <= tabsInner.clientWidth) return;
+    const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (delta === 0) return;
+    e.preventDefault();
+    tabsInner.scrollLeft += delta;
+  }, { passive: false });
+
+  let isDown = false, startX = 0, startScroll = 0, dragged = false;
+  tabsInner.addEventListener('mousedown', (e) => {
+    isDown = true; dragged = false;
+    startX = e.pageX; startScroll = tabsInner.scrollLeft;
+    tabsInner.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => { isDown = false; tabsInner.style.cursor = ''; });
+  tabsInner.addEventListener('mouseleave', () => { isDown = false; tabsInner.style.cursor = ''; });
+  tabsInner.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    const walk = e.pageX - startX;
+    if (Math.abs(walk) > 4) dragged = true;
+    tabsInner.scrollLeft = startScroll - walk;
+  });
+  // Suppress the click that follows a drag so it doesn't switch tabs unintentionally.
+  tabsInner.addEventListener('click', (e) => {
+    if (dragged) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+})();
+
+// Follow / Unfollow (single canonical button in the profile header —
+// every engine card belongs to this same profile_user, so there's no
+// need for a per-card follow button the way the multi-poster home
+// feed has)
 const followBtn = document.getElementById('followBtn');
 if (followBtn) {
   followBtn.addEventListener('click', async () => {
     const username  = followBtn.dataset.username;
     const following = followBtn.dataset.following === 'true';
-
-    const url = following
-      ? `/customer/unfollow/${username}/`
-      : `/customer/follow/${username}/`;
+    const url = following ? `/customer/unfollow/${username}/` : `/customer/follow/${username}/`;
 
     followBtn.disabled = true;
     followBtn.style.opacity = '0.6';
@@ -1598,10 +1116,8 @@ if (followBtn) {
       });
 
       if (!res.ok) {
-        const msg = res.status === 403
-          ? 'Please log in to follow users.'
-          : res.status === 404
-          ? 'User not found.'
+        const msg = res.status === 403 ? 'Please log in to follow users.'
+          : res.status === 404 ? 'User not found.'
           : `Server error (${res.status}).`;
         toast(msg, 'error');
         return;
@@ -1609,24 +1125,22 @@ if (followBtn) {
 
       const data = await res.json();
       const nowFollowing = data.following;
-
       followBtn.dataset.following = nowFollowing ? 'true' : 'false';
 
       if (nowFollowing) {
-        followBtn.className = 'btn btn-danger';
+        followBtn.className = 'profile-action-btn btn-unfollow';
         followBtn.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
         toast('You are now following this user.', 'success');
       } else {
-        followBtn.className = 'btn btn-primary';
+        followBtn.className = 'profile-action-btn btn-follow';
         followBtn.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
         toast('Unfollowed successfully.', 'info');
       }
 
-      const countEl = document.getElementById('followerCount');
-      if (countEl && data.follower_count !== undefined) {
-        countEl.textContent = data.follower_count;
+      const pills = document.querySelectorAll('.profile-pill');
+      if (pills[1] && data.follower_count !== undefined) {
+        pills[1].textContent = data.follower_count + ' Followers';
       }
-
     } catch (err) {
       console.error('Follow request failed:', err);
       toast('Network error. Please try again.', 'error');
@@ -1637,19 +1151,714 @@ if (followBtn) {
   });
 }
 
-// ── SHARE ──────────────────────────────────────────────────
+// Share
 function shareProfile() {
   const url = window.location.href;
+  const title = "{{ profile_info.profile_name|default:profile_user.email_or_phone|escapejs }}";
   if (navigator.share) {
-    navigator.share({
-      title: '{{ profile_info.profile_name|default:profile_user.email_or_phone|escapejs }} — PIELAM',
-      url,
-    }).catch(() => {});
+    navigator.share({ title: title, url }).catch(() => {});
   } else {
     navigator.clipboard.writeText(url)
       .then(() => toast('Profile link copied!', 'success'))
       .catch(() => toast('Could not copy link.', 'error'));
   }
 }
+
+// Wishlist toggle
+function toggleWishlist(uuid, btn) {
+  const icon = btn.querySelector('i');
+  fetch('/ponno/api/wishlist/toggle/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+    body: JSON.stringify({ product_uuid: uuid })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        if (data.added) {
+          icon.classList.replace('fa-regular', 'fa-solid');
+          icon.style.color = '#ef4444';
+          toast('Added to wishlist', 'success');
+        } else {
+          icon.classList.replace('fa-solid', 'fa-regular');
+          icon.style.color = '#fff';
+          toast('Removed from wishlist', 'info');
+        }
+      } else {
+        toast('Please log in to save items.', 'error');
+      }
+    })
+    .catch(err => { console.warn('Wishlist toggle failed:', err); toast('Network error.', 'error'); });
+}
+
+// URL builders (Django's url  can't take a JS variable — reverse
+// once with a placeholder, swap it in at call time)
+const URLS = {
+  productDetail: "{% url 'ponno:product_detail' slug='__SLUG__' %}",
+  loadMoreProducts: "{% if profile_user.role == 'dealer' %}{% url 'customer:load_more_products' username=profile_user.email_or_phone %}{% endif %}",
+  loadMoreServices: "{% url 'customer:load_more_services' username=profile_user.email_or_phone %}",
+};
+function productDetailUrl(slug) {
+  return URLS.productDetail.replace('__SLUG__', encodeURIComponent(slug));
+}
+
+// PRODUCT CARD RENDERING
+const productCardTpl = document.getElementById('productCardTemplate');
+
+function buildProductCard(item) {
+  const node = productCardTpl.content.cloneNode(true);
+  const article = node.querySelector('.feed-product-card');
+
+  article.dataset.uuid = item.uuid || '';
+  article.addEventListener('click', () => {
+    if (item.slug) window.location.href = productDetailUrl(item.slug);
+  });
+
+  const img = node.querySelector('[data-role="product-image"]');
+  if (item.image_url) {
+    img.src = item.image_url;
+    img.alt = item.product_name || '';
+  } else {
+    img.remove();
+  }
+
+  const badgeStack = node.querySelector('[data-role="badge-stack"]');
+  const badges = [];
+  if (item.stock === 0) {
+    badges.push('<span class="img-badge badge-stock"><i class="fa-solid fa-triangle-exclamation"></i> Out of Stock</span>');
+  } else if (item.is_low_stock) {
+    badges.push(`<span class="img-badge badge-stock"><i class="fa-solid fa-triangle-exclamation"></i> Only ${item.stock} left</span>`);
+  }
+  if (item.discount_percentage > 0) {
+    badges.push(`<span class="img-badge badge-sale"><i class="fa-solid fa-tag"></i> -${Math.round(item.discount_percentage)}%</span>`);
+  }
+  if (item.free_shipping) {
+    badges.push('<span class="img-badge badge-ship"><i class="fa-solid fa-truck"></i></span>');
+  }
+  if (item.is_featured) {
+    badges.push('<span class="img-badge badge-trend"><i class="fa-solid fa-fire"></i></span>');
+  }
+  badgeStack.innerHTML = badges.join('');
+
+  node.querySelector('[data-role="wishlist-count"]').textContent = item.wishlist_count ?? 0;
+  node.querySelector('[data-role="view-count"]').textContent = item.view_count ?? 0;
+
+  // Video block — real <video> or real <iframe> embed, exactly as it
+  // would render on the product detail page. No custom overlay, no
+  // fake play button, no thumbnail swap, no volume/expand icons.
+  if (item.video_info && item.video_info.embed_url) {
+    const vi = item.video_info;
+    const container = node.querySelector('[data-role="video-container"]');
+    container.style.display = '';
+
+    if (vi.type === 'video') {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'video-file-wrapper';
+      const video = document.createElement('video');
+      video.controls = true;
+      video.preload = 'metadata';
+      video.className = 'native-video';
+      const source = document.createElement('source');
+      source.src = vi.embed_url;
+      source.type = vi.mime_type || 'video/mp4';
+      video.appendChild(source);
+      wrapper.appendChild(video);
+      container.appendChild(wrapper);
+    } else {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'video-wrapper';
+      const iframe = document.createElement('iframe');
+      iframe.src = vi.embed_url;
+      iframe.title = (item.product_name || '') + ' video';
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+      iframe.allowFullscreen = true;
+      iframe.loading = 'lazy';
+      wrapper.appendChild(iframe);
+      container.appendChild(wrapper);
+    }
+  }
+
+  // Title / brand / description
+  const titleLink = node.querySelector('[data-role="product-title"]');
+  titleLink.textContent = item.product_name || '';
+  titleLink.href = item.slug ? productDetailUrl(item.slug) : '#';
+  titleLink.addEventListener('click', (e) => e.stopPropagation());
+
+  node.querySelector('[data-role="brand-initial"]').textContent = (item.brand_name || '—').slice(0, 1);
+  node.querySelector('[data-role="brand-name"]').textContent = item.brand_name || 'No Brand';
+  if (item.is_verified) node.querySelector('[data-role="brand-verified"]').style.display = '';
+
+  if (item.short_description) {
+    const desc = node.querySelector('[data-role="sub-desc"]');
+    desc.style.display = '';
+    desc.textContent = item.short_description;
+  }
+
+  const starsWrap = node.querySelector('[data-role="stars"]');
+  const avg = Math.round(item.rating_average || 0);
+  const starIcons = document.createDocumentFragment();
+  for (let i = 1; i <= 5; i++) {
+    const i_el = document.createElement('i');
+    i_el.className = i <= avg ? 'fa-solid fa-star' : 'fa-regular fa-star empty';
+    starIcons.appendChild(i_el);
+  }
+  starsWrap.insertBefore(starIcons, starsWrap.firstChild);
+  node.querySelector('[data-role="rating-val"]').textContent = (item.rating_average || 0).toFixed(2);
+
+  if (item.price_hidden) {
+    node.querySelector('[data-role="price-contact"]').style.display = '';
+    node.querySelector('[data-role="price-block"]').style.display = 'none';
+  } else {
+    const mrpEl = node.querySelector('[data-role="price-mrp"]');
+    const finalEl = node.querySelector('[data-role="price-final"]');
+    const currency = item.currency || '';
+    if (item.discount_percentage > 0 && item.final_price != null) {
+      mrpEl.style.display = '';
+      mrpEl.textContent = `${currency}${Math.round(item.selling_price)} Tk`;
+      finalEl.textContent = `${currency}${Math.round(item.final_price)} Tk`;
+    } else {
+      finalEl.textContent = `${currency}${Math.round(item.selling_price)} Tk`;
+    }
+  }
+
+  return node;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ENGINE CARD RENDERING — full parity with home.html's post-card,
+// EXCEPT the per-card profile attribution row (avatar + name) has
+// been intentionally removed: every card on this page belongs to
+// the same profile_user, so repeating their photo/name on every
+// card was redundant (unlike the home feed's multi-poster cards).
+// ══════════════════════════════════════════════════════════════
+
+const RETRY_URL_TMPL = "/api/connected-services/{id}/refresh/";
+
+const PLATFORM_LABELS = {
+  youtube: 'YouTube', vimeo: 'Vimeo', dailymotion: 'Dailymotion',
+  rumble: 'Rumble', streamable: 'Streamable', twitch: 'Twitch',
+  twitch_clip: 'Twitch', facebook: 'Facebook', tiktok: 'TikTok',
+  twitter: 'X', direct: 'source', unknown: 'source',
+};
+
+// Known native player shape per platform — cross-origin iframes can't
+// be measured client-side, so a portrait TikTok embed gets its
+// correct 9:16 box instead of being squashed into a generic 4:3 one.
+const PLATFORM_ASPECT_RATIOS = {
+  youtube: '16 / 9', vimeo: '16 / 9', dailymotion: '16 / 9',
+  rumble: '16 / 9', streamable: '16 / 9', twitch: '16 / 9',
+  facebook: '16 / 9', twitter: '16 / 9', twitch_clip: '16 / 9',
+  tiktok: '9 / 16',
+};
+
+// Platforms whose iframe embed can fail with zero JS-visible error
+// (private/region-blocked video, no App-domain association, etc.) —
+// these get a small "Watch on X ↗" link so the card is never a dead
+// end even when the embed silently renders blank.
+const SILENT_FAIL_PLATFORMS = new Set([
+  'facebook', 'tiktok', 'twitter', 'twitch', 'twitch_clip', 'unknown',
+]);
+
+const enginePostsById = new Map(); // svc_id -> { post, media } — full unsliced media, for the modal
+
+function engineSignalBars(post) {
+  const vals = [post.images_count || 0, engineVideoCount(post)];
+  const max = Math.max(1, ...vals);
+  const cls = ['image', 'video'];
+  return `<span class="signal-bars" title="${vals[0]} photos · ${vals[1]} videos">
+    ${vals.map((v, i) => {
+      const h = v ? Math.max(4, Math.round((v / max) * 14)) : 3;
+      return `<i class="${v ? 'on ' + cls[i] : ''}" style="height:${h}px"></i>`;
+    }).join('')}
+  </span>`;
+}
+
+function engineStatusRowHTML(post) {
+  if (post.fetch_status === 'error') {
+    const retryBtn = post.is_own_post
+      ? `<button type="button" class="retry-btn" data-retry-id="${esc(post.svc_id)}">Retry</button>` : '';
+    return `<div class="status-row is-error">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span class="status-text">Couldn't load a preview${post.fetch_error ? ' — ' + esc(post.fetch_error) : ''}</span>
+              ${retryBtn}
+            </div>`;
+  }
+  if (post.fetch_status === 'pending') {
+    return `<div class="status-row is-pending">
+              <i class="fa-solid fa-circle-notch spin"></i>
+              <span class="status-text">Fetching preview — queued ${esc(post.posted_at_human)}</span>
+            </div>`;
+  }
+  return '';
+}
+
+function engineLinksPreviewHTML(post) {
+  const links = (post.links || []).filter((l) => l.href).slice(0, 2);
+  if (!links.length) return '';
+  return `<div class="links-prev">${links.map((lnk) => `
+    <a href="${esc(lnk.href)}" target="_blank" rel="noopener noreferrer" class="link-row">
+      <span class="link-ico"><i class="fa-solid fa-link"></i></span>
+      <span class="link-body">
+        <span class="link-text">${esc(lnk.text || lnk.href)}</span>
+        <span class="link-host">${esc(domainOf(lnk.href, lnk.href))}</span>
+      </span>
+    </a>`).join('')}</div>`;
+}
+
+function engineTextPreviewHTML(post) {
+  if (!post.has_text) return '';
+  const preview = (post.text || '').slice(0, 200);
+  return `<div class="text-prev">
+    <p class="text-prev-body">${esc(preview)}</p>
+    <button type="button" class="text-prev-expand" data-open-modal="${esc(post.svc_id)}" data-open-tab="text">Read full text →</button>
+  </div>`;
+}
+
+function engineImageTarget(post, img) { return img.href || post.svc_url; }
+
+// `v` is expected in the backend-normalized shape produced by
+// megamind.utils.video_info.get_video_info_cached:
+//   { platform, embed_url, watch_url, thumbnail, type, mime_type?, embeddable? }
+function videoTagHTML(v, opts) {
+  opts = opts || {};
+  const style = opts.style || '';
+  const src = v.embed_url || v.url || '';
+  const watchUrl = v.watch_url || src;
+
+  if (v.type === 'iframe') {
+    if (v.embeddable === false) {
+      const label = PLATFORM_LABELS[v.platform] || 'source';
+      const bg = v.thumbnail ? `background-image:url('${esc(v.thumbnail)}');background-size:cover;background-position:center;` : '';
+      return `<a class="embed-fallback-link is-standalone" href="${esc(watchUrl)}" target="_blank" rel="noopener"
+                 style="${style}${bg}" onclick="event.stopPropagation()">
+                <span>Watch on ${esc(label)} <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+              </a>`;
+    }
+
+    const iframe = `<iframe src="${esc(src)}" style="${style}" title="video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen loading="lazy" onclick="event.stopPropagation()"></iframe>`;
+    if (!opts.withFallbackLink || !SILENT_FAIL_PLATFORMS.has(v.platform)) return iframe;
+    const label = PLATFORM_LABELS[v.platform] || 'source';
+    return `<div class="embed-with-fallback">
+              ${iframe}
+              <a class="embed-fallback-link" href="${esc(watchUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                Watch on ${esc(label)} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+            </div>`;
+  }
+
+  return `<video controls preload="metadata" style="${style}" onclick="event.stopPropagation()" ${v.thumbnail ? `poster="${esc(v.thumbnail)}"` : ''}>
+            <source src="${esc(src)}" type="${esc(v.mime_type || 'video/mp4')}">
+            Your browser can't play this video. <a href="${esc(watchUrl)}" target="_blank" rel="noopener">Watch it here</a> instead.
+          </video>`;
+}
+
+// Number of videos actually available to render for a post. A single
+// video only counts if post.video_info resolved to something real
+// (is_fallback === false), never a themed placeholder clip.
+function engineVideoCount(post) {
+  if (post.videos && post.videos.length) return post.videos_count || post.videos.length;
+  if (post.video_info && post.video_info.is_fallback === false) return 1;
+  return 0;
+}
+
+// Full (unsliced) media set for a post — the card mosaic only shows
+// the first 4; the "+N" overlay and count pills open the modal to
+// this complete set.
+function buildEngineMediaSet(post) {
+  const videos = (post.videos && post.videos.length)
+    ? post.videos
+    : (post.video_info && post.video_info.is_fallback === false ? [post.video_info] : []);
+  return [
+    ...videos.map((v) => ({ kind: 'video', ...v })),
+    ...(post.images || []).map((im) => ({ kind: 'image', url: im.url, alt: im.alt, href: im.href })),
+  ];
+}
+
+function engineMosaicHTML(post) {
+  const media = buildEngineMediaSet(post);
+  enginePostsById.set(String(post.svc_id), { post, media });
+  if (!media.length) return '';
+
+  const shown = media.slice(0, 4);
+  const extra = media.length - shown.length;
+
+  const cells = shown.map((it, i) => {
+    const isLast = i === shown.length - 1 && extra > 0;
+    const classes = ['cell', it.kind === 'video' ? 'is-video' : ''];
+    if (isLast) classes.push('more-overlay');
+    const dataMore = isLast ? ` data-more="+${extra}"` : '';
+
+    let inner;
+    if (isLast) {
+      const thumb = it.kind === 'video' ? (it.thumbnail || post.og_thumbnail || '') : it.url;
+      inner = `<button type="button" class="cell-gallery-btn" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"
+                  aria-label="View all ${media.length} items for this post" style="background-image:url('${esc(thumb)}')"></button>`;
+    } else if (it.kind === 'video') {
+      inner = videoTagHTML(it, { style: 'width:100%;height:100%;object-fit:cover;', withFallbackLink: true });
+    } else {
+      inner = `<a class="media-link" href="${esc(engineImageTarget(post, it))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                  <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy"></a>`;
+    }
+    return `<div class="${classes.join(' ')}"${dataMore}>${inner}</div>`;
+  }).join('');
+
+  const variant = shown.length === 1 ? 'm-solo' : '';
+  const soloVideoAttrs = (variant === 'm-solo' && shown[0].kind === 'video')
+    ? ` data-video-platform="${esc(shown[0].platform || '')}" data-video-type="${esc(shown[0].type || '')}"`
+    : '';
+  return `<div class="post-media ${variant}" data-count="${shown.length}"${soloVideoAttrs}>${cells}</div>`;
+}
+
+// Sets --media-ar on a solo-image/video mosaic to reflect the real
+// shape of its content instead of always forcing the 4:3 fallback.
+function bindMediaAspectRatio(containerEl, mediaEl, kind) {
+  if (!containerEl || !mediaEl) return;
+  const apply = (w, h) => { if (w > 0 && h > 0) containerEl.style.setProperty('--media-ar', `${w} / ${h}`); };
+  if (kind === 'video' && mediaEl.tagName === 'VIDEO') {
+    if (mediaEl.readyState >= 1 && mediaEl.videoWidth) apply(mediaEl.videoWidth, mediaEl.videoHeight);
+    else mediaEl.addEventListener('loadedmetadata', () => apply(mediaEl.videoWidth, mediaEl.videoHeight), { once: true });
+  } else if (kind === 'image') {
+    if (mediaEl.complete && mediaEl.naturalWidth) apply(mediaEl.naturalWidth, mediaEl.naturalHeight);
+    else mediaEl.addEventListener('load', () => apply(mediaEl.naturalWidth, mediaEl.naturalHeight), { once: true });
+  }
+}
+
+function bindSoloAspectRatios(root) {
+  root.querySelectorAll('.post-media.m-solo').forEach((container) => {
+    const cell = container.querySelector('.cell');
+    if (!cell) return;
+
+    const platform = container.getAttribute('data-video-platform');
+    const videoType = container.getAttribute('data-video-type');
+
+    if (videoType === 'iframe' && platform) {
+      const ratio = PLATFORM_ASPECT_RATIOS[platform];
+      if (ratio) { container.style.setProperty('--media-ar', ratio); return; }
+    }
+
+    const video = cell.querySelector('video');
+    const img = cell.querySelector('img');
+    if (video) bindMediaAspectRatio(container, video, 'video');
+    else if (img) bindMediaAspectRatio(container, img, 'image');
+  });
+}
+
+function renderEngineCard(post) {
+  const domain = post.service_domain || domainOf(post.svc_url, post.svc_name);
+  const videoCount = engineVideoCount(post);
+  return `
+    <article class="post-card enter" data-service-type="${esc(post.svc_type)}" data-fetch="${esc(post.fetch_status)}">
+      <div class="post-card-head">
+        <div class="post-card-head-right">${engineSignalBars(post)}</div>
+      </div>
+      <div class="stamp">${esc(post.action_label || 'connected a new source')}</div>
+      <div class="post-card-body">
+        <p class="post-card-title"><a href="${esc(post.svc_url)}" target="_blank" rel="noopener noreferrer">${esc(post.og_title || post.svc_name)}</a></p>
+        ${post.og_description ? `<p class="post-card-desc">${esc(post.og_description)}</p>` : ''}
+        ${engineStatusRowHTML(post)}
+        ${engineMosaicHTML(post)}
+        ${engineLinksPreviewHTML(post)}
+        ${engineTextPreviewHTML(post)}
+        <div class="post-card-counts">
+          <span class="counts-left">
+            ${post.images_count ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"><i class="fa-solid fa-image image"></i>${post.images_count}</button>` : ''}
+            ${videoCount ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"><i class="fa-solid fa-video video"></i>${videoCount}</button>` : ''}
+            ${post.links_count ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="links"><i class="fa-solid fa-link"></i>${post.links_count}</button>` : ''}
+            <a class="visit-source" href="${esc(post.svc_url)}" target="_blank" rel="noopener">
+              <img class="favicon" src="https://www.google.com/s2/favicons?domain=${esc(domain)}&sz=32" alt="" loading="lazy">
+              ${esc(domain)} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </span>
+          <span class="counts-right">
+            <button type="button" class="icon-btn" title="Copy link" data-copy-link="${esc(post.svc_url)}"><i class="fa-regular fa-copy"></i></button>
+          </span>
+        </div>
+      </div>
+    </article>`;
+}
+
+function buildEngineCard(item) {
+  return renderEngineCard(item);
+}
+
+// ── Engine details modal (Media / Links / Text) ─────────────────
+
+const engineModalEls = {
+  modal:  document.getElementById('engine-gallery-modal'),
+  title:  document.getElementById('engine-gallery-title'),
+  grid:   document.getElementById('engine-gallery-grid'),
+  links:  document.getElementById('engine-gallery-links'),
+  text:   document.getElementById('engine-gallery-text'),
+  close:  document.getElementById('engine-gallery-close'),
+  tabs:   document.querySelectorAll('#engine-gallery-modal .gallery-tab'),
+  panels: document.querySelectorAll('#engine-gallery-modal .gallery-tabpanel'),
+};
+
+function openEngineModal(svcId, tab) {
+  const entry = enginePostsById.get(String(svcId));
+  if (!entry) return;
+  const { post, media } = entry;
+
+  engineModalEls.title.textContent = post.og_title || post.svc_name || 'Engine details';
+
+  engineModalEls.grid.innerHTML = media.length
+    ? media.map((it) => it.kind === 'video'
+        ? `<div class="gallery-cell">${videoTagHTML(it, { style: 'width:100%;height:100%;object-fit:cover;', withFallbackLink: true })}</div>`
+        : `<a class="gallery-cell" href="${esc(engineImageTarget(post, it))}" target="_blank" rel="noopener">
+             <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy"></a>`
+      ).join('')
+    : '<p class="gallery-empty">No images or videos attached.</p>';
+
+  const links = (post.links || []).filter((l) => l.href);
+  engineModalEls.links.innerHTML = links.length
+    ? links.map((lnk) => {
+        const fav = faviconUrl(lnk.href);
+        const favImg = fav
+          ? `<img class="favicon" style="width:30px;height:30px;border-radius:8px;padding:5px;background:var(--blue-bg);" src="${esc(fav)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+          : '<span class="link-ico"></span>';
+        return `<a href="${esc(lnk.href)}" target="_blank" rel="noopener noreferrer" class="link-row" style="margin-bottom:8px;">
+                  ${favImg}
+                  <span class="link-body">
+                    <span class="link-text">${esc(lnk.text || lnk.href)}</span>
+                    <span class="link-host">${esc(domainOf(lnk.href, lnk.href))}</span>
+                  </span>
+                </a>`;
+      }).join('')
+    : '<p class="gallery-empty">No links extracted.</p>';
+
+  engineModalEls.text.textContent = post.text || 'No text extracted for this listing.';
+
+  engineModalEls.modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchEngineModalTab(tab || 'media');
+}
+
+function closeEngineModal() {
+  engineModalEls.modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function switchEngineModalTab(tab) {
+  engineModalEls.tabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
+  engineModalEls.panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
+}
+
+if (engineModalEls.modal) {
+  engineModalEls.tabs.forEach((t) => t.addEventListener('click', () => switchEngineModalTab(t.dataset.tab)));
+  engineModalEls.close.addEventListener('click', closeEngineModal);
+  engineModalEls.modal.addEventListener('click', (e) => { if (e.target === engineModalEls.modal) closeEngineModal(); });
+  document.getElementById('engine-gallery-copy-text').addEventListener('click', () => {
+    navigator.clipboard.writeText(engineModalEls.text.textContent || '')
+      .then(() => toast('Text copied', 'success')).catch(() => toast('Copy failed', 'error'));
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEngineModal(); });
+}
+
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('[data-open-modal]');
+  if (trigger) {
+    e.preventDefault();
+    openEngineModal(trigger.getAttribute('data-open-modal'), trigger.getAttribute('data-open-tab') || 'media');
+  }
+});
+
+// Retry (own posts only — delegates straight to megamind's refresh endpoint)
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest('.retry-btn');
+  if (!btn || btn.disabled) return;
+  const svcId = btn.getAttribute('data-retry-id');
+
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Retrying…';
+
+  fetch(RETRY_URL_TMPL.replace('{id}', svcId), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+    credentials: 'same-origin',
+  })
+    .then((r) => {
+      if (r.status === 429) { toast('Please wait before retrying again', 'info'); return; }
+      if (!r.ok) throw new Error('refresh failed');
+      toast('Refresh queued', 'success');
+    })
+    .catch(() => toast('Retry failed — try again shortly', 'error'))
+    .finally(() => { btn.disabled = false; btn.textContent = original; });
+});
+
+// Copy link (engine cards)
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest('[data-copy-link]');
+  if (!btn) return;
+  navigator.clipboard.writeText(btn.getAttribute('data-copy-link'))
+    .then(() => toast('Link copied', 'success')).catch(() => toast('Copy failed', 'error'));
+});
+
+// GENERIC INFINITE SCROLL CONTROLLER
+// buildCard may return either a DOM Node (product cards, via
+// <template> cloning) or an HTML string (engine cards, via string
+// templates) — append() handles both.
+class InfiniteGrid {
+  constructor({ gridEl, sentinelEl, buildCard, loadMoreUrl, pageParam, countLabelEl, countNoun, afterAppend }) {
+    this.gridEl = gridEl;
+    this.sentinelEl = sentinelEl;
+    this.buildCard = buildCard;
+    this.loadMoreUrl = loadMoreUrl;
+    this.pageParam = pageParam;
+    this.countLabelEl = countLabelEl;
+    this.countNoun = countNoun;
+    this.afterAppend = afterAppend || null;
+
+    this.nextPage = null;
+    this.hasNext = false;
+    this.loading = false;
+    this.total = 0;
+    this.renderedCount = 0;
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if (entry.isIntersecting) this.loadMore(); });
+    }, { rootMargin: '400px 0px' });
+  }
+
+  hydrate(initialData) {
+    this.total = initialData.total ?? this.renderedCount;
+    this.append(initialData.items || []);
+    this.hasNext = !!initialData.has_next;
+    this.nextPage = initialData.next_page || null;
+    this.afterBatch();
+  }
+
+  append(items) {
+    const frag = document.createDocumentFragment();
+    items.forEach(item => {
+      const built = this.buildCard(item);
+      if (typeof built === 'string') {
+        const tmp = document.createElement('template');
+        tmp.innerHTML = built.trim();
+        const node = tmp.content.firstElementChild;
+        if (node) frag.appendChild(node);
+      } else {
+        frag.appendChild(built);
+      }
+    });
+    this.gridEl.insertBefore(frag, this.sentinelEl);
+    this.renderedCount += items.length;
+    this.updateCountLabel();
+    if (this.afterAppend) this.afterAppend();
+  }
+
+  updateCountLabel() {
+    if (!this.countLabelEl) return;
+    const n = this.total || this.renderedCount;
+    this.countLabelEl.textContent = `${n} ${this.countNoun}${n === 1 ? '' : 's'}`;
+  }
+
+  afterBatch() {
+    if (this.renderedCount === 0) {
+      this.showEmptyState();
+      this.sentinelEl.classList.add('hidden');
+      this.observer.unobserve(this.sentinelEl);
+      return;
+    }
+    if (!this.hasNext) {
+      this.showEndOfList();
+      this.observer.unobserve(this.sentinelEl);
+    } else {
+      this.observer.observe(this.sentinelEl);
+    }
+  }
+
+  showEmptyState() {
+    const tpl = document.getElementById('cardEmptyStateTemplate');
+    const node = tpl.content.cloneNode(true);
+    this.gridEl.insertBefore(node, this.sentinelEl);
+  }
+
+  showEndOfList() {
+    const el = document.createElement('div');
+    el.className = 'end-of-list';
+    el.style.gridColumn = '1/-1';
+    el.textContent = "You've reached the end.";
+    this.gridEl.insertBefore(el, this.sentinelEl);
+    this.sentinelEl.classList.add('hidden');
+  }
+
+  async loadMore() {
+    if (this.loading || !this.hasNext || !this.loadMoreUrl) return;
+    this.loading = true;
+    this.sentinelEl.classList.remove('hidden');
+
+    try {
+      const url = new URL(this.loadMoreUrl, window.location.origin);
+      const currentParams = new URLSearchParams(window.location.search);
+      currentParams.forEach((value, key) => {
+        if (key !== 'page' && key !== 'services_page') url.searchParams.set(key, value);
+      });
+      url.searchParams.set(this.pageParam, this.nextPage);
+
+      const res = await fetch(url.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+      if (!res.ok) {
+        toast('Could not load more items.', 'error');
+        this.observer.unobserve(this.sentinelEl);
+        return;
+      }
+
+      const data = await res.json();
+      this.append(data.items || []);
+      this.hasNext = !!data.has_next;
+      this.nextPage = data.next_page || null;
+      this.total = data.total ?? this.total;
+      this.updateCountLabel();
+
+      if (!this.hasNext) {
+        this.showEndOfList();
+        this.observer.unobserve(this.sentinelEl);
+      }
+    } catch (err) {
+      console.error('Infinite scroll load failed:', err);
+      toast('Network error while loading more items.', 'error');
+    } finally {
+      this.loading = false;
+      this.sentinelEl.classList.remove('hidden');
+    }
+  }
+}
+
+// BOOTSTRAP
+document.addEventListener('DOMContentLoaded', () => {
+  const productsGridEl = document.getElementById('productsGrid');
+  if (productsGridEl) {
+    const productsData = JSON.parse(document.getElementById('products-initial-data').textContent);
+    const productsGrid = new InfiniteGrid({
+      gridEl: productsGridEl,
+      sentinelEl: document.getElementById('productsSentinel'),
+      buildCard: buildProductCard,
+      loadMoreUrl: URLS.loadMoreProducts,
+      pageParam: 'page',
+      countLabelEl: document.getElementById('productsCountLabel'),
+      countNoun: 'listing',
+    });
+    productsGrid.hydrate(productsData);
+  }
+
+  const servicesGridEl = document.getElementById('servicesGrid');
+  if (servicesGridEl) {
+    const servicesData = JSON.parse(document.getElementById('services-initial-data').textContent);
+    const servicesGrid = new InfiniteGrid({
+      gridEl: servicesGridEl,
+      sentinelEl: document.getElementById('servicesSentinel'),
+      buildCard: buildEngineCard,
+      loadMoreUrl: URLS.loadMoreServices,
+      pageParam: 'services_page',
+      countLabelEl: document.getElementById('servicesCountLabel'),
+      countNoun: 'engine',
+      afterAppend: () => bindSoloAspectRatios(servicesGridEl),
+    });
+    servicesGrid.hydrate(servicesData);
+  }
+});
 </script>
 {% endblock %}

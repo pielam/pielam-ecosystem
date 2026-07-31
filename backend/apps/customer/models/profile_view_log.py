@@ -1,3 +1,4 @@
+# apps/customer/models/profile_view_log.py
 from django.db import models
 from django.conf import settings
 from django.utils import timezone

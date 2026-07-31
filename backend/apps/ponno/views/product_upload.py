@@ -3,15 +3,40 @@
 Product upload view.
 
 Design notes:
-- Only `product_title` and `image` are required; `selling_price` defaults to
-  0.00 and `video_url` is optional (validated with Django's own URLValidator).
-- `buying_price` is intentionally omitted — it's nullable on the model and
-  no longer collected here.
+- `product_title` is the ONLY required field on this form. `image` and
+  `selling_price` are optional (`image` is nullable on Product;
+  `selling_price` defaults to 0.00 when omitted).
+- `service_type` (for the ConnectedService created alongside the
+  Product) is optional and falls back to DEFAULT_SERVICE_TYPE
+  ("product") when not provided.
+- `service_url` is NOT collected from the form. It's derived from the
+  Product's own slug via reverse('ponno:product_detail', ...) after
+  the Product is created, so it always points at the real product
+  detail page and can't drift from it or be spoofed by form input.
+- `buying_price` and `video_url` are intentionally omitted — both are
+  nullable/blank on the model and no longer collected here.
 - SKU generation avoids a pre-save existence-check query; the DB's unique
   constraint is the source of truth, with a single retry on the
   astronomically rare collision.
 - Validators/constants are module-level so they're built once at import
   time, not re-instantiated per request.
+
+ConnectedService creation:
+- Explicit, not signal-driven. The Product post_save signal that used to
+  mirror products into ConnectedService has been removed — this view now
+  owns that write directly, in the same DB transaction as the Product
+  create, so a failure on either side rolls back both.
+- Every field on ConnectedService that has a similarly-purposed
+  counterpart on Product is bridged here (see _create_connected_service
+  for the full list): title, description, image, video, and
+  active/status. Fields with no Product counterpart (is_connected,
+  fetch_status, api_key/auth_token, etc.) use their own model defaults.
+  service_url and service_type are the two fields that belong only to
+  ConnectedService — service_url is derived from product.slug once the
+  Product exists, service_type comes from the form.
+- `created_at`/`updated_at` are the only identically-named fields on
+  both models; they're auto-managed independently per row and are not
+  bridged.
 """
 
 import logging
@@ -21,13 +46,13 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.core.validators import URLValidator
 from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
 from apps.ponno.models.product import Product
+from megamind.services.connected_service_sync import sync_product_connected_service
+from megamind.models.connected_service import ConnectedService
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +67,13 @@ SKU_MAX_ATTEMPTS = 2  # initial attempt + 1 retry on collision
 MIN_TITLE_LENGTH = 3
 DEFAULT_SELLING_PRICE = Decimal("0.00")
 
-VIDEO_URL_VALIDATOR = URLValidator(schemes=["http", "https"])
+# service_type must be one of ConnectedService's own choices — sourced
+# from the model itself so the two never drift out of sync.
+VALID_SERVICE_TYPES = {choice for choice, _label in ConnectedService.SERVICE_TYPES}
+DEFAULT_SERVICE_TYPE = "product"
 
+# Hardcoded for now — swap for settings.SITE_URL later if that setting
+# gets added.
 UPLOAD_TEMPLATE = "ponno/product_upload.html"
 
 
@@ -65,29 +95,30 @@ def generate_sku(length: int = SKU_LENGTH) -> str:
 
 def _validate_upload_form(request) -> tuple[dict, list[str]]:
     """
-    Extract and validate POST data.
+    Extract and validate POST data for BOTH the Product and the
+    ConnectedService that will be created alongside it.
 
     Returns a (cleaned_data, errors) tuple. `cleaned_data` is only safe
     to use for object creation when `errors` is empty.
     """
+    # ---- Product fields ----
     product_title = request.POST.get("product_title", "").strip()
-    video_url = request.POST.get("video_url", "").strip()
     selling_price_str = request.POST.get("selling_price", "").strip()
     image = request.FILES.get("image")
+
+    # ---- ConnectedService fields ----
+    # NOTE: service_url is NOT read from the form — it's derived from
+    # the product's own slug after creation. Only service_type is
+    # user-supplied.
+    service_type = request.POST.get("service_type", "").strip() or DEFAULT_SERVICE_TYPE
 
     errors: list[str] = []
 
     if not product_title or len(product_title) < MIN_TITLE_LENGTH:
         errors.append(f"Product title is required (min {MIN_TITLE_LENGTH} characters).")
 
-    if not image:
-        errors.append("Product image is required.")
-
-    if video_url:
-        try:
-            VIDEO_URL_VALIDATOR(video_url)
-        except DjangoValidationError:
-            errors.append("Video URL is not a valid URL.")
+    if service_type not in VALID_SERVICE_TYPES:
+        errors.append(f"Invalid service type '{service_type}'.")
 
     selling_price = DEFAULT_SELLING_PRICE
     if selling_price_str:
@@ -99,19 +130,41 @@ def _validate_upload_form(request) -> tuple[dict, list[str]]:
             errors.append("Invalid selling price format.")
 
     cleaned_data = {
+        # Product
         "product_title": product_title,
-        "video_url": video_url or None,
         "selling_price": selling_price,
         "image": image,
+        # ConnectedService
+        "service_type": service_type,
     }
     return cleaned_data, errors
 
 
 def _create_product(dealer, cleaned_data: dict) -> Product:
     """
-    Persist a Product, retrying once with a fresh SKU on the rare
-    collision. Raises IntegrityError if both attempts fail for a
-    reason other than SKU collision, or if the retry also collides.
+    Persist a Product, retrying on the rare collision.
+
+    Two independently-generated fields can collide under concurrent
+    writes:
+      - sku: generated via generate_sku() in this module (random,
+        no pre-save existence check by design).
+      - slug: generated via Product.generate_slug() inside
+        Product.save(). That method does a check-then-write
+        (`while Product.objects.filter(slug=slug)...exists()`) with
+        no locking, so two requests creating products with the same
+        product_title at nearly the same instant can both see a slug
+        as free and both attempt to save it — one wins, the other
+        hits the DB's unique constraint.
+
+    Both are handled the same way: catch the IntegrityError, log
+    which field collided, and retry with a fresh Product instance —
+    a fresh instance means generate_sku() picks a new value AND
+    Product.save() re-runs generate_slug() with a fresh existence
+    check (the failed attempt was rolled back by transaction.atomic(),
+    so it won't falsely block the retry).
+
+    Raises IntegrityError if both attempts fail for a reason other
+    than a sku/slug collision, or if the retry also collides.
     """
     last_exc: IntegrityError | None = None
 
@@ -123,7 +176,6 @@ def _create_product(dealer, cleaned_data: dict) -> Product:
                     dealer=dealer,
                     product_title=cleaned_data["product_title"],
                     product_name=cleaned_data["product_title"],
-                    video_url=cleaned_data["video_url"],
                     selling_price=cleaned_data["selling_price"],
                     image=cleaned_data["image"],
                     sku=sku,
@@ -134,12 +186,52 @@ def _create_product(dealer, cleaned_data: dict) -> Product:
                     is_selling_price_visible=False,
                 )
         except IntegrityError as exc:
-            if "sku" not in str(exc).lower():
-                raise  # not a SKU collision — surface immediately
-            last_exc = exc
-            logger.warning("SKU collision on %s, retrying", sku)
+            exc_text = str(exc).lower()
+            if "sku" in exc_text:
+                last_exc = exc
+                logger.warning("SKU collision on %s, retrying", sku)
+            elif "slug" in exc_text:
+                last_exc = exc
+                logger.warning(
+                    "Slug collision for product_title=%r, retrying",
+                    cleaned_data["product_title"],
+                )
+            else:
+                raise  # not a sku/slug collision — surface immediately
 
     raise last_exc
+
+
+def _create_connected_service(dealer, product: Product, cleaned_data: dict) -> ConnectedService:
+    """
+    Create the ConnectedService row for this product via the shared
+    sync helper (megamind.services.connected_service_sync), so
+    create and edit paths use the exact same field bridge.
+
+    service_type comes from the form and is passed in explicitly —
+    see sync_product_connected_service()'s docstring for why that
+    matters (it's what distinguishes "create" from "edit" behavior
+    for that one field).
+    """
+    return sync_product_connected_service(
+        dealer=dealer,
+        product=product,
+        service_type=cleaned_data["service_type"],
+    )
+
+
+def _create_product_and_service(dealer, cleaned_data: dict) -> tuple[Product, ConnectedService]:
+    """
+    Create the Product and its ConnectedService together.
+
+    Wrapped in one transaction: if the ConnectedService create fails
+    for any reason, the Product create is rolled back too, so we never
+    end up with a Product that has no matching ConnectedService entry.
+    """
+    with transaction.atomic():
+        product = _create_product(dealer=dealer, cleaned_data=cleaned_data)
+        service = _create_connected_service(dealer=dealer, product=product, cleaned_data=cleaned_data)
+    return product, service
 
 
 # ---------------------------------------------------------------------------
@@ -153,12 +245,15 @@ def ProductUploadView(request):
     Dealer product upload.
 
     GET  -> render the upload form.
-    POST -> validate, create the Product, redirect on success.
+    POST -> validate, create the Product + ConnectedService, redirect on success.
     """
     user = request.user
 
     if request.method == "GET":
-        return render(request, UPLOAD_TEMPLATE, {"user": user})
+        return render(request, UPLOAD_TEMPLATE, {
+            "user": user,
+            "service_type_choices": ConnectedService.SERVICE_TYPES,
+        })
 
     # ==================== POST ====================
     if user.role != "dealer":
@@ -173,16 +268,18 @@ def ProductUploadView(request):
         return render(request, UPLOAD_TEMPLATE, {
             "user": user,
             "form_data": request.POST,
+            "service_type_choices": ConnectedService.SERVICE_TYPES,
         })
 
     try:
-        product = _create_product(dealer=user, cleaned_data=cleaned_data)
+        product, service = _create_product_and_service(dealer=user, cleaned_data=cleaned_data)
     except IntegrityError:
         logger.exception("Product upload failed for dealer_id=%s", user.id)
         messages.error(request, "❌ Upload failed — please try again.")
         return render(request, UPLOAD_TEMPLATE, {
             "user": user,
             "form_data": request.POST,
+            "service_type_choices": ConnectedService.SERVICE_TYPES,
         })
     except Exception:
         logger.exception("Unexpected error during product upload for dealer_id=%s", user.id)
@@ -190,6 +287,7 @@ def ProductUploadView(request):
         return render(request, UPLOAD_TEMPLATE, {
             "user": user,
             "form_data": request.POST,
+            "service_type_choices": ConnectedService.SERVICE_TYPES,
         })
 
     messages.success(

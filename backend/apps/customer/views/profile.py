@@ -83,6 +83,8 @@ from megamind.models.connected_service import ConnectedService
 
 logger = logging.getLogger(__name__)
 
+from megamind.utils.video_info import get_video_info_cached
+from megamind.utils.media_info import normalize_images, normalize_links
 
 # ═══════════════════════════════════════════════════════════════════
 # TTLs  (seconds)
@@ -172,12 +174,12 @@ _EMPTY_RECENT: list[dict[str, Any]] = []
 
 _EMPTY_ENGINE: dict[str, Any] = {
     'connected_services': [],
-    'extracted_images':   [],
-    'extracted_videos':   [],
+    'gallery_videos':     [],
+    'gallery_media':      [],
     'extracted_links':    [],
     'extracted_texts':    [],
-    'images_count':       0,
     'videos_count':       0,
+    'images_count':       0,
     'links_count':        0,
     'text_count':         0,
 }
@@ -487,8 +489,15 @@ def _load_recently_viewed(user) -> list[dict[str, Any]]:
         })
     return result
 
+from urllib.parse import urlparse
+from typing import Any
+
+from megamind.models.connected_service import ConnectedService
+from megamind.utils.media_info import normalize_images, normalize_links
+
 
 def _find_href_for_alt(alt: str, alt_to_href: dict, fallback: str) -> str:
+    """Fallback only — used when an image has no direct href of its own."""
     if not alt:
         return fallback
     alt_lower = alt.strip().lower()
@@ -499,7 +508,12 @@ def _find_href_for_alt(alt: str, alt_to_href: dict, fallback: str) -> str:
             return href
     return fallback
 
+
+
+
 def _load_engine_context(user) -> dict[str, Any]:
+    """1 DB query (+ in-Python normalization). Returns plain dict — safe to pickle & cache."""
+
     services = list(
         ConnectedService.objects
         .filter(user=user, is_connected=True)
@@ -512,10 +526,10 @@ def _load_engine_context(user) -> dict[str, Any]:
         )
     )
 
-    extracted_images = []
-    extracted_videos = []
-    extracted_links  = []
-    extracted_texts  = []
+    gallery_videos = []   # ← powers the new "Videos" tab (was Engine)
+    gallery_media  = []   # ← powers the new "Media" tab (was Following)
+    extracted_links = []
+    extracted_texts = []
 
     for svc in services:
         domain = urlparse(svc.service_url).netloc
@@ -533,58 +547,37 @@ def _load_engine_context(user) -> dict[str, Any]:
             'og_thumbnail':    svc.og_thumbnail,
         }
 
-        links = svc.extracted_links or []
-        alt_to_href: dict[str, str] = {}
-        for lnk in links:
-            href = lnk.get('href', '')
-            text = lnk.get('text', '').strip().lower()
-            if href and text:
-                alt_to_href[text] = href
-
-        # Track which destination URLs we've already assigned to a
-        # card *for this service*, so two image cards never point at
-        # the same href. Each card must be a unique destination.
-        used_hrefs: set[str] = set()
-
-        for img in (svc.extracted_images or []):
-            img_url  = img.get('url', '')
-            img_alt  = img.get('alt', '')
-            img_href = _find_href_for_alt(img_alt, alt_to_href, svc.service_url)
-
-            # Collision: either the alt-match returned a link we've
-            # already used, or (more commonly) it fell back to the
-            # generic svc.service_url which every unmatched image
-            # would otherwise share. In that case, point the card at
-            # the image's own file directly — guaranteed unique.
-            if img_href in used_hrefs or not img_href:
-                img_href = img_url or svc.service_url
-
-            used_hrefs.add(img_href)
-
-            extracted_images.append({
+        # ── Media (images) — via media_info.py ──────────────────
+        for img in normalize_images(svc.extracted_images):
+            img_link = img['href'] or img['url']   # ← per-image fallback, not svc.service_url
+            gallery_media.append({
                 **meta,
-                'file_url':      img_url,
-                'alt':           img_alt,
+                'file_url':      img['url'],
+                'alt':           img['alt'],
                 'title':         title,
-                'source_url':    img_href,
-                'source_domain': urlparse(img_href).netloc or site,
+                'source_url':    img_link,
+                'source_domain': urlparse(img_link).netloc or site,
             })
-
+        # ── Videos — via video_info.py (playable, normalized) ───
         for vid in (svc.extracted_videos or []):
-            extracted_videos.append({
+            raw_url = vid.get('url') if isinstance(vid, dict) else vid
+            if not raw_url:
+                continue
+            info = get_video_info_cached(raw_url)
+            if not info or not info.get('embed_url'):
+                continue
+            gallery_videos.append({
                 **meta,
-                'title':      title,
-                'source_url': vid.get('url') or svc.service_url,
-                'duration':   None,
+                **info,          # platform, embed_url, watch_url, thumbnail, type, mime_type?
+                'title': title,
             })
 
-        for link in (svc.extracted_links or []):
-            href = link.get('href', '')
+        for lnk in normalize_links(svc.extracted_links):
             extracted_links.append({
                 **meta,
-                'url':    href,
-                'title':  link.get('text') or title,
-                'domain': urlparse(href).netloc or domain,
+                'url':    lnk['href'],
+                'title':  lnk['text'] or title,
+                'domain': urlparse(lnk['href']).netloc or domain,
             })
 
         if svc.extracted_text and svc.extracted_text.strip():
@@ -602,17 +595,15 @@ def _load_engine_context(user) -> dict[str, Any]:
             }
             for s in services
         ],
-        'extracted_images': extracted_images,
-        'extracted_videos': extracted_videos,
+        'gallery_videos':   gallery_videos,
+        'gallery_media':    gallery_media,
         'extracted_links':  extracted_links,
         'extracted_texts':  extracted_texts,
-        'images_count':     len(extracted_images),
-        'videos_count':     len(extracted_videos),
+        'videos_count':     len(gallery_videos),
+        'images_count':     len(gallery_media),
         'links_count':      len(extracted_links),
         'text_count':       len(extracted_texts),
     }
-
-
 
 # ═══════════════════════════════════════════════════════════════════
 # ETag HELPERS

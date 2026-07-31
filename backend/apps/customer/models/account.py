@@ -22,7 +22,10 @@ from typing import Optional
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.core.exceptions import ValidationError
-from django.utils import timezone
+# Aliased to avoid colliding with the `timezone` model field defined
+# below (a User can have a `timezone = models.CharField(...)` field
+# AND use the timezone *module* for `now()` calls without shadowing).
+from django.utils import timezone as dj_timezone
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
@@ -349,8 +352,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     # ================================================================
     # INTERNATIONALIZATION
     # ================================================================
-    
-    
+
+    # NOTE: this field name intentionally matches the concept of
+    # "timezone", but the django.utils.timezone *module* is imported
+    # above as `dj_timezone` specifically so it can never be shadowed
+    # by this field. Do not import the module as a bare `timezone`
+    # name anywhere in this file.
+    timezone = models.CharField(
+        _("Timezone"),
+        max_length=64,
+        default='UTC',
+        help_text=_("User's preferred IANA timezone, e.g. 'Asia/Dhaka'")
+    )
+
     language = models.CharField(
         _("Language"),
         max_length=10,
@@ -437,7 +451,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # ================================================================
     date_joined = models.DateTimeField(
         _("Date Joined"),
-        default=timezone.now,
+        default=dj_timezone.now,
         help_text=_("When the user account was created")
     )
     
@@ -551,7 +565,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Check if account is currently locked"""
         if self.locked_until is None:
             return False
-        return timezone.now() < self.locked_until
+        return dj_timezone.now() < self.locked_until
     
     @property
     def display_name(self) -> str:
@@ -590,13 +604,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def days_since_joined(self) -> int:
         """Calculate days since account creation"""
-        return (timezone.now() - self.date_joined).days
+        return (dj_timezone.now() - self.date_joined).days
     
     @property
     def password_age_days(self) -> Optional[int]:
         """Calculate days since last password change"""
         if self.password_changed_at:
-            return (timezone.now() - self.password_changed_at).days
+            return (dj_timezone.now() - self.password_changed_at).days
         return None
     
     @property
@@ -613,7 +627,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def verify_email(self, save: bool = True) -> None:
         """Mark email as verified"""
         self.email_verified = True
-        self.email_verified_at = timezone.now()
+        self.email_verified_at = dj_timezone.now()
         if self.account_status == self.AccountStatus.PENDING_VERIFICATION:
             self.account_status = self.AccountStatus.ACTIVE
         if save:
@@ -622,7 +636,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def verify_phone(self, save: bool = True) -> None:
         """Mark phone as verified"""
         self.phone_verified = True
-        self.phone_verified_at = timezone.now()
+        self.phone_verified_at = dj_timezone.now()
         if self.account_status == self.AccountStatus.PENDING_VERIFICATION:
             self.account_status = self.AccountStatus.ACTIVE
         if save:
@@ -652,7 +666,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         
         # Lock account after 5 failed attempts for 30 minutes
         if self.failed_login_attempts >= 5:
-            self.locked_until = timezone.now() + timedelta(minutes=30)
+            self.locked_until = dj_timezone.now() + timedelta(minutes=30)
             self.account_status = self.AccountStatus.LOCKED
         
         if save:
@@ -694,7 +708,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def lock_account(self, duration_minutes: int = 30, save: bool = True) -> None:
         """Manually lock account for specified duration"""
-        self.locked_until = timezone.now() + timedelta(minutes=duration_minutes)
+        self.locked_until = dj_timezone.now() + timedelta(minutes=duration_minutes)
         self.account_status = self.AccountStatus.LOCKED
         if save:
             self.save(update_fields=['locked_until', 'account_status'])
@@ -751,7 +765,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         Soft delete the user account (GDPR compliant)
         Keeps the record but marks as deleted
         """
-        self.deleted_at = timezone.now()
+        self.deleted_at = dj_timezone.now()
         self.deleted_by = deleted_by_user
         self.is_active = False
         self.account_status = self.AccountStatus.INACTIVE
@@ -776,21 +790,21 @@ class User(AbstractBaseUser, PermissionsMixin):
     def accept_terms(self, save: bool = True) -> None:
         """Record terms and conditions acceptance"""
         self.terms_accepted = True
-        self.terms_accepted_date = timezone.now()
+        self.terms_accepted_date = dj_timezone.now()
         if save:
             self.save(update_fields=['terms_accepted', 'terms_accepted_date'])
     
     def accept_privacy(self, save: bool = True) -> None:
         """Record privacy policy acceptance"""
         self.privacy_accepted = True
-        self.privacy_accepted_date = timezone.now()
+        self.privacy_accepted_date = dj_timezone.now()
         if save:
             self.save(update_fields=['privacy_accepted', 'privacy_accepted_date'])
     
     def give_marketing_consent(self, save: bool = True) -> None:
         """Give consent for marketing communications"""
         self.marketing_consent = True
-        self.marketing_consent_date = timezone.now()
+        self.marketing_consent_date = dj_timezone.now()
         if save:
             self.save(update_fields=['marketing_consent', 'marketing_consent_date'])
     
@@ -803,7 +817,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     def export_data(self) -> dict:
         """
         Export user data for GDPR compliance
-        Returns a dictionary of all user data
+        Returns a dictionary of all user data.
+
+        Defensive by design: this is a compliance-critical endpoint, so
+        every field is read with getattr(..., None) rather than direct
+        attribute access. That way, if a field is ever renamed/removed
+        again in the future, export_data() degrades to omitting/nulling
+        that one value instead of raising AttributeError for every
+        user, regardless of role.
         """
         data = {
             'uuid': str(self.uuid),
@@ -814,7 +835,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             'account_status': self.account_status,
             'email_verified': self.email_verified,
             'phone_verified': self.phone_verified,
-            'timezone': self.timezone,
+            'timezone': getattr(self, 'timezone', None),
             'language': self.language,
             'country': self.country,
             'currency': self.currency,
@@ -844,7 +865,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def set_password(self, raw_password: str) -> None:
         """Override to track password change date"""
         super().set_password(raw_password)
-        self.password_changed_at = timezone.now()
+        self.password_changed_at = dj_timezone.now()
         self.require_password_change = False
     
     def force_password_change(self, save: bool = True) -> None:

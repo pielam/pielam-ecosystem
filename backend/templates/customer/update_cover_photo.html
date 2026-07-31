@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Update Cover Photo{% endblock %}
+
+{% block content %}
+<div class="cover-update-page">
+    <div class="cover-update-card">
+        <h2 class="cover-update-title">Update Cover Photo</h2>
+        <p class="cover-update-subtitle">This image appears at the top of your public profile.</p>
+
+        {% if messages %}
+            <div class="cover-update-messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="cover-preview">
+            <span class="cover-preview-label">Current cover photo</span>
+            <div class="cover-preview-frame">
+                <img src="{{ profile.get_profile_cover_photo_url }}"
+                     alt="Current cover photo"
+                     class="cover-preview-img">
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="cover-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="profile_cover_photo">Choose new cover photo</label>
+                <input type="file"
+                       name="profile_cover_photo"
+                       id="profile_cover_photo"
+                       accept="image/jpeg,image/png,image/webp"
+                       required
+                       class="form-control-file">
+                <small class="form-hint">JPEG, PNG, or WEBP. Max 5MB. Recommended size 1600×400px.</small>
+            </div>
+
+            <div class="cover-form-actions">
+                <button type="submit" class="btn btn-primary">Upload</button>
+                <a href="{% url 'customer:profile' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .cover-update-page {
+        width: 100%;
+        padding: clamp(16px, 4vw, 40px) 16px;
+        display: flex;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    .cover-update-card {
+        width: 100%;
+        max-width: 640px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+        padding: clamp(20px, 4vw, 32px);
+        box-sizing: border-box;
+    }
+
+    .cover-update-title {
+        margin: 0 0 4px;
+        font-size: clamp(1.25rem, 3vw, 1.6rem);
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+
+    .cover-update-subtitle {
+        margin: 0 0 20px;
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .cover-update-messages {
+        margin-bottom: 16px;
+    }
+
+    .alert {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .alert-success {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .alert-error,
+    .alert-danger {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .cover-preview {
+        margin-bottom: 24px;
+    }
+
+    .cover-preview-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .cover-preview-frame {
+        width: 100%;
+        aspect-ratio: 16 / 5;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+    }
+
+    .cover-preview-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .cover-form .form-group {
+        margin-bottom: 20px;
+    }
+
+    .cover-form label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+    }
+
+    .form-control-file {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: #f9fafb;
+        box-sizing: border-box;
+    }
+
+    .form-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .cover-form-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.05s ease;
+        flex: 1 1 auto;
+        min-width: 120px;
+    }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    /* Small phones */
+    @media (max-width: 400px) {
+        .cover-form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

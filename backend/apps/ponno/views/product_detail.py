@@ -26,6 +26,23 @@ Architecture decisions
 6. SESSION I/O MINIMISED: session is read once and written at most once
    per request, using Django's modified flag to avoid spurious saves.
 
+7. VIDEO INFO: video-URL normalization is delegated to the shared
+   megamind.utils.video_info module (get_video_info_cached) instead of
+   a local copy, so this view, the public Engine feed, and the global
+   feed all resolve/embed a video URL identically — including the
+   Facebook/TikTok/Twitter short-link resolution, retry/backoff, and
+   production failure logging that module provides. See that module's
+   docstring for the full rationale (production egress/IP-blocking
+   behavior, the 'unknown' -> type='video' fallback decision, etc.).
+
+8. VISITOR TELEMETRY: DiscoveryVisitLog rows are written inline/sync
+   via megamind.services.visit_logger.record_discovery_visit. This is
+   a deliberate exception to the "no DB write on the hot path" rule
+   above — record_discovery_visit fails safe (catches and logs, never
+   raises) so it cannot break the page, but it does add one DB INSERT
+   per request. If/when this view's traffic grows, switch this to
+   record_discovery_visit_task.delay(...) via Celery instead.
+
 Dependencies
 ------------
 - Django cache backend that supports atomic incr (Redis recommended).
@@ -33,6 +50,9 @@ Dependencies
   If Celery is absent the view falls back to synchronous writes
   on a 1-in-N probabilistic basis to avoid DB hotspots.
 - django-redis or similar for fast cache.
+- megamind.utils.video_info for video URL normalization (shared with
+  the feed pipelines — see that module's docstring).
+- megamind.services.visit_logger for visitor telemetry (DiscoveryVisitLog).
 
 Settings expected
 -----------------
@@ -42,6 +62,7 @@ Settings expected
     PRODUCT_VIEW_FLUSH_PROBABILITY  = 0.01     # 1 % of requests flush counts
     RECENTLY_VIEWED_MAX             = 10       # items kept in session list
     USE_CELERY                      = True     # set False to disable async tasks
+    DE_VIDEO_INFO_TTL               = 3600     # see megamind.utils.video_info
 """
 
 from __future__ import annotations
@@ -49,11 +70,8 @@ from __future__ import annotations
 import json
 import logging
 import random
-import re
-import uuid
 from decimal import Decimal
 from typing import Optional
-from urllib.parse import urlparse, parse_qs
 
 from django.conf import settings
 from django.core.cache import cache
@@ -68,6 +86,8 @@ from apps.ponno.models.category import Category
 from apps.ponno.models.product import Product, ProductView, Wishlist
 from apps.ponno.models.rating import ProductRating
 from apps.ponno.feed_algorithm import FeedEngine, load_user_affinity
+from megamind.utils.video_info import get_video_info_cached
+from megamind.services.visit_logger import record_discovery_visit
 
 logger = logging.getLogger(__name__)
 
@@ -551,6 +571,16 @@ def ProductDetailView(request, slug: str):
     # ── 2. Non-blocking view count ────────────────────────────────────────────
     _increment_view_count(product.pk)
 
+    # ── 2b. Visitor telemetry ─────────────────────────────────────────────────
+    # Inline/sync per current setup (see module docstring point 8). This is
+    # the one exception to the "no DB write on the hot path" rule — it's
+    # wrapped in try/except inside record_discovery_visit itself, so a
+    # failure here can never break the page.
+    record_discovery_visit(
+        request,
+        product=product,
+    )
+
     # ── 3. Auth analytics ─────────────────────────────────────────────────────
     if request.user.is_authenticated:
         _record_product_view_async(request.user.pk, product.pk)
@@ -559,7 +589,7 @@ def ProductDetailView(request, slug: str):
     # ── 4. Supporting data ────────────────────────────────────────────────────
     categories         = _get_categories()
     related_products   = _get_related_products(product)
-    dealer_products    = _get_dealer_products(product)
+    dealer_products     = _get_dealer_products(product)
     suggested_products = _get_suggested_products(product, request.user)
 
     # ── 5. Format prices on card lists (attaches .fmt_* attrs in-place) ───────
@@ -659,7 +689,7 @@ def ProductDetailView(request, slug: str):
         "show_dealer_phone":   show_dealer_phone,
         "show_dealer_email":   show_dealer_email,
         "user_authenticated":  request.user.is_authenticated,
-        "video_info":          _get_video_info(product.video_url or ""),
+        "video_info":          get_video_info_cached(product.video_url or ""),
         "user_wishlisted_ids": user_wishlisted_ids,
         "user_rating":         user_rating,
     }
@@ -689,168 +719,3 @@ def invalidate_product_cache(product: Product) -> None:
 
 def invalidate_category_cache() -> None:
     cache.delete(_PK_CATEGORIES)
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Video info helper
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _get_video_info(url: str) -> dict:
-    if not url:
-        return {}
-
-    url    = url.strip()
-    parsed = urlparse(url)
-    hostname = parsed.netloc.lower().replace("www.", "")
-
-    if hostname in ("youtube.com", "youtu.be", "m.youtube.com", "music.youtube.com"):
-        vid_id = None
-        if hostname == "youtu.be":
-            vid_id = parsed.path.lstrip("/").split("/")[0]
-        elif "/shorts/" in parsed.path:
-            vid_id = parsed.path.split("/shorts/")[1].split("/")[0]
-        elif "/live/" in parsed.path:
-            vid_id = parsed.path.split("/live/")[1].split("/")[0]
-        elif "/embed/" in parsed.path:
-            vid_id = parsed.path.split("/embed/")[1].split("/")[0]
-        else:
-            vid_id = parse_qs(parsed.query).get("v", [None])[0]
-        if vid_id:
-            vid_id = re.sub(r'[^a-zA-Z0-9_-]', '', vid_id)
-            return {
-                "platform":  "youtube",
-                "embed_url": f"https://www.youtube.com/embed/{vid_id}?rel=0&modestbranding=1",
-                "watch_url": f"https://www.youtube.com/watch?v={vid_id}",
-                "thumbnail": f"https://img.youtube.com/vi/{vid_id}/hqdefault.jpg",
-                "type":      "iframe",
-            }
-
-    if hostname in ("vimeo.com", "player.vimeo.com"):
-        vid_id = (parsed.path.split("/video/")[1].split("/")[0]
-                  if "/video/" in parsed.path
-                  else parsed.path.lstrip("/").split("/")[0])
-        vid_id = re.sub(r'[^0-9]', '', vid_id)
-        if vid_id:
-            return {
-                "platform":  "vimeo",
-                "embed_url": f"https://player.vimeo.com/video/{vid_id}?badge=0&autopause=0",
-                "watch_url": f"https://vimeo.com/{vid_id}",
-                "thumbnail": "",
-                "type":      "iframe",
-            }
-
-    if hostname in ("dailymotion.com", "dai.ly"):
-        if hostname == "dai.ly":
-            vid_id = parsed.path.lstrip("/").split("/")[0]
-        elif "/video/" in parsed.path:
-            vid_id = parsed.path.split("/video/")[1].split("_")[0].split("/")[0]
-        else:
-            vid_id = parsed.path.lstrip("/").split("/")[0]
-        vid_id = re.sub(r'[^a-zA-Z0-9]', '', vid_id)
-        if vid_id:
-            return {
-                "platform":  "dailymotion",
-                "embed_url": f"https://www.dailymotion.com/embed/video/{vid_id}",
-                "watch_url": f"https://www.dailymotion.com/video/{vid_id}",
-                "thumbnail": f"https://www.dailymotion.com/thumbnail/video/{vid_id}",
-                "type":      "iframe",
-            }
-
-    if hostname == "rumble.com":
-        m = re.search(r'rumble\.com/embed/([^/?&]+)', url)
-        vid_id = m.group(1) if m else None
-        if not vid_id:
-            m = re.search(r'rumble\.com/([^/?&]+)', url)
-            vid_id = m.group(1) if m else None
-        if vid_id:
-            return {
-                "platform":  "rumble",
-                "embed_url": f"https://rumble.com/embed/{vid_id}/",
-                "watch_url": url,
-                "thumbnail": "",
-                "type":      "iframe",
-            }
-
-    if hostname == "streamable.com":
-        vid_id = parsed.path.lstrip("/").split("/")[0]
-        if vid_id:
-            return {
-                "platform":  "streamable",
-                "embed_url": f"https://streamable.com/e/{vid_id}",
-                "watch_url": url,
-                "thumbnail": "",
-                "type":      "iframe",
-            }
-
-    if hostname in ("twitch.tv", "clips.twitch.tv"):
-        if "/clip/" in parsed.path or hostname == "clips.twitch.tv":
-            clip_id = parsed.path.lstrip("/").split("/")[-1]
-            return {
-                "platform":  "twitch_clip",
-                "embed_url": f"https://clips.twitch.tv/embed?clip={clip_id}&parent={parsed.hostname}",
-                "watch_url": url,
-                "thumbnail": "",
-                "type":      "iframe",
-            }
-        channel = parsed.path.lstrip("/").split("/")[0]
-        return {
-            "platform":  "twitch",
-            "embed_url": f"https://player.twitch.tv/?channel={channel}&parent=yourdomain.com",
-            "watch_url": url,
-            "thumbnail": "",
-            "type":      "iframe",
-        }
-
-    if hostname in ("facebook.com", "fb.watch", "fb.com"):
-        return {
-            "platform":  "facebook",
-            "embed_url": f"https://www.facebook.com/plugins/video.php?href={url}&show_text=false&width=560",
-            "watch_url": url,
-            "thumbnail": "",
-            "type":      "iframe",
-        }
-
-    if hostname in ("tiktok.com", "vm.tiktok.com"):
-        m = re.search(r'/video/(\d+)', parsed.path)
-        if m:
-            return {
-                "platform":  "tiktok",
-                "embed_url": f"https://www.tiktok.com/embed/v2/{m.group(1)}",
-                "watch_url": url,
-                "thumbnail": "",
-                "type":      "iframe",
-            }
-
-    if hostname in ("twitter.com", "x.com", "t.co"):
-        return {
-            "platform":  "twitter",
-            "embed_url": f"https://platform.twitter.com/embed/Tweet.html?id={parsed.path.split('/')[-1]}",
-            "watch_url": url,
-            "thumbnail": "",
-            "type":      "iframe",
-        }
-
-    video_extensions = ('.mp4', '.webm', '.ogg', '.mov', '.m4v', '.mkv', '.avi')
-    if any(parsed.path.lower().endswith(ext) for ext in video_extensions):
-        ext = parsed.path.lower().rsplit('.', 1)[-1]
-        mime_map = {
-            'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg',
-            'mov': 'video/mp4', 'm4v': 'video/mp4',
-            'mkv': 'video/x-matroska', 'avi': 'video/x-msvideo',
-        }
-        return {
-            "platform":  "direct",
-            "embed_url": url,
-            "watch_url": url,
-            "thumbnail": "",
-            "type":      "video",
-            "mime_type": mime_map.get(ext, 'video/mp4'),
-        }
-
-    return {
-        "platform":  "unknown",
-        "embed_url": url,
-        "watch_url": url,
-        "thumbnail": "",
-        "type":      "iframe",
-    }

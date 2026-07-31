@@ -18,7 +18,7 @@ import logging
 from apps.customer.models.profile_info import ProfileInfo
 from megamind.models.connected_service import ConnectedService
 from megamind.utils.media_info import normalize_images, normalize_links
-from megamind.utils.video_info import get_video_info_cached
+from megamind.utils.video_info import get_video_info_cached, resolve_post_video
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +96,16 @@ def refresh_feed_cache(svc: ConnectedService) -> dict:
     videos = _normalize_videos(svc.extracted_videos)
     links  = normalize_links(svc.extracted_links)
 
+    # Guaranteed single video for card display — real extracted video
+    # if there is one, else the source URL if it resolves to a known
+    # platform, else a deterministic themed placeholder. Never empty.
+    video_info = resolve_post_video(
+        extracted_videos=svc.extracted_videos,
+        source_url=svc.service_url,
+        seed=str(svc.pk),
+        service_type=svc.service_type,
+    )
+
     payload = {
         'id':     svc.pk,
         'cursor': _encode_cursor(svc.created_at, svc.pk),
@@ -112,6 +122,7 @@ def refresh_feed_cache(svc: ConnectedService) -> dict:
         },
         'images': images,
         'videos': videos,
+        'video_info': video_info,   # ← guaranteed single video for card display
         'links':  links,
         'images_count': len(images),
         'videos_count': len(videos),

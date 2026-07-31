@@ -198,7 +198,7 @@ class SubCategory(models.Model):
         settings.AUTH_USER_MODEL,
         related_name='managed_subcategories',
         blank=True,
-        null=True,
+
         help_text=_("Users who can manage this SubCategory")
     )
 

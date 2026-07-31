@@ -235,12 +235,6 @@
       align-items: center;
       gap: .5rem;
     }
-    .drawer-brand a {
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-    }
     .drawer-brand i { color: white; font-size: 1.1em; }
 
     #drawerClose {
@@ -480,7 +474,7 @@
       transition:
         background var(--t-base),
         border-color var(--t-base),
-        color white,
+        color var(--t-base),
         transform var(--t-base),
         box-shadow var(--t-base);
       white-space: nowrap;
@@ -658,9 +652,7 @@
 
   <div class="drawer-header">
     <span class="drawer-brand">
-      <a>
-        <i class="fa-solid fa-bars"></i> Menu
-      </a>
+      <i class="fa-solid fa-bars"></i> Menu
     </span>
     <button id="drawerClose" aria-label="Close menu">
       <i class="fa-solid fa-xmark"></i>
@@ -671,16 +663,16 @@
 
     {% with url_name=request.resolver_match.url_name %}
     <span class="drawer-section-label">Catalogue</span>
-    <a href="{% url 'ponno:brand_list' %}"                  class="drawer-link {% if 'brand' in url_name %}active{% endif %}"><i class="fa-solid fa-tag"></i>Brand</a>
-    <a href="{% url 'ponno:category_list' %}"               class="drawer-link {% if 'category' in url_name %}active{% endif %}"><i class="fa-solid fa-layer-group"></i>Category</a>
-    <a href="{% url 'ponno:subcategory_list' %}" class="drawer-link {% if 'sub_categor' in url_name %}active{% endif %}"><i class="fa-solid fa-list-ul"></i>SubCategory</a>
+    <a href="{% url 'ponno:brand_list' %}"        class="drawer-link {% if url_name and 'brand' in url_name %}active{% endif %}"><i class="fa-solid fa-tag"></i>Brand</a>
+    <a href="{% url 'ponno:category_list' %}"     class="drawer-link {% if url_name and 'category' in url_name %}active{% endif %}"><i class="fa-solid fa-layer-group"></i>Category</a>
+    <a href="{% url 'ponno:subcategory_list' %}"  class="drawer-link {% if url_name and 'subcategor' in url_name %}active{% endif %}"><i class="fa-solid fa-list-ul"></i>SubCategory</a>
 
     <div class="drawer-divider"></div>
     <span class="drawer-section-label">Company</span>
 
-    <a href="{% url 'ponno:about' %}" class="drawer-link secondary {% if 'about' in url_name %}active{% endif %}"><i class="fa-solid fa-circle-info"></i>About Us</a>
-    <a href="{% url 'ponno:privacy_policy' %}" class="drawer-link secondary {% if 'privacy' in url_name %}active{% endif %}"><i class="fa-solid fa-shield-halved"></i>Privacy Policy</a>
-    <a href="{% url 'ponno:terms_of_service' %}" class="drawer-link secondary {% if 'terms' in url_name %}active{% endif %}"><i class="fa-solid fa-file-contract"></i>Terms of Service</a>
+    <a href="{% url 'ponno:about' %}"             class="drawer-link secondary {% if url_name and 'about' in url_name %}active{% endif %}"><i class="fa-solid fa-circle-info"></i>About Us</a>
+    <a href="{% url 'ponno:privacy_policy' %}"    class="drawer-link secondary {% if url_name and 'privacy' in url_name %}active{% endif %}"><i class="fa-solid fa-shield-halved"></i>Privacy Policy</a>
+    <a href="{% url 'ponno:terms_of_service' %}"  class="drawer-link secondary {% if url_name and 'terms' in url_name %}active{% endif %}"><i class="fa-solid fa-file-contract"></i>Terms of Service</a>
     {% endwith %}
 
   </nav>
@@ -769,20 +761,20 @@
         {% with url_name=request.resolver_match.url_name %}
         <a href="{% url 'ponno:home' %}"
            role="listitem"
-           class="nav-item {% if 'home' in url_name %}active{% endif %}"
-           aria-current="{% if 'home' in url_name %}page{% else %}false{% endif %}">
+           class="nav-item {% if url_name and 'home' in url_name %}active{% endif %}"
+           aria-current="{% if url_name and 'home' in url_name %}page{% else %}false{% endif %}">
           <i class="fa-solid fa-house" aria-hidden="true"></i><span>Home</span>
         </a>
         <a href="{% url 'notify:notifications' %}"
            role="listitem"
-           class="nav-item {% if 'notification' in url_name %}active{% endif %}"
-           aria-current="{% if 'notification' in url_name %}page{% else %}false{% endif %}">
+           class="nav-item {% if url_name and 'notifications' in url_name %}active{% endif %}"
+           aria-current="{% if url_name and 'notifications' in url_name %}page{% else %}false{% endif %}">
           <i class="fa-solid fa-bell" aria-hidden="true"></i><span>Notifications</span>
         </a>
         <a href="{% url 'customer:profile' %}"
            role="listitem"
-           class="nav-item {% if 'profile' in url_name %}active{% endif %}"
-           aria-current="{% if 'profile' in url_name %}page{% else %}false{% endif %}">
+           class="nav-item {% if url_name and 'profile' in url_name %}active{% endif %}"
+           aria-current="{% if url_name and 'profile' in url_name %}page{% else %}false{% endif %}">
           <i class="fa-solid fa-circle-user" aria-hidden="true"></i><span>Profile</span>
         </a>
         {% endwith %}

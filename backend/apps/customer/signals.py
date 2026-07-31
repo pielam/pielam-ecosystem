@@ -1,71 +1,31 @@
+# apps/customer/signals.py
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
 
-from apps.customer.models.profile_info import ProfileInfo   # adjust import if needed
+from apps.customer.models.profile_info import ProfileInfo
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
+    """Create a ProfileInfo row automatically when a new User is created."""
     if created:
-        # Create ProfileInfo only for new users
         ProfileInfo.objects.get_or_create(user=instance)
 
 
-# app# apps/customer/signals.py
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from apps.customer.models.profile_info import ProfileInfo
-from megamind.models.connected_service import ConnectedService
-
-
-SOCIAL_FIELD_MAP = [
-    # (profile_field, service_name, service_type)
-    ('business_website', 'Business Website',  'business'),
-    ('social_facebook',  'Facebook',          'person'),
-    ('social_twitter',   'Twitter/X',         'person'),
-    ('social_instagram', 'Instagram',         'person'),
-    ('social_linkedin',  'LinkedIn',          'person'),
-    ('social_youtube',   'YouTube',           'news'),
-    ('social_tiktok',    'TikTok',            'news'),
-]
-
-
-@receiver(post_save, sender=ProfileInfo)
-def sync_urls_to_connected_services(sender, instance, **kwargs):
-    """
-    When ProfileInfo is saved, auto-create or update a ConnectedService
-    for every social/business URL field that has a value.
-    """
-    for field_name, service_label, service_type in SOCIAL_FIELD_MAP:
-        url = getattr(instance, field_name, None)
-
-        if not url:
-            # If URL was cleared, disconnect the service
-            ConnectedService.objects.filter(
-                user=instance.user,
-                profile=instance,
-                service_type=service_type,
-                service_name=service_label,
-            ).update(is_connected=False, status='private')
-            continue
-
-        # Determine service name
-        if field_name == 'business_website':
-            name = instance.business_name or instance.profile_name or service_label
-        else:
-            name = f"{instance.profile_name or instance.user.email_or_phone} — {service_label}"
-
-        ConnectedService.objects.update_or_create(
-            user=instance.user,
-            profile=instance,
-            service_name=service_label,
-            service_type=service_type,
-            defaults={
-                'service_url':  url,
-                'service_name': name,
-                'status':       'public',
-                'is_connected': True,
-            }
-        )
+# NOTE:
+# The previous `sync_urls_to_connected_services` receiver (post_save on
+# ProfileInfo, auto-creating/updating ConnectedService rows for social/
+# business URL fields) has been intentionally removed. It fired on every
+# ProfileInfo.save() — including saves from increment_view_count(),
+# verify(), suspend(), make_public(), feature(), etc. — and its
+# update_or_create() lookup mixed a stable key (service_label) with a
+# mutated value (personalized display name) in the same field, which
+# produced duplicate ConnectedService rows on nearly every save and
+# silently failed to disconnect cleared URLs.
+#
+# If ConnectedService rows need to be created/updated from ProfileInfo
+# social fields going forward, do it explicitly (e.g. in a form/serializer
+# save step, or an explicit service method the caller invokes), not as an
+# implicit signal side effect of every ProfileInfo.save().

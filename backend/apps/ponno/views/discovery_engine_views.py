@@ -37,6 +37,20 @@ Cache key namespace
   rl:ip:<ip>           rate limit counter (anonymous)
   rl:u:<user_pk>       rate limit counter (authenticated)
   lock:<key>           stampede guard lock
+
+Role / anonymous-visitor safety
+────────────────────────────────
+This view is accessed by ALL user types: anonymous visitors, and every
+authenticated Role (admin, dealer, customer, staff, moderator). No
+sub-section may assume `request.user` is authenticated or has a
+particular role. Every per-user block below either:
+  (a) checks `request.user.is_authenticated` first, or
+  (b) uses `_safe_user_role()` which returns None for anonymous users,
+      and never raises.
+Sub-sections that are non-critical (suggested dealers, connected
+services / engine context, wishlist state) are wrapped so that a
+failure there degrades to an empty/default value instead of a 500 —
+this must hold regardless of which role is logged in.
 """
 
 from __future__ import annotations
@@ -113,6 +127,48 @@ logger = logging.getLogger(__name__)
 User   = get_user_model()
 
 
+from megamind.services.visit_logger import record_discovery_visit
+
+# ═══════════════════════════════════════════════════════════════════
+# ██  DISCOVERY VISIT LOG  (megamind.models.visit_log.DiscoveryVisitLog)
+# ═══════════════════════════════════════════════════════════════════
+#
+# Device/UA parsing, geo lookup, attribution, session flags, etc. are
+# all handled inside record_discovery_visit() (megamind/services/
+# visit_logger.py) — this view only supplies the view-specific context
+# (search_query/filter_slug/sort_by/page/results_count) and fires it
+# off the request/response critical path.
+
+def _dispatch_discovery_visit(
+    request: HttpRequest,
+    params: FilterParams,
+    results_count: int | None = None,
+) -> None:
+    """
+    Fire-and-forget visitor log — no Celery available here, so we spawn
+    a short-lived daemon thread (same pattern as _spawn_refresh) rather
+    than calling record_discovery_visit() inline and adding its DB
+    reads/write latency to every page load.
+    Safe for anonymous visitors and every authenticated Role —
+    record_discovery_visit() never raises.
+    """
+    try:
+        t = threading.Thread(
+            target=record_discovery_visit,
+            kwargs=dict(
+                request=request,
+                search_query=(params.query or '')[:255],
+                filter_slug=(params.filter_slug or '')[:255],
+                sort_by=params.sort_by or '',
+                page_number=params.page or 1,
+                results_count=results_count,
+            ),
+            daemon=True,
+        )
+        t.start()
+    except Exception:
+        logger.debug('_dispatch_discovery_visit failed', exc_info=True)
+
 # ═══════════════════════════════════════════════════════════════════
 # ██  TUNEABLE CONSTANTS
 # ═══════════════════════════════════════════════════════════════════
@@ -186,6 +242,29 @@ function getCookie(name) {
 """.strip()
 
 _DIGIT_SPLIT = re.compile(r'(\d+)')
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ██  SAFE ROLE / USER HELPERS  (anonymous-visitor + any-Role safe)
+# ═══════════════════════════════════════════════════════════════════
+
+def _safe_user_role(user) -> str | None:
+    """
+    Returns the user's role string (User.Role.* value), or None for
+    anonymous visitors. Never raises — AnonymousUser has no `role`
+    attribute, and this must work identically for every Role
+    (admin / dealer / customer / staff / moderator).
+    """
+    if not user or not getattr(user, 'is_authenticated', False):
+        return None
+    return getattr(user, 'role', None)
+
+
+def _safe_user_pk(user):
+    """Returns user.pk if authenticated, else None. Never raises."""
+    if not user or not getattr(user, 'is_authenticated', False):
+        return None
+    return getattr(user, 'pk', None)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -724,7 +803,11 @@ def _dispatch_view_logs(product_db_ids: list[int], user_pk) -> None:
 # ═══════════════════════════════════════════════════════════════════
 
 def _get_wishlisted_ids(user) -> set[str]:
-    """Per-user wishlist UUID set. Redis-cached; DB fallback on cold miss."""
+    """
+    Per-user wishlist UUID set. Redis-cached; DB fallback on cold miss.
+    Anonymous visitors (any Role check aside) always get an empty set —
+    never raises.
+    """
     if not user or not getattr(user, 'is_authenticated', False):
         return set()
 
@@ -740,6 +823,7 @@ def _get_wishlisted_ids(user) -> set[str]:
                               .values_list('product__product_id', flat=True)
         )
     except Exception:
+        logger.debug('_get_wishlisted_ids DB fallback failed for uid=%s', user.pk, exc_info=True)
         ids = set()
 
     _safe_cache_set(key, ids, TTL_WISHLIST)
@@ -775,7 +859,8 @@ def _resolve_seller_info(user) -> dict:
     """
     Shared seller/dealer info resolver used by BOTH Product cards and
     ConnectedService cards, so both item types render an identical
-    dealer strip in the template.
+    dealer strip in the template. Works for a seller of any Role, and
+    tolerates a missing/None user or missing ProfileInfo.
     """
     info = {
         'seller_name':        'Seller',
@@ -1224,6 +1309,9 @@ def _get_scored_feed(
     Tier-2 (page slice) → Tier-1 (full scored list) → DB + FeedEngine.
     Returns (page_obj, total_count).
     page_obj.object_list contains formatted product dicts.
+    Works identically for anonymous visitors (user_id falls back to 0)
+    and for every authenticated Role — FeedEngine(user) already handles
+    an AnonymousUser internally via its own guards.
     """
     # Never use cache for search queries — always fetch fresh
     if params.query:
@@ -1235,8 +1323,8 @@ def _get_scored_feed(
         paginator     = Paginator(scored_list, PRODUCTS_PER_PAGE)
         safe_page     = min(params.page, paginator.num_pages) if paginator.num_pages else 1
         return paginator.get_page(safe_page), len(scored_list)
-    
-    user_id  = user.pk if (user and user.is_authenticated) else 0
+
+    user_id  = _safe_user_pk(user) or 0
     base_key = _feed_base_key(user_id, params.query, params.filter_slug, params.sort_by)
     page_key = _feed_page_key(
         user_id, params.query, params.filter_slug, params.sort_by,
@@ -1309,11 +1397,19 @@ def _record_profile_views(formatted_products: list[dict], viewer) -> None:
     For each product on this page whose seller is not the viewer,
     upsert a ProfileViewLog row (one row per viewer × profile_user).
     Service cards (item_type == 'service') are skipped.
+    No-op for anonymous visitors, regardless of Role logic elsewhere.
+    Never raises — logging failures must not break the page for any
+    Role.
     """
     if not viewer or not getattr(viewer, 'is_authenticated', False):
         return
     try:
-        from apps.customer.models.account import ProfileViewLog  # noqa: PLC0415
+        # NOTE: ProfileViewLog lives in its own module, not in
+        # apps.customer.models.account (that module only defines
+        # User / UserManager). Importing from the wrong path here
+        # silently broke profile-view logging for every role, since
+        # the failure was swallowed by the except clause below.
+        from apps.customer.models.profile_view_log import ProfileViewLog  # noqa: PLC0415
         seen_dealer_ids: set[int] = set()
         for p in formatted_products:
             if p.get('item_type') == 'service':
@@ -1349,6 +1445,8 @@ def _resolve_following_ids(user) -> list[int]:
     """
     Return the list of User PKs that `user` is currently following.
     ProfileInfo.following is a M2M → User (AUTH_USER_MODEL).
+    Safe for any authenticated Role; caller must not call this for an
+    anonymous user (ProfileInfo.objects.get(user=user) would fail).
     """
     try:
         from apps.customer.models.profile_info import ProfileInfo
@@ -1361,7 +1459,7 @@ def _resolve_following_ids(user) -> list[int]:
     except Exception:
         logger.warning(
             'DiscoveryEngine: _resolve_following_ids failed for user=%s',
-            user.pk, exc_info=True,
+            getattr(user, 'pk', None), exc_info=True,
         )
         return []
 
@@ -1739,10 +1837,6 @@ _FALLBACKS: dict[str, Any] = {
 # ██  CACHE INVALIDATION
 # ═══════════════════════════════════════════════════════════════════
 
-def invalidate_wishlist_cache(user_pk: int) -> None:
-    _safe_cache_delete(f'{_WISHLIST_PREFIX}:{user_pk}')
-
-
 def invalidate_profile_cache(user_id: int) -> None:
     cache.delete_many([
         _key_ctx(user_id), _key_activity(user_id),
@@ -1971,6 +2065,14 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
     7.  Record ProfileViewLog entries for seller profiles
     8.  Suggested dealers
     9.  Build context + render
+
+    Accessible by ANY visitor:
+      - Anonymous (not logged in) — every per-user section below
+        degrades to an empty/default value, never raises.
+      - Any authenticated Role (admin, dealer, customer, staff,
+        moderator) — no section assumes a specific role; non-critical
+        sections are wrapped in try/except so one failure never 500s
+        the whole page for any role.
     """
 
     # ── 0. Rate limit ─────────────────────────────────────────────
@@ -2049,6 +2151,9 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
 
     else:
         # Feed sorts: two-tier cache + FeedEngine.rank_dicts()
+        # Works for anonymous visitors and any Role — FeedEngine(user)
+        # and _get_scored_feed() both fall back to a neutral user_id=0
+        # bucket when the visitor isn't authenticated.
         page_obj, _ = _get_scored_feed(
             products_qs=products_qs,
             user=request.user,
@@ -2064,91 +2169,138 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
     )
 
     if show_service_cards:
-        seen_dealer_ids = {
-            p.get('dealer_id') for p in formatted_products if p.get('dealer_id')
-        }
-        service_items = _format_connected_service_items(
-            query=params.query,
-            limit=SERVICE_CARDS_LIMIT,
-            exclude_user_ids=seen_dealer_ids,
-        )
-        if service_items:
-            formatted_products = _interleave_service_cards(formatted_products, service_items)
+        try:
+            seen_dealer_ids = {
+                p.get('dealer_id') for p in formatted_products if p.get('dealer_id')
+            }
+            service_items = _format_connected_service_items(
+                query=params.query,
+                limit=SERVICE_CARDS_LIMIT,
+                exclude_user_ids=seen_dealer_ids,
+            )
+            if service_items:
+                formatted_products = _interleave_service_cards(formatted_products, service_items)
+        except Exception:
+            # Never let a broken ConnectedService card break the feed
+            # for any visitor, logged in or not.
+            logger.warning('ConnectedService card injection failed', exc_info=True)
 
     # ── 6. Per-user wishlist state ─────────────────────────────────
-    wishlisted_ids = _get_wishlisted_ids(request.user)
+    # _get_wishlisted_ids() already returns an empty set for anonymous
+    # visitors and never raises for any Role.
+    try:
+        wishlisted_ids = _get_wishlisted_ids(request.user)
+    except Exception:
+        logger.warning('wishlist lookup failed', exc_info=True)
+        wishlisted_ids = set()
 
     # ── 7. ProfileViewLog ─────────────────────────────────────────
-    _record_profile_views(formatted_products, request.user)
+    # _record_profile_views() already no-ops for anonymous visitors and
+    # swallows its own exceptions, but wrap anyway as defense-in-depth.
+    try:
+        _record_profile_views(formatted_products, request.user)
+    except Exception:
+        logger.debug('profile view logging failed', exc_info=True)
 
     # ── 8. Suggested dealers ──────────────────────────────────────
+    # Anonymous visitors and every Role get a safe default. The
+    # "suggested dealers" widget itself is only meaningful for
+    # customers / anonymous visitors browsing the marketplace; dealers,
+    # staff, admins and moderators simply won't see it (empty list),
+    # which the template already handles via `{% if suggested_dealers %}`.
     already_following: list[int] = []
-    if request.user.is_authenticated:
-        already_following = _resolve_following_ids(request.user)
+    suggested_dealers: list = []
 
-    try:
-        suggested_dealers = list(
-            User.objects
-            .filter(role='dealer', is_active=True, deleted_at__isnull=True)
-            .exclude(id__in=already_following)
-            .select_related('profileinfo')
-            .annotate(product_count=Count('products', filter=Q(products__is_active=True)))
-            .order_by('-product_count')[:6]
-        )
-    except Exception:
-        suggested_dealers = []
+    user_role = _safe_user_role(request.user)
 
-    for dealer in suggested_dealers:
+    if user_role in (None, User.Role.CUSTOMER):
         try:
-            pi = dealer.profileinfo
-            if not getattr(pi, 'profile_name', None):
-                pi.profile_name = (
-                    getattr(pi, 'full_name', None)
-                    or getattr(dealer, 'email_or_phone', '')
-                    or ''
-                )
+            if request.user.is_authenticated:
+                already_following = _resolve_following_ids(request.user)
+
+            dealer_qs = (
+                User.objects
+                .filter(role=User.Role.DEALER, is_active=True, deleted_at__isnull=True)
+                .exclude(id__in=already_following)
+            )
+            current_uid = _safe_user_pk(request.user)
+            if current_uid:
+                dealer_qs = dealer_qs.exclude(id=current_uid)  # never suggest self
+
+            suggested_dealers = list(
+                dealer_qs
+                .select_related('profileinfo')
+                .annotate(product_count=Count('products', filter=Q(products__is_active=True)))
+                .order_by('-product_count')[:6]
+            )
         except Exception:
-            pass
+            logger.debug('suggested_dealers query failed', exc_info=True)
+            suggested_dealers = []
 
-    # ── Insert this BEFORE the "context = {...}" block in DiscoveryEngineView ──
+        for dealer in suggested_dealers:
+            try:
+                pi = dealer.profileinfo
+                if not getattr(pi, 'profile_name', None):
+                    pi.profile_name = (
+                        getattr(pi, 'full_name', None)
+                        or getattr(dealer, 'email_or_phone', '')
+                        or ''
+                    )
+            except Exception:
+                pass
 
-    # ── 8b. Connected services + engine context (Formats 4/5/6/7/9/10) ────
-    engine_context = {'extracted_images': [], 'images_count': 0, 'links_count': 0}
+    # ── 8b. Connected services + engine context ────────────────────
+    # Only meaningful for authenticated dealers/sellers who've hooked
+    # up ConnectedService rows, but must never error out for ANY Role
+    # (or anonymous visitors) that happens to hit this view.
+    engine_context = dict(_EMPTY_ENGINE)
     connected_services = []
     error_service_count = success_service_count = pending_service_count = 0
     type_breakdown = []
 
     if request.user.is_authenticated:
-        engine_context = _load_engine_context(request.user)
-        connected_services = engine_context.get('connected_services', [])
+        try:
+            engine_context = _load_engine_context(request.user)
+            connected_services = engine_context.get('connected_services', [])
 
-        for svc in connected_services:
-            status = svc.get('fetch_status')
-            if status == 'success':
-                success_service_count += 1
-            elif status == 'error':
-                error_service_count += 1
-            else:
-                pending_service_count += 1
+            for svc in connected_services:
+                svc_status = svc.get('fetch_status')
+                if svc_status == 'success':
+                    success_service_count += 1
+                elif svc_status == 'error':
+                    error_service_count += 1
+                else:
+                    pending_service_count += 1
 
-        type_counts: dict[str, int] = {}
-        for svc in connected_services:
-            t = svc.get('service_type', 'other')
-            type_counts[t] = type_counts.get(t, 0) + 1
+            type_counts: dict[str, int] = {}
+            for svc in connected_services:
+                t = svc.get('service_type', 'other')
+                type_counts[t] = type_counts.get(t, 0) + 1
 
-        _TYPE_COLORS = {
-            'product':   '#0d47a1', 'education': '#7c3aed', 'news': '#ec4899',
-            'business':  '#00b894', 'api':       '#d4af37', 'person': '#f97316',
-            'location':  '#14b8a6',
-        }
-        type_breakdown = [
-            {'type': t, 'count': c, 'color': _TYPE_COLORS.get(t, '#7c3aed')}
-            for t, c in type_counts.items()
-        ]
+            _TYPE_COLORS = {
+                'product':   '#0d47a1', 'education': '#7c3aed', 'news': '#ec4899',
+                'business':  '#00b894', 'api':       '#d4af37', 'person': '#f97316',
+                'location':  '#14b8a6',
+            }
+            type_breakdown = [
+                {'type': t, 'count': c, 'color': _TYPE_COLORS.get(t, '#7c3aed')}
+                for t, c in type_counts.items()
+            ]
+        except Exception:
+            # A broken engine-context query must not 500 the discovery
+            # feed for a logged-in user, regardless of their Role.
+            logger.warning(
+                'engine_context load failed uid=%s role=%s',
+                _safe_user_pk(request.user), user_role, exc_info=True,
+            )
+            engine_context = dict(_EMPTY_ENGINE)
+            connected_services = []
+            error_service_count = success_service_count = pending_service_count = 0
+            type_breakdown = []
 
-
-    # ── Then add these keys to the existing context dict: ─────────────────
-    #
+    # ── 8c. Log the visit (background thread, non-blocking, safe for
+    #        anonymous visitors and every Role) ────────────────────
+    _dispatch_discovery_visit(request, params, results_count=total_count)
 
     # ── 9. Context + render ───────────────────────────────────────
     context = {
@@ -2179,14 +2331,14 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
         'brand_category_map':    brand_category_map,
         'brand_subcategory_map': brand_subcategory_map,
 
-        # Per-user state
+        # Per-user state (safe defaults for anonymous / any Role)
         'wishlisted_ids':    list(wishlisted_ids),
         'already_following': already_following,
         'suggested_dealers': suggested_dealers,
+        'user_role':         user_role,
 
         # getCookie JS helper required by wishlist/follow AJAX
         'get_cookie_js': _GET_COOKIE_JS,
-
 
         'connected_services':     connected_services,
         'engine_context':         engine_context,
@@ -2194,7 +2346,6 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
         'success_service_count':  success_service_count,
         'pending_service_count':  pending_service_count,
         'type_breakdown':         json.dumps(type_breakdown),
-
     }
 
     return render(request, 'ponno/discovery_engine.html', context)
