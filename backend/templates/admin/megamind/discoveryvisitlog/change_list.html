@@ -1,0 +1,124 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  /* ── Visitor analytics cards ─────────────────────────────────── */
+
+  .visit-log-analytics {
+    margin: 0 0 20px;
+  }
+
+  .visit-log-analytics__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+  }
+
+  .visit-log-analytics__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--hairline-color, #e5e7eb);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .visit-log-analytics__card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #4f9da6;
+  }
+
+  .visit-log-analytics__label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--body-quiet-color, #6b7280);
+  }
+
+  .visit-log-analytics__number {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--body-fg, #111827);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .visit-log-analytics__sub {
+    font-size: 12px;
+    color: var(--body-quiet-color, #9ca3af);
+  }
+
+  /* ── Badges (device type, etc) ───────────────────────────────── */
+
+  .visit-log-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .visit-log-muted {
+    color: var(--body-quiet-color, #9ca3af);
+  }
+
+  /* ── Result list polish ──────────────────────────────────────── */
+
+  #result_list {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  #result_list thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--darkened-bg, #f3f4f6);
+  }
+
+  #result_list tbody tr:hover {
+    background: rgba(79, 157, 166, 0.06);
+  }
+
+  #result_list td.field-ip_address {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+
+  #result_list td.field-search_query {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="visit-log-analytics">
+  <div class="visit-log-analytics__grid">
+    {% for stat in visitor_analytics %}
+    <div class="visit-log-analytics__card">
+      <span class="visit-log-analytics__label">{{ stat.label }}</span>
+      <span class="visit-log-analytics__number">{{ stat.unique_visitors }}</span>
+      <span class="visit-log-analytics__sub">unique visitor{{ stat.unique_visitors|pluralize }} &middot; {{ stat.total_hits }} hit{{ stat.total_hits|pluralize }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{{ block.super }}
+{% endblock %}

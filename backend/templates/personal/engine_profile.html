@@ -353,6 +353,10 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
 .int-icon.api       { background:rgba(124,58,237,.12); color:#7c3aed; }
 .int-icon.person    { background:rgba(249,115,22,.12); color:#f97316; }
 .int-icon.business  { background:rgba(0,184,148,.12);  color:var(--success-emerald); }
+.int-icon.brand        { background:rgba(212,175,55,.15); color:var(--accent-gold); }
+.int-icon.category     { background:rgba(14,165,233,.12); color:#0ea5e9; }
+.int-icon.subcategory  { background:rgba(100,116,139,.12); color:#64748b; }
+.int-icon.entertainment{ background:rgba(225,29,72,.12);  color:#e11d48; }
 .int-icon.other     { background:var(--bg-secondary);  color:var(--text-muted); }
 .int-info { flex:1; min-width:0; }
 .int-info__name { font-size:.875rem; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -420,6 +424,10 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
 .service-card__rail.api       { background:#7c3aed; }
 .service-card__rail.person    { background:#f97316; }
 .service-card__rail.business  { background:var(--success-emerald); }
+.service-card__rail.brand         { background:var(--accent-gold); }
+.service-card__rail.category      { background:#0ea5e9; }
+.service-card__rail.subcategory   { background:#64748b; }
+.service-card__rail.entertainment { background:#e11d48; }
 .service-card__head {
   display:flex; align-items:flex-start; justify-content:space-between;
   gap:.75rem; padding:.875rem 1rem .625rem;
@@ -438,6 +446,10 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
 .card-icon.api       { background:rgba(124,58,237,.12); color:#7c3aed; }
 .card-icon.person    { background:rgba(249,115,22,.12); color:#f97316; }
 .card-icon.business  { background:rgba(0,184,148,.12);  color:var(--success-emerald); }
+.card-icon.brand         { background:rgba(212,175,55,.15); color:var(--accent-gold); }
+.card-icon.category      { background:rgba(14,165,233,.12); color:#0ea5e9; }
+.card-icon.subcategory   { background:rgba(100,116,139,.12); color:#64748b; }
+.card-icon.entertainment { background:rgba(225,29,72,.12);  color:#e11d48; }
 .card-icon.other     { background:var(--bg-tertiary);   color:var(--text-muted); }
 .card-meta { min-width:0; }
 .card-meta__name { font-size:.875rem; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -683,19 +695,32 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
   background:var(--bg-tertiary); border:1px solid var(--border-light);
   display:flex; align-items:center; justify-content:center; color:var(--border-medium); font-size:1.25rem;
   transition:opacity .15s;
+  position:relative;
 }
 .gallery-cell img { width:100%; height:100%; object-fit:cover; }
 .gallery-cell:hover { opacity:.75; }
+.gallery-cell__link {
+  position:absolute; top:3px; right:3px;
+  width:18px; height:18px; border-radius:5px;
+  background:rgba(15,23,42,.65); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.5625rem; z-index:1;
+}
+.gallery-cell__link:hover { background:rgba(15,23,42,.85); }
 .gallery-caption { font-size:.625rem; color:var(--text-muted); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .video-item {
-  display:flex; align-items:center; gap:.625rem;
+  display:flex; flex-direction:column; align-items:stretch; gap:.5rem;
   padding:.625rem .875rem; background:var(--bg-tertiary); border:1px solid var(--border-light);
-  border-radius:10px; margin-bottom:.5rem;
+  border-radius:10px; margin-bottom:.625rem;
 }
-.video-item i { color:var(--primary-light); font-size:1rem; flex-shrink:0; }
+.video-item__row { display:flex; align-items:center; gap:.625rem; }
+.video-item__row i.fa-play-circle { color:var(--primary-light); font-size:1rem; flex-shrink:0; }
 .video-item__body { min-width:0; flex:1; }
 .video-item__url { font-family:var(--f-mono); font-size:.6875rem; color:var(--primary-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
-.video-item__type { font-size:.625rem; color:var(--text-muted); margin-top:2px; }
+.video-item__type { font-size:.625rem; color:var(--text-muted); margin-top:2px; text-transform:capitalize; }
+.video-item__player { width:100%; border-radius:8px; overflow:hidden; background:#000; }
+.video-item__player iframe,
+.video-item__player video { width:100%; aspect-ratio:16/9; border:0; display:block; }
 .link-item { display:flex; align-items:flex-start; gap:.5rem; padding:7px 0; border-bottom:1px solid var(--border-light); font-size:.75rem; }
 .link-item:last-child { border-bottom:none; }
 .link-item i { color:var(--border-medium); margin-top:2px; flex-shrink:0; }
@@ -812,6 +837,20 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
     flex: 1;
     min-width: 0;
   }
+
+  /* Stack header title + button on small screens */
+  .mgmt-card__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .625rem;
+  }
+
+  /* Add service button full-width */
+  #addServiceBtn {
+    width:100%; justify-content:center;
+    border-radius:10px; padding:.6rem 1rem;
+    font-size:.875rem;
+  }
 }
 @media(max-width:480px) {
   .main { padding:.625rem; }
@@ -824,13 +863,20 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
   .stats-scroll { justify-content:space-between; width:100%; }
   .stat-pill { flex:1; min-width:0; padding:.35rem .5rem; }
 
+  /* Stack header title + button on small screens */
+  .mgmt-card__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .625rem;
+  }
+
   /* Add service button full-width */
   #addServiceBtn {
     width:100%; justify-content:center;
     border-radius:10px; padding:.6rem 1rem;
     font-size:.875rem;
   }
-
+  
 .integrations-grid {
   display: flex;
   gap: .75rem;
@@ -866,6 +912,20 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
   .stat-pill__label { font-size:.55rem; }
   .mini-grid { grid-template-columns:repeat(2,1fr); }
   .img-gallery { grid-template-columns:repeat(auto-fill, minmax(56px,1fr)); }
+
+  /* Stack header title + button on small screens */
+  .mgmt-card__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .625rem;
+  }
+
+  /* Add service button full-width */
+  #addServiceBtn {
+    width:100%; justify-content:center;
+    border-radius:10px; padding:.6rem 1rem;
+    font-size:.875rem;
+  }
 }
 
 @media(prefers-reduced-motion:reduce) {
@@ -936,9 +996,9 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
   <div class="mgmt-card">
     <div class="mgmt-card__header">
       <h3><i class="fa-solid fa-plug"></i> Connected services</h3>
-       <button class="icon-btn primary" id="addServiceBtn">
+       {% comment %} <button class="icon-btn primary" id="addServiceBtn">
         <i class="fa-solid fa-plus"></i> Add service
-      </button>  
+      </button>   {% endcomment %}
     </div>
     <div class="mgmt-card__body">
       <div class="integrations-grid" id="servicesGrid">
@@ -953,6 +1013,10 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
             {% elif service.service_type == 'api'       %}<i class="fas fa-plug"></i>
             {% elif service.service_type == 'person'    %}<i class="fas fa-user"></i>
             {% elif service.service_type == 'business'  %}<i class="fas fa-building"></i>
+            {% elif service.service_type == 'brand'        %}<i class="fas fa-copyright"></i>
+            {% elif service.service_type == 'category'     %}<i class="fas fa-layer-group"></i>
+            {% elif service.service_type == 'subcategory'  %}<i class="fas fa-sitemap"></i>
+            {% elif service.service_type == 'entertainment'%}<i class="fas fa-film"></i>
             {% else %}<i class="fas fa-globe"></i>{% endif %}
           </div>
           <div class="int-info">
@@ -1068,13 +1132,17 @@ button { font-family:var(--font-body); cursor:pointer; border:none; background:n
       <div class="form-group">
         <label for="serviceType">Service type</label>
         <select id="serviceType" class="form-control">
-          <option value="education">Education</option>
           <option value="product">Product</option>
+          <option value="brand">Brand</option>
+          <option value="category">Category</option>
+          <option value="subcategory">Sub-category</option>
+          <option value="education">Education</option>
           <option value="news">News</option>
           <option value="location">Location</option>
           <option value="api">API endpoint</option>
           <option value="person">Person</option>
           <option value="business">Business</option>
+          <option value="entertainment">Entertainment</option>
         </select>
       </div>
       <div class="modal-actions">
@@ -1267,11 +1335,54 @@ function formatAgo(iso) {
   if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
   return `${Math.floor(d / 86400)}d ago`;
 }
+const TYPE_ICONS = {
+  education:'fa-graduation-cap', product:'fa-box-open', news:'fa-newspaper',
+  location:'fa-map-marker-alt',  api:'fa-plug',          person:'fa-user',
+  business:'fa-building',
+  brand:'fa-copyright', category:'fa-layer-group',
+  subcategory:'fa-sitemap', entertainment:'fa-film',
+};
 function typeIcon(type) {
-  const m = { education:'fa-graduation-cap', product:'fa-box', news:'fa-newspaper', location:'fa-map-marker-alt', api:'fa-code', person:'fa-user', business:'fa-briefcase' };
-  return `<i class="fas ${m[type] || 'fa-globe'}"></i>`;
+  return `<i class="fas ${TYPE_ICONS[type] || 'fa-globe'}"></i>`;
 }
-const TYPE_ICONS = { education:'fa-graduation-cap', product:'fa-box-open', news:'fa-newspaper', location:'fa-map-marker-alt', api:'fa-plug', person:'fa-user', business:'fa-building' };
+
+/* ════════════════════════════
+   VIDEO NORMALIZATION
+════════════════════════════
+   extracted_videos can arrive in two shapes depending on which
+   endpoint populated `servicesData`:
+     - normalized (server-side, via megamind.utils.video_info /
+       _serialize_service): {platform, embed_url, watch_url,
+       thumbnail, type: 'iframe'|'video', mime_type?}
+     - legacy/raw (from scraper.py / service_fetcher.py before
+       normalization, e.g. the DRF ConnectedServiceSerializer path):
+       {url, type: 'video/*'|'embed'} or a bare URL string.
+   Normalize here client-side too so the details drawer renders
+   identically — and actually plays the video — regardless of which
+   endpoint the data came from. */
+function normalizeVideoForDisplay(raw) {
+  if (raw && typeof raw === 'object' && (raw.embed_url || raw.watch_url)) {
+    const url = raw.embed_url || raw.watch_url || '';
+    return {
+      platform:  raw.platform || 'unknown',
+      embed_url: url,
+      watch_url: raw.watch_url || raw.embed_url || '',
+      thumbnail: raw.thumbnail || '',
+      type:      raw.type === 'iframe' ? 'iframe' : 'video',
+      mime_type: raw.mime_type || 'video/mp4',
+    };
+  }
+  const url = (raw && typeof raw === 'object') ? (raw.url || raw.src || '') : String(raw || '');
+  const rawType = (raw && typeof raw === 'object' && raw.type) ? raw.type : '';
+  return {
+    platform:  'unknown',
+    embed_url: url,
+    watch_url: url,
+    thumbnail: '',
+    type:      rawType === 'embed' ? 'iframe' : 'video',
+    mime_type: rawType.startsWith('video/') ? rawType : 'video/mp4',
+  };
+}
 
 
 /* ════════════════════════════
@@ -1293,7 +1404,7 @@ function renderIntegrationsStrip() {
     const stype = s.service_type || 'other';
     el.innerHTML = `
       <div class="int-icon ${escHtml(stype)}">
-        <i class="fas ${TYPE_ICONS[stype] || 'fa-globe'}"></i>
+        ${typeIcon(stype)}
       </div>
       <div class="int-info">
         <div class="int-info__name">${escHtml(s.service_name)}</div>
@@ -1712,6 +1823,7 @@ function viewServiceDetails(serviceId) {
               <div>
                 <div class="gallery-cell" onclick="viewImage('${escHtml(img.url)}')">
                   <img src="${escHtml(img.url)}" alt="${escHtml(img.alt || '')}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">
+                  ${img.href ? `<a class="gallery-cell__link" href="${escHtml(img.href)}" target="_blank" rel="noopener" title="Open source link" onclick="event.stopPropagation()"><i class="fas fa-up-right-from-square"></i></a>` : ''}
                 </div>
                 ${img.alt ? `<div class="gallery-caption" title="${escHtml(img.alt)}">${escHtml(img.alt.substring(0, 22))}${img.alt.length > 22 ? '…' : ''}</div>` : ''}
               </div>`).join('')}</div>
@@ -1720,7 +1832,25 @@ function viewServiceDetails(serviceId) {
       </div>
       <div id="tab-vid-${s.id}" class="tab-panel">
         ${videos.length
-          ? videos.map(v => `<div class="video-item"><i class="fas fa-play-circle"></i><div class="video-item__body"><a class="video-item__url" href="${escHtml(v.url)}" target="_blank" rel="noopener">${escHtml(v.url)}</a><div class="video-item__type">${escHtml(v.type || 'video')}</div></div><a href="${escHtml(v.url)}" target="_blank" rel="noopener" class="card-btn" style="flex:none;padding:.35rem .625rem"><i class="fas fa-external-link-alt"></i></a></div>`).join('')
+          ? videos.map(raw => {
+              const v = normalizeVideoForDisplay(raw);
+              const player = v.embed_url
+                ? (v.type === 'iframe'
+                    ? `<div class="video-item__player"><iframe src="${escHtml(v.embed_url)}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`
+                    : `<div class="video-item__player"><video src="${escHtml(v.embed_url)}" controls preload="none" ${v.thumbnail ? `poster="${escHtml(v.thumbnail)}"` : ''}></video></div>`)
+                : '';
+              return `<div class="video-item">
+                <div class="video-item__row">
+                  <i class="fas fa-play-circle"></i>
+                  <div class="video-item__body">
+                    <a class="video-item__url" href="${escHtml(v.watch_url)}" target="_blank" rel="noopener">${escHtml(v.watch_url)}</a>
+                    <div class="video-item__type">${escHtml(v.platform)} · ${escHtml(v.type)}</div>
+                  </div>
+                  <a href="${escHtml(v.watch_url)}" target="_blank" rel="noopener" class="card-btn" style="flex:none;padding:.35rem .625rem"><i class="fas fa-external-link-alt"></i></a>
+                </div>
+                ${player}
+              </div>`;
+            }).join('')
           : `<div class="tab-empty"><i class="fas fa-video"></i><br>No videos extracted</div>`}
       </div>
       <div id="tab-lnk-${s.id}" class="tab-panel">

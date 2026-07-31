@@ -1,25 +1,16 @@
-{% include "base.html" %}
-
-
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} — Profile | PIELAM{% endblock %}
+
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>{{ profile_info.profile_name|default:user.email_or_phone }} — Profile | PIELAM</title>
 
 <style>
 
 /* ═══════════════════════════════════════════════
        GLOBAL — Design Tokens, Reset, Base
     ═══════════════════════════════════════════════ */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap');
 
     :root {
       --r: 12px; 
@@ -36,19 +27,19 @@
       --surface-3:  #eeede9;
       --border:     #e4e3df;
       --border-2:   #d0cfc9;
-      --accent:     #c8102e;
-      --accent-2:   #a00d24;
-      --gold:       #b8860b;
-      --gold-2:     #8b6508;
+      --accent:     #4a90e2;
+      --accent-2:   #6aa9f0;
+      --gold:       #d4af37;
+      --gold-2:     #8b6a00;
       --green:      #1a6b3a;
       --green-bg:   #edf7f1;
       --warn:       #92400e;
       --warn-bg:    #fffbeb;
-      --blue:       #1e3a8a;
-      --blue-light: #3b82f6;
+      --blue:       #1565c0;
+      --blue-light: #4a90e2;
       --primary-dark:    #0a2540;
       --primary-blue:    #0d47a1;
-      --primary-light:   #1976d2;
+      --primary-light:   #1e88e5;
       --accent-gold:     #d4af37;
       --accent-amber:    #ffb300;
       --success-emerald: #00b894;
@@ -66,11 +57,11 @@
       --shadow-md: 0 4px 12px rgba(10,37,64,.12);
       --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
       --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
-      --font-display: 'Cormorant Garamond', serif;
-      --font-body:    'Syne', sans-serif;
-      --f-mono:       'JetBrains Mono', monospace;
-      --f-display:    'Cormorant Garamond', serif;
-      --f-body:       'Syne', sans-serif;
+      --font-display: 'roboto', serif;
+      --font-body:    'roboto', sans-serif;
+      --f-mono:       'roboto', monospace;
+      --f-display:    'roboto', serif;
+      --f-body:       'roboto', sans-serif;
       --header-h:          64px;
       --bg:       var(--bg-primary);
       --nav-h:             64px;
@@ -92,14 +83,14 @@
       --raised:      #f5f5f3;
       --overlay:     #eeede9;
       --abyss:       #0f0f0f;
-      --gold-pure:   #b8860b;
-      --gold-dim:    rgba(184,134,11,0.40);
-      --gold-trace:  rgba(184,134,11,0.08);
-      --gold-bright: #d4a017;
+      --gold-pure:   #d4af37;
+      --gold-dim:    rgba(212,175,55,.40);
+      --gold-trace:  rgba(212,175,55,.08);
+      --gold-bright: #ffe680;
       --emerald:  #1a6b3a;
       --amber:    #92400e;
       --ruby:     #c8102e;
-      --sapphire: #1e3a8a;
+      --sapphire: #1565c0;
 
       
     }
@@ -149,11 +140,9 @@
 
 
 </style>
+{% endblock %}
 
-</head>
-
-<body>
-
+{% block content %}
 
 <style>
 
@@ -182,7 +171,7 @@
   gap: 6px;
   padding: 8px 16px;
 
-  background: var(--gold, #b8860b);
+  background: var(--gold, #d4af37);
   color: #fff;
   border: 1px solid #000;
   border-radius: 8px;
@@ -195,7 +184,7 @@
 }
 
 .profile-cover .cover-edit-btn:hover {
-  background: var(--gold-2, #8b6508);
+  background: var(--gold-2, #8b6a00);
   border-color: #000;
 }
 
@@ -328,7 +317,7 @@
       <div class="profile-cover">
         <img src="{{ profile_info.profile_cover_photo }}"
             alt="Cover photo" class="cover-image" loading="lazy">
-        <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
+        <a href="{% url 'customer:update_cover_photo' %}" class="cover-edit-btn">
           <i class="fa-solid fa-camera"></i><span>Cover Photo</span>
         </a>
         {% comment %} <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
@@ -391,7 +380,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #1a6fa3;
+  background: #1565c0;
   color: #fff;
   border: 2px solid #fff;
   display: flex;
@@ -443,7 +432,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #1a6fa3;
+  background: #1565c0;
   color: #fff;
   font-size: 10px;
 }
@@ -532,7 +521,7 @@
           <img src="{{ profile_info.profile_photo }}"
      alt="{{ profile_info.profile_name|default:'Profile Photo' }}"
      class="profile-avatar" loading="lazy">
-          <a href="{% url 'customer:edit_profile' %}" class="avatar-edit-btn" title="Change photo">
+          <a href="{% url 'customer:update_profile_photo' %}" class="avatar-edit-btn" title="Change photo">
             <i class="fa-solid fa-camera"></i>
           </a>
         </div>
@@ -541,7 +530,9 @@
         <div class="profile-identity-main">
           <div class="profile-name-block">
             <h1 class="profile-fullname">
-              {{ profile_info.profile_name|default:user.email_or_phone }}
+              <a href="{% url 'customer:profile_view' username=user.email_or_phone %}" style="color:inherit;text-decoration:none">
+                {{ profile_info.profile_name|default:user.email_or_phone }}
+              </a>
               {% if profile_info.is_profile_verified %}
                 <span class="verified-badge" title="Verified">
                   <i class="fa-solid fa-check"></i>
@@ -1113,6 +1104,7 @@ function animateCompletionCircle() {
 }
 </script>
 
+
 <style>
 
   /* ═══ PROFILE TAB BAR ═══ */
@@ -1171,8 +1163,8 @@ function animateCompletionCircle() {
 }
 
 .tab-btn.active {
-  color: #1e3a8a;
-  border-bottom-color: #1e3a8a;
+  color: #1565c0;
+  border-bottom-color: #1565c0;
   font-weight: 700;
 }
 
@@ -1191,14 +1183,14 @@ function animateCompletionCircle() {
   height: 18px;
   padding: 0 5px;
   background: #eff6ff;
-  color: #1e3a8a;
+  color: #1565c0;
   border-radius: 10px;
   font-size: .65rem;
   font-weight: 800;
 }
 
 .tab-btn.active .tab-count {
-  background: #1e3a8a;
+  background: #1565c0;
   color: #fff;
 }
 
@@ -1293,11 +1285,15 @@ function animateCompletionCircle() {
   .tab-count { border: 1px solid ButtonText; }
 }
 
-
+.card {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
 </style>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     TAB BAR 
+     TAB BAR
 ═══════════════════════════════════════════════════════════════ -->
 <div class="profile-tabs-bar">
   <nav class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
@@ -1305,18 +1301,16 @@ function animateCompletionCircle() {
     <button class="tab-btn active" data-tab="products"
             role="tab" aria-selected="true" aria-controls="tab-products">
       <i class="fa-solid fa-box"></i> Products
-      
     </button>
 
-    <button class="tab-btn" data-tab="activity"
-            role="tab" aria-selected="false" aria-controls="tab-activity">
-      <i class="fas fa-spider"></i> Engine
+    <button class="tab-btn" data-tab="videos"
+            role="tab" aria-selected="false" aria-controls="tab-videos">
+      <i class="fa-solid fa-video"></i> Videos
     </button>
 
-    <button class="tab-btn" data-tab="following"
-            role="tab" aria-selected="false" aria-controls="tab-following">
-      <i class="fa-solid fa-user-group"></i> Following
-      
+    <button class="tab-btn" data-tab="media"
+            role="tab" aria-selected="false" aria-controls="tab-media">
+      <i class="fa-solid fa-images"></i> Media
     </button>
 
     <button class="tab-btn" data-tab="info"
@@ -1326,7 +1320,6 @@ function animateCompletionCircle() {
 
   </nav>
 </div>
-
 
 <!-- ═══════════════════════════════════════════════════════════════
      TWO-COLUMN LAYOUT — open tag only (closed in part 3)
@@ -1342,6 +1335,14 @@ function animateCompletionCircle() {
 ═══════════════════════════════════════════════════════════════ -->
 <style>
 /* ═══ UPGRADED PRODUCT CARD ═══ */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 0;
+}
+
 .product-grid-v2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1366,7 +1367,7 @@ function animateCompletionCircle() {
 .pcard:hover {
   box-shadow: 0 8px 24px rgba(10,37,64,.14);
   transform: translateY(-4px);
-  border-color: #1e3a8a;
+  border-color: #1565c0;
 }
 
 /* ── Thumb ── */
@@ -1526,7 +1527,7 @@ function animateCompletionCircle() {
 .pcard-model {
   font-size: .75rem;
   font-weight: 600;
-  color: #1e3a8a;
+  color: #1565c0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1614,7 +1615,7 @@ function animateCompletionCircle() {
 
 .pcard-tag.brand {
   background: #eff6ff;
-  color: #1e3a8a;
+  color: #1565c0;
   border: 1px solid #bfdbfe;
 }
 
@@ -1843,788 +1844,282 @@ function animateCompletionCircle() {
 </div><!-- /#tab-products -->
 
 <style>
-.engine-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.engine-filters{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
-.engine-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:12px;border:1px solid var(--border-color, #e5e7eb);cursor:pointer;background:var(--surface-2, #f9fafb);color:var(--text-secondary, #6b7280);white-space:nowrap;transition:all .15s}
-.engine-filter-btn.active{background:#fff;color:var(--text-primary, #111827);border-color:var(--border-color-strong, #9ca3af);font-weight:500}
-.engine-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.dot-all{background:var(--text-secondary, #9ca3af)}
+.video-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.video-count-label{font-size:12px;color:var(--text-secondary,#6b7280);margin-left:auto}
+
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.video-card{border:1px solid var(--border-color,#e5e7eb);border-radius:12px;overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.video-card:hover{border-color:#1565c0;box-shadow:0 6px 16px rgba(10,37,64,.1)}
+
+.video-embed-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+.video-embed-wrap iframe,
+.video-embed-wrap video{width:100%;height:100%;border:0;display:block;object-fit:cover}
+
+.video-platform-pill{position:absolute;top:8px;left:8px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,.6);color:#fff;text-transform:capitalize;z-index:2}
+.video-fallback-pill{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(202,138,4,.85);color:#fff;z-index:2}
+
+.video-body{padding:10px 12px 12px}
+.video-title{font-size:13px;font-weight:600;color:var(--text-primary,#111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:4px}
+.video-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary,#6b7280)}
+.video-watch-link{font-size:11px;color:#1565c0;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.video-watch-link:hover{text-decoration:underline}
+
+.engine-empty-state{display:flex;flex-direction:column;align-items:center;padding:48px 24px;text-align:center}
+.engine-empty-icon{width:48px;height:48px;border-radius:50%;background:var(--surface-2,#f3f4f6);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary,#9ca3af);margin-bottom:14px}
+.engine-empty-title{font-size:15px;font-weight:500;color:var(--text-primary,#111827);margin-bottom:6px}
+.engine-empty-text{font-size:13px;color:var(--text-secondary,#6b7280);max-width:280px;line-height:1.5}
+
+@media (max-width:768px){
+  .video-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+}
+</style>
+
+<div class="tab-panel" id="tab-videos" role="tabpanel">
+  <div class="card">
+    <div class="section-head">
+      <h2 class="card-title">Videos</h2>
+      {% if gallery_videos %}
+      <span style="font-size:.78rem;color:var(--text-muted);font-weight:600">
+        {{ videos_count }} video{{ videos_count|pluralize }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if gallery_videos %}
+    <div class="video-grid">
+      {% for v in gallery_videos %}
+      <div class="video-card">
+        <div class="video-embed-wrap">
+          {% if v.platform %}
+          <span class="video-platform-pill">{{ v.platform }}</span>
+          {% endif %}
+          {% if v.is_fallback %}
+          <span class="video-fallback-pill">Sample</span>
+          {% endif %}
+
+          {% if v.type == 'video' %}
+            <video src="{{ v.embed_url }}" controls preload="metadata"
+                   {% if v.thumbnail %}poster="{{ v.thumbnail }}"{% endif %}></video>
+          {% else %}
+            <iframe src="{{ v.embed_url }}"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+          {% endif %}
+        </div>
+
+        <div class="video-body">
+          <p class="video-title">{{ v.title|default:"Untitled"|truncatechars:60 }}</p>
+
+          {% if v.service_name %}
+          <div class="video-svc-row">
+            <i class="fa-solid fa-plug"></i>
+            {{ v.service_name|truncatechars:28 }}
+          </div>
+          {% endif %}
+
+          {% if v.watch_url %}
+          <a href="{{ v.watch_url }}" target="_blank" rel="noopener" class="video-watch-link">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Watch on {{ v.platform|default:"source" }}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="engine-empty-state">
+      <div class="engine-empty-icon"><i class="fa-solid fa-video"></i></div>
+      <h3 class="engine-empty-title">No videos yet</h3>
+      <p class="engine-empty-text">
+        Videos from your connected services will appear here once they've been fetched.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /#tab-videos -->
+
+<style>
+.media-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.media-filters{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
+.media-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:12px;border:1px solid var(--border-color,#e5e7eb);cursor:pointer;background:var(--surface-2,#f9fafb);color:var(--text-secondary,#6b7280);white-space:nowrap;transition:all .15s}
+.media-filter-btn.active{background:#fff;color:var(--text-primary,#111827);border-color:var(--border-color-strong,#9ca3af);font-weight:500}
+.media-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-all{background:var(--text-secondary,#9ca3af)}
 .dot-success{background:#3B6D11}
 .dot-error{background:#A32D2D}
 .dot-pending{background:#854F0B}
-.engine-view-toggle{display:flex;border:1px solid var(--border-color, #e5e7eb);border-radius:8px;overflow:hidden}
-.engine-vbtn{padding:5px 9px;cursor:pointer;background:var(--surface-2, #f9fafb);color:var(--text-secondary, #6b7280);border:none;display:flex;align-items:center;transition:all .15s}
-.engine-vbtn.active{background:#fff;color:var(--text-primary, #111827)}
-.engine-count-label{font-size:12px;color:var(--text-secondary, #6b7280);margin-left:auto;white-space:nowrap}
+.media-view-toggle{display:flex;border:1px solid var(--border-color,#e5e7eb);border-radius:8px;overflow:hidden}
+.media-vbtn{padding:5px 9px;cursor:pointer;background:var(--surface-2,#f9fafb);color:var(--text-secondary,#6b7280);border:none;display:flex;align-items:center;transition:all .15s}
+.media-vbtn.active{background:#fff;color:var(--text-primary,#111827)}
+.media-count-label{font-size:12px;color:var(--text-secondary,#6b7280);margin-left:auto;white-space:nowrap}
 
-.engine-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.engine-media-card{border:1px solid var(--border-color, #e5e7eb);border-radius:12px;overflow:hidden;background:#fff;text-decoration:none;display:flex;flex-direction:column;transition:border-color .15s}
-.engine-media-card:hover{border-color:var(--border-color-strong, #9ca3af)}
-.engine-media-thumb{position:relative;aspect-ratio:16/10;background:var(--surface-2, #f3f4f6);overflow:hidden;display:flex;align-items:center;justify-content:center}
-.engine-media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.engine-thumb-fb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary, #9ca3af);font-size:28px}
-.engine-status-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;border:2px solid #fff}
-.engine-status-dot.dot-success{background:#3B6D11}
-.engine-status-dot.dot-error{background:#A32D2D}
-.engine-status-dot.dot-pending{background:#854F0B}
-.engine-type-pill{position:absolute;top:8px;left:8px;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;text-transform:capitalize}
-.pill-education{background:#E6F1FB;color:#0C447C}
-.pill-product{background:#E1F5EE;color:#085041}
-.pill-news{background:#FAEEDA;color:#633806}
-.pill-api{background:#EEEDFE;color:#3C3489}
-.pill-business{background:#FAECE7;color:#712B13}
-.pill-location{background:#EAF3DE;color:#27500A}
-.pill-person{background:#FBEAF0;color:#72243E}
-.engine-fetch-time{position:absolute;bottom:7px;right:7px;font-size:10px;background:rgba(0,0,0,.5);color:#fff;padding:2px 6px;border-radius:10px;display:flex;align-items:center;gap:3px}
-.engine-media-body{padding:10px 12px 12px}
-.engine-media-title{font-size:13px;font-weight:500;color:var(--text-primary, #111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:4px}
-.engine-media-desc{font-size:12px;color:var(--text-secondary, #6b7280);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:6px}
-.engine-alt-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary, #6b7280);background:var(--surface-2, #f3f4f6);padding:2px 7px;border-radius:10px;margin-bottom:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.engine-divider{height:1px;background:var(--border-color, #f3f4f6);margin:8px 0}
-.engine-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary, #6b7280);margin-bottom:4px}
-.engine-src-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.engine-src-domain{font-size:11px;color:var(--text-secondary, #6b7280);display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.engine-fetch-label{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap}
-.fl-success{background:#EAF3DE;color:#27500A}
-.fl-error{background:#FCEBEB;color:#791F1F}
-.fl-pending{background:#FAEEDA;color:#633806}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.media-card{border:1px solid var(--border-color,#e5e7eb);border-radius:12px;overflow:hidden;background:#fff;text-decoration:none;display:flex;flex-direction:column;transition:border-color .15s}
+.media-card:hover{border-color:var(--border-color-strong,#9ca3af)}
+.media-thumb{position:relative;aspect-ratio:16/10;background:var(--surface-2,#f3f4f6);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.media-thumb-fb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary,#9ca3af);font-size:28px}
+.media-status-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;border:2px solid #fff}
+.media-status-dot.dot-success{background:#3B6D11}
+.media-status-dot.dot-error{background:#A32D2D}
+.media-status-dot.dot-pending{background:#854F0B}
+.media-fetch-time{position:absolute;bottom:7px;right:7px;font-size:10px;background:rgba(0,0,0,.5);color:#fff;padding:2px 6px;border-radius:10px}
+.media-body{padding:10px 12px 12px}
+.media-title{font-size:13px;font-weight:500;color:var(--text-primary,#111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:6px}
+.media-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary,#6b7280);margin-bottom:4px}
+.media-src-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.media-src-domain{font-size:11px;color:var(--text-secondary,#6b7280);display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* list view overrides */
-.engine-list-view .engine-media-grid{grid-template-columns:1fr;gap:6px}
-.engine-list-view .engine-media-card{flex-direction:row}
-.engine-list-view .engine-media-thumb{width:88px;flex-shrink:0;aspect-ratio:unset;border-radius:0}
-.engine-list-view .engine-media-desc{display:none}
-.engine-list-view .engine-divider{display:none}
+/* list view */
+.media-list-view .media-grid{grid-template-columns:1fr;gap:6px}
+.media-list-view .media-card{flex-direction:row}
+.media-list-view .media-thumb{width:88px;flex-shrink:0;aspect-ratio:unset;border-radius:0}
 
-.engine-empty-state,.engine-empty-filtered{display:flex;flex-direction:column;align-items:center;padding:48px 24px;text-align:center}
-.engine-empty-icon{width:48px;height:48px;border-radius:50%;background:var(--surface-2, #f3f4f6);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary, #9ca3af);margin-bottom:14px}
-.engine-empty-title{font-size:15px;font-weight:500;color:var(--text-primary, #111827);margin-bottom:6px}
-.engine-empty-text{font-size:13px;color:var(--text-secondary, #6b7280);max-width:280px;line-height:1.5}
+.media-empty-filtered{display:none}
 </style>
 
-
-
-<div class="tab-panel" id="tab-activity" role="tabpanel">
+<div class="tab-panel" id="tab-media" role="tabpanel">
   <div class="card">
 
-    {% if extracted_images %}
+    {% if gallery_media %}
 
-    {# ── Toolbar ── #}
-    <div class="engine-toolbar">
-      <div class="engine-filters">
-        <button class="engine-filter-btn active" data-filter="all"
-                onclick="engineSetFilter('all')">
-          <span class="engine-dot dot-all"></span>All
+    <div class="media-toolbar">
+      <div class="media-filters">
+        <button class="media-filter-btn active" data-filter="all" onclick="mediaSetFilter('all')">
+          <span class="media-dot dot-all"></span>All
         </button>
-        <button class="engine-filter-btn" data-filter="success"
-                onclick="engineSetFilter('success')">
-          <span class="engine-dot dot-success"></span>Fetched
+        <button class="media-filter-btn" data-filter="success" onclick="mediaSetFilter('success')">
+          <span class="media-dot dot-success"></span>Fetched
         </button>
-        <button class="engine-filter-btn" data-filter="error"
-                onclick="engineSetFilter('error')">
-          <span class="engine-dot dot-error"></span>Error
+        <button class="media-filter-btn" data-filter="error" onclick="mediaSetFilter('error')">
+          <span class="media-dot dot-error"></span>Error
         </button>
-        <button class="engine-filter-btn" data-filter="pending"
-                onclick="engineSetFilter('pending')">
-          <span class="engine-dot dot-pending"></span>Pending
+        <button class="media-filter-btn" data-filter="pending" onclick="mediaSetFilter('pending')">
+          <span class="media-dot dot-pending"></span>Pending
         </button>
       </div>
 
-      <div class="engine-view-toggle">
-        <button class="engine-vbtn active" id="engine-vbtn-grid"
-                onclick="engineSetView('grid')" aria-label="Grid view">
+      <div class="media-view-toggle">
+        <button class="media-vbtn active" id="media-vbtn-grid" onclick="mediaSetView('grid')" aria-label="Grid view">
           <i class="fa-solid fa-grip"></i>
         </button>
-        <button class="engine-vbtn" id="engine-vbtn-list"
-                onclick="engineSetView('list')" aria-label="List view">
+        <button class="media-vbtn" id="media-vbtn-list" onclick="mediaSetView('list')" aria-label="List view">
           <i class="fa-solid fa-list"></i>
         </button>
       </div>
 
-      <span class="engine-count-label" id="engine-count-label">
-        {{ extracted_images|length }} image{{ extracted_images|length|pluralize }}
+      <span class="media-count-label" id="media-count-label">
+        {{ gallery_media|length }} image{{ gallery_media|length|pluralize }}
       </span>
     </div>
 
-    {# ── Grid ── #}
-    <div class="engine-media-grid" id="engine-media-grid">
-      {% for item in extracted_images %}
-      <a href="{{ item.source_url }}"
-         target="_blank" rel="noopener"
-         class="engine-media-card"
-         data-status="{{ item.fetch_status|default:'pending' }}"
-         data-type="{{ item.service_type|default:'' }}">
+    <div class="media-grid" id="media-grid">
+      {% for item in gallery_media %}
+      <a href="{{ item.source_url }}" target="_blank" rel="noopener"
+         class="media-card"
+         data-status="{{ item.fetch_status|default:'pending' }}">
 
-        {# Thumbnail #}
-        <div class="engine-media-thumb">
+        <div class="media-thumb">
           {% if item.file_url %}
-          <img src="{{ item.file_url }}"
-               alt="{{ item.alt|default:item.title|default:'Image' }}"
-               loading="lazy"
-               onerror="this.style.display='none';
-                        this.nextElementSibling.style.display='flex'">
-          <span class="engine-thumb-fb" style="display:none">
-            <i class="fa-solid fa-image"></i>
-          </span>
+          <img src="{{ item.file_url }}" alt="{{ item.alt|default:item.title|default:'Image' }}" loading="lazy"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="media-thumb-fb" style="display:none"><i class="fa-solid fa-image"></i></span>
           {% else %}
-          <span class="engine-thumb-fb">
-            <i class="fa-solid fa-image"></i>
-          </span>
+          <span class="media-thumb-fb"><i class="fa-solid fa-image"></i></span>
           {% endif %}
 
-          {# Status dot #}
-          <span class="engine-status-dot
+          <span class="media-status-dot
             {% if item.fetch_status == 'success' %}dot-success
             {% elif item.fetch_status == 'error' %}dot-error
             {% else %}dot-pending{% endif %}"
-            title="Fetch status: {{ item.fetch_status|default:'pending' }}">
-          </span>
+            title="Fetch status: {{ item.fetch_status|default:'pending' }}"></span>
 
-          {# Service type pill #}
-          {% if item.service_type %}
-          <span class="engine-type-pill pill-{{ item.service_type }}">
-            {{ item.service_type }}
-          </span>
-          {% endif %}
-
-          {# Fetch time #}
           {% if item.last_fetch_time %}
-          <span class="engine-fetch-time">
-            <i class="fa-regular fa-clock"></i>
-            {{ item.last_fetch_time|timesince }} ago
-          </span>
+          <span class="media-fetch-time">{{ item.last_fetch_time|timesince }} ago</span>
           {% endif %}
         </div>
 
-        {# Body #}
-        <div class="engine-media-body">
-          <div class="engine-media-body-main">
+        <div class="media-body">
+          <p class="media-title">{{ item.title|default:"Untitled"|truncatechars:60 }}</p>
 
-            <p class="engine-media-title">
-              {{ item.title|default:"Untitled"|truncatechars:60 }}
-            </p>
+          {% if item.service_name %}
+          <div class="media-svc-row">
+            <i class="fa-solid fa-plug"></i>
+            {{ item.service_name|truncatechars:28 }}
+          </div>
+          {% endif %}
 
-            {% if item.og_description %}
-            <p class="engine-media-desc">
-              {{ item.og_description|truncatechars:100 }}
-            </p>
-            {% endif %}
-
-            {% if item.alt %}
-            <span class="engine-alt-tag">
-              <i class="fa-solid fa-tag"></i>
-              {{ item.alt|truncatechars:40 }}
+          <div class="media-src-row">
+            <span class="media-src-domain">
+              <i class="fa-solid fa-globe"></i>
+              {{ item.source_domain|default:item.source_url|truncatechars:22 }}
             </span>
-            {% endif %}
-
-            <div class="engine-divider"></div>
-
-            {% if item.service_name %}
-            <div class="engine-svc-row">
-              <i class="fa-solid fa-plug"></i>
-              {{ item.service_name|truncatechars:28 }}
-            </div>
-            {% endif %}
-
-            <div class="engine-src-row">
-              <span class="engine-src-domain">
-                <i class="fa-solid fa-globe"></i>
-                {{ item.source_domain|default:item.source_url|truncatechars:22 }}
-              </span>
-              <span class="engine-fetch-label
-                {% if item.fetch_status == 'success' %}fl-success
-                {% elif item.fetch_status == 'error' %}fl-error
-                {% else %}fl-pending{% endif %}">
-                {{ item.fetch_status|default:"pending" }}
-              </span>
-            </div>
-
-          </div>{# /.engine-media-body-main #}
-        </div>{# /.engine-media-body #}
-
+          </div>
+        </div>
       </a>
       {% endfor %}
-    </div>{# /#engine-media-grid #}
+    </div>
 
-    {# Empty state shown by JS when all cards are filtered out #}
-    <div class="engine-empty-filtered" id="engine-empty-filtered"
-         style="display:none">
+    <div class="engine-empty-state media-empty-filtered" id="media-empty-filtered">
       <div class="engine-empty-icon"><i class="fa-solid fa-filter"></i></div>
-      <p class="engine-empty-title">No images match this filter</p>
-      <p class="engine-empty-text">
-        Try a different status or check your connected services.
-      </p>
+      <h3 class="engine-empty-title">No media matches this filter</h3>
+      <p class="engine-empty-text">Try a different status.</p>
     </div>
 
     {% else %}
-
-    {# Data-empty state (no connected services have images yet) #}
     <div class="engine-empty-state">
       <div class="engine-empty-icon"><i class="fa-solid fa-image"></i></div>
-      <h3 class="engine-empty-title">No images extracted yet</h3>
+      <h3 class="engine-empty-title">No media yet</h3>
       <p class="engine-empty-text">
         Images from your connected services will appear here once they've been fetched.
       </p>
     </div>
-
     {% endif %}
 
   </div>
-</div>{# /#tab-activity #}
+</div><!-- /#tab-media -->
 
-
-{# ── CSS ── add to your stylesheet or <style> block #}
-
-
-{# ── JS ── #}
 <script>
 (function(){
   var currentFilter = 'all';
 
-  window.engineSetFilter = function(f){
+  window.mediaSetFilter = function(f){
     currentFilter = f;
-    document.querySelectorAll('.engine-filter-btn').forEach(function(b){
+    document.querySelectorAll('.media-filter-btn').forEach(function(b){
       b.classList.toggle('active', b.dataset.filter === f);
     });
-    applyFilter();
+    applyMediaFilter();
   };
 
-  window.engineSetView = function(v){
-    var wrap = document.getElementById('engine-media-grid').parentElement;
-    wrap.classList.toggle('engine-list-view', v === 'list');
-    document.getElementById('engine-vbtn-grid').classList.toggle('active', v === 'grid');
-    document.getElementById('engine-vbtn-list').classList.toggle('active', v === 'list');
-    applyFilter();
+  window.mediaSetView = function(v){
+    var grid = document.getElementById('media-grid');
+    if (!grid) return;
+    grid.parentElement.classList.toggle('media-list-view', v === 'list');
+    document.getElementById('media-vbtn-grid').classList.toggle('active', v === 'grid');
+    document.getElementById('media-vbtn-list').classList.toggle('active', v === 'list');
   };
 
-  function applyFilter(){
-    var cards   = document.querySelectorAll('#engine-media-grid .engine-media-card');
+  function applyMediaFilter(){
+    var cards = document.querySelectorAll('#media-grid .media-card');
     var visible = 0;
     cards.forEach(function(c){
       var show = currentFilter === 'all' || c.dataset.status === currentFilter;
       c.style.display = show ? '' : 'none';
-      if(show) visible++;
+      if (show) visible++;
     });
-    var lbl = document.getElementById('engine-count-label');
-    if(lbl) lbl.textContent = visible + ' image' + (visible === 1 ? '' : 's');
-    var empty = document.getElementById('engine-empty-filtered');
-    var grid  = document.getElementById('engine-media-grid');
-    if(empty){
+    var lbl = document.getElementById('media-count-label');
+    if (lbl) lbl.textContent = visible + ' image' + (visible === 1 ? '' : 's');
+    var empty = document.getElementById('media-empty-filtered');
+    var grid  = document.getElementById('media-grid');
+    if (empty) {
       empty.style.display = visible === 0 ? 'flex' : 'none';
-      grid.style.display  = visible === 0 ? 'none'  : '';
+      if (grid) grid.style.display = visible === 0 ? 'none' : '';
     }
   }
 })();
 </script>
-
-<style>
-  /* ═══ FOLLOWING TAB ═══ */
-  .following-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-    padding: 16px 18px 20px;
-  }
-
-  .following-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    padding: 16px 8px 12px;
-    border-radius: 14px;
-    border: 1.5px solid #e4e3df;
-    background: #f0f2f5;
-    transition: all .2s cubic-bezier(.34, 1.56, .64, 1);
-    overflow: hidden;
-  }
-
-  .following-card:hover {
-    background: #fff;
-    border-color: #1e3a8a;
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(10, 37, 64, .13);
-  }
-
-  /* ── Avatar wrap ── */
-  .following-avatar-wrap {
-    position: relative;
-    width: 58px;
-    height: 58px;
-    flex-shrink: 0;
-  }
-
-  .following-ring {
-    position: absolute;
-    inset: -2px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1e3a8a, #7c3aed);
-  }
-
-  .following-avatar {
-    position: relative;
-    z-index: 1;
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2.5px solid #fff;
-    background: #e4e3df;
-    display: block;
-  }
-
-  /* ── Verified badge ── */
-  .following-verified-badge {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    z-index: 2;
-    width: 17px;
-    height: 17px;
-    border-radius: 50%;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .6rem;
-    color: #1e3a8a;
-    box-shadow: 0 0 0 1.5px #fff;
-  }
-
-  /* ── Info block ── */
-  .following-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    width: 100%;
-  }
-
-  .following-name {
-    font-size: .74rem;
-    font-weight: 700;
-    color: #2d3748;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-    line-height: 1.3;
-  }
-
-  .following-card:hover .following-name { color: #1e3a8a; }
-
-  .following-handle {
-    font-size: .65rem;
-    color: #9ca3af;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-  }
-
-  /* ── Profile type badge ── */
-  .following-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: .6rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 20px;
-    margin-top: 2px;
-  }
-
-  .following-type-personal     { background: #f5f3ff; color: #7c3aed; }
-  .following-type-business     { background: #eff6ff; color: #2563eb; }
-  .following-type-professional { background: #f0fdf4; color: #16a34a; }
-  .following-type-public_figure { background: #fefce8; color: #ca8a04; }
-
-  /* ══ RESPONSIVE ══ */
-  @media (min-width: 1400px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
-  }
-  @media (max-width: 1024px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-  }
-  @media (max-width: 768px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 9px; padding: 12px 14px 16px; }
-  }
-  @media (max-width: 640px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; padding: 10px 12px; }
-    .following-avatar-wrap, .following-avatar { width: 50px; height: 50px; }
-    .following-name { font-size: .68rem; }
-    .following-card { padding: 12px 6px 10px; }
-  }
-  @media (max-width: 480px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 7px; padding: 9px 10px; }
-    .following-avatar-wrap, .following-avatar { width: 46px; height: 46px; }
-    .following-name { font-size: .64rem; }
-    .following-handle, .following-type-badge { display: none; }
-  }
-  @media (max-width: 360px) {
-    .following-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 6px; }
-    .following-avatar-wrap, .following-avatar { width: 42px; height: 42px; }
-  }
-  @media (max-width: 320px) {
-    .following-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 8px; }
-    .following-avatar-wrap, .following-avatar { width: 38px; height: 38px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .following-card { transition: none; }
-    .following-card:hover { transform: none; }
-  }
-  @media (forced-colors: active) {
-    .following-card { border-color: ButtonText; }
-    .following-ring { background: Highlight; }
-  }
-
-  /* ═══ FOLLOWING TAB — product-grade card ═══ */
-.following-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 14px;
-  padding: 16px 18px 20px;
-}
-
-.following-card {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  border-radius: 14px;
-  border: 1px solid #e4e3df;
-  background: #fff;
-  overflow: hidden;
-  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
-}
-
-.following-card:hover {
-  border-color: #1e3a8a;
-  box-shadow: 0 8px 20px rgba(10, 37, 64, .12);
-  transform: translateY(-3px);
-}
-
-/* ── Cover strip behind avatar ── */
-.following-cover {
-  height: 56px;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-}
-.following-cover-admin     { background: linear-gradient(135deg, #fef2f2, #fee2e2); }
-.following-cover-dealer    { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
-.following-cover-staff     { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
-.following-cover-moderator { background: linear-gradient(135deg, #fefce8, #fef9c3); }
-.following-cover-customer  { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
-
-/* ── Avatar (overlaps cover) ── */
-.following-avatar-wrap {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  margin: -32px auto 0;
-  flex-shrink: 0;
-}
-
-.following-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
-}
-
-.following-avatar {
-  position: relative;
-  z-index: 1;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #fff;
-  background: #e4e3df;
-  display: block;
-}
-
-.following-verified-badge {
-  position: absolute;
-  bottom: -1px;
-  right: -1px;
-  z-index: 2;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .65rem;
-  color: #1e3a8a;
-  box-shadow: 0 0 0 2px #fff;
-}
-
-/* ── Info block ── */
-.following-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 10px 12px 12px;
-  text-align: center;
-}
-
-.following-name {
-  font-size: .85rem;
-  font-weight: 700;
-  color: #1a202c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  line-height: 1.3;
-}
-
-.following-card:hover .following-name { color: #1e3a8a; }
-
-.following-handle {
-  font-size: .72rem;
-  color: #9ca3af;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  margin-bottom: 2px;
-}
-
-.following-meta-line {
-  font-size: .68rem;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.following-meta-line i { font-size: .62rem; opacity: .75; }
-
-.following-badges-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-  margin-top: 6px;
-}
-
-.following-role-pill,
-.following-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: .62rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
-
-.following-role-admin     { background: #fef2f2; color: #b91c1c; }
-.following-role-dealer    { background: #eff6ff; color: #1d4ed8; }
-.following-role-staff     { background: #f5f3ff; color: #6d28d9; }
-.following-role-moderator { background: #fefce8; color: #a16207; }
-.following-role-customer  { background: #f0fdf4; color: #15803d; }
-
-.following-status-active    { background: #f0fdf4; color: #15803d; }
-.following-status-suspended { background: #fef2f2; color: #b91c1c; }
-.following-status-locked    { background: #fffbeb; color: #92400e; }
-.following-status-pending   { background: #eff6ff; color: #1d4ed8; }
-.following-status-inactive  { background: #f3f4f6; color: #4b5563; }
-
-/* ── Footer action ── */
-.following-action-row {
-  border-top: 1px solid #f0f0ee;
-  padding: 8px 12px;
-}
-
-.following-following-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-size: .72rem;
-  font-weight: 700;
-  color: #1e3a8a;
-  padding: 5px 0;
-  border-radius: 8px;
-  background: #eff6ff;
-  transition: background .15s ease;
-}
-
-.following-card:hover .following-following-btn {
-  background: #dbeafe;
-}
-
-/* ══ RESPONSIVE ══ */
-@media (min-width: 1400px) {
-  .following-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
-}
-@media (max-width: 1024px) {
-  .following-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-}
-@media (max-width: 768px) {
-  .following-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 12px 14px 16px; }
-}
-@media (max-width: 640px) {
-  .following-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 12px; }
-  .following-avatar-wrap, .following-avatar { width: 54px; height: 54px; }
-  .following-name { font-size: .8rem; }
-}
-@media (max-width: 480px) {
-  .following-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 9px 10px; }
-  .following-avatar-wrap, .following-avatar { width: 48px; height: 48px; }
-  .following-meta-line, .following-handle { display: none; }
-  .following-name { font-size: .76rem; }
-  .following-badges-row { flex-direction: column; gap: 4px; }
-}
-@media (max-width: 360px) {
-  .following-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
-  .following-avatar-wrap, .following-avatar { width: 44px; height: 44px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .following-card { transition: none; }
-  .following-card:hover { transform: none; }
-}
-@media (forced-colors: active) {
-  .following-card { border-color: ButtonText; }
-  .following-ring { background: Highlight; }
-}
-</style>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     TAB: FOLLOWING
-═══════════════════════════════════════════════════════════════ -->
-<!-- ═══════════════════════════════════════════════════════════════
-     TAB: FOLLOWING
-═══════════════════════════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-following" role="tabpanel">
-  <div class="card">
-    <div class="card-header">
-      <h2 class="card-title">
-        Following
-        <span style="font-size:.78rem;color:var(--text-muted);font-weight:600;margin-left:6px">
-          {{ followings_count }}
-        </span>
-      </h2>
-    </div>
-
-    {% if following_profiles %}
-    <div class="following-grid">
-      {% for profile in following_profiles %}
-        {% if profile.user__email_or_phone %}
-        <a href="{% url 'customer:profile_view' username=profile.user__email_or_phone %}"
-           class="following-card"
-           title="{{ profile.profile_name|default:profile.user__email_or_phone }}">
-
-          <!-- Cover strip -->
-          <div class="following-cover following-cover-{{ profile.user__role }}"></div>
-
-          <!-- Avatar (overlapping cover) -->
-          <div class="following-avatar-wrap">
-            {% if profile.is_profile_verified %}
-            <div class="following-ring"></div>
-            {% endif %}
-            <img src="{{ profile.profile_photo_url }}"
-                 alt="{{ profile.profile_name|default:profile.user__email_or_phone }}"
-                 class="following-avatar" loading="lazy">
-            {% if profile.is_profile_verified %}
-            <span class="following-verified-badge" title="Verified">
-              <i class="fa-solid fa-circle-check"></i>
-            </span>
-            {% endif %}
-          </div>
-
-          <!-- Info -->
-          <div class="following-info">
-            <span class="following-name">
-              {{ profile.profile_name|default:profile.user__email_or_phone|truncatechars:16 }}
-            </span>
-
-            {% if profile.profile_name_slug %}
-            <span class="following-handle">
-              @{{ profile.profile_name_slug|truncatechars:16 }}
-            </span>
-            {% endif %}
-
-            {% if profile.business_name %}
-            <span class="following-meta-line">
-              <i class="fa-solid fa-building"></i>
-              {{ profile.business_name|truncatechars:18 }}
-            </span>
-            {% endif %}
-
-            {% if profile.location_display %}
-            <span class="following-meta-line">
-              <i class="fa-solid fa-location-dot"></i>
-              {{ profile.location_display|truncatechars:20 }}
-            </span>
-            {% endif %}
-
-            <div class="following-badges-row">
-              <span class="following-role-pill following-role-{{ profile.user__role }}">
-                {% if profile.user__role == 'admin' %}
-                  <i class="fa-solid fa-shield-halved"></i> Admin
-                {% elif profile.user__role == 'dealer' %}
-                  <i class="fa-solid fa-briefcase"></i> Dealer
-                {% elif profile.user__role == 'staff' %}
-                  <i class="fa-solid fa-user-tie"></i> Staff
-                {% elif profile.user__role == 'moderator' %}
-                  <i class="fa-solid fa-star"></i> Moderator
-                {% else %}
-                  <i class="fa-solid fa-user"></i> Customer
-                {% endif %}
-              </span>
-
-              <span class="following-status-pill following-status-{{ profile.user__account_status }}">
-                {% if profile.user__account_status == 'active' %}
-                  <i class="fa-solid fa-circle"></i> Active
-                {% elif profile.user__account_status == 'suspended' %}
-                  <i class="fa-solid fa-ban"></i> Suspended
-                {% elif profile.user__account_status == 'locked' %}
-                  <i class="fa-solid fa-lock"></i> Locked
-                {% elif profile.user__account_status == 'pending' %}
-                  <i class="fa-solid fa-hourglass"></i> Pending
-                {% else %}
-                  <i class="fa-solid fa-circle-pause"></i> Inactive
-                {% endif %}
-              </span>
-            </div>
-          </div>
-
-          <!-- Action footer -->
-          <div class="following-action-row">
-            <span class="following-following-btn">
-              <i class="fa-solid fa-user-check"></i> Following
-            </span>
-          </div>
-
-        </a>
-        {% endif %}
-      {% endfor %}
-    </div>
-
-    {% else %}
-    <div class="empty-state">
-      <div class="empty-icon"><i class="fa-solid fa-user-plus"></i></div>
-      <h3 class="empty-title">Not Following Anyone</h3>
-      <p class="empty-text">Discover profiles and follow them to see their updates here.</p>
-    </div>
-    {% endif %}
-
-  </div>
-</div><!-- /#tab-following -->
-
 
 <style>
 
@@ -2637,7 +2132,7 @@ function animateCompletionCircle() {
   .info-section-title {
     font-size: .7rem;
     font-weight: 800;
-    color: #1e3a8a;
+    color: #1565c0;
     text-transform: uppercase;
     letter-spacing: .8px;
     padding: 14px 0 6px;
@@ -2671,7 +2166,7 @@ function animateCompletionCircle() {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #1e3a8a;
+    color: #1565c0;
     font-size: .95rem;
     margin-top: 2px;
     transition: all .2s;
@@ -2702,7 +2197,7 @@ function animateCompletionCircle() {
     word-break: break-word;
   }
 
-  .info-block-value a { color: #1e3a8a; text-decoration: none; }
+  .info-block-value a { color: #1565c0; text-decoration: none; }
   .info-block-value a:hover { text-decoration: underline; }
 
   /* badges */
@@ -2743,7 +2238,7 @@ function animateCompletionCircle() {
     color: #374151;
     transition: all .15s;
   }
-  .social-link-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+  .social-link-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #1565c0; }
 
   /* progress bar */
   .completion-bar-wrap {
@@ -2756,7 +2251,7 @@ function animateCompletionCircle() {
   .completion-bar-fill {
     height: 100%;
     border-radius: 99px;
-    background: linear-gradient(90deg, #1e3a8a, #7c3aed);
+    background: linear-gradient(90deg, #1565c0, #7c3aed);
     transition: width .4s ease;
   }
   .completion-label {
@@ -3463,9 +2958,9 @@ function animateCompletionCircle() {
 </main>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     15) PAGE SCRIPTS
-═══════════════════════════════════════════════════════════════ -->
+{% endblock %}
+
+{% block extra_js %}
 <script>
 
 /* ── Tab Switching ── */
@@ -3519,7 +3014,6 @@ function switchTab(targetId) {
   if (activeBtn) {
     activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
-  if (targetId === 'activity') animateDeviceBars();
 }
 
 
@@ -3529,20 +3023,6 @@ tabBtns.forEach(btn => {
 bottomBtns.forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
-
-
-
-
-/* ── Device Bars ── */
-function animateDeviceBars() {
-  ['devDesktop', 'devMobile'].forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const w = el.dataset.w || '0%';
-    el.style.width = '0%';
-    setTimeout(() => { el.style.width = w; }, 100 + i * 80);
-  });
-}
 
 
 /* ── Engagement Bar ── */
@@ -3593,10 +3073,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  
 });
 
 </script>
-
-</body>
-</html>
+{% endblock %}

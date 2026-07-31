@@ -616,3 +616,90 @@ class SubCategoryAdmin(admin.ModelAdmin):
                 obj.deleted_at.strftime('%Y-%m-%d'),
             )
         return format_html('<span style="color:#28a745;">—</span>')
+
+# apps/ponno/admin.py (add this block; if the file already has other
+# registrations, just append — don't duplicate the imports)
+
+from django.contrib import admin
+
+from apps.ponno.models.discovery_visit_log import DiscoveryVisitLog
+
+
+@admin.register(DiscoveryVisitLog)
+class DiscoveryVisitLogAdmin(admin.ModelAdmin):
+    """
+    Read-only admin view for the append-only DiscoveryVisitLog audit
+    trail. No add/change/delete permitted — matches the model's own
+    save()/delete() overrides, which already reject mutation at the
+    ORM level. This just keeps the admin UI honest about that instead
+    of showing forms that would fail on submit.
+    """
+
+    # ── List view ────────────────────────────────────────────────
+    list_display = (
+        'visited_at',
+        'user',
+        'role_at_visit',
+        'is_authenticated',
+        'ip_address',
+        'device_type',
+        'search_query',
+        'filter_slug',
+        'sort_by',
+        'page_number',
+    )
+    list_filter = (
+        'role_at_visit',
+        'device_type',
+        'is_authenticated',
+        'sort_by',
+    )
+    search_fields = (
+        'ip_address',
+        'user__email_or_phone',
+        'search_query',
+        'filter_slug',
+        'session_key',
+        'user_agent',
+        'referrer',
+    )
+    date_hierarchy = 'visited_at'
+    ordering = ('-visited_at',)
+    list_per_page = 100
+
+    # ── Detail view ──────────────────────────────────────────────
+    readonly_fields = [f.name for f in DiscoveryVisitLog._meta.fields]
+    fieldsets = (
+        ('Who', {
+            'fields': (
+                'user', 'role_at_visit', 'is_authenticated',
+                'session_key', 'ip_address', 'user_agent', 'device_type',
+            ),
+        }),
+        ('What', {
+            'fields': (
+                'query_string', 'search_query', 'filter_slug',
+                'sort_by', 'page_number', 'referrer',
+            ),
+        }),
+        ('When', {
+            'fields': ('visited_at',),
+        }),
+    )
+
+    # ── Lock it down: view-only ─────────────────────────────────
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Flip to True if you want superusers able to purge individual
+        # rows from the admin UI. Note the model's own delete()
+        # override will still raise — you'd need to bypass via
+        # queryset.delete() in a custom action instead of obj.delete().
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return True

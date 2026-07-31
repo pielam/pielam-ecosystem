@@ -1143,7 +1143,54 @@ const backdrop = document.createElement('div');
       line-height: 1.2; 
     
     }
-    
+    /* Add this near your existing .dealer-name / .card-dealer rules */
+
+.dealer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dealer-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dealer-verified {
+  font-size: .68rem;
+  color: #0891b2;
+  flex-shrink: 0;
+}
+
+.dealer-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.dealer-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .62rem;
+  color: var(--ink-3, #718096);
+  white-space: nowrap;
+}
+
+.dealer-stat i {
+  font-size: .58rem;
+}
+
+.dealer-source {
+  color: #4f46e5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
     .dealer-domain { font-size: .6rem; color: #818cf8; }
 
     .card-img-wrap {
@@ -2102,13 +2149,20 @@ const backdrop = document.createElement('div');
           {% endif %}
         </div>
       {% if product.seller_username %}</a>{% endif %}
-      <div>
-        {% if product.seller_username %}
-          <a href="{% url 'customer:profile_view' username=product.seller_username %}" onclick="event.stopPropagation()" class="dealer-name">{{ product.seller_name|default:"Seller" }}</a>
-        {% else %}
-          <div class="dealer-name">{{ product.seller_name|default:"Seller" }}</div>
-        {% endif %}
-        
+
+      <div class="dealer-meta">
+        <div class="dealer-name-row">
+          {% if product.seller_username %}
+            <a href="{% url 'customer:profile_view' username=product.seller_username %}" onclick="event.stopPropagation()" class="dealer-name">{{ product.seller_name|default:"Seller" }}</a>
+          {% else %}
+            <div class="dealer-name">{{ product.seller_name|default:"Seller" }}</div>
+          {% endif %}
+          {% if product.seller_verified %}
+            <i class="fa-solid fa-circle-check dealer-verified" title="Verified"></i>
+          {% endif %}
+        </div>
+
+             
       </div>
     </div>
 

@@ -64,6 +64,26 @@
 #     one DB hit instead of one-per-request.
 #   - HTTP Cache-Control / Vary headers added so any CDN/reverse proxy
 #     sitting in front can cache the response independently.
+#   - Every serialized post (both feed systems below) now carries a
+#     guaranteed, never-empty `video_info` field via
+#     megamind.utils.video_info.resolve_post_video — real extracted
+#     video, or the source URL if it resolves to a known platform, or
+#     a deterministic themed placeholder. See that module's docstring
+#     for the full priority order. This mirrors megamind.utils.
+#     feed_cache.refresh_feed_cache, which does the same for the
+#     public/engine feed's precomputed payload.
+#   - `videos` on the GLOBAL feed (_serialize_service) is no longer
+#     the raw scraped {url, type} shape. Every entry is now run through
+#     megamind.utils.video_info.get_video_info_cached — the exact same
+#     normalizer megamind.utils.feed_cache._normalize_videos uses for
+#     the PUBLIC/ENGINE feed's precomputed payload — so both feeds
+#     agree on the shape: {platform, embed_url, watch_url, thumbnail,
+#     type, mime_type?}. Previously the template guessed "is this
+#     embeddable" from the raw URL with a regex that only recognized
+#     YouTube/Vimeo, so every other platform (Facebook, TikTok, Twitch,
+#     Rumble, ...) silently fell into a plain <video> tag and failed to
+#     play. The frontend now just reads `type`/`embed_url` directly —
+#     see the videoTagHTML() rewrite in home.html.
 #
 # ═══════════════════════════════════════════════════════════════════
 # NOTE ON TWO FEED IMPLEMENTATIONS LIVING IN THIS FILE
@@ -94,6 +114,18 @@
 # GLOBAL feed's decoder instead, which has a different failure
 # contract (returns `None` instead of `(None, None)` on a bad cursor)
 # and broke invalid-cursor handling. Keep them distinct.
+#
+# Same footgun previously existed with `_personalize_feed`: an earlier
+# revision defined it twice — once (near the top of this file) doing
+# video-info enrichment with a hardcoded fallback URL, once (below,
+# still present) doing follow/own-post enrichment for the GLOBAL feed.
+# The second definition silently shadowed the first, so the video
+# enrichment version never actually ran. That logic has since moved to
+# megamind.utils.video_info.resolve_post_video (the single, shared
+# place both feed pipelines call — see _serialize_post and
+# _serialize_service below), and the dead duplicate has been removed.
+# Only one `_personalize_feed` — the follow/own-post one — exists in
+# this file now.
 
 import base64
 import binascii
@@ -121,6 +153,7 @@ from apps.customer.models.profile_info import ProfileInfo
 from megamind.models.connected_service import ConnectedService
 from megamind.utils.feed_cache import refresh_feed_cache
 from megamind.utils.service_fetcher import fetch_service_data  # noqa: F401  (used by Celery task elsewhere)
+from megamind.utils.video_info import get_video_info_cached, resolve_post_video
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +249,12 @@ def _serialize_post(svc: ConnectedService, media_type: str = 'all') -> dict:
     Reads the precomputed payload instead of recomputing it. Falls back
     to a live build only if a row somehow has no cached payload yet
     (e.g. mid-migration/backfill) so the feed never 500s on stale data.
+
+    The cached payload already includes `video_info` (see
+    megamind.utils.feed_cache.refresh_feed_cache), so no extra work is
+    needed here — it just needs to survive the media_type filtering
+    below untouched, since the guaranteed video slot should still
+    render even when filtering to media_type='image' or 'link'.
     """
     payload = svc.cached_feed_payload
     if not payload:
@@ -419,15 +458,6 @@ def _coerce_image(img) -> dict:
     return {"url": str(img), "alt": "", "href": ""}
 
 
-def _coerce_video(v) -> dict:
-    if isinstance(v, dict):
-        return {
-            "url":  v.get("url") or v.get("src") or "",
-            "type": v.get("type") or "",
-        }
-    return {"url": str(v), "type": ""}
-
-
 def _coerce_link(lnk) -> dict:
     if isinstance(lnk, dict):
         return {
@@ -435,6 +465,47 @@ def _coerce_link(lnk) -> dict:
             "text": lnk.get("text") or lnk.get("title") or "",
         }
     return {"href": str(lnk), "text": ""}
+
+
+def _normalize_videos(raw_videos) -> list[dict]:
+    """
+    Runs every raw scraped video entry through
+    megamind.utils.video_info.get_video_info_cached — the SAME
+    normalizer megamind.utils.feed_cache._normalize_videos uses to
+    build the PUBLIC/ENGINE feed's precomputed payload — so the
+    GLOBAL feed's `videos` list agrees with it on shape:
+
+        {platform, embed_url, watch_url, thumbnail, type, mime_type?}
+
+    Accepts scraper dicts like {"url": ..., "type": "video/*"},
+    bare URL strings, or already-normalized video_info dicts (a dict
+    that already has "embed_url" is still fine — get_video_info_cached
+    just re-parses `url`/`embed_url`/`src`, whichever is present).
+
+    This replaces the previous behaviour of passing the raw
+    {"url", "type"} shape straight to the template, which forced the
+    frontend to guess "is this an iframe" from a regex that only knew
+    YouTube/Vimeo — every other platform (Facebook, TikTok, Twitch,
+    Rumble, Dailymotion, Streamable, Twitter/X, direct files) silently
+    fell into a plain <video> tag and failed to play. Now the
+    template can just read `type`/`embed_url` directly.
+
+    Entries that fail to parse (empty/garbage URL) are dropped rather
+    than surfaced as broken media — get_video_info_cached only ever
+    returns {} for a falsy URL, never raises.
+    """
+    normalized = []
+    for v in raw_videos or []:
+        if isinstance(v, dict):
+            url = v.get('url') or v.get('embed_url') or v.get('src')
+        else:
+            url = v
+        if not url:
+            continue
+        info = get_video_info_cached(url)
+        if info:
+            normalized.append(info)
+    return normalized
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -451,7 +522,7 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
 
     # ── Extracted media ─────────────────────────────────────────
     images = svc.extracted_images or []
-    videos = svc.extracted_videos or []
+    videos_raw = svc.extracted_videos or []
     links  = svc.extracted_links  or []
     text   = svc.extracted_text   or ""
 
@@ -469,13 +540,34 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
         og_type        = raw.get("og_type")     or raw.get("type")           or ""
     if raw and not images:
         images = [_coerce_image(i) for i in (raw.get("images") or []) if i]
-    if raw and not videos:
-        videos = [_coerce_video(v) for v in (raw.get("videos") or []) if v]
+    if raw and not videos_raw:
+        videos_raw = raw.get("videos") or []
     if raw and not links:
         links  = [_coerce_link(l)  for l in (raw.get("links")  or []) if l]
     if raw and not text:
         text = (raw.get("full_content") or raw.get("text_content")
                 or raw.get("content")   or raw.get("text") or "")
+
+    # Platform-normalized videos — see _normalize_videos docstring.
+    # `videos_count` below is intentionally computed from videos_raw,
+    # not the normalized list: a video whose URL fails to parse is
+    # dropped from `videos` but the post genuinely still "has" that
+    # many attached videos for badge/signal-bar purposes.
+    videos = _normalize_videos(videos_raw)
+
+    # ── Guaranteed single video for card display ────────────────
+    # Same resolver megamind.utils.feed_cache.refresh_feed_cache uses
+    # for the public/engine feed's precomputed payload, so both feed
+    # pipelines agree on what a post's video looks like. Priority:
+    # first usable extracted video → source URL if it resolves to a
+    # known platform → deterministic, service-type-themed placeholder.
+    # Never empty — see resolve_post_video's docstring.
+    video_info = resolve_post_video(
+        extracted_videos=videos_raw,
+        source_url=svc.service_url,
+        seed=str(svc.pk),
+        service_type=svc.service_type,
+    )
 
     return {
         # ── User info ──────────────────────────────────
@@ -492,7 +584,7 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
         'profile_location': profile.location_display if profile else '',
         'profile_verified': profile.is_profile_verified if profile else False,
         'profile_type':     profile.profile_type if profile else 'personal',
-        'profile_url':      profile.profile_url if profile else f'/profile/{svc.user.uuid}/',
+        'profile_url':      reverse('customer:profile_view', kwargs={'username': svc.user.email_or_phone}),
         # Annotated on the queryset (see _feed_base_queryset) instead
         # of calling profile.follower_count, which would run a fresh
         # `self.followers.count()` query per row.
@@ -518,13 +610,16 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
 
         # ── Extracted content ──────────────────────────
         'images':            images,
+        # Platform-normalized: {platform, embed_url, watch_url,
+        # thumbnail, type, mime_type?} per entry — see _normalize_videos.
         'videos':            videos,
+        'video_info':         video_info,   # guaranteed — never empty
         'links':             links,
         'text':              text,
 
         # ── Counts ─────────────────────────────────────
         'images_count':      len(images),
-        'videos_count':      len(videos),
+        'videos_count':      len(videos_raw),
         'links_count':       len(links),
         'has_text':          bool(text.strip()),
 
@@ -686,7 +781,7 @@ def _get_top_contributors(limit: int = 10) -> list[dict[str, Any]]:
             'username':       user.email_or_phone,
             'profile_name':   profile.profile_name if profile else user.email_or_phone,
             'profile_photo':  profile.get_profile_photo_url() if profile else '/static/defaults/default-profile-picture.png',
-            'profile_url':    profile.profile_url if profile else f'/profile/{user.uuid}/',
+            'profile_url':    reverse('customer:profile_view', kwargs={'username': user.email_or_phone}),
             'service_count':  row['service_count'],
         })
 

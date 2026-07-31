@@ -127,7 +127,8 @@
     }
 
     .upload-form input[type="text"],
-    .upload-form input[type="url"] {
+    .upload-form input[type="url"],
+    .upload-form select {
         width: 100%;
         font-family: 'roboto';
         font-size: var(--text-base);
@@ -141,7 +142,8 @@
     }
 
     .upload-form input[type="text"]:focus,
-    .upload-form input[type="url"]:focus {
+    .upload-form input[type="url"]:focus,
+    .upload-form select:focus {
         outline: none;
         border-color: #4a90e2;
         background: #ffffff;
@@ -402,9 +404,9 @@
 
         {% if user.role == 'dealer' %}
             <div class="upload-header">
-                
+
                 <h1>Post Product</h1>
-                <p>Only an image and a title are required — everything else is optional.</p>
+                <p>Title and image are required — everything else is optional.</p>
             </div>
 
             {% if messages %}
@@ -421,7 +423,7 @@
                 <div class="upload-grid-left">
                     <!-- 1. IMAGE -->
                     <div class="form-group image-upload-area">
-                        <label for="id_image"> Image <span class="required-mark">*</span></label>
+                        <label for="id_image">Image <span class="required-mark">*</span></label>
 
                         <label class="dropzone" id="dropzone" for="id_image" tabindex="0">
                             <input type="file" name="image" id="id_image" accept="image/*" required>
@@ -459,17 +461,29 @@
                         >
                     </div>
 
-                    <!-- 3. VIDEO URL -->
+                    <!-- 3. SELLING PRICE -->
                     <div class="form-group">
-                        <label for="id_video_url">Video URL/Link</label>
+                        <label for="id_selling_price">Selling Price</label>
                         <input
-                            type="url"
-                            name="video_url"
-                            id="id_video_url"
-                            value="{{ form_data.video_url|default:'' }}"
-                            placeholder="https://..."
+                            type="text"
+                            inputmode="decimal"
+                            name="selling_price"
+                            id="id_selling_price"
+                            value="{{ form_data.selling_price|default:'' }}"
+                            placeholder="0.00"
                         >
-                        <small class="form-text">Optional — link to a demo or promo video</small>
+                        <small class="form-text">Leave blank to default to 0.00</small>
+                    </div>
+
+                    <!-- 4. SERVICE TYPE -->
+                    <div class="form-group">
+                        <label for="id_service_type">Post Type</label>
+                        <select name="service_type" id="id_service_type">
+                            {% for value, label in service_type_choices %}
+                                <option value="{{ value }}" {% if form_data.service_type == value or not form_data.service_type and value == "product" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text">Defaults to "Product" if left unchanged</small>
                     </div>
 
                     <div class="form-actions">

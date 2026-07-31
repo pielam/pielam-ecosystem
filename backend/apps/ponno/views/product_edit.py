@@ -23,6 +23,26 @@ Covers every editable field on the Product model:
   SEO              — meta_title, meta_description, meta_keywords
   Metadata         — metadata (raw JSON), specifications & features
                      stored inside metadata for structured display
+
+ConnectedService sync:
+- Every field this view lets a dealer change that also feeds the
+  Product -> ConnectedService bridge (product_name/product_title,
+  image, video_url, description/short_description, meta_title,
+  meta_description, is_active) needs the mirrored ConnectedService
+  row updated too, or the feed keeps showing stale title/image/
+  description/status after an edit indefinitely.
+- Handled via the same shared helper product_upload.py uses —
+  megamind.services.connected_service_sync.sync_product_connected_service()
+  — called with update_or_create semantics right after product.save()
+  succeeds. service_type is intentionally NOT passed here (this form
+  doesn't collect it), so the helper preserves whatever service_type
+  the row already has rather than resetting it to the default on
+  every edit. If a product somehow has no ConnectedService row yet
+  (e.g. created before this sync existed), this self-heals by
+  creating one.
+- Scoped to product.dealer (the product's owner), not request.user —
+  matters for privileged admin/staff edits of another dealer's
+  product, where request.user != product.dealer.
 """
 
 import json
@@ -39,6 +59,7 @@ from apps.ponno.models.product  import Product
 from apps.ponno.models.brand     import Brand
 from apps.ponno.models.category  import Category
 from apps.ponno.models.sub_category import SubCategory
+from megamind.services.connected_service_sync import sync_product_connected_service
 
 logger = logging.getLogger(__name__)
 
@@ -379,7 +400,8 @@ def ProductEditView(request, slug):
     HTTP methods
     ------------
     GET  → render pre-filled form.
-    POST → apply changes, validate, save, redirect to product detail.
+    POST → apply changes, validate, save, sync the mirrored
+           ConnectedService row, redirect to product detail.
            On validation failure the form is re-rendered with errors.
     """
 
@@ -431,6 +453,25 @@ def ProductEditView(request, slug):
     try:
         _apply_post_data(product, request.POST, request.FILES, privileged)
         product.save()
+
+        # Keep the mirrored feed post in sync with whatever just
+        # changed (title, image, description, meta, active/status).
+        # service_type is intentionally omitted — this form doesn't
+        # collect it, so the helper preserves the row's existing
+        # value instead of resetting it. Scoped to product.dealer,
+        # not request.user, so a privileged admin editing someone
+        # else's product still updates the right owner's row.
+        try:
+            sync_product_connected_service(dealer=product.dealer, product=product)
+        except Exception:
+            # Don't fail the whole edit if the mirror sync has a
+            # problem (e.g. transient DB issue) — the Product save
+            # already succeeded and is the source of truth; log it
+            # so the drift is visible instead of silent.
+            logger.exception(
+                "ConnectedService sync failed after editing product pk=%s",
+                product.pk,
+            )
 
         logger.info(
             "Product '%s' (pk=%s) updated by user %s (role=%s)",

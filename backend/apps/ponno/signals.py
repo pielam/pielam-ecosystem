@@ -1,12 +1,12 @@
 # apps/ponno/signals.py
 
 """
-Signals that mirror ponno content models (Product, Brand, Category,
-SubCategory) into megamind's ConnectedService model, so each one shows
-up as a feed item in HomeEngineView / PersonalEngineView.
+Signals that mirror ponno content models (Brand, Category, SubCategory)
+into megamind's ConnectedService model, so each one shows up as a feed
+item in HomeEngineView / PersonalEngineView.
 
 Every receiver follows the same shape:
-    1. Guard on the owning user field being set (dealer / created_by).
+    1. Guard on the owning user field being set (created_by).
     2. Build a stable, absolute service_url via reverse().
     3. update_or_create() on (user, service_type, service_url) so
        repeated saves update the same ConnectedService row instead of
@@ -17,10 +17,21 @@ regenerated after creation (none of these currently do that — all
 `generate_slug()` calls are guarded with `if not self.slug`), a slug
 change would produce a second ConnectedService row rather than
 updating the original. Flagging this here since it applies uniformly
-across all four receivers below.
+across all receivers below.
+
+── Product is no longer mirrored via signal ──
+Product → ConnectedService is now created explicitly in
+apps.ponno.views.product_upload.ProductUploadView, in the same DB
+transaction as the Product create, so a failure on either side rolls
+back both and there's a single, explicit place that owns the write.
+The post_save receiver that used to mirror Product here (and its
+video_url routing / extracted_images / extracted_links helpers) has
+been removed to avoid two code paths writing (and disagreeing about)
+the same ConnectedService row. Product cache invalidation stays here
+since it's unrelated to the ConnectedService mirror.
 """
 
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
@@ -29,6 +40,7 @@ from apps.ponno.models.product import Product
 from apps.ponno.models.brand import Brand
 from apps.ponno.models.category import Category
 from apps.ponno.models.sub_category import SubCategory
+from apps.ponno.views.product_detail import invalidate_product_cache
 
 from megamind.models.connected_service import ConnectedService
 
@@ -38,73 +50,13 @@ SITE_BASE_URL = "https://pielam.com"
 
 
 # ════════════════════════════════════════════════════════════════════
-# PRODUCT → ConnectedService
+# PRODUCT — cache invalidation only (ConnectedService owned by the view)
 # ════════════════════════════════════════════════════════════════════
 
-def _build_product_service_url(product: Product) -> str:
-    """
-    Absolute URL for the product's detail page, built from the real
-    'ponno:product_detail' route (/product/<slug>/).
-    """
-    path = reverse("ponno:product_detail", kwargs={"slug": product.slug})
-    return f"{SITE_BASE_URL}{path}"[:500]
-
-
-def _build_product_extracted_images(product: Product) -> list:
-    if not product.image:
-        return []
-    return [{"url": product.image.url, "alt": product.product_name}]
-
-
-def _build_product_extracted_videos(product: Product) -> list:
-    if not product.video_url:
-        return []
-    return [{"url": product.video_url, "type": "embed"}]
-
-
-def create_or_update_connected_service_for_product(product: Product) -> ConnectedService:
-    """
-    Create or update the ConnectedService row that mirrors this Product.
-    fetch_status is set to 'success' immediately — no scrape needed,
-    since this is our own data straight from the product record.
-    """
-    service_url = _build_product_service_url(product)
-
-    service, _created = ConnectedService.objects.update_or_create(
-        user=product.dealer,
-        service_type="product",
-        service_url=service_url,
-        defaults={
-            "service_name":      product.product_name,
-            "status":            "public" if product.is_active else "private",
-            "is_connected":      True,
-
-            "og_title":          product.meta_title or product.product_name,
-            "og_description":    product.meta_description or product.short_description or "",
-            "og_thumbnail":      product.image.url if product.image else "",
-            "og_site_name":      "Pielam",
-            "og_type":           "product",
-
-            "extracted_images":  _build_product_extracted_images(product),
-            "extracted_videos":  _build_product_extracted_videos(product),
-            "extracted_links":   [],
-            "extracted_text":    product.description or product.short_description or "",
-
-            "last_fetched_data": None,
-            "last_fetch_time":   timezone.now(),
-            "fetch_status":      "success",
-            "fetch_error":       None,
-        },
-    )
-    return service
-
-
 @receiver(post_save, sender=Product)
-def sync_product_to_connected_service(sender, instance: Product, created, **kwargs):
-    """Whenever a Product is created OR updated, mirror it into ConnectedService."""
-    if not instance.dealer_id:
-        return
-    create_or_update_connected_service_for_product(instance)
+@receiver(post_delete, sender=Product)
+def clear_product_cache(sender, instance, **kwargs):
+    invalidate_product_cache(instance)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -341,15 +293,3 @@ def sync_subcategory_to_connected_service(sender, instance: SubCategory, created
     if not instance.created_by_id:
         return
     create_or_update_connected_service_for_subcategory(instance)
-
-
-# apps/ponno/signals.py
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-from apps.ponno.models.product import Product
-from apps.ponno.views.product_detail import invalidate_product_cache
-
-@receiver(post_save, sender=Product)
-@receiver(post_delete, sender=Product)
-def clear_product_cache(sender, instance, **kwargs):
-    invalidate_product_cache(instance)
