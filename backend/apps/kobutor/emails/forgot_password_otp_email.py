@@ -18,12 +18,19 @@ def send_reset_password_otp_email(user, otp_code):
 
     html_content = render_to_string("kobutor/emails/forgot_password_otp.html", context)
 
-    # Use email_or_phone as email (must be email)
+    # ``email_or_phone`` is the login identifier and may hold a phone number,
+    # which is not a deliverable address. The dedicated ``email`` column is
+    # populated by User.clean() when the identifier is an address, so prefer it.
+    recipient = getattr(user, "email", None) or user.email_or_phone
+    if "@" not in (recipient or ""):
+        logger.warning("No email address on file for user %s; OTP not emailed", user.pk)
+        return
+
     msg = EmailMultiAlternatives(
         subject=subject,
         body=f"Your OTP for password reset is {otp_code}",
         from_email=from_email,
-        to=[user.email_or_phone]
+        to=[recipient],
     )
 
     msg.attach_alternative(html_content, "text/html")

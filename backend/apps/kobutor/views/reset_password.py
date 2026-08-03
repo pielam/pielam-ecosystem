@@ -5,13 +5,17 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 def ResetPasswordView(request):
+    # NOTE: the reverse target here is ``customer:forgot-password``. This used
+    # to say ``kobutor:forgot-password``, which is not a registered URL name,
+    # so every unauthorised hit on this page raised NoReverseMatch (500)
+    # instead of redirecting to step 1.
     user_id = request.session.get('password_reset_user_id')
     if not user_id:
-        return redirect('kobutor:forgot-password')  # User must start from step 1
+        return redirect('customer:forgot-password')  # User must start from step 1
 
     user = User.objects.filter(id=user_id).first()
     if not user:
-        return redirect('kobutor:forgot-password')
+        return redirect('customer:forgot-password')
 
     if request.method == "POST":
         serializer = ResetPasswordSerializer(data=request.POST, context={'user': user})

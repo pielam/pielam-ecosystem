@@ -23,19 +23,22 @@ from __future__ import annotations
 
 from . import recovery as _recovery
 from . import keys as _keys
-# from . import profile_info as _profile_info
 from . import visit_log as _visit_log
+from . import connected_service as _connected_service
 
 
 from .recovery import *  # noqa: F401,F403
 from .keys import *  # noqa: F401,F403
-# from .profile_info import *  # noqa: F401,F403
 from .visit_log import *  # noqa: F401,F403
+from .connected_service import ConnectedService  # noqa: F401
+
+# ``profile_info`` and ``engine_users`` are fully commented out in this
+# package (superseded by ``apps.customer``); importing them would bind
+# nothing, so they are intentionally not re-exported here.
 
 __all__ = [
-
     *getattr(_recovery, '__all__', []),
     *getattr(_keys, '__all__', []),
-
     *getattr(_visit_log, '__all__', []),
+    *getattr(_connected_service, '__all__', ['ConnectedService']),
 ]

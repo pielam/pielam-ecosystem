@@ -22,11 +22,11 @@ from apps.ponno.models.brand import Brand
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 
+from apps.core.models import clean_for_save, unique_slug
 from apps.ponno.models.category import Category
 
 
@@ -618,16 +618,12 @@ class SubCategory(models.Model):
         if not self.sub_category_name:
             return None
 
-        base_slug = slugify(f"{self.category.category_name}-{self.sub_category_name}")
-        slug = base_slug
-        counter = 1
+        # ``category`` may be unset on an unsaved instance; fall back to the
+        # sub-category name alone rather than raising RelatedObjectDoesNotExist.
+        category_name = getattr(self.category, 'category_name', '') if self.category_id else ''
+        base_text = f"{category_name}-{self.sub_category_name}" if category_name else self.sub_category_name
 
-        while SubCategory.objects.filter(
-            sub_category_slug=slug
-        ).exclude(pk=self.pk).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-
+        slug = unique_slug(self, base_text, field_name='sub_category_slug')
         self.sub_category_slug = slug
 
         if save:
@@ -843,9 +839,22 @@ class SubCategory(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        """Override save to auto-generate slug and run validation"""
+        """
+        Generate the slug when missing and validate before writing.
+
+        See ``Brand.save`` for why ``update_fields`` is threaded through
+        instead of calling a bare ``full_clean()``.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+
         if self.sub_category_name and not self.sub_category_slug:
             self.generate_slug()
+            if update_fields is not None and 'sub_category_slug' not in update_fields:
+                update_fields = list(set(update_fields) | {'sub_category_slug'})
+                kwargs['update_fields'] = update_fields
 
-        self.full_clean()
+        if not skip_validation:
+            clean_for_save(self, update_fields)
+
         super().save(*args, **kwargs)

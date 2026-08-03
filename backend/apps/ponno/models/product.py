@@ -19,6 +19,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models import Avg, Count, Q, Sum
 
+from apps.core.models import clean_for_save, unique_slug
 from apps.ponno.models.brand import Brand
 from apps.ponno.models.category import Category
 from apps.ponno.models.sub_category import SubCategory
@@ -752,18 +753,12 @@ class Product(models.Model):
         if not self.product_name:
             return None
         
-        if self.brand:
-            base_slug = slugify(f"{self.product_name}-{self.brand.brand_name}")
+        if self.brand_id and self.brand:
+            base_text = f"{self.product_name}-{self.brand.brand_name}"
         else:
-            base_slug = slugify(self.product_name)
-        
-        slug = base_slug
-        counter = 1
-        
-        while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
+            base_text = self.product_name
+
+        slug = unique_slug(self, base_text, field_name='slug')
         self.slug = slug
         
         if save:
@@ -980,21 +975,51 @@ class Product(models.Model):
             self.sku = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     
     def save(self, *args, **kwargs):
-        """Override save"""
-        # Generate slug if needed
-        if self.product_name and not self.slug:
-            self.generate_slug()
-        
-        # Calculate final price
-        self.calculate_final_price()
-        
-        # Update stock status
-        if self.track_inventory:
-            self.update_stock_status(save=False)
-        
-        # Run validation
-        self.full_clean()
-        
+        """
+        Override save.
+
+        Honours ``update_fields``: a targeted write such as
+        ``save(update_fields=['stock'])`` must not silently recompute and then
+        *fail to persist* the slug or final price, and must not validate
+        columns it is not writing.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+        derived = []
+
+        if update_fields is None:
+            # Full save: derive everything.
+            if self.product_name and not self.slug:
+                self.generate_slug()
+            self.calculate_final_price()
+            if self.track_inventory:
+                self.update_stock_status(save=False)
+        else:
+            # Partial save: only recompute values whose inputs are being
+            # written, and add the derived columns to update_fields so the
+            # recomputed value actually reaches the database.
+            written = set(update_fields)
+
+            if 'product_name' in written and not self.slug:
+                self.generate_slug()
+                derived.append('slug')
+
+            # ``discount_amount`` is a property derived from these two.
+            if written & {'selling_price', 'discount_percentage'}:
+                self.calculate_final_price()
+                derived.append('final_price')
+
+            if self.track_inventory and 'stock' in written:
+                self.update_stock_status(save=False)
+                derived.append('stock_status')
+
+            if derived:
+                kwargs['update_fields'] = list(written.union(derived))
+                update_fields = kwargs['update_fields']
+
+        if not skip_validation:
+            clean_for_save(self, update_fields)
+
         super().save(*args, **kwargs)
 
 
@@ -1285,15 +1310,33 @@ class Order(models.Model):
         return self.order_number
 
     def generate_order_number(self):
+        """
+        Build a unique order number.
+
+        The previous version drew four digits from ``random`` and never checked
+        the result against a column marked ``unique=True``. With only 9000
+        values per day a collision is likely well before a thousand orders
+        (birthday bound), and the loser gets an IntegrityError at checkout.
+        Ten hex characters from ``secrets`` plus an existence check removes
+        both the collision rate and the predictability.
+        """
         from django.utils import timezone as tz
-        import random
+
         today = tz.now().strftime('%Y%m%d')
-        rand  = random.randint(1000, 9999)
-        return f"ORD-{today}-{rand}"
+        manager = self.__class__._base_manager
+        for _attempt in range(10):
+            candidate = f"ORD-{today}-{secrets.token_hex(5).upper()}"
+            if not manager.filter(order_number=candidate).exists():
+                return candidate
+        # Astronomically unlikely; fall back to a full uuid rather than loop.
+        return f"ORD-{today}-{uuid.uuid4().hex[:16].upper()}"
 
     def save(self, *args, **kwargs):
         if not self.order_number:
             self.order_number = self.generate_order_number()
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None and 'order_number' not in update_fields:
+                kwargs['update_fields'] = list(set(update_fields) | {'order_number'})
         super().save(*args, **kwargs)
 
 

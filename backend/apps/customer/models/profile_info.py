@@ -23,10 +23,11 @@ from typing import Optional, List
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q, Count
+
+from apps.core.models import clean_for_save, unique_slug
 
 
 # ====================================================================
@@ -947,17 +948,16 @@ class ProfileInfo(models.Model):
         if not self.profile_name:
             return None
         
-        base_slug = slugify(self.profile_name)
-        slug = base_slug
-        counter = 1
-        
-        # Ensure uniqueness
-        while ProfileInfo.objects.filter(
-            profile_name_slug=slug
-        ).exclude(user=self.user).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
+        # The previous implementation excluded by ``self.user``, which raises
+        # RelatedObjectDoesNotExist on an unsaved profile, and issued one query
+        # per collision. ``unique_slug`` excludes by pk and resolves the suffix
+        # from a single query.
+        slug = unique_slug(
+            self,
+            self.profile_name,
+            field_name='profile_name_slug',
+            fallback='profile',
+        )
         self.profile_name_slug = slug
         
         if save:
@@ -1264,10 +1264,23 @@ class ProfileInfo(models.Model):
                 )
     
     def save(self, *args, **kwargs):
-        """Override save to generate slug and run validation"""
-        # Generate slug if name exists but slug doesn't
+        """
+        Generate the slug when missing and validate before writing.
+
+        ``update_fields`` is respected so partial writes (a view counter, a
+        privacy toggle) do not re-validate the whole row, and a slug produced
+        here is added to the column list rather than being dropped.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+
         if self.profile_name and not self.profile_name_slug:
             self.generate_slug()
-        
-        self.full_clean()
+            if update_fields is not None and 'profile_name_slug' not in update_fields:
+                update_fields = list(set(update_fields) | {'profile_name_slug'})
+                kwargs['update_fields'] = update_fields
+
+        if not skip_validation:
+            clean_for_save(self, update_fields)
+
         super().save(*args, **kwargs)

@@ -21,11 +21,12 @@ from typing import Optional
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db.models import Count, Q
+
+from apps.core.models import clean_for_save, unique_slug
 
 
 # ====================================================================
@@ -706,17 +707,7 @@ class Brand(models.Model):
         if not self.brand_name:
             return None
         
-        base_slug = slugify(self.brand_name)
-        slug = base_slug
-        counter = 1
-        
-        # Ensure uniqueness
-        while Brand.objects.filter(
-            brand_slug=slug
-        ).exclude(pk=self.pk).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
+        slug = unique_slug(self, self.brand_name, field_name='brand_slug')
         self.brand_slug = slug
         
         if save:
@@ -1029,12 +1020,23 @@ class Brand(models.Model):
             )
     
     def save(self, *args, **kwargs):
-        """Override save to generate slug and run validation"""
-        # Generate slug if name exists but slug doesn't
+        """
+        Generate the slug when missing and validate before writing.
+
+        ``update_fields`` is honoured: a partial write only validates the
+        columns it touches, and a slug generated here is added to the list so
+        it is not silently dropped by the UPDATE.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+
         if self.brand_name and not self.brand_slug:
             self.generate_slug()
-        
-        # Run validation
-        self.full_clean()
-        
+            if update_fields is not None and 'brand_slug' not in update_fields:
+                update_fields = list(set(update_fields) | {'brand_slug'})
+                kwargs['update_fields'] = update_fields
+
+        if not skip_validation:
+            clean_for_save(self, update_fields)
+
         super().save(*args, **kwargs)

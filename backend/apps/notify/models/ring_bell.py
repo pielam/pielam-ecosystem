@@ -24,6 +24,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
+from apps.core.models import clean_for_save
+
 
 # ====================================================================
 # NOTIFICATION MANAGER
@@ -531,8 +533,23 @@ class Notification(models.Model):
                 raise ValidationError(_("Expiry time must be after creation time"))
 
     def save(self, *args, **kwargs):
-        """Override save to run validation and assign a slug"""
+        """
+        Assign a slug when missing, then validate.
+
+        Notifications are marked read/seen with
+        ``save(update_fields=['is_read', 'read_at'])``; validating the whole
+        row there would make an unrelated legacy value block the update, so
+        only the written columns are validated.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+
         if not self.slug:
             self.slug = uuid.uuid4().hex[:12]
-        self.full_clean()
+            if update_fields is not None and 'slug' not in update_fields:
+                update_fields = list(set(update_fields) | {'slug'})
+                kwargs['update_fields'] = update_fields
+
+        if not skip_validation:
+            clean_for_save(self, update_fields)
         super().save(*args, **kwargs)

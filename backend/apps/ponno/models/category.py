@@ -21,10 +21,11 @@ from typing import Optional, List
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
+
+from apps.core.models import clean_for_save, unique_slug
 from apps.ponno.models.brand import Brand
 
 # ====================================================================
@@ -644,17 +645,7 @@ class Category(models.Model):
         if not self.category_name:
             return None
         
-        base_slug = slugify(self.category_name)
-        slug = base_slug
-        counter = 1
-        
-        # Ensure uniqueness
-        while Category.objects.filter(
-            category_slug=slug
-        ).exclude(pk=self.pk).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
+        slug = unique_slug(self, self.category_name, field_name='category_slug')
         self.category_slug = slug
         
         if save:
@@ -973,15 +964,30 @@ class Category(models.Model):
                 raise ValidationError(_("Minimum price cannot be greater than maximum price"))
     
     def save(self, *args, **kwargs):
-        """Override save to generate slug, update level, and run validation"""
-        # Generate slug if name exists but slug doesn't
+        """
+        Generate the slug, refresh the tree level, then validate.
+
+        Fields derived here are appended to ``update_fields`` so a partial
+        write does not compute them and then discard them; see ``Brand.save``
+        for the rationale behind not calling a bare ``full_clean()``.
+        """
+        update_fields = kwargs.get('update_fields')
+        skip_validation = kwargs.pop('skip_validation', False)
+        derived = set()
+
         if self.category_name and not self.category_slug:
             self.generate_slug()
-        
-        # Update level and path
+            derived.add('category_slug')
+
+        # Sets both ``level`` and ``path``.
         self.update_level()
-        
-        # Run validation
-        self.full_clean()
-        
+        derived.update({'level', 'path'})
+
+        if update_fields is not None:
+            update_fields = list(set(update_fields) | derived)
+            kwargs['update_fields'] = update_fields
+
+        if not skip_validation:
+            clean_for_save(self, update_fields)
+
         super().save(*args, **kwargs)

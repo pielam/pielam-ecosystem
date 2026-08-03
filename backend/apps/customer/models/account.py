@@ -29,6 +29,7 @@ from django.utils import timezone as dj_timezone
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
+from apps.core.models import clean_for_save
 from apps.customer.validators import email_or_phone_validator
 
 
@@ -956,7 +957,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def save(self, *args, **kwargs):
         """
-        Override save to run clean validation
+        Validate before writing, without breaking partial updates.
+
+        A bare ``full_clean()`` here was a real outage risk: Django's own
+        ``update_last_login`` signal calls ``user.save(update_fields=['last_login'])``
+        on every successful login, and this model's own helpers save single
+        columns (``record_failed_login``, lockout stamps). Validating every
+        field there meant one stale or newly-invalid column could make a user
+        permanently unable to log in. ``skip_validation=True`` is available for
+        trusted bulk writes.
         """
-        self.full_clean()
+        skip_validation = kwargs.pop('skip_validation', False)
+        if not skip_validation:
+            clean_for_save(self, kwargs.get('update_fields'))
         super().save(*args, **kwargs)
