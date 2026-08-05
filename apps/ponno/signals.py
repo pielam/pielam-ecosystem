@@ -143,6 +143,9 @@ def sync_brand_to_connected_service(sender, instance: Brand, created, **kwargs):
     NOTE: created_by is nullable — brands created without an owning user
     (e.g. via Django admin without setting created_by) won't sync.
     """
+    if kwargs.get("raw", False):
+        return
+
     if not instance.created_by_id:
         return
     create_or_update_connected_service_for_brand(instance)
@@ -213,6 +216,9 @@ def sync_category_to_connected_service(sender, instance: Category, created, **kw
     Whenever a Category is created OR updated, mirror it into ConnectedService.
     NOTE: created_by is nullable — same caveat as Brand above.
     """
+    if kwargs.get("raw", False):
+        return
+
     if not instance.created_by_id:
         return
     create_or_update_connected_service_for_category(instance)
@@ -290,6 +296,9 @@ def sync_subcategory_to_connected_service(sender, instance: SubCategory, created
     Whenever a SubCategory is created OR updated, mirror it into ConnectedService.
     NOTE: created_by is nullable — same caveat as Brand/Category above.
     """
+    if kwargs.get("raw", False):
+        return
+
     if not instance.created_by_id:
         return
     create_or_update_connected_service_for_subcategory(instance)
