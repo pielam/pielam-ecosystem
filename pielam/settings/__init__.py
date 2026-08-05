@@ -8,5 +8,3 @@ elif env == "dev":
     from .dev import *
 else:
     from .local import *
-
-print("Django settings loaded ============================= ", env)
