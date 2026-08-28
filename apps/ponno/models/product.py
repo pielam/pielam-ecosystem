@@ -6,10 +6,11 @@ Enhanced Product Model for International Business Standards
 Complete e-commerce product management with all essential features
 """
 
+import logging
 import uuid
 from decimal import Decimal
 from typing import Optional
-
+from django.urls import reverse
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -24,24 +25,27 @@ from apps.ponno.models.category import Category
 from apps.ponno.models.sub_category import SubCategory
 
 
+logger = logging.getLogger(__name__)
+
+
 # ====================================================================
 # PRODUCT MANAGER
 # ====================================================================
 
 class ProductManager(models.Manager):
     """Custom manager for Product with optimized queries"""
-    
+
     def active_products(self):
         """Get all active, non-deleted products"""
         return self.filter(
             is_active=True,
             deleted_at__isnull=True
         ).select_related('brand', 'category', 'dealer')
-    
+
     def in_stock(self):
         """Get products in stock"""
         return self.active_products().filter(stock__gt=0)
-    
+
     def featured_products(self):
         """Get featured products"""
         return self.filter(
@@ -49,26 +53,26 @@ class ProductManager(models.Manager):
             is_active=True,
             deleted_at__isnull=True
         ).select_related('brand', 'category')
-    
+
     def on_sale(self):
         """Get products on sale (with discount)"""
         return self.active_products().filter(discount_percentage__gt=0)
-    
+
     def trending_products(self, limit=20):
         """Get trending products"""
         return self.active_products().order_by('-view_count', '-total_sales')[:limit]
-    
+
     def bestsellers(self, limit=20):
         """Get bestselling products"""
         return self.active_products().order_by('-total_sales')[:limit]
-    
+
     def low_stock(self, threshold=10):
         """Get low stock products"""
         return self.active_products().filter(
             stock__lte=threshold,
             stock__gt=0
         )
-    
+
     def search_products(self, query):
         """Search products"""
         return self.filter(
@@ -79,7 +83,7 @@ class ProductManager(models.Manager):
             is_active=True,
             deleted_at__isnull=True
         ).select_related('brand', 'category', 'dealer')
-    
+
     def get_by_slug(self, slug):
         """Get product by slug"""
         return self.select_related('brand', 'category', 'dealer').get(
@@ -275,7 +279,9 @@ class Product(models.Model):
         help_text=_("Product video URL")
     )
 
-    # apps/ponno/models/product.py — inside the ANALYTICS section
+    # ================================================================
+    # ANALYTICS (share_count lives here alongside the rest below)
+    # ================================================================
 
     share_count = models.PositiveIntegerField(
         _("Shares"),
@@ -720,8 +726,8 @@ class Product(models.Model):
     def product_url(self) -> str:
         """Get product URL"""
         if self.slug:
-            return f"/products/{self.slug}/"
-        return f"/products/{self.product_id}/"
+            return reverse('ponno:product_detail', kwargs={'slug': self.slug})
+        return reverse('ponno:product_detail', kwargs={'slug': str(self.product_id)})
     
     @property
     def discount_amount(self) -> Decimal:
@@ -757,6 +763,17 @@ class Product(models.Model):
         else:
             base_slug = slugify(self.product_name)
         
+        # slugify() strips non-ASCII characters by default, so a
+        # non-Latin-script product_name (Bangla, Arabic, CJK, etc.) or
+        # one made entirely of symbols/emoji can legitimately reduce to
+        # an empty string. Falling through with base_slug='' would save
+        # a Product with slug='' — valid per the field's blank=True, but
+        # unreachable via any {% url %} using the slug converter
+        # ([-a-zA-Z0-9_]+, requires 1+ chars) — hence NoReverseMatch on
+        # any template that links to it.
+        if not base_slug:
+            base_slug = f"product-{uuid.uuid4().hex[:10]}"
+        
         slug = base_slug
         counter = 1
         
@@ -770,7 +787,7 @@ class Product(models.Model):
             self.save(update_fields=['slug'])
         
         return slug
-    
+
     # ================================================================
     # PRICING METHODS
     # ================================================================
@@ -996,8 +1013,6 @@ class Product(models.Model):
         self.full_clean()
         
         super().save(*args, **kwargs)
-
-
 
 
 """

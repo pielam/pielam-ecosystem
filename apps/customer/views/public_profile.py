@@ -218,30 +218,56 @@ def _get_public_services(profile_user, request):
 
     Eligibility mirrors the same rules used everywhere else an engine
     is surfaced to someone other than its owner (see
-    apps.ponno.views.home._get_public_feed_queryset):
+    apps.ponno.views.home._get_public_feed_queryset), plus two rules
+    the newer ConnectedService model introduced that this page must
+    also respect since it's a direct downstream consumer of crawled
+    data:
 
-        - status == 'public'        → respects the per-engine privacy toggle
-        - is_connected == True      → the owner hasn't disconnected it
-        - fetch_status == 'success' → only show engines with real scraped data
+        - status == 'public'          → respects the per-engine privacy toggle
+        - is_connected == True        → the owner hasn't disconnected it
+        - fetch_status == 'success'   → only show engines with real scraped data
+        - is_active == True           → excludes soft-deleted engines
+                                         (ConnectedService.soft_delete() does
+                                         not touch status/is_connected/
+                                         fetch_status, so without this an
+                                         engine the owner deleted would keep
+                                         showing up here)
+        - content_sensitivity != PII_DETECTED → never expose a row the
+          PII-scan flagged after the fact, even if it was already public
+          (see ContentSensitivity's help_text: this field gates what's
+          "persisted/exposed downstream", and this view IS that downstream
+          exposure point — both the server-rendered first batch and the
+          load_more_services JSON endpoint)
 
-    Private, disconnected, or still-erroring engines never leave the
-    owner's own dashboard, even when the owner is viewing their own
-    public profile page — status='public' alone isn't enough, since an
-    engine can be marked public but still be broken or unfetched.
+    Private, disconnected, still-erroring, soft-deleted, or PII-flagged
+    engines never leave the owner's own dashboard, even when the owner
+    is viewing their own public profile page — status='public' alone
+    isn't enough, since an engine can be marked public but still be
+    broken, unfetched, deleted, or sensitive.
+
+    Note: rows with content_sensitivity == 'unknown' (the PII scan
+    hasn't run/completed yet) are NOT excluded here — only a confirmed
+    PII_DETECTED result hides a row. If the scan is meant to be a gate
+    (nothing public until cleared) rather than a filter, change this to
+    `filter(content_sensitivity=ContentSensitivity.CLEAN)` instead.
     """
     qs = (
         ConnectedService.objects
         .filter(
             user=profile_user,
-            status="public",
+            status=ConnectedService.Status.PUBLIC,
             is_connected=True,
-            fetch_status="success",
+            fetch_status=ConnectedService.FetchStatus.SUCCESS,
+            is_active=True,
+        )
+        .exclude(
+            content_sensitivity=ConnectedService.ContentSensitivity.PII_DETECTED,
         )
         .order_by("-created_at")
     )
 
     service_type = request.GET.get("service_type", "").strip()
-    if service_type in dict(ConnectedService.SERVICE_TYPES):
+    if service_type in ConnectedService.ServiceType.values:
         qs = qs.filter(service_type=service_type)
 
     total_count = qs.count()
@@ -373,7 +399,7 @@ def PublicProfileView(request, username):
 
         "total_services":       total_services,
         "active_service_type":  active_service_type,
-        "service_type_choices": ConnectedService.SERVICE_TYPES,
+        "service_type_choices": ConnectedService.ServiceType.choices,
 
         # JSON payloads consumed by the inline <script> in
         # public_profile.html to hydrate the first batch of cards via

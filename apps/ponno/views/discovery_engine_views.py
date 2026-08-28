@@ -13,12 +13,15 @@ Request
   ├─ FilterParams.from_request(request)        parse all params
   ├─ Load fragments (brands/cats/subcats)      fragment cache
   ├─ FilterPipeline.run(base_qs, params)       all filters + sort
+  ├─ Resolve active Campaign discounts          batch, no N+1
+  │     (applied inside _format_products(), display-only —
+  │      redemption/usage-limit enforcement stays in
+  │      CampaignPricingService at cart/checkout time)
   ├─ Sort path:
   │     name_az   → natural_sort_pks() (PKs, then Case/When)
   │     discount   → DB ORDER BY
   │     explicit   → DB ORDER BY
   │     feed sorts → FeedEngine.rank_dicts() + two-tier cache
-  ├─ Inject ConnectedService cards (UPGRADE-13)
   ├─ Inject per-user wishlist state            Redis → DB fallback
   ├─ Async view-log dispatch                   Celery → Redis INCR
   └─ Render + ETag / Cache-Control headers
@@ -47,10 +50,9 @@ particular role. Every per-user block below either:
   (a) checks `request.user.is_authenticated` first, or
   (b) uses `_safe_user_role()` which returns None for anonymous users,
       and never raises.
-Sub-sections that are non-critical (suggested dealers, connected
-services / engine context, wishlist state) are wrapped so that a
-failure there degrades to an empty/default value instead of a 500 —
-this must hold regardless of which role is logged in.
+Sub-sections that are non-critical (suggested dealers, wishlist state)
+are wrapped so that a failure there degrades to an empty/default value
+instead of a 500 — this must hold regardless of which role is logged in.
 """
 
 from __future__ import annotations
@@ -74,27 +76,19 @@ from urllib.parse import parse_qs, urlparse
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import (
     Avg, Case, Count, DecimalField, ExpressionWrapper,
     F, IntegerField, Q, Sum, Value, When,
 )
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.html import escape
 from django.views.decorators.cache import cache_control
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-
-from rest_framework import serializers, status
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
 
 from apps.customer.models.profile_info import ProfileInfo
 from apps.ponno.feed_algorithm import (
@@ -113,19 +107,111 @@ from apps.ponno.filter_products import (
     natural_sort_pks,
 )
 from apps.ponno.models.brand import Brand
+from apps.ponno.models.campaign import Campaign
 from apps.ponno.models.category import Category
 from apps.ponno.models.product import Order, Product, ProductView, SearchHistory, Wishlist
 from apps.ponno.models.product_view_log import ProductViewLog
 from apps.ponno.models.rating import ProductRating
 from apps.ponno.models.sub_category import SubCategory
 from apps.ponno.product_badges import attach_badges_to_products, resolve_badges_from_dict
-from megamind.models.connected_service import ConnectedService
-from megamind.services.scraper import scrape_url
-from megamind.utils.service_fetcher import fetch_service_data
 
 logger = logging.getLogger(__name__)
 User   = get_user_model()
 
+# ═══════════════════════════════════════════════════════════════════
+# ██  CAMPAIGN DISPLAY STRIP  (promo banners above the product grid)
+# ═══════════════════════════════════════════════════════════════════
+#
+# Distinct from _batch_active_campaigns(): that resolves one campaign
+# per product for price-badge purposes. This is just "what's currently
+# running", for a promo strip — same Campaign.objects.active() scope,
+# fragment-cached like brands/cats/subcats since it's identical for
+# every visitor (anonymous or any Role).
+
+# ═══════════════════════════════════════════════════════════════════
+# ██  CAMPAIGN DISPLAY STRIP  (promo banners above the product grid)
+# ═══════════════════════════════════════════════════════════════════
+#
+# Distinct from _batch_active_campaigns(): that resolves one campaign
+# per product for price-badge purposes. This is just "what's currently
+# running", for a promo strip — same Campaign.objects.active() scope,
+# fragment-cached like brands/cats/subcats since it's identical for
+# every visitor (anonymous or any Role).
+
+TTL_CAMPAIGN_STRIP    = getattr(settings, 'DE_TTL_CAMPAIGN_STRIP', 60)
+_CAMPAIGN_STRIP_LIMIT = 8
+
+
+def _get_active_campaigns_display() -> list[dict]:
+    """
+    Cached list of the top N currently-active campaigns, for a promo
+    strip rendered above the product grid. Read-only, display-only —
+    does not touch times_used or any redemption logic.
+
+    Never raises: any failure (cache or DB) degrades to an empty list,
+    same pattern as the other fragment helpers (_get_active_brands(),
+    etc.) so a broken campaign query never breaks page render for any
+    Role.
+    """
+    key  = 'de:campaigns'
+    data = _safe_cache_get(key)
+    if data is not None:
+        return data
+
+    got_lock = _lock(key)
+    if not got_lock:
+        return _safe_cache_get(key) or []
+
+    try:
+        campaigns = (
+            Campaign.objects.active()
+            .only(
+                'campaign_id', 'name', 'slug', 'description', 'banner_image',
+                'campaign_type', 'discount_value', 'max_discount_amount',
+                'applies_to', 'end_at', 'is_stackable', 'priority',
+            )
+            .order_by('-priority', '-discount_value')[:_CAMPAIGN_STRIP_LIMIT]
+        )
+        data = []
+        for c in campaigns:
+            if c.campaign_type == Campaign.CampaignType.PERCENTAGE:
+                badge = f'{c.discount_value:g}% OFF'
+            else:
+                badge = f'{format_price(c.discount_value)} OFF'
+
+            data.append({
+                'campaign_id':   str(c.campaign_id),
+                'name':          c.name,
+                'slug':          c.slug,
+                'description':   c.description or '',
+                'banner_url':    _media(str(c.banner_image)) if c.banner_image else None,
+                'badge':         badge,
+                'campaign_type': c.campaign_type,
+                'applies_to':    c.applies_to,
+                'is_stackable':  c.is_stackable,
+                'ends_at':       c.end_at.isoformat() if c.end_at else None,
+            })
+        _safe_cache_set(key, data, _jittered_ttl(TTL_CAMPAIGN_STRIP))
+        return data
+    except Exception:
+        logger.warning('_get_active_campaigns_display failed', exc_info=True)
+        return []
+    finally:
+        _unlock(key)
+
+def invalidate_fragment_caches() -> None:
+    """Call from a post_save signal on Brand / Category / Product / Campaign."""
+    fragment_keys = [
+        'de:brands', 'de:cats', 'de:subcats', 'de:total',
+        'de:brand_cat_map', 'de:brand_subcat_map',
+        'de:campaigns', 'de:has_active_campaigns',
+    ]
+    fb_slugs = list(TAB_FILTER_SLUGS) + ['all', '', 'brands', 'categories', 'sub_categories']
+    fb_keys  = [f'de:fb:{slug}' for slug in fb_slugs]
+    try:
+        cache.delete_many(fragment_keys + fb_keys)
+    except Exception as exc:
+        logger.warning('invalidate_fragment_caches failed: %s', exc)
 
 from megamind.services.visit_logger import record_discovery_visit
 
@@ -193,7 +279,6 @@ _WISHLIST_PREFIX = 'wl'
 PROFILE_TTL  = 60 * 5   # 5 min
 ACTIVITY_TTL = 60 * 3   # 3 min
 RECENT_TTL   = 60 * 2   # 2 min
-ENGINE_TTL   = 60 * 4   # 4 min
 ETAG_TTL     = 60 * 2   # 2 min
 
 # Columns the ORM fetches — keeps DB rows narrow
@@ -211,21 +296,6 @@ PRODUCT_FIELDS = [
     'brand_id', 'category_id', 'sub_category_id', 'dealer_id',
     'created_at',
 ]
-
-# Icon per ConnectedService.service_type for the badge stack
-_SERVICE_TYPE_BADGE_ICON = {
-    'product':   'fa-solid fa-bag-shopping',
-    'business':  'fa-solid fa-store',
-    'person':    'fa-solid fa-user',
-    'location':  'fa-solid fa-location-dot',
-    'news':      'fa-solid fa-newspaper',
-    'education': 'fa-solid fa-graduation-cap',
-    'api':       'fa-solid fa-plug',
-}
-
-# ConnectedService card injection settings
-SERVICE_CARDS_LIMIT   = getattr(settings, 'DE_SERVICE_CARDS_LIMIT', 6)
-SERVICE_CARD_INTERVAL = getattr(settings, 'DE_SERVICE_CARD_INTERVAL', 4)
 
 # Thread pool for parallel profile data loaders
 _MAX_WORKERS = getattr(settings, 'PROFILE_VIEW_THREAD_POOL_WORKERS', 4)
@@ -333,7 +403,6 @@ def _feed_page_key(user_id, query, filter_slug, sort_by,
 def _key_ctx(uid: int)      -> str: return f"profile:ctx:{uid}"
 def _key_activity(uid: int) -> str: return f"profile:activity:{uid}"
 def _key_recent(uid: int)   -> str: return f"profile:recent:{uid}"
-def _key_engine(uid: int)   -> str: return f"profile:engine:{uid}"
 def _key_etag(uid: int)     -> str: return f"profile:etag:{uid}"
 
 
@@ -399,19 +468,16 @@ def _build_profile_etag(
     ctx: dict[str, Any],
     activity: dict[str, Any],
     recently_viewed: list[dict[str, Any]],
-    engine: dict[str, Any],
 ) -> str:
     ctx             = ctx or {}
     activity        = activity or {}
     recently_viewed = recently_viewed or []
-    engine          = engine or {}
     fingerprint = {
         'uid':      uid,
         'pc':       ctx.get('profile_completion'),
         'fc':       ctx.get('followers_count'),
         'to':       activity.get('total_orders'),
         'rv_count': len(recently_viewed),
-        'svc':      engine.get('images_count'),
     }
     raw = json.dumps(fingerprint, sort_keys=True, default=str)
     return hashlib.md5(raw.encode(), usedforsecurity=False).hexdigest()  # noqa: S324
@@ -529,38 +595,6 @@ def _format_age(days: float) -> str:
 # How long to cache a parsed video_info dict per URL.
 # URLs are stable (they come from the DB), so a long TTL is fine.
 from megamind.utils.video_info import get_video_info_cached
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  COERCION HELPERS  (handles both dict and bare-string payloads)
-# ═══════════════════════════════════════════════════════════════════
-
-def _coerce_image(img) -> dict:
-    if isinstance(img, dict):
-        return {
-            'url': img.get('url') or img.get('src') or '',
-            'alt': img.get('alt') or '',
-            'href': img.get('href') or '',
-        }
-    return {'url': str(img), 'alt': '', 'href': ''}
-
-
-def _coerce_video(v) -> dict:
-    if isinstance(v, dict):
-        return {
-            'url':  v.get('url') or v.get('src') or '',
-            'type': v.get('type') or '',
-        }
-    return {'url': str(v), 'type': ''}
-
-
-def _coerce_link(lnk) -> dict:
-    if isinstance(lnk, dict):
-        return {
-            'href': lnk.get('href') or lnk.get('url')   or '',
-            'text': lnk.get('text') or lnk.get('title') or '',
-        }
-    return {'href': str(lnk), 'text': ''}
-
 
 # ═══════════════════════════════════════════════════════════════════
 # ██  FRAGMENT CACHE HELPERS
@@ -852,15 +886,140 @@ def _batch_dealer_product_counts(product_list: list) -> dict[int, int]:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# ██  CAMPAIGN PRICING  (display-time discount resolution)
+# ═══════════════════════════════════════════════════════════════════
+#
+# Mirrors Campaign.objects.for_product()'s scope + ordering rules
+# (all_products / specific_products / specific_categories /
+# specific_brands, highest priority first, largest discount_value as
+# tiebreaker) but resolved once for the whole page of products instead
+# of once per product — avoids N+1 queries on a 20+ product feed page.
+#
+# This is read-only, display-time pricing only. Actual redemption
+# (usage-limit enforcement, atomic times_used increment, per-user caps)
+# stays exclusively in
+# apps.ponno.services.campaign_pricing.CampaignPricingService, invoked
+# at cart/checkout resolution — never here.
+
+def _any_active_campaigns() -> bool:
+    """
+    Cheap cached existence check. On most page loads zero campaigns are
+    running at all, so this lets us skip _batch_active_campaigns()'s
+    heavier query (an OR across 4 scope conditions, some of which join
+    through M2M tables) entirely instead of running it — and getting an
+    empty result — on every single request. Cached briefly since "a
+    campaign just started/ended" doesn't need to be observed within
+    milliseconds; fails open (assume True) so a cache/DB hiccup here
+    never hides a real campaign, it just costs one extra query.
+    """
+    key    = 'de:has_active_campaigns'
+    cached = _safe_cache_get(key)
+    if cached is not None:
+        return cached
+    try:
+        exists = Campaign.objects.active().exists()
+    except Exception:
+        logger.warning('_any_active_campaigns check failed', exc_info=True)
+        return True
+    _safe_cache_set(key, exists, 30)
+    return exists
+
+
+def invalidate_campaign_cache() -> None:
+    """Call from a post_save/post_delete signal on Campaign."""
+    _safe_cache_delete('de:has_active_campaigns')
+
+
+def _batch_active_campaigns(product_list: list) -> dict[int, Campaign]:
+    """
+    Resolve the single best-priority active Campaign applicable to each
+    product in `product_list`, in a handful of queries regardless of
+    page size. Returns {product.pk: best_campaign}; a product with no
+    applicable campaign is simply absent from the returned dict.
+
+    Non-stackable-only resolution: even if a product is covered by
+    several stackable campaigns, this picks just the top one for
+    display purposes (a "from ৳X" style badge). Full stacking math is
+    CampaignPricingService's job at checkout, not the feed's.
+    """
+    if not product_list:
+        return {}
+    if not _any_active_campaigns():
+        return {}
+
+    category_ids = {p.category_id for p in product_list if p.category_id}
+    brand_ids    = {p.brand_id for p in product_list if p.brand_id}
+    product_ids  = [p.pk for p in product_list]
+
+    scope_q = Q(applies_to=Campaign.AppliesTo.ALL_PRODUCTS)
+    scope_q |= Q(applies_to=Campaign.AppliesTo.SPECIFIC_PRODUCTS, products__in=product_ids)
+    if category_ids:
+        scope_q |= Q(applies_to=Campaign.AppliesTo.SPECIFIC_CATEGORIES, categories__in=category_ids)
+    if brand_ids:
+        scope_q |= Q(applies_to=Campaign.AppliesTo.SPECIFIC_BRANDS, brands__in=brand_ids)
+
+    try:
+        campaigns = list(
+            Campaign.objects.active()
+            .filter(scope_q)
+            .distinct()
+            .prefetch_related('products', 'categories', 'brands')
+            .order_by('-priority', '-discount_value')
+        )
+    except Exception:
+        # A broken campaign query must never break the product feed —
+        # products just render without campaign pricing.
+        logger.warning('_batch_active_campaigns query failed', exc_info=True)
+        return {}
+
+    if not campaigns:
+        return {}
+
+    all_products_campaigns = [
+        c for c in campaigns if c.applies_to == Campaign.AppliesTo.ALL_PRODUCTS
+    ]
+
+    by_product_id: dict[int, list] = {}
+    by_category_id: dict[int, list] = {}
+    by_brand_id: dict[int, list] = {}
+
+    for c in campaigns:
+        if c.applies_to == Campaign.AppliesTo.SPECIFIC_PRODUCTS:
+            for pid in c.products.all().values_list('pk', flat=True):
+                by_product_id.setdefault(pid, []).append(c)
+        elif c.applies_to == Campaign.AppliesTo.SPECIFIC_CATEGORIES:
+            for cid in c.categories.all().values_list('pk', flat=True):
+                by_category_id.setdefault(cid, []).append(c)
+        elif c.applies_to == Campaign.AppliesTo.SPECIFIC_BRANDS:
+            for bid in c.brands.all().values_list('pk', flat=True):
+                by_brand_id.setdefault(bid, []).append(c)
+
+    best_by_product: dict[int, Campaign] = {}
+    for p in product_list:
+        candidates = list(all_products_campaigns)
+        candidates += by_product_id.get(p.pk, [])
+        if p.category_id:
+            candidates += by_category_id.get(p.category_id, [])
+        if p.brand_id:
+            candidates += by_brand_id.get(p.brand_id, [])
+        if not candidates:
+            continue
+        candidates.sort(key=lambda c: (-c.priority, -c.discount_value))
+        best_by_product[p.pk] = candidates[0]
+
+    return best_by_product
+
+
+# ═══════════════════════════════════════════════════════════════════
 # ██  SHARED SELLER/DEALER RESOLVER
 # ═══════════════════════════════════════════════════════════════════
 
 def _resolve_seller_info(user) -> dict:
     """
-    Shared seller/dealer info resolver used by BOTH Product cards and
-    ConnectedService cards, so both item types render an identical
-    dealer strip in the template. Works for a seller of any Role, and
-    tolerates a missing/None user or missing ProfileInfo.
+    Shared seller/dealer info resolver used by Product cards, so all
+    item types render an identical dealer strip in the template. Works
+    for a seller of any Role, and tolerates a missing/None user or
+    missing ProfileInfo.
     """
     info = {
         'seller_name':        'Seller',
@@ -908,14 +1067,20 @@ def _format_products(
     product_list: list,
     query: str = '',
     dealer_counts: dict | None = None,
+    campaign_map: dict | None = None,
 ) -> list[dict]:
     """
     Convert ORM Product instances into template-ready dicts.
     Badge resolution delegated to attach_badges_to_products().
     Seller info delegated to the shared _resolve_seller_info() helper.
+    Campaign discount resolution delegated to _batch_active_campaigns()
+    — pass its result in as `campaign_map`; a missing/empty map just
+    means no product gets a campaign price (never raises).
     """
     if dealer_counts is None:
         dealer_counts = {}
+    if campaign_map is None:
+        campaign_map = {}
 
     keywords = [w for w in query.split() if w][:10]
 
@@ -967,6 +1132,28 @@ def _format_products(
         discount_badge = f'{int(discount_pct)}% OFF' if discount_pct > 0 else None
         final_price    = product.final_price or product.selling_price
 
+        # ── Campaign discount (on top of the dealer's own price) ────
+        # Display-only: computed via Campaign.compute_discount(), the
+        # same pure calculation CampaignPricingService uses at
+        # checkout, just not redeemed/recorded here.
+        campaign             = campaign_map.get(product.pk)
+        campaign_info        = None
+        campaign_final_price = None
+
+        if campaign and show_selling_price and final_price:
+            campaign_discount = campaign.compute_discount(final_price)
+            if campaign_discount > 0:
+                campaign_final_price = campaign.discounted_price(final_price)
+                campaign_info = {
+                    'campaign_id':       str(campaign.campaign_id),
+                    'campaign_name':     campaign.name,
+                    'campaign_slug':     campaign.slug,
+                    'campaign_type':     campaign.campaign_type,
+                    'discount_amount':   format_price(campaign_discount),
+                    'discount_amount_raw': float(campaign_discount),
+                    'is_stackable':      campaign.is_stackable,
+                }
+
         # ── Relations ─────────────────────────────────────────────
         brand    = product.brand
         category = product.category
@@ -1013,6 +1200,15 @@ def _format_products(
             'discount_pct':         discount_pct if show_selling_price else 0,
             'discount_badge':       discount_badge if show_selling_price else None,
             'on_sale':              (discount_pct > 0) if show_selling_price else False,
+
+            # Campaign pricing — separate from the dealer's own
+            # discount_percentage above. `campaign_price` is what the
+            # customer actually pays when a campaign applies;
+            # `final_price` above stays the dealer's own price so the
+            # template can still show a strikethrough chain if wanted.
+            'campaign':          campaign_info,
+            'has_campaign':      campaign_info is not None,
+            'campaign_price':    format_price(campaign_final_price) if campaign_final_price is not None else None,
 
             # Visibility flags (template can react, e.g. show "Contact Seller")
             'show_brand_price':    show_brand_price,
@@ -1088,192 +1284,6 @@ def _format_products(
 
 
 # ═══════════════════════════════════════════════════════════════════
-# ██  CONNECTED-SERVICE → CARD ADAPTER
-# ═══════════════════════════════════════════════════════════════════
-
-def _format_connected_service_items(
-    query: str = '',
-    limit: int = SERVICE_CARDS_LIMIT,
-    exclude_user_ids: set | None = None,
-) -> list[dict]:
-    """
-    Convert public, successfully-fetched ConnectedService rows into
-    dicts shaped like _format_products() output, so they render inside
-    the same .product-card grid without template branching (beyond the
-    link target — 'item_type' == 'service').
-
-    Eligibility:
-      - status == 'public'
-      - is_connected == True
-      - fetch_status == 'success'
-      - has at least one extracted_image
-    """
-    exclude_user_ids = exclude_user_ids or set()
-
-    qs = (
-        ConnectedService.objects
-        .filter(status='public', is_connected=True, fetch_status='success')
-        .exclude(user_id__in=exclude_user_ids)
-        .select_related('user', 'user__profileinfo')
-        .order_by('-updated_at')
-    )
-
-    if query:
-        qs = qs.filter(
-            Q(service_name__icontains=query) |
-            Q(og_title__icontains=query) |
-            Q(og_description__icontains=query) |
-            Q(extracted_text__icontains=query)
-        )
-
-    qs = qs[: max(limit * 3, limit)]  # overfetch; some rows will lack images
-
-    keywords = [w for w in query.split() if w][:10]
-
-    def highlight(text: str) -> str:
-        safe = escape(text or '')
-        for word in keywords:
-            pattern = re.compile(re.escape(escape(word)), re.IGNORECASE)
-            safe = pattern.sub(
-                lambda m: f'<mark class="highlight">{m.group()}</mark>', safe
-            )
-        return safe
-
-    formatted: list[dict] = []
-
-    for svc in qs:
-        images = svc.extracted_images or []
-        if not images:
-            continue
-
-        lead_img  = images[0] if isinstance(images[0], dict) else {'url': str(images[0])}
-        image_url = lead_img.get('url') or svc.og_thumbnail or None
-        if not image_url:
-            continue
-
-        seller_info = _resolve_seller_info(svc.user)
-        title       = svc.og_title or svc.service_name or 'Untitled'
-        description = svc.og_description or ''
-        badge_icon  = _SERVICE_TYPE_BADGE_ICON.get(svc.service_type, 'fa-solid fa-link')
-
-        videos    = svc.extracted_videos or []
-        video_url = videos[0].get('url') if videos and isinstance(videos[0], dict) else None
-
-        entry = {
-            # Identity
-            'id':   f'svc-{svc.pk}',
-            'uuid': f'svc-{svc.pk}',
-            'slug': None,
-            'sku':  None,
-
-            # Display names
-            'title':                    title,
-            'product_name':             title,
-            'highlighted_title':        highlight(title),
-            'highlighted_product_name': highlight(title),
-            'short_description':        description[:160],
-
-            # Pricing — inert for services
-            'brand_price':         None,
-            'original_price':      None,
-            'final_price':         None,
-            'discount_percentage': 0,
-            'discount_pct':        0,
-            'discount_badge':      None,
-            'on_sale':             False,
-
-            # Media
-            'image':      image_url,
-            'video_url':  video_url,
-            'video_info': get_video_info_cached(video_url),
-
-            # Seller — shared resolver
-            **seller_info,
-            'seller_total_products': 0,
-
-            # Analytics — no product analytics for services
-            'views':          '0',
-            'views_raw':      0,
-            'rating':         0,
-            'rating_raw':     0.0,
-            'review_count':   0,
-            'total_sales':    0,
-            'wishlist_count': 0,
-
-            # Stock — neutralized so stock badges never fire
-            'stock':        0,
-            'stock_count':  '0',
-            'stock_status': '',
-            'stock_badge':  None,
-            'stock_class':  '',
-            'in_stock':     True,
-            'is_low_stock': False,
-
-            # Classification
-            'brand':             svc.og_site_name or svc.service_name,
-            'brand_slug':        None,
-            'brand_logo':        None,
-            'brand_is_verified': False,
-            'category':          svc.get_service_type_display(),
-            'category_slug':     svc.service_type,
-            'sub_category':      None,
-            'sub_category_slug': None,
-
-            # Status flags
-            'is_featured':   False,
-            'is_verified':   False,
-            'is_trending':   False,
-            'free_shipping': False,
-            'condition':     '',
-
-            # URL — points at the external source
-            'product_url': svc.service_url,
-
-            'created_at': svc.updated_at,
-            'dealer_id':  svc.user_id,
-
-            'age_days': _format_age(
-                (timezone.now() - svc.updated_at).total_seconds() / 86400
-            ) if svc.updated_at else '?',
-
-            # Discriminators
-            'item_type':     'service',
-            'service_id':    svc.pk,
-            'service_type':  svc.service_type,
-            'service_icon':  badge_icon,
-            'source_domain': svc.og_site_name or '',
-        }
-
-        formatted.append(entry)
-        if len(formatted) >= limit:
-            break
-
-    attach_badges_to_products(formatted)
-    return formatted
-
-
-def _interleave_service_cards(
-    formatted_products: list[dict],
-    service_items: list[dict],
-    interval: int = SERVICE_CARD_INTERVAL,
-) -> list[dict]:
-    """Insert one service card every `interval` product slots."""
-    if not service_items:
-        return formatted_products
-
-    merged: list[dict] = []
-    si = iter(service_items)
-    for idx, p in enumerate(formatted_products, start=1):
-        merged.append(p)
-        if idx % interval == 0:
-            nxt = next(si, None)
-            if nxt:
-                merged.append(nxt)
-    merged.extend(si)  # any leftover service items go at the end
-    return merged
-
-
-# ═══════════════════════════════════════════════════════════════════
 # ██  NULL PAGE OBJECT
 # ═══════════════════════════════════════════════════════════════════
 
@@ -1317,7 +1327,8 @@ def _get_scored_feed(
     if params.query:
         raw_list      = list(products_qs.order_by(*SORT_MAP.get(params.sort_by, ['-created_at'])))
         dealer_counts = _batch_dealer_product_counts(raw_list)
-        formatted     = _format_products(raw_list, params.query, dealer_counts)
+        campaign_map  = _batch_active_campaigns(raw_list)
+        formatted     = _format_products(raw_list, params.query, dealer_counts, campaign_map)
         engine        = FeedEngine(user)
         scored_list   = engine.rank_dicts(formatted, diversify=True)
         paginator     = Paginator(scored_list, PRODUCTS_PER_PAGE)
@@ -1349,7 +1360,8 @@ def _get_scored_feed(
             try:
                 raw_list      = list(products_qs.order_by(*SORT_MAP.get(params.sort_by, ['-created_at'])))
                 dealer_counts = _batch_dealer_product_counts(raw_list)
-                formatted     = _format_products(raw_list, params.query, dealer_counts)
+                campaign_map  = _batch_active_campaigns(raw_list)
+                formatted     = _format_products(raw_list, params.query, dealer_counts, campaign_map)
                 engine        = FeedEngine(user)
                 scored_list   = engine.rank_dicts(formatted, diversify=True)
                 _safe_cache_set(base_key, scored_list, TTL_FEED_BASE)
@@ -1384,7 +1396,8 @@ def _paginate_and_format(
 
     raw_list      = list(page_obj.object_list)
     dealer_counts = _batch_dealer_product_counts(raw_list)
-    formatted     = _format_products(raw_list, query, dealer_counts)
+    campaign_map  = _batch_active_campaigns(raw_list)
+    formatted     = _format_products(raw_list, query, dealer_counts, campaign_map)
     return total_count, page_obj, formatted
 
 
@@ -1396,7 +1409,6 @@ def _record_profile_views(formatted_products: list[dict], viewer) -> None:
     """
     For each product on this page whose seller is not the viewer,
     upsert a ProfileViewLog row (one row per viewer × profile_user).
-    Service cards (item_type == 'service') are skipped.
     No-op for anonymous visitors, regardless of Role logic elsewhere.
     Never raises — logging failures must not break the page for any
     Role.
@@ -1412,8 +1424,6 @@ def _record_profile_views(formatted_products: list[dict], viewer) -> None:
         from apps.customer.models.profile_view_log import ProfileViewLog  # noqa: PLC0415
         seen_dealer_ids: set[int] = set()
         for p in formatted_products:
-            if p.get('item_type') == 'service':
-                continue
             dealer_id = p.get('dealer_id')
             if not dealer_id or dealer_id == viewer.pk:
                 continue
@@ -1435,6 +1445,32 @@ def _record_profile_views(formatted_products: list[dict], viewer) -> None:
                 obj.save(update_fields=['viewed_at'])
     except Exception:
         logger.debug('_record_profile_views failed', exc_info=True)
+
+
+def _dispatch_profile_view_logging(formatted_products: list[dict], viewer) -> None:
+    """
+    Fire-and-forget wrapper around _record_profile_views().
+
+    This used to run inline in the request path: up to one
+    get_or_create() + possible save() *DB write* per distinct seller
+    shown on the page (so up to PRODUCTS_PER_PAGE synchronous
+    round-trips), all before the response could be sent. None of that
+    needs to finish before the user sees the page — it's the same
+    "safe to lose, must not block" profile telemetry as the discovery
+    visit log, so it now runs the same way: a short-lived daemon
+    thread, same pattern as _dispatch_discovery_visit. Never raises.
+    """
+    if not viewer or not getattr(viewer, 'is_authenticated', False):
+        return
+    try:
+        t = threading.Thread(
+            target=_record_profile_views,
+            args=(formatted_products, viewer),
+            daemon=True,
+        )
+        t.start()
+    except Exception:
+        logger.debug('_dispatch_profile_view_logging failed', exc_info=True)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1467,18 +1503,6 @@ def _resolve_following_ids(user) -> list[int]:
 # ═══════════════════════════════════════════════════════════════════
 # ██  PROFILE DATA LOADERS  (parallel, pickle-safe plain dicts)
 # ═══════════════════════════════════════════════════════════════════
-
-def _find_href_for_alt(alt: str, alt_to_href: dict, fallback: str) -> str:
-    if not alt:
-        return fallback
-    alt_lower = alt.strip().lower()
-    if alt_lower in alt_to_href:
-        return alt_to_href[alt_lower]
-    for text, href in alt_to_href.items():
-        if text.startswith(alt_lower):
-            return href
-    return fallback
-
 
 def _load_profile_context(user) -> dict[str, Any]:
     """~6 DB queries. CRITICAL — raises on miss (Http404 or 500)."""
@@ -1698,113 +1722,6 @@ def _load_recently_viewed(user) -> list[dict[str, Any]]:
         })
     return result
 
-def _load_engine_context(user) -> dict[str, Any]:
-    """1 DB query. Non-critical — degrades gracefully."""
-    services = list(
-        ConnectedService.objects
-        .filter(user=user, is_connected=True)
-        .only(
-            'service_name', 'service_url', 'service_type',
-            'og_title', 'og_description', 'og_thumbnail', 'og_site_name',
-            'extracted_images', 'extracted_videos', 'extracted_links', 'extracted_text',
-            'fetch_status', 'last_fetch_time',
-        )
-    )
-
-    extracted_images = []
-    extracted_videos = []
-    extracted_links  = []
-    extracted_texts  = []
-
-    for svc in services:
-        domain = urlparse(svc.service_url).netloc
-        title  = svc.og_title or svc.service_name
-        site   = svc.og_site_name or domain
-
-        meta = {
-            'source_url':      svc.service_url,
-            'source_domain':   site,
-            'service_name':    svc.service_name,
-            'service_type':    svc.service_type,
-            'fetch_status':    svc.fetch_status,
-            'last_fetch_time': svc.last_fetch_time,
-            'og_description':  svc.og_description,
-            'og_thumbnail':    svc.og_thumbnail,
-        }
-
-        links = svc.extracted_links or []
-        alt_to_href: dict[str, str] = {}
-        for lnk in links:
-            href = lnk.get('href', '')
-            text = lnk.get('text', '').strip().lower()
-            if href and text:
-                alt_to_href[text] = href
-
-        used_hrefs: set[str] = set()
-
-        for img in (svc.extracted_images or []):
-            img_url  = img.get('url', '')
-            img_alt  = img.get('alt', '')
-            img_href = _find_href_for_alt(img_alt, alt_to_href, svc.service_url)
-
-            if img_href in used_hrefs or not img_href:
-                img_href = img_url or svc.service_url
-
-            used_hrefs.add(img_href)
-
-            extracted_images.append({
-                **meta,
-                'file_url':      img_url,
-                'alt':           img_alt,
-                'title':         title,
-                'source_url':    img_href,
-                'source_domain': urlparse(img_href).netloc or site,
-            })
-
-        for vid in (svc.extracted_videos or []):
-            extracted_videos.append({
-                **meta,
-                'title':      title,
-                'source_url': vid.get('url') or svc.service_url,
-                'duration':   None,
-            })
-
-        for link in (svc.extracted_links or []):
-            href = link.get('href', '')
-            extracted_links.append({
-                **meta,
-                'url':    href,
-                'title':  link.get('text') or title,
-                'domain': urlparse(href).netloc or domain,
-            })
-
-        if svc.extracted_text and svc.extracted_text.strip():
-            extracted_texts.append({**meta, 'title': title, 'content': svc.extracted_text})
-
-    return {
-        'connected_services': [
-            {
-                'id':            s.id,              # ← add this
-                'service_name': s.service_name,
-                'service_url':  s.service_url,
-                'service_type': s.service_type,
-                'og_thumbnail': s.og_thumbnail,
-                'og_site_name': s.og_site_name,
-                'fetch_status': s.fetch_status,
-                'is_connected':  s.is_connected,    # ← add this too, 
-            }
-            for s in services
-        ],
-        'extracted_images': extracted_images,
-        'extracted_videos': extracted_videos,
-        'extracted_links':  extracted_links,
-        'extracted_texts':  extracted_texts,
-        'images_count':     len(extracted_images),
-        'videos_count':     len(extracted_videos),
-        'links_count':      len(extracted_links),
-        'text_count':       len(extracted_texts),
-    }
-
 
 # ═══════════════════════════════════════════════════════════════════
 # ██  PROFILE LOADER FALLBACKS
@@ -1820,16 +1737,9 @@ _EMPTY_ACTIVITY: dict[str, Any] = {
 
 _EMPTY_RECENT: list[dict[str, Any]] = []
 
-_EMPTY_ENGINE: dict[str, Any] = {
-    'connected_services': [], 'extracted_images': [], 'extracted_videos': [],
-    'extracted_links': [], 'extracted_texts': [],
-    'images_count': 0, 'videos_count': 0, 'links_count': 0, 'text_count': 0,
-}
-
 _FALLBACKS: dict[str, Any] = {
     'activity': _EMPTY_ACTIVITY,
     'recent':   _EMPTY_RECENT,
-    'engine':   _EMPTY_ENGINE,
 }
 
 
@@ -1840,7 +1750,7 @@ _FALLBACKS: dict[str, Any] = {
 def invalidate_profile_cache(user_id: int) -> None:
     cache.delete_many([
         _key_ctx(user_id), _key_activity(user_id),
-        _key_recent(user_id), _key_engine(user_id), _key_etag(user_id),
+        _key_recent(user_id), _key_etag(user_id),
     ])
 
 
@@ -1850,10 +1760,6 @@ def invalidate_recent_views(user_id: int) -> None:
 
 def invalidate_activity(user_id: int) -> None:
     cache.delete_many([_key_activity(user_id), _key_etag(user_id)])
-
-
-def invalidate_engine(user_id: int) -> None:
-    cache.delete_many([_key_engine(user_id), _key_etag(user_id)])
 
 
 def invalidate_user_feed(user_id: int) -> None:
@@ -1880,165 +1786,6 @@ def invalidate_fragment_caches() -> None:
         logger.warning('invalidate_fragment_caches failed: %s', exc)
 
 
-def invalidate_service_cards() -> None:
-    """Call from a post_save signal on ConnectedService."""
-    try:
-        cache.delete_pattern('de:base:*')
-        cache.delete_pattern('de:page:*')
-    except AttributeError:
-        logger.debug('Cache backend has no delete_pattern; relying on TTL_FEED_BASE expiry')
-    except Exception as exc:
-        logger.warning('invalidate_service_cards failed: %s', exc)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  SERIALIZERS  (DRF)
-# ═══════════════════════════════════════════════════════════════════
-
-class ConnectedServiceSerializer(serializers.ModelSerializer):
-    """Read serializer — all fields including scraped data."""
-    class Meta:
-        model = ConnectedService
-        fields = [
-            'id', 'service_name', 'service_url', 'service_type',
-            'status', 'is_connected',
-            'og_title', 'og_description', 'og_thumbnail', 'og_site_name', 'og_type',
-            'extracted_images', 'extracted_videos', 'extracted_links', 'extracted_text',
-            'fetch_status', 'fetch_error', 'last_fetch_time',
-            'created_at', 'updated_at',
-        ]
-        read_only_fields = [
-            'og_title', 'og_description', 'og_thumbnail', 'og_site_name', 'og_type',
-            'extracted_images', 'extracted_videos', 'extracted_links', 'extracted_text',
-            'fetch_status', 'fetch_error', 'last_fetch_time', 'last_fetched_data',
-            'created_at', 'updated_at',
-        ]
-
-
-class ConnectedServiceWriteSerializer(serializers.ModelSerializer):
-    """Write serializer — only user-editable fields."""
-    class Meta:
-        model = ConnectedService
-        fields = [
-            'service_name', 'service_url', 'service_type',
-            'status', 'is_connected', 'api_key', 'auth_token', 'profile',
-        ]
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  SERVICE SERIALIZER HELPERS
-# ═══════════════════════════════════════════════════════════════════
-
-def _should_fetch(service: ConnectedService, max_age_seconds: int = 3600) -> bool:
-    """Stale if never fetched, or older than max_age. 10-min backoff after errors."""
-    if service.last_fetch_time is None:
-        return True
-    age = (timezone.now() - service.last_fetch_time).total_seconds()
-    if service.fetch_status == 'error':
-        return age > 600
-    return age > max_age_seconds
-
-
-def _serialize_service(service: ConnectedService) -> dict:
-    """
-    Flatten a ConnectedService to a plain dict.
-    Falls back to last_fetched_data for services saved before the flat
-    OG/extracted columns existed.
-    """
-    og_title       = service.og_title       or ''
-    og_description = service.og_description or ''
-    og_thumbnail   = service.og_thumbnail   or ''
-    og_site_name   = service.og_site_name   or ''
-    og_type        = service.og_type        or ''
-    images         = service.extracted_images or []
-    videos         = service.extracted_videos or []
-    links          = service.extracted_links  or []
-    text           = service.extracted_text   or ''
-
-    raw = service.last_fetched_data or {}
-    if raw and not og_title:
-        og_title       = raw.get('title')       or raw.get('og_title')       or ''
-        og_description = raw.get('description') or raw.get('og_description') or ''
-        og_thumbnail   = (raw.get('og_image')   or raw.get('og_thumbnail')
-                          or raw.get('thumbnail') or '')
-        og_site_name   = raw.get('site_name')   or raw.get('og_site_name')   or ''
-        og_type        = raw.get('og_type')     or raw.get('type')           or ''
-    if raw and not images:
-        images = [_coerce_image(i) for i in (raw.get('images') or []) if i]
-    if raw and not videos:
-        videos = [_coerce_video(v) for v in (raw.get('videos') or []) if v]
-    if raw and not links:
-        links  = [_coerce_link(l)  for l in (raw.get('links')  or []) if l]
-    if raw and not text:
-        text = (raw.get('full_content') or raw.get('text_content')
-                or raw.get('content')   or raw.get('text') or '')
-
-    domain = urlparse(service.service_url).netloc
-
-    return {
-        'id':               service.id,
-        'service_name':     service.service_name,
-        'service_url':      service.service_url,
-        'service_type':     service.service_type,
-        'service_domain':   domain,
-        'status':           service.status,
-        'is_connected':     service.is_connected,
-        'og_title':         og_title,
-        'og_description':   og_description,
-        'og_thumbnail':     og_thumbnail,
-        'og_site_name':     og_site_name or domain,
-        'og_type':          og_type,
-        'extracted_images': images,
-        'extracted_videos': videos,
-        'extracted_links':  links,
-        'extracted_text':   text,
-        'images_count':     len(images),
-        'videos_count':     len(videos),
-        'links_count':      len(links),
-        'has_text':         bool(text.strip()),
-        'fetch_status':     service.fetch_status,
-        'fetch_error':      service.fetch_error or '',
-        'last_fetch_time':  (
-            service.last_fetch_time.isoformat()
-            if service.last_fetch_time else None
-        ),
-        'is_stale': _should_fetch(service),
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  BACKGROUND REFRESH
-# ═══════════════════════════════════════════════════════════════════
-
-def _background_refresh(service_id: int, user_id: int) -> None:
-    """
-    Fetch one service in a daemon thread so the view never blocks.
-    Busts the engine cache on success.
-    Replace threading.Thread with a Celery task when available.
-    """
-    try:
-        service = ConnectedService.objects.get(pk=service_id)
-        fetch_service_data(service)
-        cache.delete(_key_engine(user_id))
-        logger.info(
-            'Background refresh complete service_id=%s uid=%s status=%s',
-            service_id, user_id, service.fetch_status,
-        )
-    except Exception:
-        logger.exception(
-            'Background refresh failed service_id=%s uid=%s', service_id, user_id,
-        )
-
-
-def _spawn_refresh(service_id: int, user_id: int) -> None:
-    t = threading.Thread(
-        target=_background_refresh,
-        args=(service_id, user_id),
-        daemon=True,
-    )
-    t.start()
-
-
 # ═══════════════════════════════════════════════════════════════════
 # ██  MAIN DISCOVERY ENGINE VIEW
 # ═══════════════════════════════════════════════════════════════════
@@ -2060,7 +1807,6 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
           discount    → DB filter + ORDER BY
           explicit    → DB ORDER BY
           feed sorts → FeedEngine.rank_dicts() + two-tier cache
-    5b. Inject ConnectedService cards alongside products
     6.  Inject per-user wishlist state
     7.  Record ProfileViewLog entries for seller profiles
     8.  Suggested dealers
@@ -2090,6 +1836,7 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
     categories     = _get_active_categories()
     sub_categories = _get_active_sub_categories()
     total_count    = _get_total_product_count()
+    active_campaigns   = _get_active_campaigns_display()
 
     brand_category_map    = _get_brand_category_map()
     brand_subcategory_map = _get_brand_subcategory_map()
@@ -2137,7 +1884,8 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
             )
             raw_list           = list(page_qs)
             dealer_counts      = _batch_dealer_product_counts(raw_list)
-            formatted_products = _format_products(raw_list, params.query, dealer_counts)
+            campaign_map       = _batch_active_campaigns(raw_list)
+            formatted_products = _format_products(raw_list, params.query, dealer_counts, campaign_map)
 
     elif params.sort_by == 'discount':
         _, page_obj, formatted_products = _paginate_and_format(
@@ -2161,30 +1909,6 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
         )
         formatted_products = list(page_obj)
 
-    # ── 5b. Inject ConnectedService cards ─────────────────────────
-    show_service_cards = (
-        params.page == 1
-        and params.filter_slug in ('', 'all', None)
-        and params.sort_by not in EXPLICIT_SORT_BYPASSES
-    )
-
-    if show_service_cards:
-        try:
-            seen_dealer_ids = {
-                p.get('dealer_id') for p in formatted_products if p.get('dealer_id')
-            }
-            service_items = _format_connected_service_items(
-                query=params.query,
-                limit=SERVICE_CARDS_LIMIT,
-                exclude_user_ids=seen_dealer_ids,
-            )
-            if service_items:
-                formatted_products = _interleave_service_cards(formatted_products, service_items)
-        except Exception:
-            # Never let a broken ConnectedService card break the feed
-            # for any visitor, logged in or not.
-            logger.warning('ConnectedService card injection failed', exc_info=True)
-
     # ── 6. Per-user wishlist state ─────────────────────────────────
     # _get_wishlisted_ids() already returns an empty set for anonymous
     # visitors and never raises for any Role.
@@ -2195,12 +1919,13 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
         wishlisted_ids = set()
 
     # ── 7. ProfileViewLog ─────────────────────────────────────────
-    # _record_profile_views() already no-ops for anonymous visitors and
-    # swallows its own exceptions, but wrap anyway as defense-in-depth.
+    # Fired off the critical path — see _dispatch_profile_view_logging
+    # docstring. Never raises; try/except kept as defense-in-depth
+    # around the thread-spawn itself.
     try:
-        _record_profile_views(formatted_products, request.user)
+        _dispatch_profile_view_logging(formatted_products, request.user)
     except Exception:
-        logger.debug('profile view logging failed', exc_info=True)
+        logger.debug('profile view logging dispatch failed', exc_info=True)
 
     # ── 8. Suggested dealers ──────────────────────────────────────
     # Anonymous visitors and every Role get a safe default. The
@@ -2249,56 +1974,7 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
             except Exception:
                 pass
 
-    # ── 8b. Connected services + engine context ────────────────────
-    # Only meaningful for authenticated dealers/sellers who've hooked
-    # up ConnectedService rows, but must never error out for ANY Role
-    # (or anonymous visitors) that happens to hit this view.
-    engine_context = dict(_EMPTY_ENGINE)
-    connected_services = []
-    error_service_count = success_service_count = pending_service_count = 0
-    type_breakdown = []
-
-    if request.user.is_authenticated:
-        try:
-            engine_context = _load_engine_context(request.user)
-            connected_services = engine_context.get('connected_services', [])
-
-            for svc in connected_services:
-                svc_status = svc.get('fetch_status')
-                if svc_status == 'success':
-                    success_service_count += 1
-                elif svc_status == 'error':
-                    error_service_count += 1
-                else:
-                    pending_service_count += 1
-
-            type_counts: dict[str, int] = {}
-            for svc in connected_services:
-                t = svc.get('service_type', 'other')
-                type_counts[t] = type_counts.get(t, 0) + 1
-
-            _TYPE_COLORS = {
-                'product':   '#0d47a1', 'education': '#7c3aed', 'news': '#ec4899',
-                'business':  '#00b894', 'api':       '#d4af37', 'person': '#f97316',
-                'location':  '#14b8a6',
-            }
-            type_breakdown = [
-                {'type': t, 'count': c, 'color': _TYPE_COLORS.get(t, '#7c3aed')}
-                for t, c in type_counts.items()
-            ]
-        except Exception:
-            # A broken engine-context query must not 500 the discovery
-            # feed for a logged-in user, regardless of their Role.
-            logger.warning(
-                'engine_context load failed uid=%s role=%s',
-                _safe_user_pk(request.user), user_role, exc_info=True,
-            )
-            engine_context = dict(_EMPTY_ENGINE)
-            connected_services = []
-            error_service_count = success_service_count = pending_service_count = 0
-            type_breakdown = []
-
-    # ── 8c. Log the visit (background thread, non-blocking, safe for
+    # ── 8b. Log the visit (background thread, non-blocking, safe for
     #        anonymous visitors and every Role) ────────────────────
     _dispatch_discovery_visit(request, params, results_count=total_count)
 
@@ -2340,282 +2016,7 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
         # getCookie JS helper required by wishlist/follow AJAX
         'get_cookie_js': _GET_COOKIE_JS,
 
-        'connected_services':     connected_services,
-        'engine_context':         engine_context,
-        'error_service_count':    error_service_count,
-        'success_service_count':  success_service_count,
-        'pending_service_count':  pending_service_count,
-        'type_breakdown':         json.dumps(type_breakdown),
+        'active_campaigns': active_campaigns,
     }
 
     return render(request, 'ponno/discovery_engine.html', context)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  SERVICE API VIEWS
-# ═══════════════════════════════════════════════════════════════════
-
-@login_required(login_url='/customer/signin/')
-@require_http_methods(['POST'])
-def add_service(request):
-    try:
-        data         = json.loads(request.body)
-        service_name = data.get('service_name')
-        service_url  = data.get('service_url')
-        service_type = data.get('service_type', 'other')
-
-        if not service_name or not service_url:
-            return JsonResponse(
-                {'success': False, 'error': 'Service name and URL are required'}, status=400
-            )
-
-        service = ConnectedService.objects.create(
-            user=request.user,
-            service_name=service_name,
-            service_url=service_url,
-            service_type=service_type,
-            is_connected=False,
-            status='private',
-        )
-
-        return JsonResponse({
-            'success': True,
-            'service': {
-                'id':           service.id,
-                'service_name': service.service_name,
-                'service_url':  service.service_url,
-                'service_type': service.service_type,
-                'is_connected': service.is_connected,
-                'status':       service.status,
-            },
-        })
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@login_required(login_url='/customer/signin/')
-@require_http_methods(['POST'])
-def toggle_service_connection(request, service_id):
-    try:
-        service = get_object_or_404(ConnectedService, id=service_id, user=request.user)
-        service.is_connected = not service.is_connected
-        service.save()
-
-        if service.is_connected:
-            fetch_service_data(service)
-
-        return JsonResponse({
-            'success':      True,
-            'is_connected': service.is_connected,
-            'status':       service.status,
-        })
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@login_required(login_url='/customer/signin/')
-@require_http_methods(['DELETE'])
-def delete_service(request, service_id):
-    try:
-        service = get_object_or_404(ConnectedService, id=service_id, user=request.user)
-        service.delete()
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@login_required(login_url='/customer/signin/')
-@require_http_methods(['POST'])
-def refresh_service_data(request, service_id):
-    """POST engine/api/services/<id>/refresh/ — refresh one service."""
-    try:
-        service = get_object_or_404(ConnectedService, id=service_id, user=request.user)
-
-        if not service.is_connected:
-            return JsonResponse({'success': False, 'error': 'Service is not connected'}, status=400)
-
-        fetch_service_data(service)
-        service.refresh_from_db()
-        return JsonResponse({'success': True, **_serialize_service(service)})
-
-    except Exception as e:
-        logger.exception('refresh_service_data failed for service_id=%s', service_id)
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@login_required(login_url='/customer/signin/')
-@require_http_methods(['POST'])
-def batch_refresh_services(request):
-    """POST engine/api/services/batch-refresh/ — refresh multiple services."""
-    try:
-        body        = json.loads(request.body or '{}')
-        service_ids = body.get('service_ids', [])
-
-        qs = ConnectedService.objects.filter(user=request.user, is_connected=True)
-        if service_ids:
-            qs = qs.filter(id__in=service_ids)
-
-        results = []
-        for service in qs:
-            fetch_service_data(service)
-            service.refresh_from_db()
-            results.append(_serialize_service(service))
-
-        return JsonResponse({
-            'success':    True,
-            'results':    results,
-            'total':      len(results),
-            'successful': sum(1 for r in results if r['fetch_status'] == 'success'),
-        })
-
-    except Exception as e:
-        logger.exception('batch_refresh_services failed')
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-@login_required(login_url='/customer/signin/')
-def get_service_media(request, service_id):
-    """GET engine/api/services/<id>/media/ — return cached scraped media."""
-    try:
-        service = get_object_or_404(ConnectedService, id=service_id, user=request.user)
-
-        if service.fetch_status != 'success':
-            return JsonResponse({'success': False, 'error': 'No data available'}, status=404)
-
-        return JsonResponse({'success': True, **_serialize_service(service)})
-
-    except Exception as e:
-        logger.exception('get_service_media failed for service_id=%s', service_id)
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  DRF VIEWSET  (mounted via megamind/urls.py)
-# ═══════════════════════════════════════════════════════════════════
-
-class ConnectedServiceViewSet(ModelViewSet):
-    """
-    GET    /api/connected-services/              → list
-    POST   /api/connected-services/              → create
-    GET    /api/connected-services/{id}/         → retrieve
-    PUT    /api/connected-services/{id}/         → update
-    PATCH  /api/connected-services/{id}/         → partial_update
-    DELETE /api/connected-services/{id}/         → destroy
-    POST   /api/connected-services/{id}/fetch/   → scrape & persist
-    POST   /api/connected-services/{id}/refresh/ → alias of fetch/
-    GET    /api/connected-services/{id}/preview/ → cached data only
-    """
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return ConnectedService.objects.filter(user=self.request.user)
-
-    def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update'):
-            return ConnectedServiceWriteSerializer
-        return ConnectedServiceSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def _do_scrape(self, service: ConnectedService):
-        logger.info('Scraping service_id=%s url=%s', service.id, service.service_url)
-
-        result = scrape_url(
-            url=service.service_url,
-            api_key=service.api_key,
-            auth_token=service.auth_token,
-        )
-
-        if result['error']:
-            logger.warning(
-                'Scrape failed for service_id=%s url=%s error=%s',
-                service.id, service.service_url, result['error'],
-            )
-            service.fetch_status = 'error'
-            service.fetch_error  = result['error']
-            service.save(update_fields=['fetch_status', 'fetch_error', 'updated_at'])
-
-            return False, Response(
-                {
-                    'success':      False,
-                    'fetch_status': 'error',
-                    'fetch_error':  result['error'],
-                    'detail':       'Could not fetch data from this URL. The site may block automated access.',
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        og = result['og']
-        service.og_title         = og.get('title')       or ''
-        service.og_description   = og.get('description') or ''
-        service.og_thumbnail     = og.get('thumbnail')   or ''
-        service.og_site_name     = og.get('site_name')   or ''
-        service.og_type          = og.get('type')        or ''
-        service.extracted_images = result['images']
-        service.extracted_videos = result['videos']
-        service.extracted_links  = result['links']
-        service.extracted_text   = result['text']
-        service.last_fetched_data = result['raw']
-        service.last_fetch_time  = timezone.now()
-        service.fetch_status     = 'success'
-        service.fetch_error      = None
-
-        service.save(update_fields=[
-            'og_title', 'og_description', 'og_thumbnail', 'og_site_name', 'og_type',
-            'extracted_images', 'extracted_videos', 'extracted_links', 'extracted_text',
-            'last_fetched_data', 'last_fetch_time', 'fetch_status', 'fetch_error',
-            'updated_at',
-        ])
-
-        return True, Response(
-            {'success': True, **ConnectedServiceSerializer(service).data},
-            status=status.HTTP_200_OK,
-        )
-
-    @action(detail=True, methods=['post'], url_path='fetch')
-    def fetch(self, request, pk=None):
-        """Scrape service_url and persist all extracted fields."""
-        _, response = self._do_scrape(self.get_object())
-        return response
-
-    @action(detail=True, methods=['post'], url_path='refresh')
-    def refresh(self, request, pk=None):
-        """Dashboard refresh — identical to fetch/ but at /refresh/ path."""
-        _, response = self._do_scrape(self.get_object())
-        return response
-
-    @action(detail=True, methods=['get'], url_path='preview')
-    def preview(self, request, pk=None):
-        """Return cached scraped content without triggering a new scrape."""
-        service = self.get_object()
-
-        if service.fetch_status != 'success':
-            return Response(
-                {
-                    'detail':       'No data fetched yet. POST to /fetch/ first.',
-                    'fetch_status': service.fetch_status,
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        return Response(
-            {
-                'id':              service.id,
-                'service_name':    service.service_name,
-                'service_url':     service.service_url,
-                'last_fetch_time': service.last_fetch_time,
-                'og': {
-                    'title':       service.og_title,
-                    'description': service.og_description,
-                    'thumbnail':   service.og_thumbnail,
-                    'site_name':   service.og_site_name,
-                    'type':        service.og_type,
-                },
-                'images': service.extracted_images,
-                'videos': service.extracted_videos,
-                'links':  service.extracted_links,
-                'text':   service.extracted_text,
-            },
-            status=status.HTTP_200_OK,
-        )

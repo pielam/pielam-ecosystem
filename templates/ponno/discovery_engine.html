@@ -923,9 +923,249 @@ const backdrop = document.createElement('div');
 })();
 </script>
 
+<style>
+  /* ═══════════════════════════════════════
+     CAMPAIGN STRIP — horizontally scrollable
+  ═══════════════════════════════════════ */
+  .campaign-strip-wrap {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
 
+  .campaign-strip {
+    display: flex;
+    gap: .85rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+    padding: .15rem .15rem .6rem;
+    cursor: grab;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-2) transparent;
+  }
+  .campaign-strip.dragging { cursor: grabbing; scroll-snap-type: none; }
+  .campaign-strip::-webkit-scrollbar       { height: 6px; }
+  .campaign-strip::-webkit-scrollbar-track { background: transparent; }
+  .campaign-strip::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 6px; }
 
-  <style>
+  /* Edge fade masks so it's visually obvious there's more to scroll */
+  .campaign-strip-wrap::before,
+  .campaign-strip-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: .6rem;
+    width: 28px;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .campaign-strip-wrap::before {
+    left: 0;
+    background: linear-gradient(to right, var(--surface-2), transparent);
+  }
+  .campaign-strip-wrap::after {
+    right: 0;
+    background: linear-gradient(to left, var(--surface-2), transparent);
+  }
+  .campaign-strip-wrap.can-scroll-left::before  { opacity: 1; }
+  .campaign-strip-wrap.can-scroll-right::after  { opacity: 1; }
+
+  .campaign-card {
+    position: relative;
+    flex: 0 0 260px;
+    height: 120px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    box-shadow: var(--shadow-sm);
+    transition: transform .2s, box-shadow .2s;
+    scroll-snap-align: start;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .campaign-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .campaign-card img   { pointer-events: none; }
+
+  .campaign-banner-img { width: 100%; height: 100%; object-fit: cover; opacity: .85; }
+  .campaign-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,37,64,.85), transparent 60%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: .6rem .75rem;
+    gap: .2rem;
+  }
+  .campaign-badge {
+    align-self: flex-start;
+    background: var(--gold); color: #1a1200;
+    font-size: .65rem; font-weight: 800;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .campaign-name {
+    color: #fff; font-size: .82rem; font-weight: 700; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .campaign-stack-tag {
+    align-self: flex-start;
+    font-size: .58rem; color: #d1fae5;
+    background: rgba(0,184,148,.25);
+    padding: 1px 6px; border-radius: 10px;
+  }
+
+  /* Prev/next nav buttons — desktop/mouse only */
+  .campaign-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(calc(-50% - .3rem));
+    z-index: 3;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    color: var(--ink-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .78rem;
+    transition: opacity .2s, transform .15s, background .15s;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .campaign-strip-wrap:hover .campaign-nav-btn { opacity: 1; pointer-events: auto; }
+  .campaign-nav-btn:hover  { background: var(--surface-2); transform: translateY(calc(-50% - .3rem)) scale(1.08); }
+  .campaign-nav-btn:active { transform: translateY(calc(-50% - .3rem)) scale(.96); }
+  .campaign-nav-btn.prev   { left: -6px; }
+  .campaign-nav-btn.next   { right: -6px; }
+  .campaign-nav-btn[disabled] { opacity: 0 !important; pointer-events: none; }
+
+  /* ── Responsive sizing, matching the page breakpoint system ── */
+  @media (min-width: 2560px) {
+    .campaign-card { flex-basis: 320px; height: 150px; }
+    .campaign-name { font-size: .95rem; }
+  }
+  @media (max-width: 1920px) and (min-width: 1441px) {
+    .campaign-card { flex-basis: 290px; height: 135px; }
+  }
+  @media (max-width: 1024px) {
+    .campaign-nav-btn { display: none; } /* touch devices scroll natively */
+  }
+  @media (max-width: 900px) {
+    .campaign-strip { gap: .7rem; }
+    .campaign-card  { flex-basis: 235px; height: 112px; }
+  }
+  @media (max-width: 640px) {
+    .campaign-card   { flex-basis: 205px; height: 100px; }
+    .campaign-badge  { font-size: .6rem; padding: 2px 7px; }
+    .campaign-name   { font-size: .76rem; }
+  }
+  @media (max-width: 480px) {
+    .campaign-strip-wrap { margin-bottom: 1.1rem; }
+    .campaign-card        { flex-basis: 180px; height: 92px; }
+    .campaign-overlay     { padding: .5rem .6rem; }
+    .campaign-badge       { font-size: .56rem; padding: 2px 6px; }
+    .campaign-name        { font-size: .7rem; }
+    .campaign-stack-tag   { font-size: .52rem; }
+  }
+  @media (max-width: 360px) {
+    .campaign-card { flex-basis: 155px; height: 84px; }
+    .campaign-strip { gap: .5rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .campaign-strip { scroll-behavior: auto; }
+    .campaign-card, .campaign-nav-btn { transition: none; }
+  }
+</style>
+
+{% if active_campaigns %}
+<div class="campaign-strip-wrap" id="campaignStripWrap">
+  <button type="button" class="campaign-nav-btn prev" id="campaignPrev" aria-label="Scroll campaigns left" disabled>
+    <i class="fa-solid fa-chevron-left"></i>
+  </button>
+
+  <div class="campaign-strip" id="campaignStrip" role="region" aria-label="Active campaigns">
+    {% for c in active_campaigns %}
+    <a href="{% url 'ponno:campaign_detail' slug=c.slug %}" class="campaign-card" data-campaign-id="{{ c.campaign_id }}">
+      {% if c.banner_url %}
+        <img src="{{ c.banner_url }}" alt="{{ c.name }}" loading="lazy" class="campaign-banner-img" draggable="false">
+      {% endif %}
+      <div class="campaign-overlay">
+        <span class="campaign-badge">{{ c.badge }}</span>
+        <span class="campaign-name">{{ c.name }}</span>
+        {% if c.is_stackable %}<span class="campaign-stack-tag">Stackable</span>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <button type="button" class="campaign-nav-btn next" id="campaignNext" aria-label="Scroll campaigns right">
+    <i class="fa-solid fa-chevron-right"></i>
+  </button>
+</div>
+
+<script>
+(() => {
+  const wrap  = document.getElementById('campaignStripWrap');
+  const strip = document.getElementById('campaignStrip');
+  const prev  = document.getElementById('campaignPrev');
+  const next  = document.getElementById('campaignNext');
+  if (!wrap || !strip) return;
+
+  /* ── Edge fade + arrow disabled state ── */
+  function updateEdges() {
+    const max = strip.scrollWidth - strip.clientWidth - 2;
+    const atStart = strip.scrollLeft <= 2;
+    const atEnd   = strip.scrollLeft >= max;
+    wrap.classList.toggle('can-scroll-left',  !atStart);
+    wrap.classList.toggle('can-scroll-right', !atEnd && max > 0);
+    if (prev) prev.disabled = atStart;
+    if (next) next.disabled = atEnd || max <= 0;
+  }
+
+  /* ── Arrow buttons: scroll by ~2 cards worth ── */
+  function scrollByAmount(dir) {
+    const card = strip.querySelector('.campaign-card');
+    const step = card ? (card.getBoundingClientRect().width + 14) * 2 : 300;
+    strip.scrollBy({ left: dir * step, behavior: 'smooth' });
+  }
+  prev && prev.addEventListener('click', () => scrollByAmount(-1));
+  next && next.addEventListener('click', () => scrollByAmount(1));
+
+  /* ── Drag-to-scroll (mouse only; touch uses native scroll) ── */
+  let isDown = false, startX = 0, startScroll = 0, moved = false;
+
+  strip.addEventListener('mousedown', e => {
+    isDown = true; moved = false;
+    startX = e.pageX;
+    startScroll = strip.scrollLeft;
+    strip.classList.add('dragging');
+  });
+  window.addEventListener('mouseup', () => {
+    isDown = false;
+    strip.classList.remove('dragging');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDown) return;
+    const dx = e.pageX - startX;
+    if (Math.abs(dx) > 4) moved = true;
+    strip.scrollLeft = startScroll - dx;
+  });
+  /* Prevent the click-through to the campaign link right after a drag */
+  strip.addEventListener('click', e => {
+    if (moved) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  strip.addEventListener('scroll', updateEdges, { passive: true });
+  window.addEventListener('resize', updateEdges);
+  updateEdges();
+})();
+</script>
+{% endif %}
+
+<style>
     /* ═══════════════════════════════════════
        TOKENS
     ═══════════════════════════════════════ */
@@ -1211,55 +1451,6 @@ const backdrop = document.createElement('div');
     .card-img-wrap.cover-img img { object-fit: cover; padding: 0; }
     .feed-product-card:hover .card-img-wrap img { transform: scale(1.04); }
 
-    .card-video { 
-      
-      
-       
-    }
-
-    .video-file-wrapper, .video-wrapper {
-      position: relative; 
-      width: 100%; 
-      aspect-ratio: 16/9; 
-      
-
-    }
-
-    .native-video { 
-      width: 100%; 
-      height: 100%; 
-      display: block; 
-      
-      
-    }
-
-    .video-wrapper iframe {
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      width: 100%; 
-      height: 100%; 
-      border: 0;
-      border-radius: 17px;
-      border: 1px solid gold;
-
-    }
-
-    .card-top-row {
-      position: absolute; 
-      top: 8px; 
-      left: 8px; 
-      right: 8px;
-      display: flex; 
-      justify-content: space-between; 
-      align-items: flex-start;
-    }
-
-    .badge-stack { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 3px; 
-    }
 
     .img-badge {
       display: inline-flex; 
@@ -1687,6 +1878,11 @@ const backdrop = document.createElement('div');
         640px  Large phone landscape / small tablet
         480px  Phone landscape / large phone portrait
         360px  Small phone portrait
+
+       NOTE: .grid-4 (products/services) stays at 2 columns from
+       768px down through 360px — cards are never forced to a single
+       column on phones. Sizing steps down at each breakpoint so two
+       cards per row stay comfortable at every width.
     ═══════════════════════════════════════ */
 
     /* ── 2560px — Ultra-wide / 4K ── */
@@ -1760,24 +1956,24 @@ const backdrop = document.createElement('div');
       .post-foot       { padding: .6rem .85rem .75rem; }
     }
 
-    /* ── 768px — Tablet portrait (iPad) ── */
+    /* ── 768px — Tablet portrait (iPad) — 2 products per row ── */
     @media (max-width: 768px) {
       .page            { padding: 1rem 1rem 3.5rem; }
-      .grid-4          { grid-template-columns: repeat(1, 1fr); gap: .75rem; }
+      .grid-4          { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
       .grid-2          { grid-template-columns: repeat(1, 1fr); gap: .75rem; }
 
       /* Nav */
       .top-nav__brand  { font-size: 1.45rem; }
 
-      /* Product cards */
-      .card-dealer     { padding: .5rem .75rem; }
+      /* Product cards — compact 2-col */
+      .card-dealer     { padding: .5rem .65rem; gap: .45rem; }
       .dealer-av       { width: 30px; height: 30px; font-size: .58rem; }
-      .dealer-name     { font-size: 1rem; }
+      .dealer-name     { font-size: .82rem; }
       .card-img-wrap   { aspect-ratio: 1/1; }
-      .card-info       { padding: .55rem .75rem .75rem; }
-      .card-title      { font-size: .78rem; -webkit-line-clamp: 2; }
-      .card-brand      { font-size: .62rem; }
-      .price           { font-size: .85rem; }
+      .card-info       { padding: .55rem .65rem .7rem; gap: .24rem; }
+      .card-title      { font-size: .76rem; -webkit-line-clamp: 2; }
+      .card-brand      { font-size: .6rem; }
+      .price           { font-size: .84rem; }
       .stars i         { font-size: .5rem; }
 
       /* Service cards */
@@ -1813,10 +2009,10 @@ const backdrop = document.createElement('div');
       .feed-section    { margin-bottom: 2rem; }
     }
 
-    /* ── 640px — Large phone landscape / small tablet ── */
+    /* ── 640px — Large phone landscape / small tablet — 2 products per row ── */
     @media (max-width: 640px) {
       .page            { padding: .9rem .85rem 3rem; }
-      .grid-4          { grid-template-columns: repeat(1, 1fr); gap: .6rem; }
+      .grid-4          { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
       .grid-2          { grid-template-columns: 1fr; gap: .6rem; }
 
       /* Nav */
@@ -1824,10 +2020,13 @@ const backdrop = document.createElement('div');
       .top-nav__brand  { font-size: 1.3rem; }
 
       /* Product cards — compact 2-col on phones */
-      .card-img-wrap   { aspect-ratio: 4/3; }
-      .card-info       { padding: .5rem .65rem .7rem; gap: .22rem; }
-      .card-title      { font-size: .75rem; }
-      .price           { font-size: .82rem; }
+      .card-dealer     { padding: .45rem .6rem; gap: .4rem; }
+      .dealer-av       { width: 28px; height: 28px; font-size: .55rem; }
+      .dealer-name     { font-size: .72rem; }
+      .card-img-wrap   { aspect-ratio: 1/1; }
+      .card-info       { padding: .5rem .6rem .65rem; gap: .22rem; }
+      .card-title      { font-size: .74rem; }
+      .price           { font-size: .8rem; }
       .service-cta     { font-size: .6rem; padding: 2px 8px; }
 
       /* Badges */
@@ -1859,33 +2058,33 @@ const backdrop = document.createElement('div');
       .feed-section    { margin-bottom: 1.75rem; }
     }
 
-    /* ── 480px — Phone landscape / large phone portrait ── */
+    /* ── 480px — Phone landscape / large phone portrait — 2 products per row ── */
     @media (max-width: 480px) {
       .page            { padding: .75rem .7rem 2.5rem; }
-      .grid-4          { grid-template-columns: repeat(1, 1fr); gap: .5rem; }
+      .grid-4          { grid-template-columns: repeat(2, 1fr); gap: .5rem; }
 
       /* Nav */
       .top-nav         { padding: 0 .85rem; }
       .top-nav__brand  { font-size: 1.2rem; }
 
       /* Product card — keep 2-col but shrink internals */
-      .card-dealer     { padding: .42rem .65rem; gap: .4rem; }
-      .dealer-av       { width: 30px; height: 30px; font-size: .54rem; }
-      .dealer-name     { font-size: .66rem; }
+      .card-dealer     { padding: .42rem .5rem; gap: .35rem; }
+      .dealer-av       { width: 26px; height: 26px; font-size: .5rem; }
+      .dealer-name     { font-size: .64rem; }
       .dealer-domain   { font-size: .56rem; }
       .card-img-wrap   { aspect-ratio: 1/1; }
-      .card-info       { padding: .45rem .6rem .65rem; gap: .2rem; }
-      .card-title      { font-size: .72rem; }
-      .card-brand      { font-size: .58rem; gap: .25rem; }
-      .brand-dot       { width: 12px; height: 12px; font-size: .42rem; }
-      .card-sub-desc   { font-size: .62rem; }
-      .stars i         { font-size: .46rem; }
-      .rating-val      { font-size: .6rem; }
-      .price           { font-size: .78rem; }
+      .card-info       { padding: .42rem .55rem .6rem; gap: .18rem; }
+      .card-title      { font-size: .7rem; }
+      .card-brand      { font-size: .56rem; gap: .22rem; }
+      .brand-dot       { width: 11px; height: 11px; font-size: .4rem; }
+      .card-sub-desc   { font-size: .6rem; }
+      .stars i         { font-size: .44rem; }
+      .rating-val      { font-size: .58rem; }
+      .price           { font-size: .76rem; }
 
       /* Stat cluster */
-      .stat-cluster span { font-size: .48rem; }
-      .wl-btn          { font-size: .8rem; }
+      .stat-cluster span { font-size: .46rem; }
+      .wl-btn          { font-size: .78rem; }
 
       /* Status chip */
       .status-chip     { font-size: .56rem; padding: 2px 7px; }
@@ -1940,20 +2139,25 @@ const backdrop = document.createElement('div');
       .feed-item-divider { margin-bottom: .9rem; }
     }
 
-    /* ── 360px — Small phone portrait ── */
+    /* ── 360px — Small phone portrait — 2 products per row ── */
     @media (max-width: 360px) {
       .page            { padding: .65rem .55rem 2rem; }
-      .grid-4          { grid-template-columns: 1fr; gap: .55rem; }
+      .grid-4          { grid-template-columns: repeat(2, 1fr); gap: .45rem; }
       .grid-2          { grid-template-columns: 1fr; gap: .55rem; }
 
       /* Nav */
       .top-nav__brand  { font-size: 1.1rem; }
 
-      /* On very small phones, single col for everything */
-      .card-img-wrap   { aspect-ratio: 16/10; }
-      .card-info       { padding: .55rem .75rem .75rem; }
-      .card-title      { font-size: .78rem; }
-      .price           { font-size: .84rem; }
+      /* Product card at the smallest width — still 2 up */
+      .card-dealer     { padding: .35rem .45rem; gap: .3rem; }
+      .dealer-av       { width: 22px; height: 22px; font-size: .46rem; }
+      .dealer-name     { font-size: .58rem; }
+      .card-img-wrap   { aspect-ratio: 1/1; }
+      .card-info       { padding: .4rem .5rem .55rem; gap: .16rem; }
+      .card-title      { font-size: .66rem; }
+      .card-brand      { font-size: .52rem; }
+      .price           { font-size: .7rem; }
+      .card-sub-desc   { font-size: .56rem; }
 
       .sc-thumb        { height: 150px; }
       .post-og img     { height: 150px; }
@@ -1962,7 +2166,7 @@ const backdrop = document.createElement('div');
       /* Make touch targets bigger */
       .sc-btn          { padding: .45rem .5rem; min-height: 36px; }
       .pa-btn          { width: 32px; height: 32px; }
-      .wl-btn          { padding: 4px; }
+      .wl-btn          { padding: 3px; font-size: .7rem; }
 
       .feed-section    { margin-bottom: 1.25rem; }
     }
@@ -2010,7 +2214,7 @@ const backdrop = document.createElement('div');
 <div class="page">
 
   <!-- ════════════════════════════════════════
-       SECTION 1 — PRODUCTS / SERVICES  (4-col)
+       SECTION 1 — PRODUCTS / SERVICES  (4-col → 2-col below 768px)
        Infinity-scroll driven
   ════════════════════════════════════════ -->
   <div class="feed-section" id="section-products">
@@ -2075,26 +2279,7 @@ const backdrop = document.createElement('div');
       </button>
     </div>
 
-    {# ── Video block: native file or YouTube/iframe embed ── #}
-    {% if product.video_info %}
-    <div class="card-video" onclick="event.stopPropagation()">
-      {% if product.video_info.type == "video" %}
-        <div class="video-file-wrapper">
-          <video controls preload="metadata" class="native-video">
-            <source src="{{ product.video_info.embed_url }}" type="{{ product.video_info.mime_type }}">
-          </video>
-        </div>
-      {% else %}
-        <div class="video-wrapper">
-          <iframe src="{{ product.video_info.embed_url }}"
-                  title="{{ product.product_name }} video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen loading="lazy">
-          </iframe>
-        </div>
-      {% endif %}
-    </div>
-    {% endif %}
+
 
     <div class="card-info">
       <a href="{% url 'ponno:product_detail' slug=product.slug %}" class="card-title" onclick="event.stopPropagation()">{{ product.title }}</a>
@@ -2232,7 +2417,6 @@ const backdrop = document.createElement('div');
 
 
 </div><!-- /.page -->
-
 
 <!-- ══════════════════════════════════════
      CSRF HELPER

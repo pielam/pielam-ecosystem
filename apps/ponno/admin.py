@@ -703,3 +703,219 @@ class DiscoveryVisitLogAdmin(admin.ModelAdmin):
 
     def has_view_permission(self, request, obj=None):
         return True
+
+
+
+# apps/ponno/admin/campaign_admin.py
+
+from django.contrib import admin
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+
+from apps.ponno.models.campaign import Campaign, CampaignRedemption
+
+
+class CampaignRedemptionInline(admin.TabularInline):
+    model = CampaignRedemption
+    extra = 0
+    can_delete = False
+    fields = (
+        'user', 'product', 'order', 'order_item',
+        'original_price', 'discount_amount', 'final_price', 'redeemed_at',
+    )
+    readonly_fields = fields
+    ordering = ('-redeemed_at',)
+
+    def has_add_permission(self, request, obj=None):
+        # Redemptions are only ever created via CampaignPricingService.redeem();
+        # creating one from the admin would bypass the atomic usage-limit
+        # check and increment times_used incorrectly.
+        return False
+
+
+@admin.register(Campaign)
+class CampaignAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'campaign_type', 'discount_value', 'applies_to',
+        'status_badge', 'priority', 'is_stackable', 'usage_display',
+        'budget_display', 'start_at', 'end_at', 'is_enabled',
+    )
+    list_filter = (
+        'campaign_type', 'applies_to', 'channel',
+        'approval_status', 'is_enabled', 'is_stackable',
+        'is_cancelled', 'is_archived',
+    )
+    search_fields = ('name', 'slug', 'campaign_code', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+
+    # Every editable=False field on the model is admin-readonly too —
+    # these are only ever written by the model's own methods
+    # (register_redemption / approve / reject / archive / save), never
+    # meant to be hand-edited from a form.
+    readonly_fields = (
+        'campaign_id', 'times_used', 'budget_spent',
+        'first_activated_at',
+        'submitted_for_approval_at', 'approved_at', 'rejected_at',
+        'archived_at',
+        'created_at', 'updated_at', 'status_badge',
+    )
+    filter_horizontal = ('products', 'categories', 'brands')
+    date_hierarchy = 'start_at'
+    inlines = [CampaignRedemptionInline]
+    autocomplete_fields = (
+        'created_by', 'updated_by', 'approved_by', 'rejected_by', 'archived_by',
+    )
+
+    fieldsets = (
+        (_("Identity"), {
+            'fields': (
+                'campaign_id', 'campaign_code', 'name', 'slug',
+                'description', 'banner_image', 'terms_conditions',
+            )
+        }),
+        (_("Discount"), {
+            'fields': (
+                'campaign_type', 'discount_value', 'max_discount_amount',
+                'min_order_amount', 'currency',
+            )
+        }),
+        (_("Scope"), {
+            'fields': ('applies_to', 'products', 'categories', 'brands', 'channel')
+        }),
+        (_("Schedule"), {
+            'fields': ('start_at', 'end_at')
+        }),
+        (_("Usage Limits"), {
+            'fields': ('usage_limit_total', 'usage_limit_per_user', 'times_used')
+        }),
+        (_("Budget"), {
+            'fields': ('budget_limit', 'budget_spent')
+        }),
+        (_("Stacking"), {
+            'fields': ('priority', 'is_stackable')
+        }),
+        (_("Approval Workflow"), {
+            'fields': (
+                'approval_status', 'submitted_for_approval_at',
+                'approved_by', 'approved_at',
+                'rejected_by', 'rejected_at', 'rejection_reason',
+            )
+        }),
+        (_("Status"), {
+            'fields': ('is_enabled', 'first_activated_at', 'is_cancelled', 'status_badge')
+        }),
+        (_("Archive"), {
+            'fields': ('is_archived', 'archived_at', 'archived_by'),
+            'classes': ('collapse',),
+        }),
+        (_("Ownership"), {
+            'fields': ('created_by', 'updated_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    @admin.display(description=_("Status"))
+    def status_badge(self, obj):
+        colors = {
+            Campaign.Status.ACTIVE: '#16a34a',
+            Campaign.Status.SCHEDULED: '#2563eb',
+            Campaign.Status.PAUSED: '#a16207',
+            Campaign.Status.ENDED: '#6b7280',
+            Campaign.Status.CANCELLED: '#dc2626',
+            Campaign.Status.DRAFT: '#6b7280',
+            Campaign.Status.PENDING_APPROVAL: '#a855f7',
+            Campaign.Status.REJECTED: '#dc2626',
+            Campaign.Status.ARCHIVED: '#374151',
+        }
+        status = obj.status
+        color = colors.get(status, '#6b7280')
+        return format_html(
+            '<span style="color:#fff;background:{};padding:2px 8px;border-radius:10px;font-size:11px;">{}</span>',
+            color, status.upper(),
+        )
+
+    @admin.display(description=_("Usage"))
+    def usage_display(self, obj):
+        if not obj.usage_limit_total:
+            return f"{obj.times_used} / \u221e"
+        return f"{obj.times_used} / {obj.usage_limit_total}"
+
+    @admin.display(description=_("Budget"))
+    def budget_display(self, obj):
+        if obj.budget_limit is None:
+            return "\u2014"
+        return f"{obj.budget_spent} / {obj.budget_limit} {obj.currency}"
+
+    def save_model(self, request, obj, form, change):
+        if not change and not obj.created_by_id:
+            obj.created_by = request.user
+        # updated_by is documented as "set by callers, not inferred
+        # automatically" — the admin is exactly such a caller, so it
+        # should actually set it on every save, not just on create.
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+    actions = [
+        'enable_campaigns', 'disable_campaigns',
+        'approve_campaigns', 'cancel_campaigns', 'archive_campaigns',
+    ]
+
+    def _apply_per_object(self, request, queryset, method_name, verb):
+        """
+        Run a Campaign lifecycle method (enable/disable/approve/cancel/
+        archive) row-by-row instead of queryset.update(). This matters:
+        queryset.update() writes columns directly and skips clean()/
+        full_clean() and the side effects those methods carry (e.g.
+        enable() stamping first_activated_at the first time a campaign
+        goes live, archive() cascading is_enabled=False, etc).
+        """
+        count = 0
+        for obj in queryset:
+            getattr(obj, method_name)()
+            count += 1
+        self.message_user(request, f"{count} campaign(s) {verb}.")
+
+    @admin.action(description=_("Enable selected campaigns"))
+    def enable_campaigns(self, request, queryset):
+        self._apply_per_object(request, queryset, 'enable', 'enabled')
+
+    @admin.action(description=_("Disable selected campaigns"))
+    def disable_campaigns(self, request, queryset):
+        self._apply_per_object(request, queryset, 'disable', 'disabled')
+
+    @admin.action(description=_("Approve selected campaigns"))
+    def approve_campaigns(self, request, queryset):
+        count = 0
+        for obj in queryset:
+            obj.approve(approved_by_user=request.user)
+            count += 1
+        self.message_user(request, f"{count} campaign(s) approved.")
+
+    @admin.action(description=_("Cancel selected campaigns"))
+    def cancel_campaigns(self, request, queryset):
+        self._apply_per_object(request, queryset, 'cancel', 'cancelled')
+
+    @admin.action(description=_("Archive selected campaigns"))
+    def archive_campaigns(self, request, queryset):
+        count = 0
+        for obj in queryset:
+            obj.archive(archived_by_user=request.user)
+            count += 1
+        self.message_user(request, f"{count} campaign(s) archived.")
+
+
+@admin.register(CampaignRedemption)
+class CampaignRedemptionAdmin(admin.ModelAdmin):
+    list_display = ('campaign', 'user', 'product', 'order', 'discount_amount', 'final_price', 'redeemed_at')
+    list_filter = ('campaign',)
+    search_fields = ('campaign__name', 'user__username', 'product__product_name', 'order__order_number')
+    readonly_fields = [f.name for f in CampaignRedemption._meta.fields]
+    date_hierarchy = 'redeemed_at'
+
+    def has_add_permission(self, request):
+        # Same rationale as the inline above — writes must go through
+        # CampaignPricingService.redeem().
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

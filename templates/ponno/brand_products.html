@@ -99,7 +99,7 @@
 
 .page-wrapper a      { text-decoration: none; color: inherit; }
 .page-wrapper img    { max-width: 100%; display: block; }
-.page-wrapper button { font-family: var(--ff-body); cursor: pointer; border: none; background: none; }
+.page-wrapper button { font-family: 'roboto'; cursor: pointer; border: none; background: none; }
 
 .page-wrapper::before {
   content: '';
@@ -161,9 +161,9 @@ mark.hl { background: #fef3c7; color: #92400e; padding: 0 2px; border-radius: 3p
 }
 .brand-logo-wrap:hover { transform: scale(1.04); box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 12px 40px rgba(0,0,0,0.55); }
 .brand-logo-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 6px; display: block; }
-.brand-logo-fallback { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 900; color: var(--primary-dark); letter-spacing: 1px; line-height: 1; }
+.brand-logo-fallback { font-family: 'roboto'; font-size: 1.5rem; font-weight: 900; color: var(--primary-dark); letter-spacing: 1px; line-height: 1; }
 
-.brand-hero-name { font-family: var(--ff-display); font-size: 2.4rem; font-weight: 900; color: #ffffff; line-height: 1.1; letter-spacing: -0.5px; margin: 0; text-shadow: 0 2px 16px rgba(0,0,0,0.5); }
+.brand-hero-name { font-family: 'roboto'; font-size: 2.4rem; font-weight: 900; color: #ffffff; line-height: 1.1; letter-spacing: -0.5px; margin: 0; text-shadow: 0 2px 16px rgba(0,0,0,0.5); }
 .brand-hero-tagline { font-size: 0.9rem; color: rgba(255,255,255,0.65); font-style: italic; font-weight: 400; letter-spacing: 0.2px; margin: 0; }
 
 .brand-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.25rem; }
@@ -199,7 +199,7 @@ mark.hl { background: #fef3c7; color: #92400e; padding: 0 2px; border-radius: 3p
 }
 .hero-stat:hover::after { transform: scaleX(1); }
 .hero-stat-value {
-    font-family: var(--ff-display); font-size: 1.6rem; font-weight: 900; color: #ffffff; line-height: 1;
+    font-family: 'roboto'; font-size: 1.6rem; font-weight: 900; color: #ffffff; line-height: 1;
     background: linear-gradient(135deg, #ffffff 0%, var(--accent-gold) 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
@@ -248,7 +248,7 @@ mark.hl { background: #fef3c7; color: #92400e; padding: 0 2px; border-radius: 3p
 .brand-info-inner { max-width: 1400px; margin: 0 auto; padding: 2rem 2.5rem; background: #ffffff; }
 .brand-info-block { max-width: 680px; }
 .info-block-title {
-    font-family: var(--ff-display); font-size: .7rem; font-weight: 700; letter-spacing: 1.5px;
+    font-family: 'roboto'; font-size: .7rem; font-weight: 700; letter-spacing: 1.5px;
     text-transform: uppercase; color: var(--ink-muted); margin-bottom: .875rem;
     display: flex; align-items: center; gap: .4rem;
 }
@@ -256,7 +256,7 @@ mark.hl { background: #fef3c7; color: #92400e; padding: 0 2px; border-radius: 3p
 .brand-description { font-size: .9rem; color: var(--ink-soft); line-height: 1.7; }
 .brand-story-toggle {
     margin-top: .5rem; font-size: .82rem; color: var(--gold); font-weight: 600; cursor: pointer;
-    background: none; border: none; padding: 0; font-family: var(--ff-body);
+    background: none; border: none; padding: 0; font-family: 'roboto';
     display: flex; align-items: center; gap: .3rem;
 }
 .brand-story-text {
@@ -295,7 +295,7 @@ a.contact-item:hover { color: var(--gold); }
     display: inline-flex; align-items: center; gap: .375rem; padding: .75rem 1rem;
     white-space: nowrap; font-size: .85rem; font-weight: 600; color: var(--ink-muted);
     text-decoration: none; border-bottom: 2px solid transparent; transition: all .2s;
-    flex-shrink: 0; font-family: var(--ff-body); cursor: pointer;
+    flex-shrink: 0; font-family: 'roboto'; cursor: pointer;
     background: none; border-left: none; border-right: none; border-top: none;
 }
 .filter-tab:hover { color: var(--ink); border-bottom-color: var(--surface-3); }
@@ -316,7 +316,7 @@ a.contact-item:hover { color: var(--gold); }
     display: inline-flex; align-items: center; gap: .35rem; padding: .375rem .875rem;
     border-radius: var(--r-full); border: 1px solid var(--surface-3); background: #ffffff;
     color: var(--ink-soft); font-size: .8rem; font-weight: 600; white-space: nowrap;
-    text-decoration: none; transition: all .18s; flex-shrink: 0; font-family: var(--ff-body); cursor: pointer;
+    text-decoration: none; transition: all .18s; flex-shrink: 0; font-family: 'roboto'; cursor: pointer;
 }
 .sub-pill:hover { border-color: var(--gold); color: var(--gold); }
 .sub-pill.active { background: var(--ink); border-color: var(--ink); color: #ffffff; }
@@ -343,14 +343,14 @@ a.contact-item:hover { color: var(--gold); }
     appearance: none; padding: .45rem 2rem .45rem .875rem; border-radius: var(--r-full);
     border: 1px solid var(--surface-3);
     background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right .75rem center;
-    font-family: var(--ff-body); font-size: .82rem; font-weight: 600; color: var(--ink);
+    font-family: 'roboto'; font-size: .82rem; font-weight: 600; color: var(--ink);
     cursor: pointer; outline: none; transition: border-color .2s;
 }
 .sort-select:focus { border-color: var(--gold); }
 .toggle-btn {
     display: flex; align-items: center; gap: .4rem; padding: .45rem .875rem;
     border-radius: var(--r-full); border: 1px solid var(--surface-3); background: #ffffff;
-    font-family: var(--ff-body); font-size: .82rem; font-weight: 600; color: var(--ink-soft);
+    font-family: 'roboto'; font-size: .82rem; font-weight: 600; color: var(--ink-soft);
     cursor: pointer; transition: all .18s; text-decoration: none;
 }
 .toggle-btn:hover { border-color: var(--gold); color: var(--gold); }
@@ -360,19 +360,19 @@ a.contact-item:hover { color: var(--gold); }
 /* ============================================================
    PRODUCT GRID
 ============================================================ */
-.products-section { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2.5rem 3rem; background: #f7fafc; }
+.products-section { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2.5rem 3rem; background: #fff; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
 .product-card {
-    background: #ffffff; border-radius: var(--r-lg); border: 1px solid var(--surface-3);
+    background: #fff; border-radius: var(--r-lg); border: 1px solid var(--surface-3);
     overflow: hidden; box-shadow: var(--bl-shadow-sm);
     transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
     display: flex; flex-direction: column;
 }
 .product-card:hover { transform: translateY(-6px); box-shadow: var(--bl-shadow-lg); border-color: var(--border-2); }
 .product-link { text-decoration: none; color: inherit; display: flex; flex-direction: column; flex: 1; align-items: stretch; width: 100%; }
-.product-thumb { position: relative; height: 260px; background: var(--surface-2); overflow: hidden; flex-shrink: 0; }
-.product-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; display: block; }
+.product-thumb { position: relative; height: 260px; background: #ffffff; overflow: hidden; flex-shrink: 0; }
+.product-thumb img { width: 100%; height: 100%; object-fit: contain; transition: transform .3s ease; display: block; }
 .product-card:hover .product-thumb img { transform: scale(1.06); }
 
 .product-badges { position: absolute; top: .75rem; left: .75rem; right: .75rem; display: flex; flex-wrap: wrap; gap: .375rem; z-index: 2; }
@@ -385,24 +385,24 @@ a.contact-item:hover { color: var(--gold); }
 .p-badge-trending { background: rgba(100,30,100,.92); color: #f0d6ff; }
 
 .product-price-badge {
-    position: absolute; bottom: .75rem; right: .75rem; background: rgba(15,15,15,.92);
-    backdrop-filter: blur(10px); color: #ffffff; padding: .5rem 1rem; font-size: 1.05rem;
-    font-weight: 700; border-radius: var(--r-md); box-shadow: var(--bl-shadow-md); z-index: 2;
-    font-family: var(--ff-display);
+    position: absolute; bottom: .75rem; right: .75rem; background: rgba(255,255,255,.92); 
+    color: var(--ink); box-shadow: var(--bl-shadow-sm); padding: .5rem 1rem; font-size: 1.05rem;
+    font-weight: 700; border-radius: var(--r-md);  z-index: 2;
+    font-family: 'roboto';
 }
-.product-price-badge .was { font-size: .7rem; color: rgba(255,255,255,.5); text-decoration: line-through; display: block; margin-bottom: .1rem; font-family: var(--ff-body); font-weight: 400; }
+.product-price-badge .was { font-size: .7rem; color: rgba(255,255,255,.5); text-decoration: line-through; display: block; margin-bottom: .1rem; font-family: 'roboto'; font-weight: 400; }
 
 .product-info { padding: .875rem 1rem .625rem; flex: 1; width: 100%; background: #ffffff; }
 .product-meta { width: 100%; }
 .product-title {
-    font-family: var(--ff-display); font-weight: 700; font-size: .95rem; color: var(--ink);
+    font-family: 'roboto'; font-weight: 700; font-size: .95rem; color: var(--ink);
     line-height: 1.35; margin-bottom: .2rem;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .product-card:hover .product-title { color: #1a4ed8; }
 .product-name-sub { font-size: .8rem; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.dealer-strip { padding: .625rem .875rem; border-top: 1px solid var(--surface-2); display: flex; align-items: center; gap: .625rem; background: var(--surface-2); width: 100%; }
+.dealer-strip { padding: .625rem .875rem; border-top: 1px solid var(--surface-3); display: flex; align-items: center; gap: .625rem; background: var(--gold-trace); width: 100%; }
 .dealer-avatar { position: relative; flex-shrink: 0; text-decoration: none; }
 .dealer-photo { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--surface-3); object-fit: cover; display: block; transition: border-color .2s; }
 .dealer-avatar:hover .dealer-photo { border-color: var(--gold); }
@@ -430,7 +430,7 @@ a.dealer-name:hover { color: var(--gold); }
 ============================================================ */
 .empty-state { grid-column: 1/-1; padding: 5rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem; background: #ffffff; border-radius: var(--r-lg); }
 .empty-icon  { font-size: 4rem; color: var(--surface-3); }
-.empty-title { font-family: var(--ff-display); font-size: 1.5rem; font-weight: 700; color: var(--ink); }
+.empty-title { font-family: 'roboto'; font-size: 1.5rem; font-weight: 700; color: var(--ink); }
 .empty-text  { font-size: .9rem; color: var(--ink-muted); max-width: 400px; }
 
 /* ============================================================
@@ -441,7 +441,7 @@ a.dealer-name:hover { color: var(--gold); }
     display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.125rem;
     border-radius: var(--r-md); border: 1px solid var(--surface-3); background: #ffffff;
     color: var(--ink-soft); text-decoration: none; font-size: .85rem; font-weight: 600;
-    transition: all .18s; font-family: var(--ff-body); cursor: pointer;
+    transition: all .18s; font-family: 'roboto'; cursor: pointer;
 }
 .page-link:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
 .page-link.active { background: var(--ink); border-color: var(--ink); color: #ffffff; }
@@ -452,7 +452,7 @@ a.dealer-name:hover { color: var(--gold); }
 ============================================================ */
 .bottom-sort-bar {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 950;
-    background: linear-gradient(135deg, var(--primary-dark) 0%, #0d3060 100%);
+    background: whitesmoke;
     height: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
     padding-bottom: env(safe-area-inset-bottom, 0);
     display: flex; align-items: center; gap: .5rem;
@@ -466,14 +466,15 @@ a.dealer-name:hover { color: var(--gold); }
     animation: barShimmer 4s ease-in-out infinite; pointer-events: none;
 }
 @keyframes barShimmer { 0% { left: -60%; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { left: 160%; opacity: 0; } }
+
 .bsb-item {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: .15rem; padding: .35rem .5rem; border-radius: var(--r-md); border: none; background: transparent;
-    color: rgba(255,255,255,.5); font-family: var(--ff-body); font-size: .68rem; font-weight: 600;
+    color: var(--ink-soft); font-family: 'roboto'; font-size: .68rem; font-weight: 600;
     cursor: pointer; transition: all .18s; text-decoration: none;
 }
 .bsb-item i { font-size: 1rem; }
-.bsb-item:hover, .bsb-item.active { color: var(--accent-gold); }
+.bsb-item:hover, .bsb-item.active { color: var(--gold); }
 
 /* ============================================================
    SORT SHEET (mobile)
@@ -488,10 +489,10 @@ a.dealer-name:hover { color: var(--gold); }
 }
 .sort-sheet.open { transform: translateY(0); }
 .sheet-handle { width: 40px; height: 4px; background: var(--surface-3); border-radius: 99px; margin: .75rem auto .25rem; }
-.sheet-header { padding: .75rem 1.25rem .5rem; font-family: var(--ff-display); font-size: .9rem; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--surface-2); }
+.sheet-header { padding: .75rem 1.25rem .5rem; font-family: 'roboto'; font-size: .9rem; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--surface-2); }
 .sort-option {
     display: flex; align-items: center; gap: .875rem; padding: .875rem 1.25rem;
-    font-family: var(--ff-body); font-size: .9rem; color: var(--ink-soft); cursor: pointer;
+    font-family: 'roboto'; font-size: .9rem; color: var(--ink-soft); cursor: pointer;
     border: none; background: none; width: 100%; text-align: left; transition: background .15s;
 }
 .sort-option:hover { background: var(--surface-2); }
@@ -525,9 +526,10 @@ a.dealer-name:hover { color: var(--gold); }
     .subcategory-pills-wrap { padding: .625rem 1rem; }
     .toolbar { padding: .875rem 1rem; }
     .products-section { padding: 1rem 1rem 3rem; }
-    .product-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .product-grid { grid-template-columns: 1fr; gap: 1rem; }
     .pagination-wrap { padding: 0 1rem; }
 }
+
 @media (max-width: 480px) {
     .brand-banner { height: 180px; }
     .brand-hero-content { min-height: 180px; padding: 1.25rem 1rem 0; }
@@ -544,21 +546,23 @@ a.dealer-name:hover { color: var(--gold); }
     .hero-stat-value { font-size: 1.25rem; }
     .hero-stat-label { font-size: 0.64rem; }
     .hero-stat { padding: 0.875rem 0.5rem; }
-    .brand-tab span:not(.brand-tab-count) { display: none; }
-    .brand-tab i { font-size: 1rem; }
-    .brand-tab { padding: .75rem .875rem; }
-    .product-grid { grid-template-columns: repeat(2, 1fr); gap: .75rem; }
-    .product-thumb { height: 180px; }
+    .brand-tab { padding: .7rem .75rem; font-size: .78rem; gap: .3rem; }
+    .brand-tab i { font-size: .85rem; }
+    .product-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .product-thumb { height: 240px; }
     .product-info { padding: .625rem .75rem .5rem; }
     .dealer-photo { width: 30px; height: 30px; }
     .product-title { font-size: .85rem; }
     .product-stats-row { padding: .375rem .75rem .625rem; gap: .25rem; font-size: .7rem; }
     .dealer-strip { padding: .4rem .75rem; }
 }
+
 @media (max-width: 360px) {
     .brand-hero-name { font-size: 1.3rem; }
     .brand-logo-wrap { width: 52px; height: 52px; border-radius: 10px; }
     .hero-stat-value { font-size: 1.1rem; }
+    .product-grid { grid-template-columns: 1fr; gap: .875rem; }
+    .product-thumb { height: 220px; }
 }
 @media print { .product-grid { grid-template-columns: 1fr; } }
 </style>
@@ -656,7 +660,7 @@ a.dealer-name:hover { color: var(--gold); }
         <button class="brand-tab active" data-tab="products">
             <i class="fa-solid fa-box-archive"></i>
             <span>Products</span>
-            <span class="brand-tab-count">{{ brand_data.total_products }}</span>
+            {% comment %} <span class="brand-tab-count">{{ brand_data.total_products }}</span> {% endcomment %}
         </button>
 
         {% if brand_data.social_facebook or brand_data.social_instagram or brand_data.social_twitter or brand_data.social_linkedin or brand_data.social_youtube %}
@@ -794,50 +798,6 @@ a.dealer-name:hover { color: var(--gold); }
 
             {% for product in products %}
             <article class="product-card">
-                <a href="{% url 'ponno:product_detail' product.slug %}" class="product-link">
-
-                    <div class="product-thumb">
-                        <img src="{{ product.image }}"
-                             alt="{{ product.title|default:product.product_name }}"
-                             loading="lazy"
-                             onerror="this.src='/static/defaults/default-product.png'">
-
-                        <div class="product-badges">
-                            {% if product.discount_badge %}
-                            <span class="p-badge p-badge-discount"><i class="fa-solid fa-percent"></i> {{ product.discount_badge }}</span>
-                            {% endif %}
-                            {% if product.is_featured %}
-                            <span class="p-badge p-badge-featured"><i class="fa-solid fa-star"></i> Featured</span>
-                            {% endif %}
-                            {% if product.is_verified %}
-                            <span class="p-badge p-badge-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
-                            {% endif %}
-                            {% if product.is_trending %}
-                            <span class="p-badge p-badge-trending"><i class="fa-solid fa-fire"></i> Trending</span>
-                            {% endif %}
-                            {% if product.free_shipping %}
-                            <span class="p-badge p-badge-shipping"><i class="fa-solid fa-truck"></i> Free Ship</span>
-                            {% endif %}
-                        </div>
-
-                        <div class="product-price-badge">
-                            {% if product.on_sale %}
-                            <span class="was">{{ product.selling_price }}</span>
-                            {% endif %}
-                            {{ product.final_price }}
-                        </div>
-                    </div>
-
-                    <div class="product-info">
-                        <div class="product-meta">
-                            <h3 class="product-title">{{ product.title|default:product.product_name }}</h3>
-                            {% if product.product_name and product.title and product.title != product.product_name %}
-                            <p class="product-name-sub">{{ product.product_name }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-
                 <div class="dealer-strip">
                     <img class="dealer-photo"
                          src="{{ product.dealer_photo }}"
@@ -863,6 +823,52 @@ a.dealer-name:hover { color: var(--gold); }
                         </div>
                     </div>
                 </div>
+
+                <a href="{% url 'ponno:product_detail' product.slug %}" class="product-link">
+
+                    <div class="product-thumb">
+                        <img src="{{ product.image }}"
+                             alt="{{ product.title|default:product.product_name }}"
+                             loading="lazy"
+                             onerror="this.src='/static/defaults/default-product.png'">
+
+                        <div class="product-badges">
+                            {% if product.discount_badge %}
+                            <span class="p-badge p-badge-discount"><i class="fa-solid fa-percent"></i> </span>
+                            {% endif %}
+                            {% if product.is_featured %}
+                            <span class="p-badge p-badge-featured"><i class="fa-solid fa-star"></i> </span>
+                            {% endif %}
+                            {% if product.is_verified %}
+                            <span class="p-badge p-badge-verified"><i class="fa-solid fa-circle-check"></i> </span>
+                            {% endif %}
+                            {% if product.is_trending %}
+                            <span class="p-badge p-badge-trending"><i class="fa-solid fa-fire"></i></span>
+                            {% endif %}
+                            {% if product.free_shipping %}
+                            <span class="p-badge p-badge-shipping"><i class="fa-solid fa-truck"></i></span>
+                            {% endif %}
+                        </div>
+
+                        <div class="product-price-badge">
+                            {% if product.on_sale %}
+                            <span class="was">{{ product.selling_price }}</span>
+                            {% endif %}
+                            {{ product.final_price }}
+                        </div>
+                    </div>
+
+                    <div class="product-info">
+                        <div class="product-meta">
+                            <h3 class="product-title">{{ product.title|default:product.product_name }}</h3>
+                            {% if product.product_name and product.title and product.title != product.product_name %}
+                            <p class="product-name-sub">{{ product.product_name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+
+                
 
                 <div class="product-stats-row">
 

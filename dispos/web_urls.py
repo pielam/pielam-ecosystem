@@ -59,6 +59,7 @@ from engine.profile_views.engine_profile import (
 )
 
 
+
 urlpatterns = [
 
     # ==================== MAIN PAGES ====================
@@ -101,4 +102,6 @@ urlpatterns = [
     path('api/services/<int:service_id>/delete/',      delete_service,            name='delete_service'),
     path('api/services/<int:service_id>/refresh/',     refresh_service_data,      name='refresh_service'),
     path('api/services/<int:service_id>/media/',       get_service_media,         name='get_service_media'),
+
+ 
 ]

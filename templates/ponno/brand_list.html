@@ -1,626 +1,893 @@
 {% extends "base.html" %}
-{% load static %}
 
-{% block title %}{% if query %}{{ query }} — {% endif %}PIELAM{% endblock %}
+{% block title %}{% if query %}"{{ query }}" — {% endif %}Brand Directory · Ponno{% endblock %}
 
 {% block extra_css %}
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}{% else %}
+<style>
+  /* ============================================================
+     TOKENS
+     Reuses base.html's palette/typography/spacing/shadow system
+     (--accent, --active-from/to, --shadow-*, --ease, --focus-ring,
+     'roboto' font, --header-h/--content-max/--content-pad) and
+     only adds the few surface/text/status tokens base.html doesn't
+     define for light page content.
+     ============================================================ */
+  :root{
+    --ink:        #14293F;
+    --ink-soft:   #4D6072;
+    --ink-faint:  #8695A5;
+    --paper:      #F2F6FB;
+    --surface:    #FFFFFF;
+    --surface-2:  #EAF1F9;
+    --line:       #DDE6EF;
+    --line-soft:  #E9EFF5;
 
-  <style>
-    /* ═══════════════════════════════════════════════
-       BRAND LIST — page-scoped tokens & reset
-       Scoped to .page-wrapper so they never leak into
-       base.html's header/drawer (which already owns
-       --accent, --shadow-*, --ease, --header-h, etc.)
-    ═══════════════════════════════════════════════ */
-    .page-wrapper {
-      --ink:        #0f0f0f;
-      --ink-2:      #3a3a3a;
-      --ink-3:      #6b6b6b;
-      --ink-4:      #9b9b9b;
-      --surface:    #ffffff;
-      --surface-2:  #f5f5f3;
-      --surface-3:  #eeede9;
-      --border:     #e4e3df;
-      --border-2:   #d0cfc9;
-      --bl-accent:  #c8102e;
-      --bl-accent-2:#a00d24;
-      --gold:       #b8860b;
-      --gold-2:     #8b6508;
-      --green:      #1a6b3a;
-      --green-bg:   #edf7f1;
-      --warn:       #92400e;
-      --warn-bg:    #fffbeb;
-      --blue:       #1e3a8a;
-      --blue-light: #3b82f6;
-      --primary-dark:    #0a2540;
-      --primary-blue:    #0d47a1;
-      --primary-light:   #1976d2;
-      --accent-gold:     #d4af37;
-      --accent-amber:    #ffb300;
-      --success-emerald: #00b894;
-      --danger-crimson:  #e74c3c;
-      --text-primary:    #1a202c;
-      --text-secondary:  #4a5568;
-      --text-muted:      #718096;
-      --bg-primary:      #ffffff;
-      --bg-secondary:    #f7fafc;
-      --bg-tertiary:     #edf2f7;
-      --border-light:    #e2e8f0;
-      --border-medium:   #cbd5e0;
-      --bl-shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
-      --bl-shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
-      --bl-shadow-md: 0 4px 12px rgba(10,37,64,.12);
-      --bl-shadow-lg: 0 10px 30px rgba(10,37,64,.15);
-      --bl-shadow-xl: 0 20px 50px rgba(10,37,64,.2);
-      --font-display: 'Cormorant Garamond', serif;
-      --font-body:    'Syne', sans-serif;
-      --f-mono:       'JetBrains Mono', monospace;
-      --f-display:    'Cormorant Garamond', serif;
-      --f-body:       'Syne', sans-serif;
-      --bottom-bar-height: 68px;
-      --r-sm:  8px;
-      --r-md:  14px;
-      --r-lg:  20px;
-      --r-xl:  28px;
-      --bl-ease:         cubic-bezier(.4,0,.2,1);
-      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
-      --transition-fast: .15s ease;
-      --transition-base: .25s ease;
-      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
-      --gold-pure:   #b8860b;
-      --gold-dim:    rgba(184,134,11,0.40);
-      --gold-trace:  rgba(184,134,11,0.08);
-      --gold-bright: #d4a017;
-      --emerald:  #1a6b3a;
-      --amber:    #92400e;
-      --ruby:     #c8102e;
-      --sapphire: #1e3a8a;
+    /* gold mirrors base.html's literal "gold" accent used for
+       active/hover states in the nav + drawer, and its logo's
+       #b8960c gradient stop for anything needing solid contrast. */
+    --gold:       gold;
+    --gold-deep:  #B8960C;
+    --gold-ink:   #7A5C00;
+    --gold-tint:  #FFF6D6;
 
-      position: relative;
-      z-index: 1;
-      padding-bottom: var(--bottom-bar-height);
-    }
+    --trend:      #1F8A5F;
+    --trend-tint: #DFF3EA;
 
-    .page-wrapper *,
-    .page-wrapper *::before,
-    .page-wrapper *::after {
-      box-sizing: border-box;
-    }
+    --danger:      #C0392B;
+    --danger-tint: #FBE3DF;
 
-    .page-wrapper a      { text-decoration: none; color: inherit; }
-    .page-wrapper img    { max-width: 100%; display: block; }
-    .page-wrapper button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+    --font-body: 'roboto', -apple-system, BlinkMacSystemFont, sans-serif;
 
-    .page-wrapper::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: -1;
-    }
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
 
-    /* ── STATS BAR ── */
-    .bl-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
-    .bl-stat {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 999px;
-      border: 1.5px solid var(--border-light);
-      background: #fff; font-size: 12px; font-weight: 600;
-      color: var(--text-secondary); white-space: nowrap;
-      box-shadow: var(--bl-shadow-xs);
-    }
-    .bl-stat i { font-size: 13px; }
-    .bl-stat.s-gold   { background: #fffbeb; border-color: rgba(212,175,55,.4);  color: #92400e; }
-    .bl-stat.s-blue   { background: #dbeafe; border-color: #bfdbfe;              color: #1e40af; }
-    .bl-stat.s-green  { background: #d1fae5; border-color: #a7f3d0;              color: #065f46; }
-    .bl-stat.s-purple { background: #ede9fe; border-color: #c4b5fd;              color: #5b21b6; }
+    --shadow-header: 0 1px 0 var(--line);
 
-    /* ── TOOLBAR ── */
-    .bl-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
-    .bl-search {
-      flex: 1; min-width: 200px; max-width: 400px;
-      display: flex; align-items: center;
-      background: #fff; border: 1.5px solid var(--border-medium);
-      border-radius: var(--r-md); overflow: hidden;
-      transition: border-color var(--transition-base), box-shadow var(--transition-base);
-    }
-    .bl-search:focus-within {
-      border-color: var(--primary-blue);
-      box-shadow: 0 0 0 3px rgba(13,71,161,.08);
-    }
-    .bl-search i { padding: 0 10px; font-size: 15px; color: var(--text-muted); }
-    .bl-search input {
-      flex: 1; border: none; outline: none;
-      font-family: var(--font-body); font-size: 13px;
-      padding: 9px 0; background: transparent; color: var(--text-primary);
-    }
-    .bl-search input::placeholder { color: var(--text-muted); font-size: 12px; }
+    --container: var(--content-max, 1400px);
+    --gutter:    var(--content-pad, clamp(16px, 4vw, 40px));
+  }
 
-    .bl-select {
-      padding: 9px 28px 9px 12px;
-      border: 1.5px solid var(--border-medium);
-      border-radius: var(--r-md);
-      background: #fff;
-      font-family: var(--font-body);
-      font-size: 12px; font-weight: 600; color: var(--text-primary);
-      cursor: pointer; outline: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 9px center;
-      transition: border-color var(--transition-base);
-    }
-    .bl-select:focus { border-color: var(--primary-blue); }
+  /* Page body sits inside base.html's own body — only reset what this
+     page's components need, don't touch global body rules (base.html
+     already sets padding-top / font-family for the whole site). */
+  .brand-directory-page{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .brand-directory-page img{ max-width:100%; display:block; }
+  .brand-directory-page a{ color:inherit; text-decoration:none; }
+  .brand-directory-page button{ font:inherit; }
+  .brand-directory-page ul{ margin:0; padding:0; list-style:none; }
+  .brand-directory-page h1,
+  .brand-directory-page h2,
+  .brand-directory-page h3{ margin:0; font-family:var(--font-body); font-weight:700; }
+  .tnum{ font-variant-numeric: tabular-nums; }
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
 
-    .bl-view-btns { display: flex; gap: 4px; margin-left: auto; }
-    .bl-vbtn {
-      width: 34px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      border: 1.5px solid var(--border-medium); border-radius: var(--r-md);
-      background: #fff; cursor: pointer; font-size: 15px; color: var(--text-secondary);
-      transition: all var(--transition-fast);
-    }
-    .bl-vbtn.active, .bl-vbtn:hover {
-      background: var(--primary-dark); color: #fff; border-color: var(--primary-dark);
-    }
+  .skip-link{
+    position:absolute; left:-999px; top:auto;
+    background:var(--ink); color:#fff; padding:10px 16px; border-radius:var(--radius-sm);
+    z-index:2100; /* above base.html's drawer (2000) so keyboard users can reach it */
+  }
+  .skip-link:focus{ left:16px; top:16px; }
 
-    /* ── FILTER TABS ── */
-    .bl-tabs {
-      display: flex; gap: 6px; margin-bottom: 1rem;
-      flex-wrap: nowrap; overflow-x: auto;
-      -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
-    }
-    .bl-tabs::-webkit-scrollbar { display: none; }
-    .bl-tab {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 6px 14px; border-radius: 999px;
-      border: 1.5px solid var(--border-medium); background: #fff;
-      color: var(--text-secondary); font-family: var(--font-body);
-      font-size: 12px; font-weight: 600; cursor: pointer;
-      white-space: nowrap; flex-shrink: 0;
-      transition: all var(--transition-base);
-      box-shadow: var(--bl-shadow-xs);
-    }
-    .bl-tab:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-1px); }
-    .bl-tab.active {
-      background: var(--primary-dark); color: #fff; border-color: transparent;
-      box-shadow: 0 3px 10px rgba(10,37,64,.2);
-    }
-    .bl-tab .tc {
-      font-size: 10px; padding: 1px 6px; border-radius: 999px;
-      background: rgba(0,0,0,.06); color: inherit; font-weight: 700;
-    }
-    .bl-tab.active .tc { background: rgba(255,255,255,.22); }
+  .brand-directory-page :focus-visible{
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
 
-    /* ── RESULTS BAR ── */
-    .bl-results {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0.875rem; flex-wrap: wrap; gap: 6px;
-    }
-    .bl-results-left { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-    .bl-results-left strong { color: var(--primary-blue); font-weight: 700; }
-    .bl-sort-info { font-size: 11px; color: var(--text-muted); }
+  .wrap{ max-width:var(--container); margin:0 auto; padding-left:var(--gutter); padding-right:var(--gutter); }
 
-    /* ── HIGHLIGHT CALLOUT ── */
-    .highlight-callout {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 14px; margin-bottom: 1rem;
-      background: var(--warn-bg); border: 1px solid rgba(212,175,55,.4);
-      border-radius: var(--r-md); font-size: 12px; color: var(--warn);
-    }
-    .highlight-callout a { margin-left: auto; font-weight: 600; color: var(--primary-blue); }
+  /* ============================================================
+     DIRECTORY SUB-HEADER (search)
+     Sits BELOW base.html's fixed site nav — top offset uses
+     base.html's own --header-h variable so it never gets hidden
+     underneath the global nav on scroll.
+     ============================================================ */
+  .site-header{
+    position:sticky; top:var(--header-h, 64px); z-index:40;
+    background:rgba(242,246,251,0.92);
+    -webkit-backdrop-filter:saturate(140%) blur(8px);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);
+    transition: box-shadow .2s var(--ease);
+  }
+  .site-header.is-scrolled{ box-shadow:var(--shadow-header), 0 8px 20px -12px rgba(20,25,43,0.25); }
 
-    /* ── GRID — adaptive 2 → 3 → 4 columns ── */
-    .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .header-bar{
+    display:flex; align-items:center; gap:24px;
+    padding:18px 0;
+    flex-wrap:wrap;
+  }
+  .search-form{
+    flex:1 1 auto; width:100%;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:6px 8px 6px 16px;
+    transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .search-form:focus-within{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,144,226,0.18); }
+  .search-form svg{ flex:none; color:var(--ink-faint); }
+  .search-form input[type="text"]{
+    flex:1; border:0; outline:0; background:transparent;
+    font:inherit; font-size:14px; color:var(--ink); min-width:0;
+  }
+  .search-form input::placeholder{ color:var(--ink-faint); }
+  .search-form button{
+    flex:none; color:#fff; border:0;
+    background:linear-gradient(135deg, var(--nav-bg-from) 0%, var(--nav-bg-to) 100%);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:background .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .search-form button:hover{
+    background:linear-gradient(135deg, var(--active-from) 0%, var(--active-to) 100%);
+    box-shadow:var(--active-shadow);
+  }
 
-    /* ── CARD ── */
-    .brand-card {
-      background: #fff; border-radius: var(--r-lg);
-      border: 1.5px solid var(--border-light);
-      box-shadow: var(--bl-shadow-sm);
-      overflow: hidden; display: flex; flex-direction: column;
-      cursor: pointer; position: relative;
-      transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
-    }
-    .brand-card:hover { transform: translateY(-5px); box-shadow: var(--bl-shadow-lg); border-color: var(--border-medium); }
-    .brand-card:focus-visible { outline: 3px solid var(--primary-blue); outline-offset: 2px; }
-    .brand-card.highlighted { border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(212,175,55,.22), var(--bl-shadow-lg); }
+  /* ============================================================
+     LEDGER — the stat ribbon
+     ============================================================ */
+  .ledger{
+    border-bottom:1px solid var(--line);
+    background:
+      repeating-linear-gradient(90deg, transparent, transparent 119px, var(--line-soft) 119px, var(--line-soft) 120px),
+      var(--surface-2);
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .ledger::-webkit-scrollbar{ display:none; }
+  .ledger-row{
+    display:flex; gap:0;
+    padding:14px var(--gutter);
+    min-width:max-content;
+  }
+  .ledger-item{
+    padding:0 24px; display:flex; flex-direction:column; gap:2px;
+    border-right:1px solid var(--line-soft);
+  }
+  .ledger-item:first-child{ padding-left:0; }
+  .ledger-item:last-child{ border-right:0; }
+  .ledger-value{
+    font-family:var(--font-body); font-size:19px; font-weight:700; color:var(--ink);
+  }
+  .ledger-label{
+    font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint);
+  }
 
-    .bc-logo {
-      height: 110px; background: var(--bg-secondary);
-      display: flex; align-items: center; justify-content: center;
-      border-bottom: 1px solid var(--border-light); padding: 1rem;
-      position: relative; overflow: hidden;
-    }
-    .bc-logo img { max-width: 100%; max-height: 70px; object-fit: contain; transition: transform var(--transition-slow); }
-    .brand-card:hover .bc-logo img { transform: scale(1.07); }
+  /* ============================================================
+     FILTER / SORT CONTROL BAR
+     ============================================================ */
+  .control-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:16px 0 20px;
+    flex-wrap:wrap;
+  }
+  .filter-tabs{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none;
+    max-width:100%;
+  }
+  .filter-tabs::-webkit-scrollbar{ display:none; }
+  .filter-tab{
+    flex:none;
+    display:flex; align-items:center; gap:7px;
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink-soft);
+    font-size:13px; font-weight:500; white-space:nowrap;
+    transition:all .15s var(--ease);
+  }
+  .filter-tab:hover{ border-color:var(--accent); color:var(--ink); }
+  .filter-tab[aria-current="true"]{
+    background:linear-gradient(135deg, var(--active-from) 0%, var(--active-to) 100%);
+    border-color:var(--gold); color:var(--gold);
+    box-shadow:var(--active-shadow);
+  }
+  .filter-tab .count{
+    font-family:var(--font-body); font-size:11px; font-weight:700;
+    background:rgba(255,255,255,0.14); padding:1px 6px; border-radius:999px;
+  }
+  .filter-tab:not([aria-current="true"]) .count{
+    background:var(--paper); color:var(--ink-faint);
+  }
 
-    .bc-logo-placeholder {
-      width: 56px; height: 56px; border-radius: var(--r-md);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700;
-    }
+  .sort-control{ flex:none; display:flex; align-items:center; gap:8px; }
+  .sort-control label{ font-size:12px; color:var(--ink-faint); white-space:nowrap; }
+  .sort-select-wrap{ position:relative; }
+  .sort-select-wrap svg{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    pointer-events:none; color:var(--ink-faint);
+  }
+  select#sort-select{
+    appearance:none; -webkit-appearance:none;
+    font:inherit; font-size:13px; font-weight:500; color:var(--ink);
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:8px 32px 8px 12px; cursor:pointer;
+  }
+  select#sort-select:hover{ border-color:var(--accent); }
+  .sort-noscript button{
+    border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-md);
+    padding:8px 12px; font-size:13px; cursor:pointer;
+  }
+  html.js .sort-noscript{ display:none; }
 
-    .bc-badges { position: absolute; top: 7px; left: 7px; display: flex; flex-wrap: wrap; gap: 3px; z-index: 2; }
-    .bc-badge {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 6px; border-radius: 999px; font-size: 9px; font-weight: 800;
-      text-transform: uppercase; letter-spacing: 0.3px;
-    }
-    .bc-badge i { font-size: 9px; }
-    .bdg-v  { background: #d1fae5; color: #065f46; }
-    .bdg-f  { background: #fef3c7; color: #92400e; }
-    .bdg-t  { background: #fee2e2; color: #991b1b; }
-    .bdg-o  { background: #dbeafe; color: #1e40af; }
-    .bdg-tr { background: #ede9fe; color: #5b21b6; }
+  .active-query-banner, .highlight-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--gold-tint); border:1px solid var(--gold-deep);
+    color:var(--gold-ink); border-radius:var(--radius-md);
+    padding:10px 16px; font-size:13px; margin-bottom:18px;
+  }
+  .active-query-banner a, .highlight-banner a{ text-decoration:underline; font-weight:600; }
 
-    .bc-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
-    .bc-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .bc-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bc-chip {
-      display: inline-flex; align-items: center; gap: 3px;
-      padding: 2px 7px; border-radius: 999px;
-      background: var(--bg-secondary); border: 1px solid var(--border-light);
-      font-size: 9px; color: var(--text-muted); font-weight: 600;
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .bc-chip i { font-size: 9px; }
+  /* ============================================================
+     RESULTS META
+     ============================================================ */
+  .results-meta{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom:16px; color:var(--ink-faint); font-size:13px;
+    flex-wrap:wrap; gap:6px 16px;
+  }
+  .results-meta strong{ color:var(--ink); font-weight:600; }
 
-    .bc-tagline { font-size: 11px; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+  /* ============================================================
+     BRAND GRID
+     ============================================================ */
+  .brand-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:20px;
+    padding-bottom:32px;
+  }
 
-    .bc-mini-stats { display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
-    .bc-ms { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--text-secondary); }
-    .bc-ms i      { font-size: 10px; color: var(--text-muted); }
-    .bc-ms strong { color: var(--text-primary); font-weight: 600; }
+  .brand-card{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:20px;
+    display:flex; flex-direction:column; gap:14px;
+    box-shadow:var(--shadow-sm);
+    transition:transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease);
+  }
+  .brand-card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--shadow-lg);
+    border-color:var(--line-soft);
+  }
+  .brand-card.is-highlighted{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(255,215,0,0.25), var(--shadow-sm);
+  }
+  .brand-card.is-highlighted::before{
+    content:"Highlighted";
+    position:absolute; top:-1px; right:16px;
+    background:var(--gold-deep); color:#fff;
+    font-family:var(--font-body); font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    padding:3px 9px; border-radius:0 0 6px 6px;
+  }
 
-    .bc-pop { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-    .bc-pop-label { font-size: 9px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
-    .bc-pop-track { flex: 1; height: 3px; background: var(--bg-tertiary); border-radius: 999px; overflow: hidden; }
-    .bc-pop-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary-dark), var(--primary-light)); transition: width 0.4s ease; }
-    .bc-pop-val { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 22px; text-align: right; flex-shrink: 0; }
+  .card-top{ display:flex; align-items:center; gap:12px; }
+  .card-logo{
+    flex:none; width:52px; height:52px; border-radius:var(--radius-md);
+    border:1px solid var(--line-soft); background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .card-logo img{ width:100%; height:100%; object-fit:contain; }
+  .card-heading{ min-width:0; }
+  .card-heading .name{
+    font-family:var(--font-body); font-weight:700; font-size:17px;
+    display:flex; align-items:center; gap:6px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .card-heading .name a{ overflow:hidden; text-overflow:ellipsis; }
+  .card-heading .type{
+    font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em;
+  }
 
-    .bc-meta {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      padding-top: 8px; margin-top: auto; border-top: 1px solid var(--border-light);
-      font-size: 10px; color: var(--text-muted); flex-wrap: wrap;
-    }
-    .bc-meta span { display: flex; align-items: center; gap: 3px; }
-    .bc-meta i    { font-size: 10px; }
+  .seal-rail{ display:flex; gap:6px; flex:none; }
+  .seal{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--gold-tint); color:var(--gold-ink);
+    border:1px solid var(--gold);
+    flex:none;
+  }
+  .seal.trending{ background:var(--trend-tint); color:var(--trend); border-color:var(--trend); }
+  .seal svg{ width:12px; height:12px; }
 
-    .bc-cta {
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      margin-top: 8px; padding: 7px 0; width: 100%;
-      background: var(--primary-dark); color: #fff; border-radius: var(--r-sm);
-      font-family: var(--font-body); font-size: 11px; font-weight: 700;
-      letter-spacing: 0.2px; border: none; cursor: pointer;
-      transition: background var(--transition-base); text-decoration: none;
-    }
-    .bc-cta i { font-size: 11px; transition: transform var(--transition-fast); }
-    .brand-card:hover .bc-cta   { background: var(--primary-blue); }
-    .brand-card:hover .bc-cta i { transform: translateX(3px); }
+  .tagline{
+    color:var(--ink-soft); font-size:13.5px; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    min-height:2.6em;
+  }
 
-    /* ── LIST MODE ── */
-    .brand-grid.list-mode { grid-template-columns: 1fr; }
-    .brand-grid.list-mode .brand-card { flex-direction: row; align-items: stretch; }
-    .brand-grid.list-mode .bc-logo {
-      width: 100px; height: auto; min-height: 80px; flex-shrink: 0;
-      border-bottom: none; border-right: 1px solid var(--border-light);
-    }
-    .brand-grid.list-mode .bc-body { flex-direction: row; align-items: center; gap: 16px; padding: 10px 14px; }
-    .brand-grid.list-mode .bc-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .brand-grid.list-mode .bc-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-    .brand-grid.list-mode .bc-pop   { width: 140px; }
-    .brand-grid.list-mode .bc-cta   { width: auto; padding: 6px 14px; margin: 0; }
-    .brand-grid.list-mode .bc-meta  { border: none; padding: 0; flex-wrap: nowrap; }
+  .card-meta{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:12px; border-top:1px dashed var(--line);
+    font-family:var(--font-body); font-size:11.5px; color:var(--ink-faint);
+    gap:8px; flex-wrap:wrap;
+  }
+  .card-meta .country{
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--ink-soft); font-weight:600;
+  }
+  .card-meta .stats{ display:flex; gap:10px; flex-wrap:wrap; }
+  .card-meta .score{
+    display:inline-flex; align-items:center; gap:4px;
+    color:var(--gold-ink);
+  }
+  .card-meta .score svg{ width:10px; height:10px; }
 
-    /* ── EMPTY STATE ── */
-    .bl-empty { grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted); }
-    .bl-empty-icon {
-      width: 72px; height: 72px; border-radius: 50%; background: var(--bg-tertiary);
-      display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;
-    }
-    .bl-empty i   { font-size: 2rem; opacity: 0.25; }
-    .bl-empty h3  { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem; }
-    .bl-empty p   { font-size: 13px; max-width: 300px; margin: 0 auto 1rem; }
-    .bl-empty-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 18px; background: var(--primary-dark); color: #fff;
-      border: none; border-radius: var(--r-md);
-      font-family: var(--font-body); font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: background var(--transition-base);
-    }
-    .bl-empty-btn:hover { background: var(--primary-blue); }
+  .card-cta{
+    position:absolute; inset:0; border-radius:inherit;
+  }
 
-    /* ── INFINITE SCROLL ── */
-    .inf-loader {
-      display: none; align-items: center; justify-content: center; gap: 8px;
-      padding: 1.25rem 0; font-size: 12px; color: var(--text-muted);
-    }
-    .inf-loader.visible { display: flex; }
-    .inf-spinner {
-      width: 18px; height: 18px; border-radius: 50%;
-      border: 2px solid var(--border-light); border-top-color: var(--primary-blue);
-      animation: bl-spin 0.7s linear infinite;
-    }
-    @keyframes bl-spin { to { transform: rotate(360deg); } }
-    .inf-end {
-      display: none; align-items: center; justify-content: center; gap: 6px;
-      padding: 1.25rem 0; font-size: 11px; color: var(--text-muted);
-    }
-    .inf-end.visible { display: flex; }
+  /* ============================================================
+     EMPTY / ERROR STATES
+     ============================================================ */
+  .state-panel{
+    text-align:center; padding:72px 24px; background:var(--surface);
+    border:1px dashed var(--line); border-radius:var(--radius-lg);
+    margin-bottom:48px;
+  }
+  .state-panel h2{ font-size:20px; margin-bottom:8px; }
+  .state-panel p{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+  .state-panel .clear-link{
+    display:inline-block; color:#fff; padding:9px 18px;
+    background:linear-gradient(135deg, var(--nav-bg-from) 0%, var(--nav-bg-to) 100%);
+    border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .state-panel.is-error{ border-color:var(--danger); border-style:solid; background:var(--danger-tint); }
+  .state-panel.is-error h2{ color:var(--danger); }
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
-      .bl-toolbar { gap: 6px; }
-      .bl-search  { min-width: 0; flex: 1 1 55%; }
-      .bl-select  { font-size: 11px; }
-      .brand-grid { gap: 10px; }
-      .bc-logo    { height: 96px; }
-      .bc-name    { font-size: 12px; }
-      .bc-tagline { font-size: 10px; }
-    }
-    @media (max-width: 600px) {
-      .brand-grid { gap: 8px; }
-      .bc-logo    { height: 88px; padding: 0.875rem; }
-      .bc-body    { padding: 8px 10px 10px; }
-      .bc-name    { font-size: 11px; }
-      .bc-cta     { font-size: 10px; padding: 6px 0; }
-    }
-    @media (max-width: 480px) {
-      .bl-toolbar   { flex-direction: column; align-items: stretch; }
-      .bl-search    { max-width: 100%; flex: none; }
-      .bl-select    { width: 100%; }
-      .bl-view-btns { margin-left: 0; }
-      .brand-grid   { gap: 6px; }
-      .bc-logo      { height: 80px; padding: 0.75rem; }
-      .bc-tagline, .bc-chip { display: none; }
-      .bc-pop       { display: none; }
-      .bc-meta      { font-size: 9px; gap: 6px; }
-      .bc-badge     { font-size: 8px; padding: 1px 5px; }
-    }
-    @media (max-width: 360px) {
-      .bc-logo { height: 70px; }
-      .bc-name { font-size: 10px; }
-      .bc-cta  { font-size: 9px; padding: 5px 0; border-radius: 6px; }
-      .bl-tab  { font-size: 11px; padding: 5px 10px; }
-      .bl-stat { font-size: 11px; padding: 5px 10px; }
-    }
-    @media (max-width: 320px) {
-      .bc-meta { display: none; }
-      .bc-logo { height: 60px; padding: 0.5rem; }
-      .bc-name { font-size: 9px; }
-      .bc-cta  { font-size: 8px; border-radius: 4px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .brand-card, .brand-card:hover, .bc-logo img, .brand-card:hover .bc-logo img,
-      .bc-cta, .bc-cta i, .brand-card:hover .bc-cta i, .bl-tab, .bl-vbtn, .bc-pop-fill {
-        transition: none; transform: none; animation: none;
-      }
-      .inf-spinner { animation: none; border-color: var(--primary-blue); }
-    }
-  </style>
+  /* ============================================================
+     INFINITE SCROLL — sentinel / loader / end-of-list / retry
+     ============================================================ */
+  .scroll-sentinel{ height:1px; width:100%; }
+
+  .scroll-loader{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:28px 0; color:var(--ink-faint); font-size:13px;
+  }
+  .scroll-loader[hidden]{ display:none; }
+  .scroll-loader .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--line); border-top-color:var(--gold-deep);
+    animation:spin .6s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .scroll-end{
+    text-align:center; padding:20px 0 8px; color:var(--ink-faint); font-size:12.5px;
+  }
+  .scroll-end[hidden]{ display:none; }
+
+  .scroll-retry{
+    display:block; margin:8px auto 24px;
+    border:1px solid var(--danger); background:var(--danger-tint); color:var(--danger);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 720px){
+    .header-bar{ padding:14px 0; }
+    .ledger-row{ padding:12px var(--gutter); }
+    .ledger-item{ padding:0 16px; }
+    .control-bar{ flex-direction:column; align-items:stretch; }
+    .sort-control{ justify-content:space-between; }
+    .brand-grid{ grid-template-columns:1fr; gap:14px; }
+    .results-meta{ flex-direction:column; align-items:flex-start; gap:4px; }
+  }
+
+  @media (min-width: 1600px){
+    .brand-grid{ grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .brand-directory-page *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  /* Print */
+  @media print{
+    .site-header, .ledger, .control-bar, .scroll-sentinel, .scroll-loader, .scroll-end{ display:none; }
+    .brand-card{ break-inside:avoid; box-shadow:none; }
+  }
+</style>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-
-  {% include "search.html" %}
-
-  <div class="page-wrapper">
-
-    {# ── FILTER TABS ── #}
-    <div class="bl-tabs" role="tablist" aria-label="Filter by brand type">
-      {% for tab in filter_tabs %}
-        <a
-          href="{% url 'ponno:brand_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}"
-          class="bl-tab {% if tab.active %}active{% endif %}"
-          role="tab"
-          aria-selected="{% if tab.active %}true{% else %}false{% endif %}"
-        >
-          {% if   tab.value == 'all'      %}<i class="fa-solid fa-border-all"></i>
-          {% elif tab.value == 'verified' %}<i class="fa-solid fa-circle-check"></i>
-          {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
-          {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
-          {% elif tab.value == 'official' %}<i class="fa-solid fa-shield-halved"></i>
-          {% elif tab.value == 'trusted'  %}<i class="fa-solid fa-medal"></i>
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}
+  {# Infinite-scroll fragment: bare <li> cards only — no chrome, no wrapper.
+     infinite-scroll.js pulls these out with querySelectorAll('.brand-card')
+     and appends them straight into #brand-results-grid. #}
+  {% for brand in brands %}
+    <li class="brand-card{% if brand.highlighted %} is-highlighted{% endif %}">
+      <div class="card-top">
+        <div class="card-logo">
+          <img src="{{ brand.logo }}" alt="" loading="lazy" width="52" height="52"
+               onerror="this.onerror=null;this.src='/static/defaults/default-brand-logo.png';">
+        </div>
+        <div class="card-heading">
+          <p class="name">
+            <a href="{{ brand.brand_url }}">{{ brand.name }}</a>
+          </p>
+          <p class="type">
+            {% if brand.type == 'private_label' %}Private Label
+            {% elif brand.type == 'manufacturer' %}Manufacturer
+            {% elif brand.type == 'distributor' %}Distributor
+            {% elif brand.type == 'retailer' %}Retailer
+            {% else %}Other{% endif %}
+          </p>
+        </div>
+        <div class="seal-rail">
+          {% if brand.is_verified %}
+            <span class="seal" title="Verified brand"><svg><use href="#icon-verified"/></svg></span>
           {% endif %}
+          {% if brand.is_official %}
+            <span class="seal" title="Official account"><svg><use href="#icon-official"/></svg></span>
+          {% endif %}
+          {% if brand.is_trusted %}
+            <span class="seal" title="Trusted brand"><svg><use href="#icon-trusted"/></svg></span>
+          {% endif %}
+          {% if brand.is_trending %}
+            <span class="seal trending" title="Trending now"><svg><use href="#icon-trending"/></svg></span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if brand.tagline %}
+        <p class="tagline">{{ brand.tagline }}</p>
+      {% else %}
+        <p class="tagline" aria-hidden="true"></p>
+      {% endif %}
+
+      <div class="card-meta">
+        {% if brand.country %}
+          <span class="country" data-country="{{ brand.country }}">{{ brand.country }}</span>
+        {% else %}
+          <span></span>
+        {% endif %}
+        <span class="stats tnum">
+          <span data-num="{{ brand.product_count }}">{{ brand.product_count }}</span>&nbsp;products
+          <span>·</span>
+          <span data-num="{{ brand.view_count }}">{{ brand.view_count }}</span>&nbsp;views
+          <span>·</span>
+          <span class="score" title="Popularity score">
+            <svg><use href="#icon-spark"/></svg>
+            <span data-num="{{ brand.popularity_score|default_if_none:0|floatformat:0 }}">{{ brand.popularity_score|default_if_none:0|floatformat:0 }}</span>
+          </span>
+        </span>
+      </div>
+
+      <a class="card-cta" href="{{ brand.brand_url }}" aria-label="View {{ brand.name }}"></a>
+    </li>
+  {% endfor %}
+{% else %}
+<div class="brand-directory-page">
+
+<a href="#brand-results" class="skip-link">Skip to brand results</a>
+
+<!-- shared icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-verified" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-official" viewBox="0 0 24 24"><path d="M12 2l2.6 5.9L21 8.6l-4.7 4.2 1.3 6.3L12 15.9 6.4 19.1l1.3-6.3L3 8.6l6.4-.7z" fill="currentColor"/></symbol>
+    <symbol id="icon-trusted" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-trending" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="15 6 21 6 21 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<header class="site-header" id="brand-directory-header">
+  <div class="wrap header-bar">
+    <form class="search-form" method="get" role="search" aria-label="Search brands">
+      <svg width="16" height="16"><use href="#icon-search"/></svg>
+      <input type="text" name="q" value="{{ query }}" placeholder="Search brands by name or description…" maxlength="120" autocomplete="off">
+      <input type="hidden" name="type" value="{{ current_filter }}">
+      <input type="hidden" name="sort" value="{{ current_sort }}">
+      {% if highlighted_brand %}
+        <input type="hidden" name="brand" value="{{ highlighted_brand.slug }}">
+      {% endif %}
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</header>
+
+<div class="ledger" aria-label="Directory totals">
+  <div class="ledger-row wrap tnum">
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.total }}</span>
+      <span class="ledger-label">Total brands</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.verified }}</span>
+      <span class="ledger-label">Verified</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.featured }}</span>
+      <span class="ledger-label">Featured</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.trending }}</span>
+      <span class="ledger-label">Trending</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.official }}</span>
+      <span class="ledger-label">Official</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.trusted }}</span>
+      <span class="ledger-label">Trusted</span>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="brand-results">
+
+  <div class="control-bar">
+    <nav class="filter-tabs" aria-label="Filter brands by status">
+      {% for tab in filter_tabs %}
+        <a class="filter-tab"
+           href="?q={{ query|urlencode }}&amp;type={{ tab.value }}&amp;sort={{ current_sort }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+           {% if tab.active %}aria-current="true"{% endif %}>
           {{ tab.label }}
-          <span class="tc">{{ tab.count }}</span>
+          <span class="count tnum">{{ tab.count }}</span>
         </a>
       {% endfor %}
-    </div>
+    </nav>
 
-    {# ── RESULTS BAR ── #}
-    {% if brands %}
-    <div class="bl-results">
-      <div class="bl-results-left">
-        Showing
-        <strong id="resShowing">{{ brands|length }}</strong>
-        of
-        <strong>{{ total_count }}</strong>
-        brand{% if total_count != 1 %}s{% endif %}
-        {% if current_filter != 'all' %}&mdash; {{ current_filter|capfirst }} only{% endif %}
+    <div class="sort-control">
+      <label for="sort-select">Sort by</label>
+      <div class="sort-select-wrap">
+        <select id="sort-select"
+                data-base-href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}&amp;sort=">
+          {% for opt in sort_options %}
+            <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+        <svg width="14" height="14"><use href="#icon-chevron"/></svg>
       </div>
-      <div class="bl-sort-info">
-        Sorted by
-        {% for opt in sort_options %}{% if opt.active %}{{ opt.label|lower }}{% endif %}{% endfor %}
-        {% if query %}
-          &nbsp;&middot;&nbsp;
-          <a
-            href="{% url 'ponno:brand_list' %}{% if current_filter != 'all' %}?type={{ current_filter }}{% endif %}"
-            style="color:var(--primary-blue);font-weight:600;"
-          >
-            <i class="fa-solid fa-xmark"></i> Clear &ldquo;{{ query }}&rdquo;
-          </a>
-        {% endif %}
-      </div>
+      <noscript>
+        <form class="sort-noscript" method="get" style="display:flex; gap:6px;">
+          <input type="hidden" name="q" value="{{ query }}">
+          <input type="hidden" name="type" value="{{ current_filter }}">
+          <input type="hidden" name="page" value="1">
+          {% if highlighted_brand %}
+            <input type="hidden" name="brand" value="{{ highlighted_brand.slug }}">
+          {% endif %}
+          <select name="sort">
+            {% for opt in sort_options %}
+              <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit">Apply</button>
+        </form>
+      </noscript>
     </div>
-    {% endif %}
+  </div>
 
-    {# ── HIGHLIGHTED BRAND CALLOUT ── #}
-    {% if highlighted_brand %}
-    <div class="highlight-callout">
-      <i class="fa-solid fa-bolt"></i>
-      Showing <strong>{{ highlighted_brand.brand_name }}</strong> at the top of results.
-      <a href="{% url 'ponno:brand_list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
-        <i class="fa-solid fa-xmark"></i> Remove highlight
-      </a>
+  {% if query %}
+    <div class="active-query-banner">
+      <span>Showing results for <strong>&ldquo;{{ query }}&rdquo;</strong></span>
+      <a href="?type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}">Clear search</a>
     </div>
-    {% endif %}
+  {% endif %}
 
-    {# ── BRAND GRID ── #}
-    <div class="brand-grid" id="brandGrid">
+  {% if highlighted_brand %}
+    <div class="highlight-banner">
+      <span>Jumped in from a link to <strong>{{ highlighted_brand.brand_name }}</strong> — it's marked below.</span>
+      <a href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page=1">Clear</a>
+    </div>
+  {% endif %}
 
+  <div aria-live="polite">
+
+  {% if error %}
+
+    <div class="state-panel is-error">
+      <h2>Brand directory is temporarily unavailable</h2>
+      <p>We're having trouble reaching the catalog right now. Your search and filters weren't lost — try refreshing in a moment.</p>
+      <a class="clear-link" href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}">Try again</a>
+    </div>
+
+  {% elif brands %}
+
+    <p class="results-meta">
+      <span><strong class="tnum" id="results-count">{{ total_count }}</strong> brand{{ total_count|pluralize }} found</span>
+    </p>
+
+    <ul class="brand-grid"
+        id="brand-results-grid"
+        data-current-page="{{ page_obj.number }}"
+        data-has-next="{{ page_obj.has_next|yesno:'true,false' }}"
+        data-fetch-url="{{ request.path }}?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}">
       {% for brand in brands %}
-      <a
-        href="{% url 'ponno:brand_products' brand_slug=brand.slug %}"
-        class="brand-card {% if brand.highlighted %}highlighted{% endif %}"
-        aria-label="{{ brand.name }}{% if brand.tagline %} — {{ brand.tagline }}{% endif %}"
-        tabindex="0"
-      >
-
-        <div class="bc-badges">
-          {% if brand.is_verified %}<span class="bc-badge bdg-v"><i class="fa-solid fa-circle-check"></i>Verified</span>{% endif %}
-          {% if brand.is_featured %}<span class="bc-badge bdg-f"><i class="fa-solid fa-star"></i>Featured</span>{% endif %}
-          {% if brand.is_trending %}<span class="bc-badge bdg-t"><i class="fa-solid fa-fire"></i>Trending</span>{% endif %}
-          {% if brand.is_official %}<span class="bc-badge bdg-o"><i class="fa-solid fa-shield-halved"></i>Official</span>{% endif %}
-          {% if brand.is_trusted %}<span class="bc-badge bdg-tr"><i class="fa-solid fa-medal"></i>Trusted</span>{% endif %}
-        </div>
-
-        <div class="bc-logo">
-          <img
-            src="{{ brand.logo }}"
-            alt="{{ brand.name }} logo"
-            loading="lazy"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-          >
-          <div class="bc-logo-placeholder" style="display:none;background:#e0e7ff;color:#3730a3">
-            {{ brand.name|slice:":2"|upper }}
-          </div>
-        </div>
-
-        <div class="bc-body">
-
-          <div class="bc-name-row">
-            <div class="bc-name">{{ brand.name }}</div>
-            {% if brand.type %}
-            <span class="bc-chip">
-              {% if   brand.type == 'manufacturer' %}<i class="fa-solid fa-industry"></i>
-              {% elif brand.type == 'distributor'  %}<i class="fa-solid fa-truck"></i>
-              {% elif brand.type == 'retailer'     %}<i class="fa-solid fa-store"></i>
-              {% else                              %}<i class="fa-solid fa-tag"></i>
+        <li class="brand-card{% if brand.highlighted %} is-highlighted{% endif %}">
+          <div class="card-top">
+            <div class="card-logo">
+              <img src="{{ brand.logo }}" alt="" loading="lazy" width="52" height="52"
+                   onerror="this.onerror=null;this.src='/static/defaults/default-brand-logo.png';">
+            </div>
+            <div class="card-heading">
+              <p class="name">
+                <a href="{{ brand.brand_url }}">{{ brand.name }}</a>
+              </p>
+              <p class="type">
+                {% if brand.type == 'private_label' %}Private Label
+                {% elif brand.type == 'manufacturer' %}Manufacturer
+                {% elif brand.type == 'distributor' %}Distributor
+                {% elif brand.type == 'retailer' %}Retailer
+                {% else %}Other{% endif %}
+              </p>
+            </div>
+            <div class="seal-rail">
+              {% if brand.is_verified %}
+                <span class="seal" title="Verified brand"><svg><use href="#icon-verified"/></svg></span>
               {% endif %}
-              {{ brand.type|capfirst }}
-            </span>
-            {% endif %}
+              {% if brand.is_official %}
+                <span class="seal" title="Official account"><svg><use href="#icon-official"/></svg></span>
+              {% endif %}
+              {% if brand.is_trusted %}
+                <span class="seal" title="Trusted brand"><svg><use href="#icon-trusted"/></svg></span>
+              {% endif %}
+              {% if brand.is_trending %}
+                <span class="seal trending" title="Trending now"><svg><use href="#icon-trending"/></svg></span>
+              {% endif %}
+            </div>
           </div>
 
           {% if brand.tagline %}
-            <div class="bc-tagline">{{ brand.tagline }}</div>
-          {% endif %}
-
-          <div class="bc-mini-stats">
-            <span class="bc-ms"><i class="fa-solid fa-box"></i><strong>{{ brand.product_count }}</strong>&nbsp;products</span>
-            <span class="bc-ms"><i class="fa-solid fa-eye"></i><strong>{{ brand.view_count }}</strong>&nbsp;views</span>
-            {% if brand.country %}
-              <span class="bc-ms"><i class="fa-solid fa-location-dot"></i><strong>{{ brand.country }}</strong></span>
-            {% endif %}
-          </div>
-
-          <div class="bc-pop">
-            <span class="bc-pop-label">Popularity</span>
-            <div class="bc-pop-track">
-              <div class="bc-pop-fill" style="width:{{ brand.popularity_score|floatformat:0 }}%"></div>
-            </div>
-            <span class="bc-pop-val">{{ brand.popularity_score|floatformat:0 }}</span>
-          </div>
-
-          <div class="bc-meta">
-            <span><i class="fa-solid fa-box"></i>{{ brand.product_count }} product{% if brand.product_count != 1 %}s{% endif %}</span>
-            <span><i class="fa-solid fa-eye"></i>{{ brand.view_count }} views</span>
-            {% if brand.country %}
-              <span><i class="fa-solid fa-location-dot"></i>{{ brand.country }}</span>
-            {% endif %}
-          </div>
-
-          <div class="bc-cta">View products <i class="fa-solid fa-arrow-right"></i></div>
-
-        </div>
-      </a>
-
-      {% empty %}
-      <div class="bl-empty">
-        <div class="bl-empty-icon"><i class="fa-solid fa-registered"></i></div>
-        <h3>No brands found</h3>
-        <p>
-          {% if query %}
-            No brands matched &ldquo;<strong>{{ query }}</strong>&rdquo;.
-            Try a different keyword or clear the search.
+            <p class="tagline">{{ brand.tagline }}</p>
           {% else %}
-            No brands match the selected filter.
-            Try switching to &ldquo;All&rdquo;.
+            <p class="tagline" aria-hidden="true"></p>
           {% endif %}
-        </p>
-        <a href="{% url 'ponno:brand_list' %}" class="bl-empty-btn">
-          <i class="fa-solid fa-rotate-left"></i> View all brands
-        </a>
-      </div>
+
+          <div class="card-meta">
+            {% if brand.country %}
+              <span class="country" data-country="{{ brand.country }}">{{ brand.country }}</span>
+            {% else %}
+              <span></span>
+            {% endif %}
+            <span class="stats tnum">
+              <span data-num="{{ brand.product_count }}">{{ brand.product_count }}</span>&nbsp;products
+              <span>·</span>
+              <span data-num="{{ brand.view_count }}">{{ brand.view_count }}</span>&nbsp;views
+              <span>·</span>
+              <span class="score" title="Popularity score">
+                <svg><use href="#icon-spark"/></svg>
+                <span data-num="{{ brand.popularity_score|default_if_none:0|floatformat:0 }}">{{ brand.popularity_score|default_if_none:0|floatformat:0 }}</span>
+              </span>
+            </span>
+          </div>
+
+          <a class="card-cta" href="{{ brand.brand_url }}" aria-label="View {{ brand.name }}"></a>
+        </li>
       {% endfor %}
+    </ul>
 
-      <div id="inf-sentinel" style="grid-column:1/-1;height:1px"></div>
+    <!-- Infinite scroll: sentinel triggers the next fetch, loader/end/retry
+         are toggled by infinite-scroll JS below. No-JS users get the
+         classic pagination links inside <noscript>. -->
+    <div class="scroll-sentinel" id="scroll-sentinel" aria-hidden="true"></div>
+    <p class="scroll-loader" id="scroll-loader" hidden>
+      <span class="spinner" aria-hidden="true"></span> Loading more brands…
+    </p>
+    <p class="scroll-end" id="scroll-end" hidden>You've reached the end of the list.</p>
 
-    </div>{# /brand-grid #}
-
-    <div class="inf-loader" id="infLoader">
-      <div class="inf-spinner"></div> Loading more brands…
-    </div>
-    <div class="inf-end" id="infEnd">
-      <i class="fa-solid fa-check"></i> All brands loaded
-    </div>
-
-    {% if page_obj.paginator.num_pages > 1 %}
-    <nav class="pagination-wrapper" id="staticPagination" aria-label="Brand page navigation" style="display:none">
-      {% if page_obj.has_previous %}
-        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          <i class="fa-solid fa-chevron-left"></i> Previous
-        </a>
+    <noscript>
+      {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Brand directory pages" style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; padding-bottom:64px;">
+          {% if page_obj.has_previous %}
+            <a class="page-link"
+               href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page={{ page_obj.previous_page_number }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+               aria-label="Previous page">&lsaquo; Prev</a>
+          {% endif %}
+          <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a class="page-link"
+               href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page={{ page_obj.next_page_number }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+               aria-label="Next page">Next &rsaquo;</a>
+          {% endif %}
+        </nav>
       {% endif %}
+    </noscript>
 
-      {% for num in page_obj.paginator.page_range %}
-        {% if page_obj.number == num %}
-          <span class="page-item active"><span class="page-link">{{ num }}</span></span>
-        {% elif num == 1 or num == page_obj.paginator.num_pages %}
-          <a class="page-link page-number" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">{{ num }}</a>
-        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
-          <span class="page-ellipsis">&hellip;</span>
-        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-          <a class="page-link page-number" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">{{ num }}</a>
-        {% endif %}
-      {% endfor %}
+  {% else %}
 
-      {% if page_obj.has_next %}
-        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}">
-          Next <i class="fa-solid fa-chevron-right"></i>
-        </a>
-      {% endif %}
-    </nav>
-    {% endif %}
+    <div class="state-panel">
+      <h2>No brands match those filters</h2>
+      <p>
+        {% if query %}Nothing matched &ldquo;{{ query }}&rdquo; in this view.{% else %}This filter has no brands right now.{% endif %}
+        Try clearing your search or switching filters.
+      </p>
+      <a class="clear-link" href="?type=all&amp;sort=popular&amp;page=1">Clear all filters</a>
+    </div>
 
-  </div>{# /page-wrapper #}
+  {% endif %}
 
+  </div><!-- /aria-live results region -->
+
+</main>
+
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}{% else %}
 <script>
-function applySort(value) {
-  const url = new URL(window.location.href);
-  url.searchParams.set('sort', value);
-  url.searchParams.delete('page');
-  window.location.href = url.toString();
-}
+  document.documentElement.classList.add('js');
+
+  // Sticky sub-header shadow on scroll (below the global site nav)
+  (function(){
+    var header = document.getElementById('brand-directory-header');
+    if(!header) return;
+    var onScroll = function(){
+      header.classList.toggle('is-scrolled', window.scrollY > 4);
+    };
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+  })();
+
+  // Sort select navigates on change (progressive enhancement over the noscript form)
+  (function(){
+    var select = document.getElementById('sort-select');
+    if(!select) return;
+    select.addEventListener('change', function(){
+      var base = select.getAttribute('data-base-href');
+      window.location.href = base + encodeURIComponent(select.value);
+    });
+  })();
+
+  // Country code -> flag emoji, and locale-formatted counts. Extracted
+  // into reusable functions so infinite-scroll can re-run them on each
+  // freshly appended batch of cards, not just the initial page.
+  function decorateCountryFlags(root){
+    (root || document).querySelectorAll('[data-country]').forEach(function(el){
+      if (el.dataset.flagged) return; // avoid re-decorating on re-run
+      var code = (el.getAttribute('data-country') || '').trim().toUpperCase();
+      if(code.length !== 2) return;
+      var flag = String.fromCodePoint.apply(null, [...code].map(function(c){ return 127397 + c.charCodeAt(0); }));
+      el.textContent = flag + ' ' + code;
+      el.dataset.flagged = '1';
+    });
+  }
+
+  function decorateNumbers(root){
+    (root || document).querySelectorAll('[data-num]').forEach(function(el){
+      if (el.dataset.formatted) return;
+      var n = Number(el.getAttribute('data-num'));
+      if(!isNaN(n)) el.textContent = n.toLocaleString();
+      el.dataset.formatted = '1';
+    });
+  }
+
+  decorateCountryFlags();
+  decorateNumbers();
+
+  // ============================================================
+  // INFINITE SCROLL
+  // Fetches this same view (AJAX branch keyed on X-Requested-With)
+  // and appends the returned <li class="brand-card"> elements into
+  // #brand-results-grid as the sentinel scrolls into view. Falls
+  // back cleanly to the <noscript> pagination links above when JS
+  // is unavailable.
+  // ============================================================
+  (function(){
+    var grid     = document.getElementById('brand-results-grid');
+    var sentinel = document.getElementById('scroll-sentinel');
+    var loader   = document.getElementById('scroll-loader');
+    var endMsg   = document.getElementById('scroll-end');
+    var countEl  = document.getElementById('results-count');
+
+    if (!grid || !sentinel) return;
+
+    var currentPage = parseInt(grid.dataset.currentPage, 10) || 1;
+    var hasNext     = grid.dataset.hasNext === 'true';
+    var fetchBase   = grid.dataset.fetchUrl; // already has q/type/sort/brand params
+    var isLoading   = false;
+    var retryBtn    = null;
+
+    if (!hasNext) {
+      sentinel.remove();
+      endMsg.hidden = false;
+      return;
+    }
+
+    function buildUrl(page){
+      var sep = fetchBase.indexOf('?') === -1 ? '?' : '&';
+      return fetchBase + sep + 'page=' + page;
+    }
+
+    function clearRetry(){
+      if (retryBtn){ retryBtn.remove(); retryBtn = null; }
+    }
+
+    function showRetry(page){
+      clearRetry();
+      retryBtn = document.createElement('button');
+      retryBtn.type = 'button';
+      retryBtn.className = 'scroll-retry';
+      retryBtn.textContent = 'Couldn\u2019t load more brands — tap to retry';
+      retryBtn.addEventListener('click', function(){
+        clearRetry();
+        fetchNextPage(page);
+      }, { once:true });
+      sentinel.before(retryBtn);
+    }
+
+    function fetchNextPage(page){
+      if (isLoading) return;
+      isLoading = true;
+      loader.hidden = false;
+
+      fetch(buildUrl(page), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res){
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var nextHeader  = res.headers.get('X-Has-Next-Page');
+          var totalHeader = res.headers.get('X-Total-Count');
+          return res.text().then(function(html){
+            return { html: html, hasNext: nextHeader === 'true', total: totalHeader };
+          });
+        })
+        .then(function(result){
+          var temp = document.createElement('div');
+          temp.innerHTML = result.html;
+
+          var cards = temp.querySelectorAll('.brand-card');
+          var fragment = document.createDocumentFragment();
+          cards.forEach(function(card){ fragment.appendChild(card); });
+          grid.appendChild(fragment);
+
+          decorateCountryFlags(grid);
+          decorateNumbers(grid);
+
+          if (countEl && result.total) {
+            var n = Number(result.total);
+            if (!isNaN(n)) countEl.textContent = n.toLocaleString();
+          }
+
+          currentPage = page;
+          hasNext = result.hasNext;
+
+          if (!hasNext) {
+            sentinelObserver.unobserve(sentinel);
+            sentinel.remove();
+            endMsg.hidden = false;
+          }
+        })
+        .catch(function(err){
+          console.error('Infinite scroll fetch failed:', err);
+          showRetry(page);
+        })
+        .finally(function(){
+          isLoading = false;
+          loader.hidden = true;
+        });
+    }
+
+    var sentinelObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting && hasNext && !isLoading) {
+          fetchNextPage(currentPage + 1);
+        }
+      });
+    }, { root: null, rootMargin: '600px 0px', threshold: 0 });
+
+    sentinelObserver.observe(sentinel);
+  })();
 </script>
+{% endif %}
 {% endblock %}

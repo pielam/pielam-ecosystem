@@ -406,7 +406,7 @@
             <div class="upload-header">
 
                 <h1>Post Product</h1>
-                <p>Title and image are required — everything else is optional.</p>
+                <p>Title is required — everything else is optional.</p>
             </div>
 
             {% if messages %}
@@ -421,16 +421,16 @@
                 {% csrf_token %}
 
                 <div class="upload-grid-left">
-                    <!-- 1. IMAGE -->
+                    <!-- 1. IMAGE (optional) -->
                     <div class="form-group image-upload-area">
-                        <label for="id_image">Image <span class="required-mark">*</span></label>
+                        <label for="id_image">Image</label>
 
                         <label class="dropzone" id="dropzone" for="id_image" tabindex="0">
-                            <input type="file" name="image" id="id_image" accept="image/*" required>
+                            <input type="file" name="image" id="id_image" accept="image/*">
                             <div class="dropzone-content" id="dropzone-content">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <span class="dz-title">Click or drag an image here</span>
-                                <span class="dz-sub">JPG or PNG, up to 5MB</span>
+                                <span class="dz-sub">JPG or PNG, up to 5MB &mdash; optional</span>
                             </div>
                         </label>
 
@@ -461,7 +461,7 @@
                         >
                     </div>
 
-                    <!-- 3. SELLING PRICE -->
+                    {% comment %} <!-- 3. SELLING PRICE -->
                     <div class="form-group">
                         <label for="id_selling_price">Selling Price</label>
                         <input
@@ -473,18 +473,7 @@
                             placeholder="0.00"
                         >
                         <small class="form-text">Leave blank to default to 0.00</small>
-                    </div>
-
-                    <!-- 4. SERVICE TYPE -->
-                    <div class="form-group">
-                        <label for="id_service_type">Post Type</label>
-                        <select name="service_type" id="id_service_type">
-                            {% for value, label in service_type_choices %}
-                                <option value="{{ value }}" {% if form_data.service_type == value or not form_data.service_type and value == "product" %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text">Defaults to "Product" if left unchanged</small>
-                    </div>
+                    </div> {% endcomment %}
 
                     <div class="form-actions">
                         <a href="{% url 'ponno:home' %}" class="btn btn-secondary">

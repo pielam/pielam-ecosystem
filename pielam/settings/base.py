@@ -249,3 +249,8 @@ LOGGING = {
 }
 
 CELERY_ENABLED = False
+
+CONNECTED_SERVICE_SYNC_PRODUCT_ON_FETCH = True
+
+# Optional — only needed if you want service types beyond the default {"product", "brand"}
+CONNECTED_SERVICE_PRODUCT_SYNC_TYPES = {"product", "brand", "category", "subcategory", "education", "News", "location", "api", "person", "business", "entertainment"}

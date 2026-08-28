@@ -43,6 +43,19 @@ Architecture decisions
    per request. If/when this view's traffic grows, switch this to
    record_discovery_visit_task.delay(...) via Celery instead.
 
+9. CAMPAIGN PRICING: the price actually shown/charged is resolved via
+   apps.ponno.services.campaign_pricing.CampaignPricingService, NOT
+   read directly off Product.final_price/selling_price. A campaign
+   discounts from Product.brand_price (MRP) when the product has one
+   (see that service's _base_price() docstring) — so
+   CampaignPriceResult.final_price can be lower than, equal to, or
+   even higher than the dealer's own final_price, and it is always
+   preferred over the dealer's own price once a campaign applies.
+   Resolution is cache-aside with a short TTL (CAMPAIGN_PRICE_CACHE_TTL,
+   default 120s) — deliberately shorter than PRODUCT_DETAIL_CACHE_TTL,
+   since campaign eligibility is schedule/usage-cap driven and can flip
+   mid-lifetime of the cached product row.
+
 Dependencies
 ------------
 - Django cache backend that supports atomic incr (Redis recommended).
@@ -53,12 +66,15 @@ Dependencies
 - megamind.utils.video_info for video URL normalization (shared with
   the feed pipelines — see that module's docstring).
 - megamind.services.visit_logger for visitor telemetry (DiscoveryVisitLog).
+- apps.ponno.services.campaign_pricing for campaign/MRP-based price
+  resolution (see point 9 above).
 
 Settings expected
 -----------------
     PRODUCT_DETAIL_CACHE_TTL        = 300      # seconds (product row)
     PRODUCT_CATEGORY_CACHE_TTL      = 3600     # seconds (category list)
     PRODUCT_RELATED_CACHE_TTL       = 600      # seconds (related products)
+    PRODUCT_CAMPAIGN_PRICE_CACHE_TTL = 120     # seconds (campaign price)
     PRODUCT_VIEW_FLUSH_PROBABILITY  = 0.01     # 1 % of requests flush counts
     RECENTLY_VIEWED_MAX             = 10       # items kept in session list
     USE_CELERY                      = True     # set False to disable async tasks
@@ -86,6 +102,7 @@ from apps.ponno.models.category import Category
 from apps.ponno.models.product import Product, ProductView, Wishlist
 from apps.ponno.models.rating import ProductRating
 from apps.ponno.feed_algorithm import FeedEngine, load_user_affinity
+from apps.ponno.services.campaign_pricing import CampaignPricingService, CampaignPriceResult
 from megamind.utils.video_info import get_video_info_cached
 from megamind.services.visit_logger import record_discovery_visit
 
@@ -95,12 +112,13 @@ logger = logging.getLogger(__name__)
 # Configuration helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-PRODUCT_CACHE_TTL   = getattr(settings, "PRODUCT_DETAIL_CACHE_TTL",       300)
-CATEGORY_CACHE_TTL  = getattr(settings, "PRODUCT_CATEGORY_CACHE_TTL",     3600)
-RELATED_CACHE_TTL   = getattr(settings, "PRODUCT_RELATED_CACHE_TTL",      600)
-FLUSH_PROBABILITY   = getattr(settings, "PRODUCT_VIEW_FLUSH_PROBABILITY", 0.01)
-RECENTLY_VIEWED_MAX = getattr(settings, "RECENTLY_VIEWED_MAX",            10)
-USE_CELERY          = getattr(settings, "USE_CELERY",                     False)
+PRODUCT_CACHE_TTL         = getattr(settings, "PRODUCT_DETAIL_CACHE_TTL",         300)
+CATEGORY_CACHE_TTL        = getattr(settings, "PRODUCT_CATEGORY_CACHE_TTL",       3600)
+RELATED_CACHE_TTL         = getattr(settings, "PRODUCT_RELATED_CACHE_TTL",        600)
+CAMPAIGN_PRICE_CACHE_TTL  = getattr(settings, "PRODUCT_CAMPAIGN_PRICE_CACHE_TTL", 120)
+FLUSH_PROBABILITY         = getattr(settings, "PRODUCT_VIEW_FLUSH_PROBABILITY",   0.01)
+RECENTLY_VIEWED_MAX       = getattr(settings, "RECENTLY_VIEWED_MAX",              10)
+USE_CELERY                = getattr(settings, "USE_CELERY",                       False)
 
 # Redis key prefixes
 _PK_PRODUCT         = "pd:product:{slug}"
@@ -110,6 +128,7 @@ _PK_CATEGORIES      = "pd:categories"
 _PK_VIEW_COUNTER    = "pd:vc:{pk}"
 _PK_RECENTLY_VIEWED = "pd:rv:{user_pk}"
 _PK_SUGGESTED       = "pd:suggested:{product_pk}:{user_pk}"
+_PK_CAMPAIGN_PRICE  = "pd:campaign_price:{pk}"
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -163,23 +182,63 @@ def _format_product_prices(product: Product) -> dict:
     }
 
 
-def _annotate_card_prices(products: list) -> list:
+def _annotate_card_prices(products: list, campaign_results: Optional[dict] = None) -> list:
     """
     Attach  .fmt_selling_price, .fmt_final_price, .fmt_brand_price,
-    .show_brand_price, .show_selling_price, and .price_hidden  directly
-    onto each product object in a list so the card HTML can react to
-    per-product price-visibility flags without extra template lookups.
+    .show_brand_price, .show_selling_price, .price_hidden, and the
+    campaign-specific fields below directly onto each product object in
+    a list, so the card HTML can react to per-product price-visibility
+    flags and campaign discounts without extra template lookups.
+
+    campaign_results: optional {product.pk: CampaignPriceResult} from
+    CampaignPricingService.get_effective_prices_bulk() — pass this in
+    (resolved once for the whole page) rather than calling the service
+    per card list, to keep this a single bulk campaign query per request
+    instead of three.
+
+    Adds, per product:
+      .has_campaign_discount   bool — a campaign is actively discounting
+                                this product AND its price is visible.
+      .campaign_name           str or None — name of the applied
+                                campaign (first one, if stacked).
+      .fmt_campaign_original_price
+                                the MRP the campaign discounted from,
+                                formatted — only set when there IS a
+                                campaign discount AND the product's own
+                                MRP is meant to be customer-visible
+                                (is_brand_price_visible). A campaign
+                                discount still applies and .fmt_final_price
+                                still reflects it even when this is None
+                                — it just means no "was X" reference
+                                price gets shown alongside it.
     """
+    campaign_results = campaign_results or {}
+
     for p in products:
         show_selling = bool(getattr(p, "is_selling_price_visible", True))
         show_brand   = bool(getattr(p, "is_brand_price_visible", True))
 
+        result: Optional[CampaignPriceResult] = campaign_results.get(p.pk)
+        has_campaign_discount = bool(result and result.has_discount and show_selling)
+
+        effective_final = result.final_price if has_campaign_discount else p.final_price
+
         p.fmt_selling_price = format_price(p.selling_price) if show_selling else None
-        p.fmt_final_price   = format_price(p.final_price) if show_selling else None
+        p.fmt_final_price   = format_price(effective_final) if show_selling else None
         p.fmt_brand_price   = format_price(p.brand_price) if (show_brand and p.brand_price) else None
         p.show_selling_price = show_selling
         p.show_brand_price    = show_brand
         p.price_hidden        = not (show_selling or show_brand)
+
+        p.has_campaign_discount = has_campaign_discount
+        p.campaign_name = (
+            result.campaign.name if (has_campaign_discount and result.campaign) else None
+        )
+        p.fmt_campaign_original_price = (
+            format_price(result.original_price)
+            if (has_campaign_discount and show_brand)
+            else None
+        )
     return products
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -306,6 +365,68 @@ def _get_dealer_products(product: Product) -> list:
         cache.set(cache_key, dealer_prods, _ttl_with_jitter(RELATED_CACHE_TTL))
     return dealer_prods
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Campaign pricing (cache-aside)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _get_effective_price(product: Product) -> CampaignPriceResult:
+    """
+    Cache-aside wrapper around CampaignPricingService.get_effective_price()
+    for the single hero product on this page.
+
+    Short TTL (CAMPAIGN_PRICE_CACHE_TTL, default 120s) relative to
+    PRODUCT_CACHE_TTL (default 300s) is deliberate: campaign eligibility
+    is schedule/usage-cap driven (start_at/end_at, usage_limit_total) and
+    can flip well before the cached product row itself expires — a
+    campaign ending at 9:00pm shouldn't still be advertised at 9:04pm
+    just because the product cache entry has 4 minutes left to live.
+    """
+    cache_key = _PK_CAMPAIGN_PRICE.format(pk=product.pk)
+    result = cache.get(cache_key)
+    if result is None:
+        result = CampaignPricingService.get_effective_price(product)
+        cache.set(cache_key, result, _ttl_with_jitter(CAMPAIGN_PRICE_CACHE_TTL))
+    return result
+
+
+def _get_effective_prices_bulk_for_cards(*product_lists: list) -> dict:
+    """
+    Resolve campaign prices once for every product appearing across all
+    of the card lists on this page (related / dealer / suggested),
+    instead of calling CampaignPricingService three separate times.
+    Not cached at this layer (each card list is itself already cached
+    upstream in _get_related_products/_get_dealer_products/
+    _get_suggested_products, and campaign resolution against an
+    already-in-memory list of <= ~24 products is cheap — see that
+    service's own docstring on why it doesn't need per-call caching).
+    """
+    combined: list = []
+    seen_pks: set = set()
+    for products in product_lists:
+        for p in products:
+            if p.pk not in seen_pks:
+                combined.append(p)
+                seen_pks.add(p.pk)
+
+    if not combined:
+        return {}
+    return CampaignPricingService.get_effective_prices_bulk(combined)
+
+
+def invalidate_product_campaign_price_cache(product: Product) -> None:
+    """
+    Call this from wherever a Campaign is created/edited/enabled/disabled
+    (e.g. CampaignCreateView / CampaignEditView, for every product in its
+    scope) to make a campaign change visible immediately instead of
+    waiting out CAMPAIGN_PRICE_CACHE_TTL. Not wired up automatically here
+    since this view has no visibility into which products a campaign
+    save affects — the short TTL is the fallback safety net if this
+    isn't called.
+    """
+    cache.delete(_PK_CAMPAIGN_PRICE.format(pk=product.pk))
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Non-blocking analytics
 # ──────────────────────────────────────────────────────────────────────────────
@@ -399,7 +520,11 @@ def _update_session_recently_viewed(request, product_id_str: str) -> None:
 # SEO helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-def _build_structured_data(request, product: Product) -> dict:
+def _build_structured_data(
+    request,
+    product: Product,
+    campaign_price: Optional[CampaignPriceResult] = None,
+) -> dict:
     image_url = ""
     if product.image:
         try:
@@ -427,11 +552,20 @@ def _build_structured_data(request, product: Product) -> dict:
     # interpreting the product as free or flagging a structured-data mismatch
     # against what a visitor sees on the page.
     if show_selling_price:
+        # Prefer the campaign-resolved price when a campaign is actively
+        # discounting this product — that's the price a shopper actually
+        # pays, and structured data should never advertise a price the
+        # page itself doesn't charge.
+        if campaign_price is not None and campaign_price.has_discount:
+            effective_price = campaign_price.final_price
+        else:
+            effective_price = product.final_price or product.selling_price
+
         data["offers"] = {
             "@type":           "Offer",
             "url":             request.build_absolute_uri(),
             "priceCurrency":   product.currency,
-            "price":           str(product.final_price or product.selling_price),
+            "price":           str(effective_price),
             "priceValidUntil": (timezone.now() + timezone.timedelta(days=30)).strftime("%Y-%m-%d"),
             "itemCondition":   "https://schema.org/NewCondition",
             "availability": (
@@ -592,22 +726,51 @@ def ProductDetailView(request, slug: str):
     dealer_products     = _get_dealer_products(product)
     suggested_products = _get_suggested_products(product, request.user)
 
-    # ── 5. Format prices on card lists (attaches .fmt_* attrs in-place) ───────
-    _annotate_card_prices(related_products)
-    _annotate_card_prices(dealer_products)
-    _annotate_card_prices(suggested_products)
+    # ── 4b. Campaign price resolution ─────────────────────────────────────────
+    # One resolution for the hero product (cached, short TTL) and one bulk
+    # resolution shared across all three card lists (see helper docstrings
+    # above for why each is cached the way it is).
+    campaign_price = _get_effective_price(product)
+    card_campaign_results = _get_effective_prices_bulk_for_cards(
+        related_products, dealer_products, suggested_products
+    )
 
-# ── 6. Derived values ─────────────────────────────────────────────────────
+    # ── 5. Format prices on card lists (attaches .fmt_* attrs in-place) ───────
+    _annotate_card_prices(related_products, card_campaign_results)
+    _annotate_card_prices(dealer_products, card_campaign_results)
+    _annotate_card_prices(suggested_products, card_campaign_results)
+
+    # ── 6. Derived values ─────────────────────────────────────────────────────
     show_brand_price   = bool(product.is_brand_price_visible)
     show_buying_price  = bool(product.is_buying_price_visible)
     show_selling_price = bool(product.is_selling_price_visible)
 
+    has_campaign_discount = bool(campaign_price.has_discount and show_selling_price)
+
+    # The price actually charged: the campaign's resolved price when one is
+    # applicable, otherwise the dealer's own final_price (falling back to
+    # selling_price if final_price was somehow never computed).
+    effective_selling_price = (
+        campaign_price.final_price
+        if has_campaign_discount
+        else (product.final_price if product.final_price is not None else product.selling_price)
+    )
+
     savings = savings_pct = 0
-    if (
+    if has_campaign_discount:
+        # Campaign savings — computed against whatever _base_price() used
+        # inside CampaignPricingService (brand_price/MRP when the product
+        # has one, else the dealer's own final_price/selling_price).
+        savings = campaign_price.total_discount
+        if campaign_price.original_price and campaign_price.original_price > 0:
+            savings_pct = float(savings / campaign_price.original_price * 100)
+    elif (
         show_brand_price and show_selling_price
         and product.brand_price and product.selling_price
         and product.brand_price > 0
     ):
+        # No active campaign — fall back to the dealer's own MRP vs.
+        # selling_price markdown, exactly as before.
         savings     = product.brand_price - product.selling_price
         savings_pct = float(savings / product.brand_price * 100)
 
@@ -617,7 +780,7 @@ def ProductDetailView(request, slug: str):
     show_dealer_email = bool(profileinfo and profileinfo.show_email)
 
     # ── 8. SEO ────────────────────────────────────────────────────────────────
-    structured_data = _build_structured_data(request, product)
+    structured_data = _build_structured_data(request, product, campaign_price)
     meta            = _build_meta(product)
 
     og_image = ""
@@ -650,18 +813,33 @@ def ProductDetailView(request, slug: str):
     # ── 11. Pre-format main product prices ────────────────────────────────────
 
     product.fmt_selling_price = format_price(product.selling_price) if show_selling_price else None
-    product.fmt_final_price   = format_price(product.final_price) if show_selling_price else None
+    # fmt_final_price is now the EFFECTIVE price — campaign-adjusted when a
+    # campaign applies, the dealer's own final_price otherwise. This is the
+    # number the template's primary "current price" display should read.
+    product.fmt_final_price   = format_price(effective_selling_price) if show_selling_price else None
     product.fmt_brand_price   = format_price(product.brand_price) if (show_brand_price and product.brand_price) else None
     product.fmt_buying_price = format_price(product.buying_price) if (show_buying_price and product.buying_price) else None
     product.fmt_shipping_cost = format_price(product.shipping_cost)
-    product.fmt_savings       = format_price(savings) if (show_brand_price and show_selling_price) else None
+    product.fmt_savings       = format_price(savings) if (savings and show_selling_price) else None
     product.price_hidden      = not (show_selling_price or show_brand_price)
 
-    # ⬇ ADD THESE — the template's price block reads product.show_brand_price /
-    # product.show_selling_price, but only price_hidden was ever attached above.
     product.show_brand_price   = show_brand_price
     product.show_buying_price  = show_buying_price
     product.show_selling_price = show_selling_price
+
+    # ── 11b. Campaign badge fields for the template ───────────────────────────
+    product.has_campaign_discount = has_campaign_discount
+    product.campaign = campaign_price.campaign if has_campaign_discount else None
+    # "Was X" reference price for the campaign badge. Gated on show_brand_price
+    # on purpose: a campaign discount still applies and fmt_final_price still
+    # reflects it even when this is None — it just means the underlying MRP
+    # itself stays undisclosed if the dealer chose to hide it, rather than a
+    # campaign silently exposing a price the dealer marked hidden.
+    product.fmt_campaign_original_price = (
+        format_price(campaign_price.original_price)
+        if (has_campaign_discount and show_brand_price)
+        else None
+    )
 
     # ── 12. Context ───────────────────────────────────────────────────────────
     context = {
@@ -681,6 +859,11 @@ def ProductDetailView(request, slug: str):
         "show_buying_price":   show_buying_price,
         "show_selling_price":  show_selling_price,
         "price_hidden":        product.price_hidden,
+
+        # Campaign pricing
+        "has_campaign_discount":         product.has_campaign_discount,
+        "campaign":                       product.campaign,
+        "fmt_campaign_original_price":    product.fmt_campaign_original_price,
 
         **meta,
         "og_image":            og_image,
@@ -706,6 +889,7 @@ def invalidate_product_cache(product: Product) -> None:
         _PK_PRODUCT.format(slug=product.slug),
         _PK_RELATED.format(pk=product.pk),
         _PK_DEALER_PRODS.format(pk=product.dealer_id),
+        _PK_CAMPAIGN_PRICE.format(pk=product.pk),
     ]
     cache.delete_many(keys)
 

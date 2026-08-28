@@ -673,7 +673,14 @@
   <a href="{% url 'service_profile' %}" class="profile-action-btn profile-action-btn--ghost">
     <i class="fas fa-spider"></i>
     <span>Engine</span>
-  </a> 
+  </a>  
+
+  {% if user.role == 'dealer' %}
+  <a href="{% url 'customer:campaign_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fas fa-bullhorn"></i>
+    <span>Campaign</span>
+  </a>
+  {% endif %}
 
   {% if profile_completion == 100 %}
   <a href="{% url 'customer:dashboard' %}" class="profile-action-btn profile-action-btn--ghost">

@@ -1,7 +1,12 @@
 # apps/ponno/views/brand_list.py
 """
 BrandListView — Production-grade, high-traffic brand listing view.
-Upgraded for millions of requests / second.
+
+This file was previously a near-duplicate of ProductListView (it queried
+Product with product-only fields — SKU, price, stock, category, rating —
+none of which exist on Brand), and it rendered a mix of
+'ponno/product_list.html' and 'ponno/brand_list.html' inconsistently.
+It has been rewritten here to actually match apps/ponno/models/brand.py:
 
 Architecture (all in one file, sectioned)
 ──────────────────────────────────────────
@@ -11,24 +16,58 @@ Architecture (all in one file, sectioned)
 §4  Circuit breaker           (CircuitBreaker) DB cascade protection
 §5  Stats manager             (get_brand_stats) single-SQL aggregation
 §6  Core data builder         (_build_context)
-§7  View                      (BrandListView)
+§7  View                      (BrandListView) — full page + infinite scroll
+§8  Backfill utility          (backfill_brand_product_counts) — one-off repair
 
-Key upgrades over v1
-────────────────────
-1.  L1 in-process LRU — zero-network reads (<1 µs) before hitting Redis.
-2.  Request coalescing — on a cold miss only ONE thread queries the DB;
-    all concurrent requests wait on a per-key RLock then read from cache.
-3.  Circuit breaker — opens after 5 DB failures, fast-fails for 30 s,
-    preventing thread pile-up and connection pool exhaustion.
-4.  Single-SQL stats — SUM(CASE WHEN ...) replaces a full table scan +
-    Python-side counting loop.
-5.  ThreadPoolExecutor (bounded, 4 workers) replaces raw Thread() for
-    stale-while-revalidate refreshes.
-6.  If-Modified-Since conditional GET support added.
-7.  Cache-Control: s-maxage for CDN, max-age for browser, independent.
-8.  Double-keyed stale stats (fresh TTL + 1-hr stale fallback).
-9.  ETag via BLAKE2b — faster than MD5/SHA-256 for non-security use.
-10. page_obj queryset fully evaluated before caching — no cursor leaks.
+Notes vs. the old (Product-shaped) version
+────────────────────────────────────────────
+- No price/stock/category/SKU/rating fields exist on Brand, so price
+  filtering, price sorts, and the nested brand/category serializers
+  have all been removed — there's nothing on Brand to hang them off.
+- Type filter now maps to real Brand boolean flags: is_featured,
+  is_trending, is_verified, is_official, is_trusted.
+- Sort options now use real Brand fields: popularity_score / view_count
+  (popular), product_count (most_products), brand_created_at (newest),
+  brand_name (name_asc/name_desc). There's no price/rating equivalent.
+- The single "highlight one item" query param now highlights a specific
+  *brand* by brand_slug (there's no sub-filtering-by-brand concept here,
+  since this view lists brands themselves).
+- Template rendered is always 'ponno/brand_list.html' for full page loads
+  (previously one error branch pointed at 'ponno/product_list.html' by
+  mistake), and 'ponno/partials/brand_cards.html' for infinite-scroll
+  AJAX requests (see §7).
+- Uses Brand.objects.active_brands() / the model's logo_url / brand_url
+  properties rather than re-deriving that logic in the view.
+
+Infinite scroll (§7)
+────────────────────────────
+The view now detects AJAX "load more" requests (X-Requested-With:
+XMLHttpRequest header, or ?ajax=1 as a fallback) and renders ONLY the
+brand cards partial instead of the full HTML document. Pagination state
+is returned via response headers (X-Has-Next-Page, X-Next-Page,
+X-Total-Count) so the frontend doesn't need to parse a JSON body.
+The initial page load is unaffected — it's still a full, cacheable,
+SEO-friendly HTML document. `Vary` now includes `X-Requested-With` so
+a CDN/browser cache never confuses a partial response for a full page
+(or vice versa) at the same URL.
+
+Product count backfill (§8)
+────────────────────────────
+Brand.product_count is a cached column (Brand.update_product_count()).
+apps/ponno/signals.py keeps it correct going forward (see the
+PRODUCT → BRAND.PRODUCT_COUNT section there), but that signal only
+fires on future Product saves/deletes — it does nothing for brands
+whose count was already stale/zero from before the signal existed.
+backfill_brand_product_counts() at the bottom of this file is the
+one-off repair for that. Run it once from a shell after deploying the
+signal:
+
+    python manage.py shell -c "
+    from apps.ponno.views.brand_list import backfill_brand_product_counts
+    backfill_brand_product_counts()
+    "
+
+It does not touch _page_cache (see §8 docstring for why that's fine).
 """
 
 from __future__ import annotations
@@ -45,7 +84,7 @@ from typing import Any, Callable, Optional
 
 from django.core.cache import cache
 from django.core.paginator import InvalidPage, Paginator
-from django.db import OperationalError, connection
+from django.db import OperationalError, connection, transaction
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import render
@@ -67,23 +106,31 @@ CACHE_TTL       = 60      # seconds — fresh window
 STALE_TTL       = 30      # seconds — serve stale while refreshing
 MAX_PAGE        = 500
 MAX_Q_LEN       = 120
-MAX_SLUG_LEN    = 80
+MAX_SLUG_LEN    = 160     # Brand.brand_slug is max_length=160
 
-VALID_SORTS = frozenset({'popular', 'newest', 'name_asc', 'name_desc'})
-VALID_TYPES = frozenset({'all', 'verified', 'featured', 'trending', 'official'})
+VALID_SORTS = frozenset({
+    'popular', 'most_products', 'newest', 'name_asc', 'name_desc',
+})
+VALID_TYPES = frozenset({
+    'all', 'featured', 'trending', 'verified', 'official', 'trusted',
+})
 
 SORT_MAP = {
-    'popular':   ('-popularity_score', '-product_count'),
-    'newest':    ('-brand_created_at',),
-    'name_asc':  ('brand_name',),
-    'name_desc': ('-brand_name',),
+    'popular':       ('-popularity_score', '-view_count'),
+    'most_products': ('-product_count', '-popularity_score'),
+    'newest':        ('-brand_created_at',),
+    'name_asc':      ('brand_name',),
+    'name_desc':     ('-brand_name',),
 }
 
+# Fields actually needed to render a brand card — kept to real Brand columns.
 ONLY_FIELDS = (
-    'pk', 'brand_name', 'brand_slug', 'brand_tagline',
-    'brand_logo', 'brand_type', 'country_of_origin',
-    'is_verified', 'is_featured', 'is_trending', 'is_official',
-    'is_trusted', 'product_count', 'view_count', 'popularity_score',
+    'pk', 'brand_name', 'brand_slug', 'brand_type', 'brand_tagline',
+    'brand_logo', 'country_of_origin',
+    'is_verified', 'is_featured', 'is_trending', 'is_official', 'is_trusted',
+    'view_count', 'product_count', 'category_count', 'subcategory_count',
+    'popularity_score', 'average_rating', 'review_count',
+    'brand_created_at',
 )
 
 # L1 cache limits
@@ -91,14 +138,23 @@ _L1_MAX_ENTRIES = 512   # bounded so it never OOMs
 _L1_TTL         = 5     # seconds — short; process restarts are cheap
 
 # Stats cache keys & TTLs
-_STATS_CACHE_KEY = 'brandlist_stats_v3'
-_STATS_LOCK_KEY  = 'brandlist_stats_lock_v3'
-_STATS_STALE_KEY = 'brandlist_stats_stale_v3'
+_STATS_CACHE_KEY = 'brandlist_stats_v1'
+_STATS_LOCK_KEY  = 'brandlist_stats_lock_v1'
+_STATS_STALE_KEY = 'brandlist_stats_stale_v1'
 _STATS_CACHE_TTL = 300    # 5 min  — fresh
 _STATS_STALE_TTL = 3600   # 1 hr   — long-lived fallback
 _STATS_LOCK_TTL  = 15     # seconds
 
-_EMPTY_STATS: dict = {'total': 0, 'verified': 0, 'featured': 0, 'trending': 0}
+_EMPTY_STATS: dict = {
+    'total': 0, 'featured': 0, 'trending': 0,
+    'verified': 0, 'official': 0, 'trusted': 0,
+}
+
+# Backfill defaults (§8)
+_BACKFILL_BATCH_SIZE = 200
+
+# Infinite scroll (§7)
+BRAND_CARDS_PARTIAL_TEMPLATE = 'ponno/brand_list.html'
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -152,10 +208,8 @@ class _L1Cache:
 # §3  TWO-LAYER CACHE  (L1 + Redis)
 # ════════════════════════════════════════════════════════════════════════════
 
-# Singletons — one per worker process, shared across threads
 _l1 = _L1Cache(max_size=_L1_MAX_ENTRIES, ttl=_L1_TTL)
 
-# Per-key RLocks for thundering-herd prevention (request coalescing)
 _coalesce_locks: dict[str, RLock] = {}
 _coalesce_meta_lock = RLock()
 
@@ -180,7 +234,6 @@ class TwoLayerCache:
         self.stale_ttl = stale_ttl
 
     def get(self, key: str) -> Optional[dict]:
-        """L1 → L2. Returns None on full miss."""
         found, value = _l1.get(key)
         if found:
             return value
@@ -194,7 +247,6 @@ class TwoLayerCache:
         return value
 
     def set(self, key: str, value: dict) -> None:
-        """Write to L1 and L2."""
         _l1.set(key, value)
         try:
             cache.set(key, value, self.ttl + self.stale_ttl)
@@ -202,7 +254,6 @@ class TwoLayerCache:
             log.warning("Redis SET failed key=%s", key)
 
     def invalidate(self, key: str) -> None:
-        """Purge from both layers — call after admin edits."""
         _l1.delete(key)
         try:
             cache.delete(key)
@@ -220,13 +271,6 @@ class TwoLayerCache:
         kwargs: dict = None,
         warm_async_fn: Optional[Callable] = None,
     ) -> Optional[dict]:
-        """
-        Cache-aside with stale-while-revalidate + request coalescing.
-
-        On a cache hit:  return immediately; fire async refresh if stale.
-        On a cold miss:  acquire per-key lock → only one thread builds;
-                         others wait, then read from the freshly warmed cache.
-        """
         if kwargs is None:
             kwargs = {}
 
@@ -236,10 +280,9 @@ class TwoLayerCache:
                 warm_async_fn(key, builder, *args, **kwargs)
             return ctx
 
-        # Cold miss — serialize concurrent requests for this key
         lock = _get_coalesce_lock(key)
         with lock:
-            ctx = self.get(key)   # double-check after acquiring lock
+            ctx = self.get(key)
             if ctx is not None:
                 return ctx
             try:
@@ -271,13 +314,9 @@ class CircuitBreaker:
     """
     Thread-safe circuit breaker.
 
-    CLOSED   → All calls go through.
-    OPEN     → Fast-fail for reset_timeout seconds.
+    CLOSED    → All calls go through.
+    OPEN      → Fast-fail for reset_timeout seconds.
     HALF_OPEN → One probe call; success → CLOSED, failure → OPEN again.
-
-    Without a breaker, a slow DB cascades:
-      threads pile up → connection pool exhausts → OOM / 504 storm.
-    With a breaker, callers fail instantly and the DB gets breathing room.
     """
 
     def __init__(
@@ -371,21 +410,17 @@ _brand_db_breaker = CircuitBreaker(
 
 def _compute_stats_sql() -> dict:
     """
-    Single aggregation query — one DB round-trip for all four counts.
-
-    SUM(CASE WHEN ...) works on PostgreSQL, MySQL, and SQLite.
-    On PostgreSQL this runs as an index-only aggregate scan —
-    sub-millisecond regardless of table size.
-
-    The original code fetched ALL rows into Python and counted in a
-    loop — a full sequential scan on every stats cache miss.
+    Single aggregation query — one DB round-trip for all six counts.
+    Matches Brand's real flags (Meta.db_table = 'brands').
     """
     sql = """
         SELECT
-            COUNT(*)                                        AS total,
-            SUM(CASE WHEN is_verified  THEN 1 ELSE 0 END)  AS verified,
-            SUM(CASE WHEN is_featured  THEN 1 ELSE 0 END)  AS featured,
-            SUM(CASE WHEN is_trending  THEN 1 ELSE 0 END)  AS trending
+            COUNT(*)                                      AS total,
+            SUM(CASE WHEN is_featured THEN 1 ELSE 0 END)  AS featured,
+            SUM(CASE WHEN is_trending THEN 1 ELSE 0 END)  AS trending,
+            SUM(CASE WHEN is_verified THEN 1 ELSE 0 END)  AS verified,
+            SUM(CASE WHEN is_official THEN 1 ELSE 0 END)  AS official,
+            SUM(CASE WHEN is_trusted  THEN 1 ELSE 0 END)  AS trusted
         FROM brands
         WHERE is_active = TRUE
           AND deleted_at IS NULL
@@ -397,26 +432,21 @@ def _compute_stats_sql() -> dict:
     if not row:
         return _EMPTY_STATS.copy()
 
-    total, verified, featured, trending = row
+    total, featured, trending, verified, official, trusted = row
     return {
         'total':    int(total    or 0),
-        'verified': int(verified or 0),
         'featured': int(featured or 0),
         'trending': int(trending or 0),
+        'verified': int(verified or 0),
+        'official': int(official or 0),
+        'trusted':  int(trusted  or 0),
     }
 
 
 def get_brand_stats() -> dict:
     """
-    Return brand stats with a double-keyed cache strategy:
-
-    1. Fresh key (5 min TTL)    → return immediately on hit.
-    2. Acquire Redis lock        → compute, write both fresh + stale keys.
-    3. Lock not acquired         → another worker is computing; return stale.
-    4. DB error / breaker open   → return stale key (up to 1 hr old) or zeros.
-
-    The stale key surviving 1 hr means a Redis flush never causes a
-    thundering herd on the stats query — workers always have a fallback.
+    Double-keyed cache strategy: fresh key (5 min) → lock-guarded compute
+    → 1 hr stale fallback → zeros.
     """
     stats = cache.get(_STATS_CACHE_KEY)
     if stats:
@@ -448,10 +478,7 @@ def get_brand_stats() -> dict:
 
 
 def invalidate_stats() -> None:
-    """
-    Call from admin actions or post_save signals when brand flags change,
-    so stats refresh within one cache cycle rather than waiting 5 min.
-    """
+    """Call from admin actions / post_save signals when brand flags change."""
     cache.delete_many([_STATS_CACHE_KEY, _STATS_STALE_KEY, _STATS_LOCK_KEY])
     log.info("Brand stats cache invalidated")
 
@@ -462,7 +489,7 @@ def invalidate_stats() -> None:
 
 def _build_context(
     query: str,
-    brand_slug: str,
+    highlight_slug: str,
     filter_type: str,
     sort_by: str,
     page_number: int,
@@ -471,11 +498,7 @@ def _build_context(
     Fetch → filter → paginate → serialise.
 
     Returns a plain dict with no live ORM objects — safe to cache and
-    share across threads.  Returns None on DB error or invalid page.
-
-    The queryset is fully evaluated inside this function (list comprehension
-    over page_obj) so the DB cursor closes before the dict is returned.
-    No connection leaks into the cache layer.
+    share across threads. Returns None on DB error or invalid page.
     """
     try:
         qs = Brand.objects.active_brands().only(*ONLY_FIELDS)
@@ -483,9 +506,9 @@ def _build_context(
         # ── Highlighted brand ────────────────────────────────────────────
         highlighted_pk    = None
         highlighted_brand = None
-        if brand_slug:
+        if highlight_slug:
             try:
-                hb = qs.get(brand_slug=brand_slug)
+                hb = qs.get(brand_slug=highlight_slug)
                 highlighted_pk    = hb.pk
                 highlighted_brand = {
                     'pk':         hb.pk,
@@ -495,21 +518,21 @@ def _build_context(
             except Brand.DoesNotExist:
                 pass
 
-        # ── Search ───────────────────────────────────────────────────────
+        # ── Search — mirrors BrandManager.search_brands() ───────────────
         if query:
             qs = qs.filter(
-                Q(brand_name__icontains=query)        |
+                Q(brand_name__icontains=query) |
                 Q(brand_description__icontains=query) |
-                Q(company_name__icontains=query)      |
-                Q(brand_tagline__icontains=query)
+                Q(brand_slug__icontains=query)
             )
 
-        # ── Type filter ──────────────────────────────────────────────────
+        # ── Type filter — real Brand boolean flags ───────────────────────
         _filter_map = {
-            'verified': {'is_verified': True},
             'featured': {'is_featured': True},
             'trending': {'is_trending': True},
+            'verified': {'is_verified': True},
             'official': {'is_official': True},
+            'trusted':  {'is_trusted': True},
         }
         if filter_type in _filter_map:
             qs = qs.filter(**_filter_map[filter_type])
@@ -527,22 +550,23 @@ def _build_context(
         # ── Serialise — evaluate queryset HERE, cursor closes before return
         brands = [
             {
-                'id':            b.pk,
-                'name':          b.brand_name,
-                'slug':          b.brand_slug,
-                'tagline':       b.brand_tagline or '',
-                'logo':          b.logo_url,
-                'type':          b.brand_type,
-                'country':       b.country_of_origin or '',
-                'is_verified':   b.is_verified,
-                'is_featured':   b.is_featured,
-                'is_trending':   b.is_trending,
-                'is_official':   b.is_official,
-                'is_trusted':    b.is_trusted,
-                'product_count': b.product_count,
-                'view_count':    b.view_count,
-                'brand_url':     b.brand_url,
-                'highlighted':   (b.pk == highlighted_pk) if highlighted_pk else False,
+                'id':                b.pk,
+                'name':              b.brand_name,
+                'slug':              b.brand_slug,
+                'type':              b.brand_type,
+                'tagline':           b.brand_tagline or '',
+                'logo':              b.logo_url,
+                'country':           b.country_of_origin,
+                'product_count':     b.product_count,
+                'view_count':        b.view_count,
+                'popularity_score':  b.popularity_score,
+                'is_verified':       b.is_verified,
+                'is_featured':       b.is_featured,
+                'is_trending':       b.is_trending,
+                'is_official':       b.is_official,
+                'is_trusted':        b.is_trusted,
+                'brand_url':         b.brand_url,
+                'highlighted':       (b.pk == highlighted_pk) if highlighted_pk else False,
             }
             for b in page_obj
         ]
@@ -552,23 +576,25 @@ def _build_context(
 
         # ── UI metadata ──────────────────────────────────────────────────
         sort_options = [
-            {'value': 'popular',   'label': 'Most Popular', 'active': sort_by == 'popular'},
-            {'value': 'newest',    'label': 'Newest First',  'active': sort_by == 'newest'},
-            {'value': 'name_asc',  'label': 'Name A → Z',   'active': sort_by == 'name_asc'},
-            {'value': 'name_desc', 'label': 'Name Z → A',   'active': sort_by == 'name_desc'},
+            {'value': 'popular',       'label': 'Most Popular',   'active': sort_by == 'popular'},
+            {'value': 'most_products', 'label': 'Most Products',  'active': sort_by == 'most_products'},
+            {'value': 'newest',        'label': 'Newest First',   'active': sort_by == 'newest'},
+            {'value': 'name_asc',      'label': 'Name A → Z',     'active': sort_by == 'name_asc'},
+            {'value': 'name_desc',     'label': 'Name Z → A',     'active': sort_by == 'name_desc'},
         ]
         filter_tabs = [
             {'value': 'all',      'label': 'All',      'count': stats['total'],    'active': filter_type == 'all'},
-            {'value': 'verified', 'label': 'Verified', 'count': stats['verified'], 'active': filter_type == 'verified'},
             {'value': 'featured', 'label': 'Featured', 'count': stats['featured'], 'active': filter_type == 'featured'},
             {'value': 'trending', 'label': 'Trending', 'count': stats['trending'], 'active': filter_type == 'trending'},
+            {'value': 'verified', 'label': 'Verified', 'count': stats['verified'], 'active': filter_type == 'verified'},
+            {'value': 'official', 'label': 'Official', 'count': stats['official'], 'active': filter_type == 'official'},
+            {'value': 'trusted',  'label': 'Trusted',  'count': stats['trusted'],  'active': filter_type == 'trusted'},
         ]
 
         return {
             'brands':            brands,
             'page_obj':          page_obj,
             'query':             query,
-            'brand_slug':        brand_slug,
             'highlighted_brand': highlighted_brand,
             'current_sort':      sort_by,
             'current_filter':    filter_type,
@@ -589,21 +615,18 @@ def _build_context(
 # §7  VIEW
 # ════════════════════════════════════════════════════════════════════════════
 
-# Module-level singletons — initialised once per worker process
 _page_cache = TwoLayerCache(ttl=CACHE_TTL, stale_ttl=STALE_TTL)
 
-# Bounded thread pool for stale-while-revalidate refreshes.
-# Raw Thread() per request is dangerous: 10k rps × 1% refresh rate = 100
-# new threads/sec → OOM.  A pool of 4 caps this completely.
 _refresh_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix='brandlist_refresh')
 
 
-def _cache_key(query: str, brand_slug: str, filter_type: str,
-               sort_by: str, page: int) -> str:
+def _cache_key(
+    query: str, highlight_slug: str, filter_type: str, sort_by: str, page: int,
+) -> str:
     """SHA-256 of canonical params — fixed length, no raw user input in key."""
-    raw    = f"{query}|{brand_slug}|{filter_type}|{sort_by}|{page}"
+    raw = f"{query}|{highlight_slug}|{filter_type}|{sort_by}|{page}"
     digest = hashlib.sha256(raw.encode()).hexdigest()
-    return f"brandlist_v2:{digest}"
+    return f"brandlist_v1:{digest}"
 
 
 def _etag(cache_key: str, built_at: float) -> str:
@@ -620,11 +643,25 @@ def _safe_positive_int(value, default: int, maximum: int) -> int:
         return default
 
 
+def _is_ajax_request(request) -> bool:
+    """
+    True for infinite-scroll "load more" fetches.
+
+    The frontend (infinite-scroll.js) sends X-Requested-With:
+    XMLHttpRequest on every fetch() call. ?ajax=1 is a fallback for
+    manual testing / progressive-enhancement links.
+    """
+    return (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.GET.get('ajax') == '1'
+    )
+
+
 def _warm_async(cache_key: str, builder_fn, *args, **kwargs) -> None:
     """
     Submit a background refresh to the bounded pool.
     Drops silently if the pool is saturated — the next stale request
-    will retry.  Never blocks the response.
+    will retry. Never blocks the response.
     """
     def _task():
         try:
@@ -650,7 +687,7 @@ _ERROR_CONTEXT = lambda raw_q, filter_type, sort_by: {
 
 
 @require_GET
-@vary_on_headers('Accept-Encoding')
+@vary_on_headers('Accept-Encoding', 'X-Requested-With')
 def BrandListView(request):
     """
     Request lifecycle
@@ -661,13 +698,14 @@ def BrandListView(request):
        Stale hit → async pool refresh, serve immediately
        Cold miss → one thread builds, others wait on RLock
     4. Conditional GET (ETag + If-Modified-Since) → 304 if unchanged
-    5. Render template
+    5. Render — full page normally, cards-only partial for infinite
+       scroll AJAX requests (X-Requested-With: XMLHttpRequest or ?ajax=1)
     6. Set HTTP caching headers (s-maxage for CDN, max-age for browser)
     """
 
     # ── 1. Validate & normalise ─────────────────────────────────────────
-    raw_q    = request.GET.get('q',     '').strip()[:MAX_Q_LEN]
-    raw_slug = request.GET.get('brand', '').strip()[:MAX_SLUG_LEN]
+    raw_q     = request.GET.get('q',     '').strip()[:MAX_Q_LEN]
+    raw_slug  = request.GET.get('brand', '').strip()[:MAX_SLUG_LEN]   # highlight one brand
 
     sort_by     = request.GET.get('sort', 'popular').strip()
     filter_type = request.GET.get('type', 'all').strip()
@@ -678,6 +716,7 @@ def BrandListView(request):
 
     page_number = _safe_positive_int(raw_page, default=1, maximum=MAX_PAGE)
     query       = ' '.join(raw_q.lower().split())
+    is_ajax     = _is_ajax_request(request)
 
     # ── 2. Cache key ────────────────────────────────────────────────────
     ck = _cache_key(query, raw_slug, filter_type, sort_by, page_number)
@@ -699,6 +738,8 @@ def BrandListView(request):
         context = _page_cache.get(ck)
         if context is None:
             log.error("Circuit breaker open and no stale cache for key=%s", ck)
+            if is_ajax:
+                return HttpResponse(status=503)
             return render(
                 request, 'ponno/brand_list.html',
                 _ERROR_CONTEXT(raw_q, filter_type, sort_by),
@@ -708,6 +749,8 @@ def BrandListView(request):
     if context is None:
         if page_number > 1:
             raise Http404
+        if is_ajax:
+            return HttpResponse(status=503)
         return render(
             request, 'ponno/brand_list.html',
             _ERROR_CONTEXT(raw_q, filter_type, sort_by),
@@ -729,17 +772,24 @@ def BrandListView(request):
         return HttpResponse(status=HTTPStatus.NOT_MODIFIED)
 
     # ── 5. Render ───────────────────────────────────────────────────────
-    response = render(request, 'ponno/brand_list.html', context)
+    page_obj = context['page_obj']
 
-    # ── 6. HTTP caching headers ─────────────────────────────────────────
+    if is_ajax:
+        # Infinite scroll fetch: return only the card markup. Pagination
+        # state travels in headers rather than a JSON body so the
+        # frontend can just do `res.text()` and append it.
+        response = render(request, BRAND_CARDS_PARTIAL_TEMPLATE, context)
+        response['X-Has-Next-Page'] = 'true' if page_obj.has_next() else 'false'
+        response['X-Next-Page']     = str(page_number + 1) if page_obj.has_next() else ''
+        response['X-Total-Count']   = str(context['total_count'])
+    else:
+        response = render(request, 'ponno/brand_list.html', context)
+
+    # ── 6. HTTP caching headers ──────────────────────────────────────────
     response['ETag']          = etag
     response['Last-Modified'] = http_date(built_at)
-    response['Vary']          = 'Accept-Encoding'
+    response['Vary']          = 'Accept-Encoding, X-Requested-With'
 
-    # s-maxage  → CDN (Cloudflare / Fastly) caches for CACHE_TTL
-    # max-age   → browser caches for half that (let CDN revalidate first)
-    # stale-while-revalidate → edge serves stale while fetching fresh
-    # stale-if-error         → edge keeps serving on origin error (24 h)
     response['Cache-Control'] = (
         f'public, '
         f's-maxage={CACHE_TTL}, '
@@ -749,3 +799,111 @@ def BrandListView(request):
     )
 
     return response
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# §8  BACKFILL UTILITY — one-off repair for Brand.product_count
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Brand.product_count is a cached column. apps/ponno/signals.py keeps it
+# correct going forward for any *new* Product save/delete, but does
+# nothing for brands whose count was already stale/zero from before
+# that signal existed. This function is the one-off repair — run it
+# once, from a shell, after deploying the signal:
+#
+#     python manage.py shell -c "
+#     from apps.ponno.views.brand_list import backfill_brand_product_counts
+#     backfill_brand_product_counts()
+#     "
+#
+# It intentionally does NOT touch `_page_cache` or `get_brand_stats()`:
+#   - `_page_cache` keys are SHA-256 hashes of (query, filter, sort, page)
+#     with no registry of "all keys in use", so there's nothing to
+#     selectively purge. Worst case, a page keeps showing pre-backfill
+#     counts for up to CACHE_TTL + STALE_TTL (90s) after this runs, then
+#     TwoLayerCache's stale-while-revalidate rebuilds it from the DB.
+#   - get_brand_stats() aggregates brands by boolean flag (featured,
+#     trending, etc.), not product_count, so it's unaffected either way.
+
+def backfill_brand_product_counts(
+    include_inactive: bool = False,
+    batch_size: int = _BACKFILL_BATCH_SIZE,
+    dry_run: bool = False,
+) -> dict:
+    """
+    Recompute Brand.product_count for every brand from real Product rows.
+
+    Args:
+        include_inactive: also backfill soft-deleted/inactive brands.
+            Defaults to False, matching Brand.objects.active_brands()
+            (the same manager method _build_context uses).
+        batch_size: brands processed per DB transaction. Keeps a single
+            long-running transaction from holding locks on a big catalog.
+        dry_run: report what would change without writing anything.
+
+    Returns:
+        {'checked': int, 'changed': int, 'errored': int, 'total': int}
+    """
+    base_qs = Brand.objects.all() if include_inactive else Brand.objects.active_brands()
+    # Only fetch what update_product_count() and logging actually need —
+    # same discipline as ONLY_FIELDS above.
+    qs = base_qs.only('pk', 'brand_name', 'product_count').order_by('pk')
+
+    total   = qs.count()
+    checked = 0
+    changed = 0
+    errored = 0
+
+    log.info("Backfilling product_count for %d brand(s)%s", total, ' (dry run)' if dry_run else '')
+
+    batch = []
+    for brand in qs.iterator(chunk_size=batch_size):
+        batch.append(brand)
+        if len(batch) >= batch_size:
+            c, ch, e = _backfill_batch(batch, dry_run)
+            checked += c
+            changed += ch
+            errored += e
+            batch = []
+
+    if batch:
+        c, ch, e = _backfill_batch(batch, dry_run)
+        checked += c
+        changed += ch
+        errored += e
+
+    log.info(
+        "Backfill complete: checked=%d changed=%d errored=%d total=%d%s",
+        checked, changed, errored, total, ' (dry run — nothing written)' if dry_run else '',
+    )
+
+    return {'checked': checked, 'changed': changed, 'errored': errored, 'total': total}
+
+
+def _backfill_batch(batch: list[Brand], dry_run: bool) -> tuple[int, int, int]:
+    """Process one batch inside its own transaction. Returns (checked, changed, errored)."""
+    checked = changed = errored = 0
+
+    with transaction.atomic():
+        for brand in batch:
+            before = brand.product_count
+            try:
+                if dry_run:
+                    # Same filter Brand.update_product_count() uses, without saving.
+                    after = brand.products.filter(is_active=True).count()
+                else:
+                    after = brand.update_product_count()
+            except Exception:
+                errored += 1
+                log.exception("Failed to update product_count for brand pk=%s", brand.pk)
+                continue
+
+            checked += 1
+            if before != after:
+                changed += 1
+                log.info("Brand %s (pk=%s): product_count %d -> %d", brand.brand_name, brand.pk, before, after)
+
+        if dry_run:
+            transaction.set_rollback(True)
+
+    return checked, changed, errored

@@ -17,9 +17,10 @@ from apps.customer.views.dashboard import (
 from apps.customer.views.cover_photo import UpdateCoverPhotoView
 from apps.customer.views.profile_photo import UpdateProfilePhotoView
 
-app_name = "customer"
 
-from django.urls import path
+from apps.customer.views.campaign_profile import CampaignDetailView, CampaignProfileView
+
+app_name = "customer"
 
 urlpatterns = [
     path('signup/', SignUpView, name='signup'),
@@ -48,4 +49,8 @@ urlpatterns = [
 
     path("api/dashboard/", ProfessionalDashboardView.as_view(), name="dashboard-api"),
     path("dashboard/", ProfessionalDashboardTemplateView.as_view(), name="dashboard"),
+
+    # Campaigns
+    path('campaign_profile/', CampaignProfileView, name='campaign_profile'),
+    path('campaign/<slug:slug>/', CampaignDetailView, name='campaign_detail'),
 ]

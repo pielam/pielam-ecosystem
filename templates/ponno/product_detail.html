@@ -96,8 +96,6 @@
 
   body {
     font-family: 'roboto';
-    
-    
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -141,12 +139,10 @@
 <style>
   .breadcrumb-bar {
     background: transparent;
-    
     padding: 1px 2px;
-
     display: flex;
     justify-content: center;
-    align-items: center;   /* Fixed: align-item → align-items */
+    align-items: center;
 }
 
   .breadcrumb {
@@ -162,7 +158,6 @@
   .breadcrumb-separator { color: blue; font-size: .65rem; }
   .breadcrumb-current { color: var(--ink); font-weight: 600; }
   .breadcrumb-item {
-
     display: flex; align-items: center; gap: 5px;
     color: black; font-weight: 500;
     transition: color var(--transition-fast);
@@ -198,11 +193,10 @@
   .product-description-section {
     grid-column: 1 / -1; grid-row: 2;
     margin-top: 2px; padding-top: 2px;
-    
   }
 
   .product-image-section {
-    position: relative; \
+    position: relative;
     display: flex; flex-direction: column;
     gap: 0; width: 100%; min-width: 0;
     animation: fadeUp .5s var(--ease-out-expo) both;
@@ -274,10 +268,9 @@
 .product-meta {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;  /* spreads items evenly */
+  justify-content: space-between;
   gap: 4px;
   padding: 1px 0;
-
 }  
   .meta-item {
     display: inline-flex; 
@@ -298,7 +291,6 @@
   .price-card {
     position: relative;
     background: white; 
-    
     border-radius: var(--r-md); 
     padding: 1px 2px;
     display: flex; 
@@ -845,6 +837,7 @@
   .card-badge.trending { background: var(--accent-amber); color: var(--primary-dark); }
   .card-badge.verified { background: var(--green);        color: #fff; }
   .card-badge.new      { background: var(--blue);         color: #fff; }
+  .card-badge.campaign { background: linear-gradient(135deg, var(--rust), #d1603f); color: #fff; }
 
   .card-wishlist-btn {
     position: absolute; top: 9px; right: 9px; z-index: 1;
@@ -1230,7 +1223,6 @@
     z-index: 999; 
     padding: 10px 14px; gap: 10px;
     background: whitesmoke;
-    
   }
   .mob-order-bar .order-btn {
     flex: 1; border-radius: var(--r-sm); padding: 13px 10px; font-size: .88rem;
@@ -1480,50 +1472,77 @@
 
         
 
-<!-- FEATURE 8 · PRICE BLOCK -->
-        <div class="price-section">
-          <div class="price-card" aria-label="Pricing">
-            {% if product.price_hidden %}
-              <div class="price-row main-price">
-                <span class="price-label">Price</span>
-                <span class="price selling-price-val">Contact Seller</span>
-              </div>
-            {% else %}
-              {% if product.show_brand_price and product.brand_price %}
-              <div class="price-row">
-                <span class="price-label">Brand MRP</span>
-                <span class="price brand-price-val">{{ product.fmt_brand_price }}</span>
-              </div>
-              {% endif %}
+<!-- FEATURE 8 · PRICE BLOCK (campaign-aware) -->
+<div class="price-section">
+  <div class="price-card" aria-label="Pricing">
+    {% if product.price_hidden %}
+      <div class="price-row main-price">
+        <span class="price-label">Price</span>
+        <span class="price selling-price-val">Contact Seller</span>
+      </div>
+    {% else %}
 
-              {% if product.show_buying_price and product.fmt_buying_price %}
-              <div class="price-row">
-                <span class="price-label">Cost Price</span>
-                <span class="price buying-price-val">{{ product.fmt_buying_price }}</span>
-              </div>
-              {% endif %}
+      {% if product.show_brand_price and product.brand_price %}
+      <div class="price-row">
+        <span class="price-label">Brand MRP</span>
+        <span class="price brand-price-val">{{ product.fmt_brand_price }}</span>
+      </div>
+      {% endif %}
 
-              {% if product.show_selling_price %}
-              <div class="price-row main-price">
-                <span class="price-label">Selling Price</span>
-                <span class="price selling-price-val">{{ product.fmt_selling_price }}</span>
-              </div>
-              {% if product.discount_percentage > 0 and product.final_price %}
-              <div class="price-row final-price-row">
-                <span class="price-label">After {{ product.discount_percentage|floatformat:0 }}% Discount</span>
-                <span class="price final-price-val">{{ product.fmt_final_price }}</span>
-              </div>
-              {% endif %}
-              {% if product.tax_rate > 0 %}
-              <p class="tax-note">
-                <i class="fa-solid fa-receipt" aria-hidden="true"></i>
-                {{ product.tax_rate|floatformat:1 }}% tax may apply
-              </p>
-              {% endif %}
-              {% endif %}
-            {% endif %}
-          </div>
+      {% if product.show_buying_price and product.fmt_buying_price %}
+      <div class="price-row">
+        <span class="price-label">Cost Price</span>
+        <span class="price buying-price-val">{{ product.fmt_buying_price }}</span>
+      </div>
+      {% endif %}
+
+      {% if product.show_selling_price %}
+      <div class="price-row main-price">
+        <span class="price-label">Selling Price</span>
+        <span class="price selling-price-val">{{ product.fmt_selling_price }}</span>
+      </div>
+
+      {% if product.has_campaign_discount %}
+        <!-- ── Campaign price wins over the plain discount_percentage row ── -->
+        <div class="price-row final-price-row">
+          <span class="price-label">
+            <i class="fa-solid fa-bolt" aria-hidden="true" style="color:var(--rust);"></i>
+            {{ product.campaign.name }}
+          </span>
+          <span class="price final-price-val">{{ product.fmt_final_price }}</span>
         </div>
+        {% if fmt_campaign_original_price %}
+        <span class="savings-badge" style="background:var(--green-bg); color:var(--accent-2);">
+          <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
+          Was {{ fmt_campaign_original_price }} — Save {{ savings_percentage }}%
+        </span>
+        {% endif %}
+        {% if product.campaign.end_at %}
+        <p class="tax-note" style="color:var(--rust); font-weight:700;">
+          <i class="fa-solid fa-clock" aria-hidden="true"></i>
+          Offer ends {{ product.campaign.end_at|date:"M d, h:i A" }}
+        </p>
+        {% endif %}
+
+      {% elif product.discount_percentage > 0 and product.final_price %}
+        <!-- ── No campaign — fall back to the dealer's own discount ── -->
+        <div class="price-row final-price-row">
+          <span class="price-label">After {{ product.discount_percentage|floatformat:0 }}% Discount</span>
+          <span class="price final-price-val">{{ product.fmt_final_price }}</span>
+        </div>
+      {% endif %}
+
+      {% if product.tax_rate > 0 %}
+      <p class="tax-note">
+        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+        {{ product.tax_rate|floatformat:1 }}% tax may apply
+      </p>
+      {% endif %}
+      {% endif %}
+
+    {% endif %}
+  </div>
+</div>
 
         <div class="product-meta">
   <span class="meta-item">
@@ -1839,7 +1858,11 @@
 
               <!-- Corner badges -->
               <div class="card-corner-badges">
-                {% if sp.discount_percentage > 0 %}
+                {% if sp.has_campaign_discount %}
+                  <span class="card-badge campaign">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>Deal
+                  </span>
+                {% elif sp.discount_percentage > 0 %}
                   <span class="card-badge discount">
                     <i class="fa-solid fa-tag" aria-hidden="true"></i>{{ sp.discount_percentage|floatformat:0 }}%
                   </span>
@@ -1906,6 +1929,19 @@
               <div class="product-card-pricing">
                 {% if sp.price_hidden %}
                   <p class="product-card-price">Contact Seller</p>
+
+                {% elif sp.has_campaign_discount %}
+                  <p class="product-card-original-price">
+                    {{ sp.fmt_campaign_original_price|default:sp.fmt_selling_price }}
+                  </p>
+                  <p class="product-card-price">
+                    {{ sp.fmt_final_price }}
+                  </p>
+                  <p class="product-card-savings" style="background:var(--green-bg); color:var(--accent-2);">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+                    {{ sp.campaign_name }}
+                  </p>
+
                 {% elif sp.discount_percentage > 0 and sp.final_price and sp.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ sp.fmt_selling_price }}
@@ -1917,10 +1953,12 @@
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
                     Save {{ sp.discount_percentage|floatformat:0 }}%
                   </p>
+
                 {% elif sp.show_selling_price %}
                   <p class="product-card-price">
                     {{ sp.fmt_selling_price }}
                   </p>
+
                 {% elif sp.show_brand_price and sp.fmt_brand_price %}
                   <p class="product-card-price">
                     {{ sp.fmt_brand_price }}
@@ -1972,7 +2010,11 @@
               {% endif %}
 
               <div class="card-corner-badges">
-                {% if related.discount_percentage > 0 %}
+                {% if related.has_campaign_discount %}
+                  <span class="card-badge campaign">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>Deal
+                  </span>
+                {% elif related.discount_percentage > 0 %}
                   <span class="card-badge discount">
                     <i class="fa-solid fa-tag" aria-hidden="true"></i>{{ related.discount_percentage|floatformat:0 }}%
                   </span>
@@ -2031,6 +2073,19 @@
               <div class="product-card-pricing">
                 {% if related.price_hidden %}
                   <p class="product-card-price">Contact Seller</p>
+
+                {% elif related.has_campaign_discount %}
+                  <p class="product-card-original-price">
+                    {{ related.fmt_campaign_original_price|default:related.fmt_selling_price }}
+                  </p>
+                  <p class="product-card-price">
+                    {{ related.fmt_final_price }}
+                  </p>
+                  <p class="product-card-savings" style="background:var(--green-bg); color:var(--accent-2);">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+                    {{ related.campaign_name }}
+                  </p>
+
                 {% elif related.discount_percentage > 0 and related.final_price and related.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ related.fmt_selling_price }}
@@ -2042,10 +2097,12 @@
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
                     Save {{ related.discount_percentage|floatformat:0 }}%
                   </p>
+
                 {% elif related.show_selling_price %}
                   <p class="product-card-price">
                     {{ related.fmt_selling_price }}
                   </p>
+
                 {% elif related.show_brand_price and related.fmt_brand_price %}
                   <p class="product-card-price">
                     {{ related.fmt_brand_price }}
@@ -2098,7 +2155,11 @@
               {% endif %}
 
               <div class="card-corner-badges">
-                {% if dp.discount_percentage > 0 %}
+                {% if dp.has_campaign_discount %}
+                  <span class="card-badge campaign">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>Deal
+                  </span>
+                {% elif dp.discount_percentage > 0 %}
                   <span class="card-badge discount">
                     <i class="fa-solid fa-tag" aria-hidden="true"></i>{{ dp.discount_percentage|floatformat:0 }}%
                   </span>
@@ -2157,6 +2218,19 @@
               <div class="product-card-pricing">
                 {% if dp.price_hidden %}
                   <p class="product-card-price">Contact Seller</p>
+
+                {% elif dp.has_campaign_discount %}
+                  <p class="product-card-original-price">
+                    {{ dp.fmt_campaign_original_price|default:dp.fmt_selling_price }}
+                  </p>
+                  <p class="product-card-price">
+                    {{ dp.fmt_final_price }}
+                  </p>
+                  <p class="product-card-savings" style="background:var(--green-bg); color:var(--accent-2);">
+                    <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+                    {{ dp.campaign_name }}
+                  </p>
+
                 {% elif dp.discount_percentage > 0 and dp.final_price and dp.show_selling_price %}
                   <p class="product-card-original-price">
                     {{ dp.fmt_selling_price }}
@@ -2168,10 +2242,12 @@
                     <i class="fa-solid fa-piggy-bank" aria-hidden="true"></i>
                     Save {{ dp.discount_percentage|floatformat:0 }}%
                   </p>
+
                 {% elif dp.show_selling_price %}
                   <p class="product-card-price">
                     {{ dp.fmt_selling_price }}
                   </p>
+
                 {% elif dp.show_brand_price and dp.fmt_brand_price %}
                   <p class="product-card-price">
                     {{ dp.fmt_brand_price }}

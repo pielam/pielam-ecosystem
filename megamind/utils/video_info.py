@@ -1,4 +1,5 @@
 # megamind/utils/video_info.py
+
 """
 Shared video-URL normalizer.
 
@@ -331,6 +332,63 @@ _VIDEO_INFO_TTL = getattr(settings, 'DE_VIDEO_INFO_TTL', 3600)
 # falls back to a placeholder that at least won't be twitch.tv's own host.
 _EMBED_PARENT_DOMAIN = getattr(settings, 'SITE_DOMAIN', None) or 'localhost'
 
+# ── get_video_info() lookup tables, precompiled once at import time ──
+# get_video_info() runs once per extracted/scraped video URL, so
+# anything rebuilt inside it (tuples, dicts, regex pattern strings)
+# gets rebuilt on every single call. Hoisting them here avoids that
+# per-call allocation and, for the regexes, avoids relying on the
+# `re` module's internal pattern cache (a process-wide LRU shared
+# with every other regex in the app) being warm.
+_YOUTUBE_HOSTS = frozenset({'youtube.com', 'youtu.be', 'm.youtube.com', 'music.youtube.com'})
+_VIMEO_HOSTS = frozenset({'vimeo.com', 'player.vimeo.com'})
+_DAILYMOTION_HOSTS = frozenset({'dailymotion.com', 'dai.ly'})
+_TWITCH_HOSTS = frozenset({'twitch.tv', 'clips.twitch.tv'})
+_FACEBOOK_HOSTS = frozenset({'facebook.com', 'fb.watch', 'fb.com'})
+_TIKTOK_HOSTS = frozenset({'tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'})
+_TIKTOK_SHORT_HOSTS = frozenset({'vm.tiktok.com', 'vt.tiktok.com'})
+_TWITTER_HOSTS = frozenset({'twitter.com', 'x.com', 't.co'})
+
+_VIDEO_EXTS = ('.mp4', '.webm', '.ogg', '.mov', '.m4v', '.mkv', '.avi')
+_VIDEO_MIME_MAP = {
+    'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg',
+    'mov': 'video/mp4', 'm4v': 'video/mp4',
+    'mkv': 'video/x-matroska', 'avi': 'video/x-msvideo',
+}
+
+_RE_YT_ID_SANITIZE = re.compile(r'[^a-zA-Z0-9_-]')
+_RE_VIMEO_DIGITS_ONLY = re.compile(r'[^0-9]')
+_RE_DAILYMOTION_SANITIZE = re.compile(r'[^a-zA-Z0-9]')
+_RE_RUMBLE_EMBED_ID = re.compile(r'rumble\.com/embed/([^/?&]+)')
+_RE_RUMBLE_GENERIC_ID = re.compile(r'rumble\.com/([^/?&]+)')
+_RE_TIKTOK_VIDEO_ID = re.compile(r'/video/(\d+)')
+_RE_TWITTER_STATUS_ID = re.compile(r'/status(?:es)?/(\d+)')
+
+
+def _iframe_result(platform: str, embed_url: str, watch_url: str, thumbnail: str = '') -> dict:
+    """Every iframe-embed platform branch below returns this exact
+    shape by hand; centralizing it means the dict shape only needs to
+    be right in one place."""
+    return {
+        'platform': platform,
+        'embed_url': embed_url,
+        'watch_url': watch_url,
+        'thumbnail': thumbnail,
+        'type': 'iframe',
+    }
+
+
+def _video_result(platform: str, url: str, mime_type: str = 'video/mp4', thumbnail: str = '') -> dict:
+    """Same as _iframe_result but for the native <video>-tag branches
+    (direct file links and the 'unknown' fallback)."""
+    return {
+        'platform': platform,
+        'embed_url': url,
+        'watch_url': url,
+        'thumbnail': thumbnail,
+        'type': 'video',
+        'mime_type': mime_type,
+    }
+
 
 def _resolve_facebook_share_link(url: str) -> str:
     """
@@ -420,7 +478,7 @@ def get_video_info(url: str) -> dict:
     hostname = parsed.netloc.lower().replace('www.', '')
 
     # ── YouTube ───────────────────────────────────────────────────
-    if hostname in ('youtube.com', 'youtu.be', 'm.youtube.com', 'music.youtube.com'):
+    if hostname in _YOUTUBE_HOSTS:
         vid_id = None
         if hostname == 'youtu.be':
             vid_id = parsed.path.lstrip('/').split('/')[0]
@@ -433,97 +491,77 @@ def get_video_info(url: str) -> dict:
         else:
             vid_id = parse_qs(parsed.query).get('v', [None])[0]
         if vid_id:
-            vid_id = re.sub(r'[^a-zA-Z0-9_-]', '', vid_id)
-            return {
-                'platform':  'youtube',
-                'embed_url': f'https://www.youtube.com/embed/{vid_id}?rel=0&modestbranding=1',
-                'watch_url': f'https://www.youtube.com/watch?v={vid_id}',
-                'thumbnail': f'https://img.youtube.com/vi/{vid_id}/hqdefault.jpg',
-                'type':      'iframe',
-            }
+            vid_id = _RE_YT_ID_SANITIZE.sub('', vid_id)
+            return _iframe_result(
+                'youtube',
+                f'https://www.youtube.com/embed/{vid_id}?rel=0&modestbranding=1',
+                f'https://www.youtube.com/watch?v={vid_id}',
+                f'https://img.youtube.com/vi/{vid_id}/hqdefault.jpg',
+            )
 
     # ── Vimeo ─────────────────────────────────────────────────────
-    if hostname in ('vimeo.com', 'player.vimeo.com'):
+    if hostname in _VIMEO_HOSTS:
         vid_id = (
             parsed.path.split('/video/')[1].split('/')[0]
             if '/video/' in parsed.path
             else parsed.path.lstrip('/').split('/')[0]
         )
-        vid_id = re.sub(r'[^0-9]', '', vid_id)
+        vid_id = _RE_VIMEO_DIGITS_ONLY.sub('', vid_id)
         if vid_id:
-            return {
-                'platform':  'vimeo',
-                'embed_url': f'https://player.vimeo.com/video/{vid_id}?badge=0&autopause=0',
-                'watch_url': f'https://vimeo.com/{vid_id}',
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result(
+                'vimeo',
+                f'https://player.vimeo.com/video/{vid_id}?badge=0&autopause=0',
+                f'https://vimeo.com/{vid_id}',
+            )
 
     # ── Dailymotion ───────────────────────────────────────────────
-    if hostname in ('dailymotion.com', 'dai.ly'):
+    if hostname in _DAILYMOTION_HOSTS:
         if hostname == 'dai.ly':
             vid_id = parsed.path.lstrip('/').split('/')[0]
         elif '/video/' in parsed.path:
             vid_id = parsed.path.split('/video/')[1].split('_')[0].split('/')[0]
         else:
             vid_id = parsed.path.lstrip('/').split('/')[0]
-        vid_id = re.sub(r'[^a-zA-Z0-9]', '', vid_id)
+        vid_id = _RE_DAILYMOTION_SANITIZE.sub('', vid_id)
         if vid_id:
-            return {
-                'platform':  'dailymotion',
-                'embed_url': f'https://www.dailymotion.com/embed/video/{vid_id}',
-                'watch_url': f'https://www.dailymotion.com/video/{vid_id}',
-                'thumbnail': f'https://www.dailymotion.com/thumbnail/video/{vid_id}',
-                'type':      'iframe',
-            }
+            return _iframe_result(
+                'dailymotion',
+                f'https://www.dailymotion.com/embed/video/{vid_id}',
+                f'https://www.dailymotion.com/video/{vid_id}',
+                f'https://www.dailymotion.com/thumbnail/video/{vid_id}',
+            )
 
     # ── Rumble ────────────────────────────────────────────────────
     if hostname == 'rumble.com':
-        m = re.search(r'rumble\.com/embed/([^/?&]+)', url)
+        m = _RE_RUMBLE_EMBED_ID.search(url)
         vid_id = m.group(1) if m else None
         if not vid_id:
-            m = re.search(r'rumble\.com/([^/?&]+)', url)
+            m = _RE_RUMBLE_GENERIC_ID.search(url)
             vid_id = m.group(1) if m else None
         if vid_id:
-            return {
-                'platform':  'rumble',
-                'embed_url': f'https://rumble.com/embed/{vid_id}/',
-                'watch_url': url,
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result('rumble', f'https://rumble.com/embed/{vid_id}/', url)
 
     # ── Streamable ────────────────────────────────────────────────
     if hostname == 'streamable.com':
         vid_id = parsed.path.lstrip('/').split('/')[0]
         if vid_id:
-            return {
-                'platform':  'streamable',
-                'embed_url': f'https://streamable.com/e/{vid_id}',
-                'watch_url': url,
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result('streamable', f'https://streamable.com/e/{vid_id}', url)
 
     # ── Twitch ────────────────────────────────────────────────────
-    if hostname in ('twitch.tv', 'clips.twitch.tv'):
+    if hostname in _TWITCH_HOSTS:
         if '/clip/' in parsed.path or hostname == 'clips.twitch.tv':
             clip_id = parsed.path.lstrip('/').split('/')[-1]
-            return {
-                'platform':  'twitch_clip',
-                'embed_url': f'https://clips.twitch.tv/embed?clip={clip_id}&parent={_EMBED_PARENT_DOMAIN}',
-                'watch_url': url,
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result(
+                'twitch_clip',
+                f'https://clips.twitch.tv/embed?clip={clip_id}&parent={_EMBED_PARENT_DOMAIN}',
+                url,
+            )
         channel = parsed.path.lstrip('/').split('/')[0]
-        return {
-            'platform':  'twitch',
-            'embed_url': f'https://player.twitch.tv/?channel={channel}&parent={_EMBED_PARENT_DOMAIN}',
-            'watch_url': url,
-            'thumbnail': '',
-            'type':      'iframe',
-        }
+        return _iframe_result(
+            'twitch',
+            f'https://player.twitch.tv/?channel={channel}&parent={_EMBED_PARENT_DOMAIN}',
+            url,
+        )
 
     # ── Facebook ──────────────────────────────────────────────────
     # NOTE: oEmbed confirmation was removed. Facebook's oEmbed Read
@@ -542,7 +580,7 @@ def get_video_info(url: str) -> dict:
     # videoTagHTML() renders the iframe directly. Facebook stays in
     # home.html's SILENT_FAIL_PLATFORMS set, so a "Watch on Facebook ↗"
     # link still renders underneath the iframe as a manual fallback.
-    if hostname in ('facebook.com', 'fb.watch', 'fb.com'):
+    if hostname in _FACEBOOK_HOSTS:
         # Unwrap plugin/embed-wrapper URLs FIRST. A video captured via
         # its <iframe src="..."> — the normal way sites embed Facebook
         # video, per megamind.utils.service_fetcher._handle_html — is
@@ -565,13 +603,11 @@ def get_video_info(url: str) -> dict:
             if '/share/' in parsed.path
             else url
         )
-        return {
-            'platform':  'facebook',
-            'embed_url': f'https://www.facebook.com/plugins/video.php?href={quote(resolved_url, safe="")}&show_text=false&width=560',
-            'watch_url': resolved_url,
-            'thumbnail': '',
-            'type':      'iframe',
-        }
+        return _iframe_result(
+            'facebook',
+            f'https://www.facebook.com/plugins/video.php?href={quote(resolved_url, safe="")}&show_text=false&width=560',
+            resolved_url,
+        )
 
     # ── TikTok ────────────────────────────────────────────────────
     # vm.tiktok.com / vt.tiktok.com are short-link redirectors — the
@@ -585,19 +621,13 @@ def get_video_info(url: str) -> dict:
     # never embedded at all. See module docstring's "PRODUCTION FIX"
     # section: resolution can fail in production specifically due to
     # egress/IP-blocking, same as Facebook.
-    if hostname in ('tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com'):
+    if hostname in _TIKTOK_HOSTS:
         resolve_url = url
-        if hostname in ('vm.tiktok.com', 'vt.tiktok.com'):
+        if hostname in _TIKTOK_SHORT_HOSTS:
             resolve_url = _resolve_tiktok_short_link(url)
-        m = re.search(r'/video/(\d+)', urlparse(resolve_url).path)
+        m = _RE_TIKTOK_VIDEO_ID.search(urlparse(resolve_url).path)
         if m:
-            return {
-                'platform':  'tiktok',
-                'embed_url': f'https://www.tiktok.com/embed/v2/{m.group(1)}',
-                'watch_url': resolve_url,
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result('tiktok', f'https://www.tiktok.com/embed/v2/{m.group(1)}', resolve_url)
         # Resolution failed or landed somewhere unexpected (deleted
         # video, region lock, etc.) — fall through to 'unknown' below
         # rather than returning a broken embed with no video ID.
@@ -619,40 +649,25 @@ def get_video_info(url: str) -> dict:
     # embed is only returned when a real ID was found; otherwise this
     # falls through to the generic fallback instead of returning a
     # guaranteed-broken embed.
-    if hostname in ('twitter.com', 'x.com', 't.co'):
+    if hostname in _TWITTER_HOSTS:
         resolve_url = url
         if hostname == 't.co':
             resolve_url = _resolve_twitter_short_link(url)
-        m = re.search(r'/status(?:es)?/(\d+)', urlparse(resolve_url).path)
+        m = _RE_TWITTER_STATUS_ID.search(urlparse(resolve_url).path)
         if m:
-            return {
-                'platform':  'twitter',
-                'embed_url': f'https://platform.twitter.com/embed/Tweet.html?id={m.group(1)}',
-                'watch_url': resolve_url,
-                'thumbnail': '',
-                'type':      'iframe',
-            }
+            return _iframe_result(
+                'twitter',
+                f'https://platform.twitter.com/embed/Tweet.html?id={m.group(1)}',
+                resolve_url,
+            )
         # No status ID found (profile URL, resolution failed, etc.) —
         # fall through to 'unknown' below rather than returning a
         # broken embed.
 
     # ── Direct video file ─────────────────────────────────────────
-    _VIDEO_EXTS = ('.mp4', '.webm', '.ogg', '.mov', '.m4v', '.mkv', '.avi')
     if any(parsed.path.lower().endswith(ext) for ext in _VIDEO_EXTS):
         ext = parsed.path.lower().rsplit('.', 1)[-1]
-        mime_map = {
-            'mp4': 'video/mp4', 'webm': 'video/webm', 'ogg': 'video/ogg',
-            'mov': 'video/mp4', 'm4v': 'video/mp4',
-            'mkv': 'video/x-matroska', 'avi': 'video/x-msvideo',
-        }
-        return {
-            'platform':  'direct',
-            'embed_url': url,
-            'watch_url': url,
-            'thumbnail': '',
-            'type':      'video',
-            'mime_type': mime_map.get(ext, 'video/mp4'),
-        }
+        return _video_result('direct', url, mime_type=_VIDEO_MIME_MAP.get(ext, 'video/mp4'))
 
     # ── Unknown / fallback ────────────────────────────────────────
     # type='video', NOT 'iframe' — see module docstring. Every caller
@@ -665,14 +680,7 @@ def get_video_info(url: str) -> dict:
     # no error shown — that's worse than a <video> tag failing
     # gracefully in the rare case this URL really is an unembeddable
     # page.
-    return {
-        'platform':  'unknown',
-        'embed_url': url,
-        'watch_url': url,
-        'thumbnail': '',
-        'type':      'video',
-        'mime_type': 'video/mp4',
-    }
+    return _video_result('unknown', url)
 
 
 def get_video_info_cached(url: Optional[str]) -> dict:

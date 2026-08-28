@@ -1,583 +1,224 @@
+{% extends 'base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="{% static 'customer/css/profile_edit.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'customer/css/profile_edit.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
 
-    <title>Edit Profile — {{ profile_info.profile_name|default:user.email_or_phone }} | PIELAM</title>
-
-    
-    <style>
+<style>
     /* ============================================================
-       DESIGN SYSTEM TOKENS
+       PAGE-LOCAL TOKENS
+       (only adds names base.html's :root doesn't already define —
+       nothing here overrides --accent, --shadow-*, --space-*, --text-*,
+       --header-h, etc. from base.html)
     ============================================================ */
-    *, *::before, *::after {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
     :root {
-        --ink:          #0f0f0f;
-        --ink-2:        #3a3a3a;
-        --ink-3:        #6b6b6b;
-        --ink-4:        #9b9b9b;
-        --surface:      #ffffff;
-        --surface-2:    #f5f5f3;
-        --surface-3:    #eeede9;
-        --border:       #e4e3df;
-        --border-2:     #d0cfc9;
-        --accent:       #c8102e;
-        --accent-2:     #a00d24;
-        --gold:         #b8860b;
-        --gold-2:       #8b6508;
-        --green:        #1a6b3a;
-        --green-bg:     #edf7f1;
-        --warn:         #92400e;
-        --warn-bg:      #fffbeb;
-        --blue:         #1e3a8a;
-        --blue-light:   #3b82f6;
-
         --primary-dark:     #0a2540;
         --primary-blue:     #0d47a1;
-        --primary-light:    #1976d2;
         --accent-gold:      #d4af37;
         --accent-amber:     #ffb300;
         --success-emerald:  #00b894;
         --danger-crimson:   #e74c3c;
+        --green:            #1a6b3a;
+        --green-bg:         #edf7f1;
+        --gold-2:           #8b6508;
         --text-primary:     #1a202c;
         --text-secondary:   #4a5568;
         --text-muted:       #718096;
         --bg-primary:       #ffffff;
-        --bg-secondary:     #f7fafc;
         --bg-tertiary:      #edf2f7;
         --border-light:     #e2e8f0;
         --border-medium:    #cbd5e0;
-        --shadow-xs:  0 1px 3px rgba(10,37,64,.05);
-        --shadow-sm:  0 2px 6px rgba(10,37,64,.08);
-        --shadow-md:  0 4px 12px rgba(10,37,64,.12);
-        --shadow-lg:  0 10px 30px rgba(10,37,64,.15);
-        --shadow-xl:  0 20px 50px rgba(10,37,64,.2);
-        --font-display: 'DM Serif Display', 'Playfair Display', serif;
-        --font-body:    'DM Sans', 'Outfit', sans-serif;
-
-        --nav-h:    64px;
-        --r-sm:     8px;
-        --r-md:     14px;
-        --r-lg:     20px;
-        --r-xl:     28px;
-        --ease:     cubic-bezier(.4,0,.2,1);
-        --transition-fast: .15s ease;
-        --transition-base: .25s ease;
-        --transition-slow: .4s cubic-bezier(.4,0,.2,1);
-        --bottom-bar-height: 68px;
+        --r-sm:  8px;
+        --r-md:  14px;
+        --r-lg:  20px;
+        --font-display: 'Playfair Display', serif;
+        --font-body:    'Outfit', 'roboto', sans-serif;
     }
-
-    html { scroll-behavior: smooth; font-size: 16px; }
-
-    body {
-        font-family: var(--font-body);
-        background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-        color: var(--ink);
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-        overflow-x: clip;
-        padding-bottom: var(--bottom-bar-height);
-    }
-
-    body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background-image:
-            radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
-            radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    a { text-decoration: none; color: inherit; }
-    img { max-width: 100%; display: block; }
-    button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
 
     /* ============================================================
-       SIDE DRAWER
+       PAGE HEADER
     ============================================================ */
-    #drawerOverlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,.45);
-        z-index: 1999;
-        transition: opacity .3s;
-        opacity: 0;
+    .page-header {
+        padding: 28px 1.5rem 20px;
+        max-width: 1100px;
+        margin: 0 auto;
+        font-family: var(--font-body);
     }
 
-    #sideDrawer {
-        position: fixed;
-        top: 0; left: 0;
-        width: 260px; height: 100%;
-        background: linear-gradient(160deg, #0a2540 0%, #0d47a1 100%);
-        z-index: 2000;
-        transform: translateX(-100%);
-        transition: transform .35s cubic-bezier(.4,0,.2,1);
-        display: flex;
-        flex-direction: column;
-        box-shadow: 4px 0 32px rgba(0,0,0,.35);
-        overflow-y: auto;
-    }
-
-    .drawer-header {
+    .header-content {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 18px 20px 16px;
-        border-bottom: 1px solid rgba(255,255,255,.12);
-        position: sticky;
-        top: 0;
-        background: #0a2540;
-        z-index: 1;
+        gap: 16px;
     }
 
-    .drawer-brand {
-        font-family: var(--font-display);
-        font-size: 1.4rem;
-        font-weight: 900;
+    .header-icon {
+        width: 52px; height: 52px;
+        border-radius: var(--r-md);
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
         color: #fff;
-        letter-spacing: .5px;
-    }
-
-    #drawerClose {
-        width: 34px; height: 34px;
-        background: rgba(255,255,255,.1);
-        border: none;
-        border-radius: 8px;
-        color: #fff;
-        font-size: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        transition: background .2s;
-    }
-    #drawerClose:hover { background: rgba(255,255,255,.2); }
-
-    .drawer-nav {
-        padding: 18px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        flex: 1;
+        font-size: 1.4rem;
+        box-shadow: var(--shadow-md);
+        flex-shrink: 0;
     }
 
-    .drawer-link {
+    .page-title {
+        font-family: var(--font-display);
+        font-size: 1.9rem;
+        color: var(--text-primary);
+    }
+
+    .title-accent { color: var(--primary-blue); }
+
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: .95rem;
+        margin-top: 2px;
+    }
+
+    /* ============================================================
+       BUSINESS STATS
+    ============================================================ */
+    .business-stats-section {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1.5rem 8px;
+        font-family: var(--font-body);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+    }
+
+    .stat-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--r-md);
+        padding: 16px 18px;
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 13px 16px;
-        border-radius: 10px;
-        color: #fff;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: .95rem;
-        transition: background .2s;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow var(--t-base), transform var(--t-base);
     }
-    .drawer-link:hover { background: rgba(255,255,255,.12); }
-    .drawer-link i { width: 18px; text-align: center; opacity: .8; }
-
-    .drawer-divider {
-        height: 1px;
-        background: rgba(255,255,255,.12);
-        margin: 8px 4px;
+    .stat-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
     }
 
-    .drawer-link.secondary {
-        color: rgba(255,255,255,.7);
-        font-weight: 500;
-        font-size: .88rem;
-    }
-    .drawer-link.secondary:hover { background: rgba(255,255,255,.08); }
-    .drawer-link.secondary i { opacity: .7; }
-
-    /* ============================================================
-       NAVBAR
-    ============================================================ */
-    .menu-top {
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-
-    .navbar-container {
-        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
-        position: relative;
-        overflow: hidden;
-        box-shadow: var(--shadow-lg);
-    }
-
-    .navbar-glow {
-        position: absolute;
-        top: 0; left: -100%;
-        width: 200%; height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(212,175,55,0.15), transparent);
-        animation: navGlow 4s infinite;
-    }
-
-    @keyframes navGlow {
-        0%, 100% { left: -100%; }
-        50% { left: 100%; }
-    }
-
-    .menu {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.875rem 1.5rem;
-        max-width: 1400px;
-        margin: 0 auto;
-        position: relative;
-        z-index: 1;
-    }
-
-    .logo-section { display: flex; align-items: center; }
-
-    .logo-left {
-        display: flex;
-        align-items: center;
-        gap: 0;
-    }
-
-    .logo-brand {
-        margin-left: 0.5rem;
-    }
-
-    .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        text-decoration: none;
-    }
-
-    .logo-icon {
-        width: 44px; height: 44px;
-        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
-        border-radius: 12px;
+    .stat-icon {
+        width: 42px; height: 42px;
+        border-radius: var(--r-sm);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--primary-dark);
-        font-size: 1.35rem;
-        box-shadow: 0 4px 12px rgba(212,175,55,0.4);
-        transition: all var(--transition-slow);
+        font-size: 1.05rem;
         flex-shrink: 0;
-        cursor: pointer;
+        background: var(--bg-tertiary);
+        color: var(--primary-blue);
     }
-    .logo-icon:hover {
-        transform: scale(1.08);
-        box-shadow: 0 6px 20px rgba(212,175,55,0.55);
+    .stat-card.accent-gold .stat-icon   { background: #fdf3e0; color: var(--gold-2); }
+    .stat-card.accent-green .stat-icon  { background: var(--green-bg); color: var(--green); }
+
+    .stat-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
     }
 
-    .navbar-brand {
-        font-family: var(--font-display);
-        font-size: 1.75rem;
-        font-weight: 900;
-        color: #ffffff;
-        letter-spacing: 0.5px;
-    }
-
-    .menu-links {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .menu-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.625rem 1rem;
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 10px;
-        color: #ffffff;
-        text-decoration: none;
+    .stat-label {
+        font-size: .78rem;
+        color: var(--text-muted);
         font-weight: 600;
-        font-size: 0.9rem;
-        transition: all var(--transition-base);
-    }
-    .menu-item:hover {
-        background: rgba(255,255,255,0.18);
-        border-color: rgba(212,175,55,0.4);
-        transform: translateY(-2px);
-    }
-    .menu-item.active {
-        background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
-        color: var(--primary-dark);
-        border-color: transparent;
-        box-shadow: 0 4px 16px rgba(212,175,55,0.5);
+        text-transform: uppercase;
+        letter-spacing: .3px;
     }
 
     /* ============================================================
-       RESPONSIVE
+       FORM (minimal fallback — profile_edit.css governs the rest)
     ============================================================ */
-    @media (max-width: 1024px) {
-        .product-grid { grid-template-columns: 1fr; gap: 28px; }
-        .product-title { font-size: 1.7rem; }
+    .profile-content { max-width: 1100px; margin: 0 auto; padding: 24px 1.5rem 40px; font-family: var(--font-body); }
+    .section-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
     }
+    .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border-light); }
+    .section-title { font-family: var(--font-display); font-size: 1.25rem; color: var(--text-primary); }
+    .card-body.form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        padding: 22px 24px;
+    }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-label {
+        display: flex; align-items: center; gap: 8px;
+        font-size: .85rem; font-weight: 700; color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid var(--border-medium);
+        border-radius: var(--r-sm);
+        font-family: var(--font-body);
+        font-size: .95rem;
+        color: var(--text-primary);
+        background: var(--bg-primary);
+        transition: border-color var(--t-fast);
+    }
+    .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+    }
+    .form-hint { display: block; margin-top: 5px; font-size: .78rem; color: var(--text-muted); }
+    .form-actions { display: flex; gap: 12px; margin-top: 22px; }
+    .btn-primary, .btn-secondary {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 22px;
+        border-radius: var(--r-sm);
+        font-weight: 700;
+        font-size: .92rem;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+        color: #fff;
+        box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+    /* Messages */
+    .messages-section { margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .alert {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 13px 16px;
+        border-radius: var(--r-sm);
+        font-size: .9rem;
+    }
+    .alert-success { background: var(--green-bg); color: var(--green); }
+    .alert-error   { background: #fdecea; color: var(--danger-crimson); }
+    .alert-info    { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .alert-close { margin-left: auto; opacity: .6; }
 
     @media (max-width: 768px) {
-        :root { --nav-h: 56px; }
-        .product-detail-wrapper { padding: 16px 14px 100px; }
-        .product-container { padding: 20px; border-radius: var(--r-lg); }
-        .product-title { font-size: 1.5rem; }
-        
-        .original-price {  font-size: 1.2rem; }
-        .offer-price { font-size: 1.8rem; }
-        .order-section { display: none; }
-        .mob-order-bar { display: flex; }
-        .products-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .related-products-section, .dealer-products-section { padding: 20px; }
-        .tab-panel { padding: 20px 0 0; }
-        .dealer-header { flex-direction: column; text-align: center; }
-        .dealer-stats { grid-template-columns: 1fr; }
-        .dealer-details-grid { grid-template-columns: 1fr; }
-        .contact-buttons { grid-template-columns: 1fr; }
-        .menu-item span { display: none; }
-        .menu-item { padding: 8px 10px; }
-        .menu { padding: 0.75rem 1rem; }
-        .navbar-brand { font-size: 1.4rem; }
-        .logo-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+        .card-body.form-grid { grid-template-columns: 1fr; }
     }
+</style>
+{% endblock %}
 
-    @media (max-width: 480px) {
-        .product-container { padding: 14px; }
-        .product-title { font-size: 1.3rem; }
-        .trust-row { gap: 5px; }
-        .trust-item span { font-size: .65rem; }
-        .products-grid { grid-template-columns: repeat(2,1fr); }
-        .spec-row { grid-template-columns: 40% 60%; }
-    }
-
-    @media print {
-        .menu-top, .mob-order-bar { display: none !important; }
-        body { padding-bottom: 0; background: white; }
-        body::before { display: none; }
-        .product-grid { grid-template-columns: 1fr; }
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--surface-3); }
-    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
-
-        </style>
-        
-</head>
-
-<body>
-  
-<!-- ═══════════════════════════════
-     SIDE DRAWER OVERLAY
-════════════════════════════════ -->
-<div id="drawerOverlay"></div>
-
-<!-- ═══════════════════════════════
-     SIDE DRAWER
-════════════════════════════════ -->
-<aside id="sideDrawer" role="dialog" aria-label="Navigation menu">
-    <div class="drawer-header">
-        <span class="drawer-brand">PIELAM</span>
-        <button id="drawerClose" aria-label="Close menu">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-
-    <nav class="drawer-nav">
-        <!-- Primary links -->
-        <a href="{% url 'ponno:home' %}" class="drawer-link">
-            <i class="fa-solid fa-house"></i>
-            Home
-        </a>
-        <a href="{% url 'ponno:discovery_engine' %}" class="drawer-link">
-            <i class="fa-solid fa-compass"></i>
-            Discover
-        </a>
-        <a href="{% url 'notify:notification' %}" class="drawer-link">
-            <i class="fa-solid fa-bell"></i>
-            Notifications
-        </a>
-        <a href="{% url 'customer:profile' %}" class="drawer-link">
-            <i class="fa-solid fa-circle-user"></i>
-            My Profile
-        </a>
-        <a href="#" class="drawer-link">
-            <i class="fa-solid fa-gear"></i>
-            Settings
-        </a>
-
-        <!-- Divider -->
-        <div class="drawer-divider"></div>
-
-        <!-- Secondary links (formerly footer links) -->
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-circle-info"></i>
-            About Us
-        </a>
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-shield-halved"></i>
-            Privacy Policy
-        </a>
-        <a href="#" class="drawer-link secondary">
-            <i class="fa-solid fa-file-contract"></i>
-            Terms of Service
-        </a>
-    </nav>
-</aside>
-
-<!-- ═══════════════════════════════
-     NAVIGATION BAR
-════════════════════════════════ -->
-<nav class="menu-top" role="navigation" aria-label="Main navigation">
-    <div class="navbar-container">
-        <div class="navbar-glow"></div>
-        <div class="menu">
-            <div class="logo-left">
-                <div class="logo-icon" id="menuToggle" role="button" aria-label="Open menu" tabindex="0">
-                    <i class="fa-solid fa-bars"></i>
-                </div>
-                <div class="logo-brand">
-                    <a href="{% url 'ponno:discovery_engine' %}" class="logo-container">
-                        <span class="navbar-brand">PIELAM</span>
-                    </a>
-                </div>
-            </div>
-            <div class="menu-links">
-                <a href="{% url 'ponno:home' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Home</span>
-                </a>
-                <a href="{% url 'notify:notification' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'notification' %}active{% endif %}">
-                    <i class="fa-solid fa-bell"></i>
-                    <span>Notifications</span>
-                </a>
-                <a href="{% url 'customer:profile' %}"
-                   class="menu-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-                    <i class="fa-solid fa-circle-user"></i>
-                    <span>Profile</span>
-                </a>
-            </div>
-        </div>
-    </div>
-</nav>
-<!-- ═══════════════════════════════
-     JAVASCRIPT
-════════════════════════════════ -->
-<script>
-// ── Tabs ─────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + target).classList.add('active');
-    });
-});
-
-// ── Image zoom ────────────────────────────
-const mainImg = document.getElementById('mainImg');
-if (mainImg) {
-    mainImg.addEventListener('click', () => mainImg.classList.toggle('zoomed'));
-}
-
-// ── Share button ──────────────────────────
-document.getElementById('shareBtn')?.addEventListener('click', async () => {
-    const shareData = {
-        title: "{{ product.product_name|escapejs }}",
-        text: "Check out this product on PIELAM!",
-        url: window.location.href
-    };
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            await navigator.clipboard.writeText(window.location.href);
-            const btn = document.getElementById('shareBtn');
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i><span>Copied!</span>';
-            btn.style.background = 'rgba(26,107,58,.9)';
-            btn.style.color = '#fff';
-            setTimeout(() => {
-                btn.innerHTML = orig;
-                btn.style.background = '';
-                btn.style.color = '';
-            }, 2000);
-        }
-    } catch(e) {}
-});
-
-// ── Side Drawer ───────────────────────────
-const drawer      = document.getElementById('sideDrawer');
-const overlay     = document.getElementById('drawerOverlay');
-const menuToggle  = document.getElementById('menuToggle');
-const drawerClose = document.getElementById('drawerClose');
-
-function openDrawer() {
-    overlay.style.display = 'block';
-    requestAnimationFrame(() => {
-        overlay.style.opacity = '1';
-        drawer.style.transform = 'translateX(0)';
-    });
-    document.body.style.overflow = 'hidden';
-}
-
-function closeDrawer() {
-    overlay.style.opacity = '0';
-    drawer.style.transform = 'translateX(-100%)';
-    setTimeout(() => { overlay.style.display = 'none'; }, 350);
-    document.body.style.overflow = '';
-}
-
-menuToggle.addEventListener('click', openDrawer);
-drawerClose.addEventListener('click', closeDrawer);
-overlay.addEventListener('click', closeDrawer);
-
-// Keyboard support for menu toggle
-menuToggle.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(); }
-});
-
-// Close on Escape key
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeDrawer();
-});
-
-// ── Performance monitoring ────────────────
-if ('PerformanceObserver' in window) {
-    try {
-        const obs = new PerformanceObserver(list => {
-            for (const entry of list.getEntries()) {
-                console.log('LCP:', entry.startTime);
-            }
-        });
-        obs.observe({ entryTypes: ['largest-contentful-paint'] });
-    } catch(e) {}
-}
-</script>
-
+{% block content %}
 
 <!-- Page Header -->
 <div class="page-header">
@@ -588,24 +229,67 @@ if ('PerformanceObserver' in window) {
             </div>
             <div class="header-text">
                 <h1 class="page-title">
-                    <span class="title-accent">Business Profile</span> 
+                    <span class="title-accent">Business Profile</span>
                 </h1>
                <p class="page-subtitle">Update your business information</p>
             </div>
         </div>
-        
     </div>
 </div>
 
+<!-- Business Stats (from view context) -->
+<div class="business-stats-section">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div>
+                <div class="stat-value">{{ products_listed_count }}</div>
+                <div class="stat-label">Products Listed</div>
+            </div>
+        </div>
+        <div class="stat-card accent-green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">{{ active_products_count }}</div>
+                <div class="stat-label">Active Products</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <div class="stat-value">{{ followers_count }}</div>
+                <div class="stat-label">Followers</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-user-group"></i></div>
+            <div>
+                <div class="stat-value">{{ followings_count }}</div>
+                <div class="stat-label">Following</div>
+            </div>
+        </div>
+        <div class="stat-card accent-gold">
+            <div class="stat-icon"><i class="fa-solid fa-tags"></i></div>
+            <div>
+                <div class="stat-value">{{ brands_count }}</div>
+                <div class="stat-label">Brands on Platform</div>
+            </div>
+        </div>
+        <div class="stat-card accent-gold">
+            <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div>
+                <div class="stat-value">{{ categories_count }}</div>
+                <div class="stat-label">Categories</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Main Content -->
 <div class="profile-content">
     <div class="content-container">
-
-        <!-- Main Form Area -->
         <main class="main-content" role="main">
 
-            <!-- Django Messages -->
             {% if messages %}
             <section class="messages-section">
                 {% for message in messages %}
@@ -628,12 +312,12 @@ if ('PerformanceObserver' in window) {
             </section>
             {% endif %}
 
-            <form method="POST" enctype="multipart/form-data" class="edit-form" novalidate>
-                {% csrf_token %}                
-                <!-- ================================================
-                     SECTION 4 — BUSINESS INFO (dealers only)
-                ================================================ -->
-                
+            <form method="POST" class="edit-form" novalidate>
+                {% csrf_token %}
+                <!-- BUSINESS INFO (dealers only)
+                     Field names match request.POST.get(...) keys read by
+                     CreateBusinessProfileView exactly. -->
+
                 <section class="edit-profile-section">
                     <div class="section-card">
                         <div class="card-header">
@@ -651,7 +335,8 @@ if ('PerformanceObserver' in window) {
                                 <input type="text" name="business_name" id="business_name"
                                        value="{{ profile_info.business_name|default:'' }}"
                                        class="form-input"
-                                       placeholder="Acme Electronics Ltd.">
+                                       placeholder="Acme Electronics Ltd."
+                                       required>
                             </div>
 
                             <div class="form-group">
@@ -704,21 +389,16 @@ if ('PerformanceObserver' in window) {
                                     Business Description
                                 </label>
                                 <textarea name="business_description" id="business_description" rows="4"
+                                          maxlength="1000"
                                           class="form-textarea"
                                           placeholder="Describe your business and services...">{{ profile_info.business_description|default:'' }}</textarea>
-                                <span class="form-hint">Max 1000 characters</span>
+                                <span class="form-hint">{{ profile_info.business_description|default:''|length }} / 1000 characters</span>
                             </div>
 
                         </div>
                     </div>
                 </section>
-                
 
-                
-                
-                <!-- ================================================
-                     FORM ACTIONS
-                ================================================ -->
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">
                         <i class="fa-solid fa-floppy-disk"></i>
@@ -732,56 +412,25 @@ if ('PerformanceObserver' in window) {
 
             </form>
         </main>
-
     </div>
 </div>
 
+{% endblock %}
 
-
+{% block extra_js %}
 <script>
-    // Back to Top
-    const backToTop = document.querySelector('.back-to-top');
-    window.addEventListener('scroll', () => {
-        backToTop.style.display = window.pageYOffset > 300 ? 'flex' : 'none';
+// Live character counter for business description.
+// (Drawer open/close is already wired up in base.html — no need to
+// duplicate that JS here.)
+const bizDesc = document.getElementById('business_description');
+if (bizDesc) {
+    const hint = bizDesc.nextElementSibling;
+    bizDesc.addEventListener('input', () => {
+        const max = 1000;
+        const remaining = max - bizDesc.value.length;
+        if (hint) hint.textContent = `${bizDesc.value.length} / ${max} characters`;
+        hint.style.color = remaining < 20 ? 'var(--danger-crimson)' : '';
     });
-    backToTop.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Live image preview helper
-    function previewImage(inputId, previewClass) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-        input.addEventListener('change', function () {
-            if (!this.files || !this.files[0]) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                const preview = document.querySelector(previewClass);
-                if (preview) preview.src = e.target.result;
-            };
-            reader.readAsDataURL(this.files[0]);
-        });
-    }
-
-    previewImage('profile_photo', '.profile-photo-preview');
-    previewImage('profile_cover_photo', '.cover-photo-preview');
-
-    // Live character counter for bio and tagline
-    function charCounter(inputId, max) {
-        const el = document.getElementById(inputId);
-        if (!el) return;
-        const hint = el.nextElementSibling;
-        el.addEventListener('input', () => {
-            const remaining = max - el.value.length;
-            if (hint) hint.textContent = `${el.value.length} / ${max} characters`;
-            el.style.borderColor = remaining < 20 ? 'var(--danger-crimson)' : '';
-        });
-    }
-
-    charCounter('profile_bio', 500);
-    charCounter('profile_tagline', 100);
-    charCounter('business_description', 1000);
+}
 </script>
-
-</body>
-</html>
+{% endblock %}

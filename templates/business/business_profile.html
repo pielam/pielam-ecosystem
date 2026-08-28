@@ -1490,11 +1490,13 @@
                     {% endif %}
                 </div>
 
+                {% if product.slug %}
                 <div class="product-edit-overlay">
                     <a href="{% url 'ponno:product_edit' slug=product.slug %}" class="product-edit-btn">
                         <i class="fas fa-pen"></i> Edit
                     </a>
                 </div>
+                {% endif %}
             </div>
 
             <div class="product-info">

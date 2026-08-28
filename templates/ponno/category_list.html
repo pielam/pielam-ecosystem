@@ -1,580 +1,625 @@
-{% include "base.html" %}
+{% comment %}
+apps/ponno/templates/ponno/category_list.html
 
-{% load static %}
+Card-grid rendering of CategoryListView's context (apps/ponno/views/category_list.py, §6/§7).
+
+Two render modes, branching on the same signal the view uses for
+_is_ajax_request: X-Requested-With: XMLHttpRequest, or ?ajax=1.
+Infinite-scroll "load more" requests get ONLY <article class="card">
+elements — no <head>, no header, no pagination chrome — so the JS at
+the bottom can drop them straight into #catalog-grid.
+
+Context consumed (all keys from _build_context / _ERROR_CONTEXT):
+  categories, page_obj, query, category_slug, highlighted_category,
+  parent_category, breadcrumb, current_sort, current_filter,
+  sort_options, filter_tabs, total_count, stats, error
+{% endcomment %}
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}
+{# ══════════════════════ AJAX FRAGMENT — cards only ══════════════════════ #}
+{% for category in categories %}
+<article class="card{% if category.highlighted %} card--highlighted{% endif %}{% if not category.is_visible_in_menu %} card--hidden{% endif %}"
+         style="--accent: {{ category.color_code|default:'#6D5DD3' }};"
+         data-category-id="{{ category.id }}" data-uuid="{{ category.uuid }}">
+  <div class="card__cover{% if 'default-category-image' in category.image %} card__cover--blank{% endif %}"
+       {% if 'default-category-image' not in category.image %}style="background-image: url('{{ category.image }}');"{% endif %}>
+    <span class="card__no">{{ forloop.counter|stringformat:"03d" }}</span>
+    <div class="card__ribbons">
+      {% if category.is_featured %}<span class="pill pill--amber">★ Featured</span>{% endif %}
+      {% if category.is_trending %}<span class="pill pill--teal">▲ Trending</span>{% endif %}
+      {% if not category.is_visible_in_menu %}<span class="pill pill--rust">Hidden</span>{% endif %}
+    </div>
+    <div class="card__glyph">
+      {% if category.icon_class %}<i class="{{ category.icon_class }}" aria-hidden="true"></i>
+      {% else %}<img src="{{ category.icon }}" alt="" loading="lazy" width="26" height="26">{% endif %}
+    </div>
+  </div>
+
+  <div class="card__body">
+    <div class="card__toprow">
+      <span class="card__type">{{ category.type }}</span>
+      {% if category.level > 0 %}<span class="card__level">L{{ category.level }}</span>{% endif %}
+    </div>
+    <a class="card__name" href="{{ category.category_url }}">{{ category.name }}</a>
+    <span class="card__slug">/{{ category.slug }}</span>
+
+    {% if category.short_description %}<p class="card__desc">{{ category.short_description }}</p>{% endif %}
+
+    <div class="card__lineage">
+      {% if category.parent_name %}
+        <a href="?parent={{ category.parent_slug }}">↑ {{ category.parent_name }}</a>
+      {% else %}
+        <span class="card__root">◆ Root category</span>
+      {% endif %}
+      {% if category.has_children %}
+        <a href="?parent={{ category.slug }}">{{ category.child_count }} sub{{ category.child_count|pluralize:",s" }} →</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card__stats">
+    <div class="stat"><span class="stat__val">{{ category.product_count }}</span><span class="stat__lbl">SKUs</span></div>
+    <div class="stat stat--accent"><span class="stat__val">{{ category.total_product_count }}</span><span class="stat__lbl">Subtree</span></div>
+    <div class="stat"><span class="stat__val">{{ category.view_count }}</span><span class="stat__lbl">Views</span></div>
+    <div class="stat stat--score"><span class="stat__val">{{ category.popularity_score }}{% if category.is_trending %}<i class="stat__arrow">▲</i>{% endif %}</span><span class="stat__lbl">Score</span></div>
+  </div>
+
+  <a class="card__cta" href="{{ category.category_url }}">Open catalog <span>→</span></a>
+</article>
+{% empty %}
+<p class="empty-note">No further entries.</p>
+{% endfor %}
+
+{% else %}
+{# ══════════════════════════════ FULL PAGE ══════════════════════════════ #}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categories — PIELAM</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if parent_category %}{{ parent_category.category_name }} — {% endif %}Catalog — Ponno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..800&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1C1B2E;
+    --paper: #F3F1FB;
+    --surface: #FFFFFF;
+    --rule: #E4E0F5;
+    --violet: #6D5DD3;
+    --violet-deep: #4B3DA8;
+    --violet-soft: #EBE7FB;
+    --teal: #1D9A8B;
+    --teal-soft: #DCF5F1;
+    --amber: #E08B2E;
+    --amber-soft: #FDECD6;
+    --rust: #E15252;
+    --rust-soft: #FCE2E2;
+    --sky: #2E7FD6;
+    --slate: #6B6C85;
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --radius-sm: 7px;
+    --font-display: "Fraunces", Georgia, serif;
+    --font-body: "Inter", -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --shadow-card: 0 1px 2px rgba(28,27,46,0.04), 0 12px 28px -14px rgba(76,61,168,0.28);
+    --shadow-card-hover: 0 6px 14px rgba(28,27,46,0.06), 0 26px 44px -18px rgba(76,61,168,0.38);
+  }
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } *{ animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
-    <style>
-        /* ── Reset & Root ─────────────────────────────────────── */
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body{
+    margin: 0;
+    background: var(--paper);
+    background-image: radial-gradient(circle at 12% 0%, rgba(109,93,211,0.10), transparent 45%),
+                       radial-gradient(circle at 88% 8%, rgba(29,154,139,0.10), transparent 40%);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
 
-        :root {
-            --primary-dark:    #0a2540;
-            --primary-blue:    #0d47a1;
-            --primary-light:   #1976d2;
-            --accent-gold:     #d4af37;
-            --accent-amber:    #ffb300;
-            --success-emerald: #00b894;
-            --danger-crimson:  #e74c3c;
-            --text-primary:    #1a202c;
-            --text-secondary:  #4a5568;
-            --text-muted:      #718096;
-            --bg-primary:      #ffffff;
-            --bg-secondary:    #f7fafc;
-            --bg-tertiary:     #edf2f7;
-            --border-light:    #e2e8f0;
-            --border-medium:   #cbd5e0;
-            --shadow-sm:       0 2px 6px rgba(10,37,64,0.08);
-            --shadow-md:       0 4px 12px rgba(10,37,64,0.12);
-            --shadow-lg:       0 10px 30px rgba(10,37,64,0.15);
-            --font-display:    'Playfair Display', serif;
-            --font-body:       'Outfit', sans-serif;
-            --transition-base: 0.25s ease;
-        }
+  a{ color: inherit; text-decoration: none; }
+  :focus-visible{ outline: 2px solid var(--violet); outline-offset: 2px; border-radius: 4px; }
 
-        html { scroll-behavior: smooth; }
+  .wrap{ max-width: 1280px; margin: 0 auto; padding: 0 28px 100px; }
 
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            -webkit-font-smoothing: antialiased;
-        }
+  /* ── Top bar ─────────────────────────────────────────────── */
+  .topbar{ background: var(--ink); }
+  .topbar__inner{
+    max-width: 1280px; margin: 0 auto; padding: 13px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: rgba(255,255,255,0.6);
+  }
+  .topbar__mark{ color: #fff; font-weight: 600; }
+  .topbar__mark span{ color: #9F8FFF; }
 
-        /* ── Page Wrapper ─────────────────────────────────────── */
-        .page-wrapper {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 6rem 2rem 4rem;
-        }
+  /* ── Breadcrumb ──────────────────────────────────────────── */
+  .breadcrumb{
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    padding: 18px 0 0; font-family: var(--font-mono); font-size: 12.5px; color: var(--slate);
+  }
+  .breadcrumb a{ border-bottom: 1px solid transparent; }
+  .breadcrumb a:hover{ border-bottom-color: var(--violet); color: var(--violet); }
+  .breadcrumb .sep{ color: var(--rule); }
+  .breadcrumb .current{ color: var(--ink); font-weight: 600; }
 
-        /* ── Page Header ──────────────────────────────────────── */
-        .page-header {
-            margin-bottom: 2rem;
-        }
-        .page-title {
-            font-family: var(--font-display);
-            font-size: 2.25rem;
-            font-weight: 900;
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.375rem;
-        }
-        .page-title i { color: var(--accent-gold); font-size: 1.75rem; }
-        .page-subtitle { color: var(--text-muted); font-size: 1rem; }
+  /* ── Hero ────────────────────────────────────────────────── */
+  .hero{
+    margin-top: 18px; padding: 36px; border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--violet) 0%, var(--violet-deep) 55%, #2E2670 100%);
+    color: #fff; position: relative; overflow: hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .hero::after{
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 85% 20%, rgba(255,255,255,0.16), transparent 55%);
+    pointer-events: none;
+  }
+  .hero__eyebrow{
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #C9BEFF; margin: 0 0 12px; position: relative;
+  }
+  .hero__title{
+    font-family: var(--font-display); font-weight: 700; font-size: 44px;
+    line-height: 1.05; margin: 0 0 10px; letter-spacing: -0.01em; position: relative;
+  }
+  .hero__sub{ margin: 0 0 24px; color: rgba(255,255,255,0.82); max-width: 62ch; position: relative; }
 
-        /* ── Breadcrumb ───────────────────────────────────────── */
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-        .breadcrumb a {
-            color: var(--primary-blue);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color var(--transition-base);
-        }
-        .breadcrumb a:hover { color: var(--primary-dark); }
-        .breadcrumb i { font-size: 0.65rem; color: var(--border-medium); }
+  .hero__search{ display: flex; gap: 0; max-width: 480px; position: relative; }
+  .hero__search input{
+    flex: 1; border: none; background: rgba(255,255,255,0.96);
+    padding: 13px 16px; font-family: var(--font-body); font-size: 14px; color: var(--ink);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+  }
+  .hero__search input::placeholder{ color: var(--slate); }
+  .hero__search button{
+    border: none; background: var(--amber); color: #fff;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 0 24px; cursor: pointer;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0; transition: background 0.15s;
+  }
+  .hero__search button:hover{ background: #C77820; }
 
-        /* ── Filter Tabs ──────────────────────────────────────── */
-        .filter-tabs {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-        .filter-tab {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.5rem 1rem;
-            border-radius: 999px;
-            border: 1.5px solid var(--border-medium);
-            background: white;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            transition: all var(--transition-base);
-            box-shadow: var(--shadow-sm);
-        }
-        .filter-tab:hover {
-            border-color: var(--primary-blue);
-            color: var(--primary-blue);
-            transform: translateY(-1px);
-        }
-        .filter-tab.active {
-            background: var(--primary-dark);
-            color: white;
-            border-color: transparent;
-            box-shadow: 0 3px 10px rgba(10,37,64,0.2);
-        }
-        .tab-count {
-            font-size: 0.7rem;
-            padding: 0.1rem 0.45rem;
-            border-radius: 999px;
-            background: rgba(0,0,0,0.06);
-            font-weight: 700;
-        }
-        .filter-tab.active .tab-count { background: rgba(255,255,255,0.22); }
+  /* ── Stat ticker ─────────────────────────────────────────── */
+  .ticker{
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    margin-top: 28px; position: relative;
+  }
+  .ticker__cell{
+    padding: 14px 16px; border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.14);
+    transition: transform 0.15s, background 0.15s; text-decoration: none; color: #fff;
+  }
+  .ticker__cell:hover{ transform: translateY(-2px); background: rgba(255,255,255,0.18); }
+  .ticker__cell.is-active{ background: #fff; color: var(--violet-deep); border-color: #fff; }
+  .ticker__label{
+    display: block; font-family: var(--font-mono); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.65); margin-bottom: 4px;
+  }
+  .ticker__cell.is-active .ticker__label{ color: var(--violet); opacity: 0.75; }
+  .ticker__value{ display: block; font-family: var(--font-mono); font-size: 24px; font-weight: 700; }
 
-        .sort-select {
-            margin-left: auto;
-            padding: 0.5rem 1.75rem 0.5rem 0.9rem;
-            border: 1.5px solid var(--border-medium);
-            border-radius: 999px;
-            background: white;
-            font-family: var(--font-body);
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            cursor: pointer;
-            outline: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            transition: border-color var(--transition-base);
-        }
-        .sort-select:focus { border-color: var(--primary-blue); }
+  /* ── Parent filter chip ──────────────────────────────────── */
+  .parent-strip{
+    display: flex; align-items: center; gap: 10px; margin-top: 20px;
+    padding: 14px 18px; background: var(--amber-soft); border: 1px solid #F4D5A8;
+    border-radius: var(--radius-md); font-size: 13.5px; color: #7A4B10;
+  }
+  .parent-strip a.clear{
+    margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--rust);
+  }
 
-        /* ── Category Grid ────────────────────────────────────── */
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 1.25rem;
-        }
+  /* ── Controls ─────────────────────────────────────────────── */
+  .controls{
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 14px; margin-top: 32px;
+  }
+  .tabs{ display: flex; gap: 8px; flex-wrap: wrap; }
+  .tabs a{
+    font-family: var(--font-mono); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--slate); padding: 8px 14px;
+    border-radius: 999px; border: 1px solid var(--rule); background: var(--surface); white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tabs a.active{ color: #fff; border-color: var(--violet); background: var(--violet); font-weight: 600; }
+  .tabs a:hover:not(.active){ border-color: var(--violet); color: var(--violet); }
 
-        /* ── Category Card ────────────────────────────────────── */
-        .category-card {
-            background: white;
-            border-radius: 16px;
-            border: 1.5px solid var(--border-light);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-            transition: all var(--transition-base);
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        .category-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-lg);
-            border-color: var(--border-medium);
-        }
-        .category-card.highlighted {
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 0 3px rgba(212,175,55,0.25), var(--shadow-lg);
-        }
+  .result-line{
+    font-family: var(--font-mono); font-size: 12px; color: var(--slate);
+  }
+  .result-line strong{ color: var(--ink); }
 
-        /* Image / icon area */
-        .category-image-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 130px;
-            background: var(--bg-secondary);
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-light);
-            overflow: hidden;
-            position: relative;
-        }
-        /* Color accent bar at top using inline style */
-        .category-image-wrap::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 4px;
-            background: var(--card-color, var(--primary-blue));
-        }
-        .category-image-wrap img {
-            max-width: 100%;
-            max-height: 80px;
-            object-fit: contain;
-            transition: transform var(--transition-base);
-        }
-        .category-card:hover .category-image-wrap img { transform: scale(1.08); }
+  /* ── Card grid ────────────────────────────────────────────── */
+  #catalog-grid{
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 22px; margin-top: 22px;
+  }
 
-        /* Fallback icon when no image */
-        .category-icon-fallback {
-            font-size: 2.5rem;
-            color: var(--card-color, var(--primary-blue));
-            opacity: 0.75;
-            transition: transform var(--transition-base);
-        }
-        .category-card:hover .category-icon-fallback { transform: scale(1.12); }
+  .card{
+    background: var(--surface); border-radius: var(--radius-lg);
+    border: 1px solid var(--rule); overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card:hover{ transform: translateY(-5px); box-shadow: var(--shadow-card-hover); }
+  .card--highlighted{ outline: 2px solid var(--teal); outline-offset: 3px; }
+  .card--hidden{ opacity: 0.6; }
 
-        /* Badge strip */
-        .category-badges {
-            position: absolute;
-            top: 0.625rem;
-            left: 0.625rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.3rem;
-        }
-        .category-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .category-badge i { font-size: 0.65rem; }
-        .badge-featured  { background: #fef3c7; color: #92400e; }
-        .badge-trending  { background: #fee2e2; color: #991b1b; }
-        .badge-root      { background: #dbeafe; color: #1e40af; }
+  .card__cover{
+    position: relative; height: 132px;
+    background-size: cover; background-position: center;
+    background-color: color-mix(in srgb, var(--accent) 22%, white);
+  }
+  .card__cover::before{
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.35) 100%);
+  }
+  .card__cover--blank{
+    background-image:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 85%, white) 0%, color-mix(in srgb, var(--accent) 55%, #1C1B2E) 100%);
+  }
+  .card__no{
+    position: absolute; top: 12px; left: 14px; z-index: 2;
+    font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.85);
+    background: rgba(0,0,0,0.28); padding: 3px 8px; border-radius: 999px;
+  }
+  .card__ribbons{ position: absolute; top: 12px; right: 14px; z-index: 2; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .card__glyph{
+    position: absolute; bottom: -20px; left: 18px; z-index: 3;
+    width: 46px; height: 46px; border-radius: 14px; background: var(--surface);
+    border: 3px solid var(--surface); box-shadow: 0 6px 14px rgba(28,27,46,0.18);
+    display: flex; align-items: center; justify-content: center; font-size: 19px; color: var(--accent);
+  }
+  .card__glyph img{ width: 24px; height: 24px; object-fit: contain; }
 
-        /* Children indicator (top-right) */
-        .children-indicator {
-            position: absolute;
-            top: 0.625rem;
-            right: 0.625rem;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: rgba(10,37,64,0.75);
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.2rem 0.5rem;
-            border-radius: 999px;
-            backdrop-filter: blur(4px);
-        }
-        .children-indicator i { font-size: 0.6rem; }
+  .pill{
+    font-family: var(--font-mono); font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 3px 8px; border-radius: 999px; backdrop-filter: blur(2px);
+  }
+  .pill--amber{ background: rgba(224,139,46,0.92); color: #fff; }
+  .pill--teal{ background: rgba(29,154,139,0.92); color: #fff; }
+  .pill--rust{ background: rgba(225,82,82,0.92); color: #fff; }
 
-        /* Info area */
-        .category-info {
-            padding: 1rem 1.125rem 1.125rem;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 0.375rem;
-        }
-        .category-name {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .category-short-desc {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-        }
-        /* Parent breadcrumb pill */
-        .category-parent {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--primary-blue);
-            background: #eff6ff;
-            padding: 0.15rem 0.55rem;
-            border-radius: 999px;
-            width: fit-content;
-        }
-        .category-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-top: auto;
-            padding-top: 0.625rem;
-            border-top: 1px solid var(--border-light);
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
-        .category-meta span { display: flex; align-items: center; gap: 0.3rem; }
-        .category-meta i { font-size: 0.7rem; }
+  .card__body{ padding: 30px 18px 6px; flex: 1; }
+  .card__toprow{ display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .card__type{
+    font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; font-weight: 700;
+    letter-spacing: 0.05em; color: var(--violet); background: var(--violet-soft);
+    padding: 3px 8px; border-radius: var(--radius-sm);
+  }
+  .card__level{ font-family: var(--font-mono); font-size: 10px; color: var(--slate); }
 
-        /* ── Empty State ──────────────────────────────────────── */
-        .empty-state {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 5rem 2rem;
-            color: var(--text-muted);
-        }
-        .empty-state i { font-size: 4rem; opacity: 0.3; margin-bottom: 1.25rem; display: block; }
-        .empty-state h3 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+  .card__name{
+    display: block; font-family: var(--font-display); font-weight: 700; font-size: 21px;
+    color: var(--ink); line-height: 1.2; margin-bottom: 3px;
+  }
+  .card__name:hover{ color: var(--violet); }
+  .card__slug{ font-family: var(--font-mono); font-size: 11.5px; color: var(--slate); }
 
-        /* ── Pagination ───────────────────────────────────────── */
-        .pagination-wrapper {
-            display: flex; justify-content: center;
-            margin-top: 3rem;
-        }
-        .pagination { display: flex; gap: 0.5rem; list-style: none; }
-        .page-link {
-            display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
-            background: white; border: 1.5px solid var(--border-medium);
-            border-radius: 10px; color: var(--text-primary);
-            text-decoration: none; font-weight: 600; font-size: 0.9rem;
-            transition: all var(--transition-base);
-        }
-        .page-link:hover { border-color: var(--primary-blue); color: var(--primary-blue); transform: translateY(-2px); }
-        .page-item.active .page-link { background: var(--primary-dark); color: white; border-color: transparent; }
+  .card__desc{
+    margin: 10px 0 0; color: var(--slate); font-size: 13.5px; line-height: 1.5;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
 
-        /* ── Responsive ───────────────────────────────────────── */
-        @media (max-width: 768px) {
-            .page-wrapper { padding: 5rem 1rem 3rem; }
-            .menu { padding: 0.75rem 1rem; }
-            .menu-item span { display: none; }
-            .page-title { font-size: 1.6rem; }
-            .category-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.875rem; }
-            .category-image-wrap { height: 100px; }
-            .sort-select { margin-left: 0; }
-        }
-    </style>
+  .card__lineage{
+    display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px;
+    font-family: var(--font-mono); font-size: 11.5px;
+  }
+  .card__lineage a{ color: var(--sky); font-weight: 600; }
+  .card__lineage a:hover{ text-decoration: underline; }
+  .card__root{ color: var(--rule); }
+
+  .card__stats{
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    margin: 18px 16px 0; border-top: 1px dashed var(--rule); padding-top: 14px;
+  }
+  .stat{ display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat__val{ font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--ink); display: flex; align-items: baseline; gap: 2px; }
+  .stat__lbl{ font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); }
+  .stat--accent .stat__val{ color: var(--teal); }
+  .stat--score .stat__val{ color: var(--amber); }
+  .stat__arrow{ color: var(--teal); font-size: 10px; }
+
+  .card__cta{
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin: 18px; padding: 11px; border-radius: var(--radius-md);
+    background: var(--violet-soft); color: var(--violet-deep);
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; transition: background 0.15s, color 0.15s;
+  }
+  .card__cta span{ transition: transform 0.15s; }
+  .card__cta:hover{ background: var(--violet); color: #fff; }
+  .card__cta:hover span{ transform: translateX(3px); }
+
+  .empty-note{
+    grid-column: 1 / -1; padding: 40px 4px; text-align: center; color: var(--slate);
+    font-family: var(--font-mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ── Empty / error states ─────────────────────────────────── */
+  .state-panel{
+    grid-column: 1 / -1; margin-top: 6px; padding: 56px 24px; text-align: center;
+    border: 1px dashed var(--rule); border-radius: var(--radius-lg); background: var(--surface);
+  }
+  .state-panel h2{ font-family: var(--font-display); font-size: 24px; margin: 0 0 8px; color: var(--ink); }
+  .state-panel p{ color: var(--slate); margin: 0; }
+  .state-panel.is-error{ border-color: var(--rust); background: var(--rust-soft); }
+  .state-panel.is-error h2{ color: var(--rust); }
+
+  /* ── Pagination / load more ───────────────────────────────── */
+  .pager{
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--rule);
+    font-family: var(--font-mono); font-size: 12px; color: var(--slate);
+  }
+  .pager__pages{ display: flex; gap: 6px; }
+  .pager__pages a, .pager__pages span{
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 30px; border-radius: var(--radius-sm);
+    border: 1px solid var(--rule); background: var(--surface);
+  }
+  .pager__pages a:hover{ border-color: var(--violet); color: var(--violet); }
+  .pager__pages .current{ background: var(--violet); color: #fff; border-color: var(--violet); }
+
+  .loadmore{ text-align: center; margin-top: 32px; }
+  .loadmore button{
+    font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 13px 30px; border: none; color: #fff; cursor: pointer;
+    background: linear-gradient(135deg, var(--violet), var(--violet-deep));
+    border-radius: 999px; box-shadow: 0 10px 24px -8px rgba(76,61,168,0.55);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .loadmore button:hover{ transform: translateY(-2px); box-shadow: 0 14px 28px -8px rgba(76,61,168,0.65); }
+  .loadmore button:disabled{ opacity: 0.5; cursor: default; transform: none; }
+  .loadmore__hint{ margin-top: 10px; color: var(--rule); font-size: 11px; }
+  .loadmore__hint a{ color: var(--violet); }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 760px){
+    .hero{ padding: 26px; }
+    .hero__title{ font-size: 32px; }
+    .ticker{ grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px){
+    .wrap{ padding: 0 16px 80px; }
+    #catalog-grid{ grid-template-columns: 1fr; }
+    .ticker{ grid-template-columns: repeat(2, 1fr); }
+    .hero__title{ font-size: 27px; }
+  }
+</style>
 </head>
-
 <body>
 
+<div class="topbar">
+  <div class="topbar__inner">
+    <span class="topbar__mark">PONNO <span>//</span> CATALOG</span>
+    <span>{{ total_count }} active entr{{ total_count|pluralize:"y,ies" }}</span>
+  </div>
+</div>
 
-<div class="page-wrapper">
+<div class="wrap">
 
-    <!-- Header -->
-    <div class="page-header">
-        <h1 class="page-title">
-            <i class="fa-solid fa-table-cells-large"></i>
-            {% if parent_category %}
-                {{ parent_category.category_name }}
-            {% else %}
-                All Categories
-            {% endif %}
-        </h1>
-        <p class="page-subtitle">
-            {{ stats.total }} categories available on PIELAM
-            {% if highlighted_category %}
-                &mdash; showing <strong>{{ highlighted_category.category_name }}</strong> highlighted
-            {% endif %}
-            {% if parent_category %}
-                &mdash; browsing subcategories of <strong>{{ parent_category.category_name }}</strong>
-            {% endif %}
-        </p>
+  {% if breadcrumb %}
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="?">Catalog</a>
+    {% for node in breadcrumb %}
+      <span class="sep">/</span>
+      {% if forloop.last %}<span class="current">{{ node.name }}</span>
+      {% else %}<a href="?parent={{ node.slug }}">{{ node.name }}</a>{% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <header class="hero">
+    <p class="hero__eyebrow">{% if error %}Catalog temporarily unavailable{% else %}Live category catalog{% endif %}</p>
+    <h1 class="hero__title">
+      {% if parent_category %}{{ parent_category.category_name }}{% elif query %}Results for “{{ query }}”{% else %}Browse Categories{% endif %}
+    </h1>
+    <p class="hero__sub">
+      {% if parent_category %}
+        Subcategories filed under {{ parent_category.category_name }}, ranked by {{ current_sort }}.
+      {% else %}
+        Every active category with its direct and rolled-up subtree counts, page views, and computed
+        popularity score. Filter by status or search by name, slug, or description.
+      {% endif %}
+    </p>
+
+    <form class="hero__search" method="get" action="">
+      {% if current_filter != 'all' %}<input type="hidden" name="type" value="{{ current_filter }}">{% endif %}
+      {% if current_sort != 'popular' %}<input type="hidden" name="sort" value="{{ current_sort }}">{% endif %}
+      {% if parent_category %}<input type="hidden" name="parent" value="{{ parent_category.slug }}">{% endif %}
+      <input type="text" name="q" value="{{ query }}" placeholder="Search name, slug, description…" maxlength="100" aria-label="Search categories">
+      <button type="submit">Search</button>
+    </form>
+
+    {% if not error %}
+    <div class="ticker" role="tablist" aria-label="Category status filters">
+      {% for tab in filter_tabs %}
+        <a class="ticker__cell{% if tab.active %} is-active{% endif %}"
+           href="?type={{ tab.value }}{% if query %}&q={{ query }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}{% if parent_category %}&parent={{ parent_category.slug }}{% endif %}"
+           role="tab" aria-selected="{{ tab.active|yesno:'true,false' }}">
+          <span class="ticker__label">{{ tab.label }}</span>
+          <span class="ticker__value">{{ tab.count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </header>
+
+  {% if parent_category %}
+  <div class="parent-strip">
+    <span>Browsing subcategories of <strong>{{ parent_category.category_name }}</strong></span>
+    <a class="clear" href="?{% if query %}q={{ query }}&{% endif %}{% if current_sort != 'popular' %}sort={{ current_sort }}&{% endif %}type={{ current_filter }}">Clear ×</a>
+  </div>
+  {% endif %}
+
+  {% if error %}
+    <div class="state-panel is-error" style="margin-top:24px;">
+      <h2>Catalog is catching up</h2>
+      <p>The database is under load and the cache has no recent snapshot. Refresh in a moment — nothing has been lost.</p>
+    </div>
+  {% else %}
+
+    <div class="controls">
+      <nav class="tabs" aria-label="Sort order">
+        {% for opt in sort_options %}
+          <a class="{% if opt.active %}active{% endif %}"
+             href="?sort={{ opt.value }}{% if query %}&q={{ query }}{% endif %}{% if current_filter != 'all' %}&type={{ current_filter }}{% endif %}{% if parent_category %}&parent={{ parent_category.slug }}{% endif %}">
+            {{ opt.label }}
+          </a>
+        {% endfor %}
+      </nav>
+      <div class="result-line">
+        Showing <strong>{{ categories|length }}</strong> of <strong>{{ total_count }}</strong> — page <strong>{{ page_obj.number }}</strong> of {{ page_obj.paginator.num_pages }}
+        {% if highlighted_category %} · highlighting <strong>{{ highlighted_category.category_name }}</strong>{% endif %}
+      </div>
     </div>
 
-    <!-- Breadcrumb (only when drilling into a parent) -->
-    {% if breadcrumb %}
-        <div class="breadcrumb">
-            <a href="{% url 'ponno:category_list' %}">
-                <i class="fa-solid fa-table-cells-large"></i> All Categories
-            </a>
-            {% for crumb in breadcrumb %}
-                <i class="fa-solid fa-chevron-right"></i>
-                {% if not forloop.last %}
-                    <a href="{% url 'ponno:category_list' %}?parent={{ crumb.slug }}">{{ crumb.name }}</a>
-                {% else %}
-                    <span>{{ crumb.name }}</span>
-                {% endif %}
-            {% endfor %}
+    <section id="catalog-grid" aria-label="Category entries">
+      {% for category in categories %}
+      <article class="card{% if category.highlighted %} card--highlighted{% endif %}{% if not category.is_visible_in_menu %} card--hidden{% endif %}"
+                style="--accent: {{ category.color_code|default:'#6D5DD3' }};"
+                data-category-id="{{ category.id }}" data-uuid="{{ category.uuid }}">
+        <div class="card__cover{% if 'default-category-image' in category.image %} card__cover--blank{% endif %}"
+             {% if 'default-category-image' not in category.image %}style="background-image: url('{{ category.image }}');"{% endif %}>
+          <span class="card__no">{{ forloop.counter|add:page_obj.start_index|add:"-1"|stringformat:"03d" }}</span>
+          <div class="card__ribbons">
+            {% if category.is_featured %}<span class="pill pill--amber">★ Featured</span>{% endif %}
+            {% if category.is_trending %}<span class="pill pill--teal">▲ Trending</span>{% endif %}
+            {% if not category.is_visible_in_menu %}<span class="pill pill--rust">Hidden</span>{% endif %}
+          </div>
+          <div class="card__glyph">
+            {% if category.icon_class %}<i class="{{ category.icon_class }}" aria-hidden="true"></i>
+            {% else %}<img src="{{ category.icon }}" alt="" loading="lazy" width="26" height="26">{% endif %}
+          </div>
         </div>
-    {% endif %}
 
-    <!-- Filter Tabs -->
-    <div class="filter-tabs">
-        {% for tab in filter_tabs %}
-            <a
-                href="{% url 'ponno:category_list' %}?type={{ tab.value }}{% if query %}&q={{ query|urlencode }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}"
-                class="filter-tab {% if tab.active %}active{% endif %}"
-            >
-                {% if tab.value == 'all' %}      <i class="fa-solid fa-border-all"></i>
-                {% elif tab.value == 'featured' %}<i class="fa-solid fa-star"></i>
-                {% elif tab.value == 'trending' %}<i class="fa-solid fa-fire"></i>
-                {% elif tab.value == 'root' %}    <i class="fa-solid fa-sitemap"></i>
-                {% endif %}
-                {{ tab.label }}
-                <span class="tab-count">{{ tab.count }}</span>
-            </a>
-        {% endfor %}
+        <div class="card__body">
+          <div class="card__toprow">
+            <span class="card__type">{{ category.type }}</span>
+            {% if category.level > 0 %}<span class="card__level">L{{ category.level }}</span>{% endif %}
+          </div>
+          <a class="card__name" href="{{ category.category_url }}">{{ category.name }}</a>
+          <span class="card__slug">/{{ category.slug }}</span>
 
-        <select class="sort-select" onchange="applySort(this.value)" aria-label="Sort categories">
-            {% for opt in sort_options %}
-                <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>
-                    {{ opt.label }}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
+          {% if category.short_description %}<p class="card__desc">{{ category.short_description }}</p>{% endif %}
 
-    <!-- Category Grid -->
-    <div class="category-grid">
-        {% for cat in categories %}
-            <a
-                href="{{ cat.category_url }}"
-                class="category-card {% if cat.highlighted %}highlighted{% endif %}"
-                style="--card-color: {{ cat.color_code|default:'#0d47a1' }};"
-            >
+          <div class="card__lineage">
+            {% if category.parent_name %}
+              <a href="?parent={{ category.parent_slug }}">↑ {{ category.parent_name }}</a>
+            {% else %}
+              <span class="card__root">◆ Root category</span>
+            {% endif %}
+            {% if category.has_children %}
+              <a href="?parent={{ category.slug }}">{{ category.child_count }} sub{{ category.child_count|pluralize:",s" }} →</a>
+            {% endif %}
+          </div>
+        </div>
 
-                <!-- Badges -->
-                <div class="category-badges">
-                    {% if cat.is_featured %}
-                        <span class="category-badge badge-featured">
-                            <i class="fa-solid fa-star"></i> Featured
-                        </span>
-                    {% endif %}
-                    {% if cat.is_trending %}
-                        <span class="category-badge badge-trending">
-                            <i class="fa-solid fa-fire"></i> Trending
-                        </span>
-                    {% endif %}
-                    {% if cat.is_root %}
-                        <span class="category-badge badge-root">
-                            <i class="fa-solid fa-layer-group"></i> Top Level
-                        </span>
-                    {% endif %}
-                </div>
+        <div class="card__stats">
+          <div class="stat"><span class="stat__val">{{ category.product_count }}</span><span class="stat__lbl">SKUs</span></div>
+          <div class="stat stat--accent"><span class="stat__val">{{ category.total_product_count }}</span><span class="stat__lbl">Subtree</span></div>
+          <div class="stat"><span class="stat__val">{{ category.view_count }}</span><span class="stat__lbl">Views</span></div>
+          <div class="stat stat--score"><span class="stat__val">{{ category.popularity_score }}{% if category.is_trending %}<i class="stat__arrow">▲</i>{% endif %}</span><span class="stat__lbl">Score</span></div>
+        </div>
 
-                <!-- Children indicator -->
-                {% if cat.has_children %}
-                    <div class="children-indicator">
-                        <i class="fa-solid fa-sitemap"></i> {{ cat.child_count }}
-                    </div>
-                {% endif %}
+        <a class="card__cta" href="{{ category.category_url }}">Open catalog <span>→</span></a>
+      </article>
+      {% empty %}
+      <div class="state-panel">
+        <h2>No entries match this filter</h2>
+        <p>Try clearing the search, switching tabs, or moving up a level in the hierarchy.</p>
+      </div>
+      {% endfor %}
+    </section>
 
-                <!-- Image / Icon -->
-                <div class="category-image-wrap">
-                    {% if cat.image %}
-                        <img
-                            src="{{ cat.image }}"
-                            alt="{{ cat.name }}"
-                            loading="lazy"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                        >
-                        <span class="category-icon-fallback" style="display:none;">
-                            {% if cat.icon_class %}
-                                <i class="{{ cat.icon_class }}"></i>
-                            {% else %}
-                                <i class="fa-solid fa-table-cells-large"></i>
-                            {% endif %}
-                        </span>
-                    {% else %}
-                        <span class="category-icon-fallback">
-                            {% if cat.icon_class %}
-                                <i class="{{ cat.icon_class }}"></i>
-                            {% else %}
-                                <i class="fa-solid fa-table-cells-large"></i>
-                            {% endif %}
-                        </span>
-                    {% endif %}
-                </div>
-
-                <!-- Info -->
-                <div class="category-info">
-                    <div class="category-name">{{ cat.name }}</div>
-
-                    {% if cat.short_description %}
-                        <div class="category-short-desc">{{ cat.short_description }}</div>
-                    {% endif %}
-
-                    {% if not cat.is_root and cat.parent_name %}
-                        <div class="category-parent">
-                            <i class="fa-solid fa-turn-up fa-rotate-90"></i>
-                            {{ cat.parent_name }}
-                        </div>
-                    {% endif %}
-
-                    <div class="category-meta">
-                        <span>
-                            <i class="fa-solid fa-box"></i>
-                            {{ cat.product_count }} products
-                        </span>
-                        {% if cat.has_children %}
-                            <span>
-                                <i class="fa-solid fa-folder-tree"></i>
-                                {{ cat.child_count }} sub
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-
-            </a>
-
-        {% empty %}
-            <div class="empty-state">
-                <i class="fa-solid fa-table-cells-large"></i>
-                <h3>No categories found</h3>
-                <p>
-                    {% if query %}
-                        No results for &ldquo;<strong>{{ query }}</strong>&rdquo;.
-                    {% else %}
-                        No categories match the selected filter.
-                    {% endif %}
-                </p>
-            </div>
-        {% endfor %}
-    </div>
-
-    <!-- Pagination -->
     {% if page_obj.paginator.num_pages > 1 %}
-    <nav class="pagination-wrapper" aria-label="Category pages">
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">
-                        <i class="fa-solid fa-chevron-left"></i> Previous
-                    </a>
-                </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">{{ num }}</a>
-                    </li>
-                {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}&type={{ current_filter }}&sort={{ current_sort }}{% if parent_category %}&parent={{ parent_category.category_slug }}{% endif %}">
-                        Next <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                </li>
-            {% endif %}
-        </ul>
-    </nav>
+    <div class="pager" data-total-count="{{ total_count }}">
+      <span>{{ page_obj.paginator.count }} total, {{ page_obj.paginator.num_pages }} pages</span>
+      <div class="pager__pages">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_filter != 'all' %}&type={{ current_filter }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}">‹</a>{% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="current">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if current_filter != 'all' %}&type={{ current_filter }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_filter != 'all' %}&type={{ current_filter }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}">›</a>{% endif %}
+      </div>
+    </div>
     {% endif %}
 
-</div><!-- /page-wrapper -->
+    {% if page_obj.has_next %}
+    <div class="loadmore">
+      <button type="button" id="load-more-btn" data-next-page="{{ page_obj.next_page_number }}">Load next 24 entries</button>
+      <p class="loadmore__hint">or continue to <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_filter != 'all' %}&type={{ current_filter }}{% endif %}{% if current_sort != 'popular' %}&sort={{ current_sort }}{% endif %}">page {{ page_obj.next_page_number }}</a> directly</p>
+    </div>
+    {% endif %}
+
+  {% endif %}
+</div>
 
 <script>
-function applySort(value) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('sort', value);
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
+(function () {
+  var btn = document.getElementById('load-more-btn');
+  if (!btn) return;
+  var grid = document.getElementById('catalog-grid');
+  var params = new URLSearchParams(window.location.search);
+
+  btn.addEventListener('click', function () {
+    var nextPage = btn.getAttribute('data-next-page');
+    if (!nextPage) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+
+    params.set('page', nextPage);
+    params.set('ajax', '1');
+
+    fetch(window.location.pathname + '?' + params.toString(), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin'
+    })
+      .then(function (res) {
+        var hasNext = res.headers.get('X-Has-Next-Page') === 'true';
+        var next = res.headers.get('X-Next-Page');
+        return res.text().then(function (html) {
+          return { html: html, hasNext: hasNext, next: next };
+        });
+      })
+      .then(function (data) {
+        var fragment = document.createElement('div');
+        fragment.innerHTML = data.html.trim();
+        while (fragment.firstChild) {
+          grid.appendChild(fragment.firstChild);
+        }
+
+        if (data.hasNext && data.next) {
+          btn.setAttribute('data-next-page', data.next);
+          btn.disabled = false;
+          btn.textContent = 'Load next 24 entries';
+        } else {
+          btn.remove();
+        }
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Retry load more';
+      });
+  });
+})();
 </script>
 
 </body>
 </html>
+{% endif %}
