@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ campaign.name }}{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --cd-ink:#1b1f23;
+    --cd-paper:#fbfaf7;
+    --cd-line:#e2ddd2;
+    --cd-accent:#0f6b5c;
+    --cd-accent-dark:#0b4f44;
+    --cd-accent-bg:#e4f2ee;
+    --cd-muted:#6b6558;
+    --cd-card-bg:#ffffff;
+    --cd-strike:#a8a196;
+    --cd-badge-active-bg:#e4f2ee;
+    --cd-badge-active-fg:#0b4f44;
+    --cd-badge-scheduled-bg:#eef1fb;
+    --cd-badge-scheduled-fg:#33409e;
+    --cd-badge-paused-bg:#fdf3e3;
+    --cd-badge-paused-fg:#946200;
+    --cd-badge-ended-bg:#f1efe9;
+    --cd-badge-ended-fg:#6b6558;
+    --cd-badge-cancelled-bg:#fdecea;
+    --cd-badge-cancelled-fg:#b3261e;
+    --cd-badge-pending-bg:#f5eefc;
+    --cd-badge-pending-fg:#6a3fa0;
+    --cd-badge-rejected-bg:#fdecea;
+    --cd-badge-rejected-fg:#b3261e;
+    --cd-badge-draft-bg:#f1efe9;
+    --cd-badge-draft-fg:#6b6558;
+  }
+
+  .cd-wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:0 1.25rem 5rem;
+    color:var(--cd-ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  /* ---------- Hero ---------- */
+  .cd-hero{
+    position:relative;
+    border-radius:16px;
+    overflow:hidden;
+    margin:2rem 0 2.5rem;
+    background:linear-gradient(135deg,var(--cd-accent-dark),var(--cd-accent));
+    color:#fff;
+    min-height:260px;
+    display:flex;
+    align-items:flex-end;
+  }
+  .cd-hero-bg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:.35;
+  }
+  .cd-hero-inner{
+    position:relative;
+    padding:2rem 2.25rem;
+    width:100%;
+  }
+  .cd-badge{
+    display:inline-block;
+    font-size:.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    padding:.25rem .65rem;
+    border-radius:999px;
+    margin-bottom:.85rem;
+  }
+  .cd-badge-active{ background:var(--cd-badge-active-bg); color:var(--cd-badge-active-fg); }
+  .cd-badge-scheduled{ background:var(--cd-badge-scheduled-bg); color:var(--cd-badge-scheduled-fg); }
+  .cd-badge-paused{ background:var(--cd-badge-paused-bg); color:var(--cd-badge-paused-fg); }
+  .cd-badge-ended{ background:var(--cd-badge-ended-bg); color:var(--cd-badge-ended-fg); }
+  .cd-badge-cancelled{ background:var(--cd-badge-cancelled-bg); color:var(--cd-badge-cancelled-fg); }
+  .cd-badge-pending{ background:var(--cd-badge-pending-bg); color:var(--cd-badge-pending-fg); }
+  .cd-badge-rejected{ background:var(--cd-badge-rejected-bg); color:var(--cd-badge-rejected-fg); }
+  .cd-badge-draft{ background:var(--cd-badge-draft-bg); color:var(--cd-badge-draft-fg); }
+
+  .cd-hero-title{
+    font-size:2.25rem;
+    line-height:1.1;
+    font-weight:800;
+    margin:0 0 .5rem;
+    letter-spacing:-.01em;
+  }
+
+  .cd-hero-sub{
+    font-size:1.05rem;
+    opacity:.9;
+    max-width:56ch;
+    margin:0;
+  }
+
+  .cd-hero-discount{
+    display:inline-flex;
+    align-items:baseline;
+    gap:.4rem;
+    margin-top:1.1rem;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.3);
+    border-radius:10px;
+    padding:.5rem .9rem;
+    font-weight:700;
+  }
+  .cd-hero-discount .value{ font-size:1.4rem; }
+  .cd-hero-discount .unit{ font-size:.85rem; opacity:.85; }
+
+  /* ---------- Info strip ---------- */
+  .cd-info-strip{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--cd-line);
+    border:1px solid var(--cd-line);
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:2.5rem;
+  }
+  .cd-info-cell{
+    background:var(--cd-card-bg);
+    padding:1rem 1.1rem;
+  }
+  .cd-info-label{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--cd-muted);
+    font-weight:700;
+    margin:0 0 .3rem;
+  }
+  .cd-info-value{
+    font-size:1rem;
+    font-weight:600;
+    margin:0;
+  }
+  .cd-info-value.muted{ color:var(--cd-muted); font-weight:500; font-size:.85rem; }
+
+  /* ---------- Description / terms ---------- */
+  .cd-copy-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:1.5rem;
+    margin-bottom:3rem;
+  }
+  .cd-copy-block{
+    background:var(--cd-paper);
+    border:1px solid var(--cd-line);
+    border-radius:12px;
+    padding:1.35rem 1.5rem;
+  }
+  .cd-copy-heading{
+    font-size:.95rem;
+    font-weight:700;
+    margin:0 0 .6rem;
+  }
+  .cd-copy-text{
+    font-size:.92rem;
+    line-height:1.6;
+    color:#3a362e;
+    margin:0;
+    white-space:pre-line;
+  }
+  .cd-copy-text.small{
+    font-size:.82rem;
+    color:var(--cd-muted);
+  }
+
+  /* ---------- Product grid ---------- */
+  .cd-section-title{
+    font-size:1.3rem;
+    font-weight:700;
+    margin:0 0 .25rem;
+  }
+  .cd-section-sub{
+    color:var(--cd-muted);
+    font-size:.88rem;
+    margin:0 0 1.5rem;
+  }
+
+  .cd-product-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:1.25rem;
+  }
+
+  .cd-product-card{
+    display:flex;
+    flex-direction:column;
+    background:var(--cd-card-bg);
+    border:1px solid var(--cd-line);
+    border-radius:12px;
+    overflow:hidden;
+    text-decoration:none;
+    color:inherit;
+    transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .cd-product-card:hover{
+    box-shadow:0 8px 24px rgba(27,31,35,.08);
+    transform:translateY(-2px);
+  }
+
+  .cd-product-media{
+    position:relative;
+    aspect-ratio:1/1;
+    background:#f1efe9;
+  }
+  .cd-product-media img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .cd-product-discount-tag{
+    position:absolute;
+    top:.6rem;
+    left:.6rem;
+    background:var(--cd-accent);
+    color:#fff;
+    font-size:.72rem;
+    font-weight:700;
+    padding:.2rem .5rem;
+    border-radius:6px;
+  }
+  .cd-product-out-of-stock{
+    position:absolute;
+    inset:0;
+    background:rgba(27,31,35,.55);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:.8rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+
+  .cd-product-body{
+    padding:.85rem 1rem 1.1rem;
+    display:flex;
+    flex-direction:column;
+    gap:.35rem;
+    flex:1;
+  }
+  .cd-product-name{
+    font-size:.9rem;
+    font-weight:600;
+    line-height:1.35;
+    margin:0;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .cd-product-prices{
+    display:flex;
+    align-items:baseline;
+    gap:.5rem;
+    margin-top:auto;
+    padding-top:.4rem;
+  }
+  .cd-price-final{
+    font-size:1.05rem;
+    font-weight:800;
+    color:var(--cd-accent-dark);
+  }
+  .cd-price-original{
+    font-size:.82rem;
+    color:var(--cd-strike);
+    text-decoration:line-through;
+  }
+
+  .cd-empty{
+    border:1px dashed var(--cd-line);
+    border-radius:12px;
+    padding:3rem 1.5rem;
+    text-align:center;
+    color:var(--cd-muted);
+  }
+  .cd-empty p{ margin:0; font-size:.92rem; }
+
+  /* ---------- Top bar ---------- */
+  .cd-topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    padding-top:1.5rem;
+  }
+
+  .cd-breadcrumb{
+    display:flex;
+    align-items:center;
+    gap:.4rem;
+    font-size:.85rem;
+    color:var(--cd-muted);
+  }
+  .cd-breadcrumb a{
+    color:var(--cd-muted);
+    text-decoration:none;
+  }
+  .cd-breadcrumb a:hover{
+    color:var(--cd-accent-dark);
+    text-decoration:underline;
+  }
+  .cd-breadcrumb .current{
+    color:var(--cd-ink);
+    font-weight:600;
+    max-width:32ch;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  .cd-edit-link{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--cd-accent-dark);
+    background:var(--cd-accent-bg);
+    border:1px solid #bfe0d6;
+    border-radius:8px;
+    padding:.45rem .85rem;
+    text-decoration:none;
+    transition:background .15s ease;
+  }
+  .cd-edit-link:hover{ background:#d7ece5; }
+
+  @media (max-width:760px){
+    .cd-info-strip{ grid-template-columns:repeat(2,1fr); }
+    .cd-copy-grid{ grid-template-columns:1fr; }
+    .cd-hero-title{ font-size:1.7rem; }
+    .cd-breadcrumb .current{ max-width:16ch; }
+  }
+</style>
+
+<div class="cd-wrap">
+
+  <!-- ============================================================ -->
+  <!-- TOP BAR: breadcrumb + edit link -->
+  <!-- ============================================================ -->
+  <div class="cd-topbar">
+    <nav class="cd-breadcrumb" aria-label="Breadcrumb">
+      <a href="{% url 'ponno:campaign_list' %}">Campaigns</a>
+      <span>/</span>
+      <span class="current">{{ campaign.name }}</span>
+    </nav>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- HERO -->
+  <!-- ============================================================ -->
+  <div class="cd-hero">
+    {% if campaign.banner_image %}
+      <img class="cd-hero-bg" src="{{ campaign.banner_image.url }}" alt="">
+    {% endif %}
+    <div class="cd-hero-inner">
+      {% if campaign.status == 'active' %}
+        <span class="cd-badge cd-badge-active">Live now</span>
+      {% elif campaign.status == 'scheduled' %}
+        <span class="cd-badge cd-badge-scheduled">Starts {{ campaign.start_at|date:"M j, Y" }}</span>
+      {% elif campaign.status == 'paused' %}
+        <span class="cd-badge cd-badge-paused">Paused</span>
+      {% elif campaign.status == 'pending_approval' %}
+        <span class="cd-badge cd-badge-pending">Pending Approval</span>
+      {% elif campaign.status == 'rejected' %}
+        <span class="cd-badge cd-badge-rejected">Not Approved</span>
+      {% elif campaign.status == 'draft' %}
+        <span class="cd-badge cd-badge-draft">Draft</span>
+      {% elif campaign.status == 'cancelled' %}
+        <span class="cd-badge cd-badge-cancelled">Cancelled</span>
+      {% else %}
+        <span class="cd-badge cd-badge-ended">Ended</span>
+      {% endif %}
+
+      <h1 class="cd-hero-title">{{ campaign.name }}</h1>
+      {% if campaign.description %}
+        <p class="cd-hero-sub">{{ campaign.description|truncatewords:28 }}</p>
+      {% endif %}
+
+      <div class="cd-hero-discount">
+        {% if campaign.campaign_type == 'percentage' %}
+          <span class="value">{{ campaign.discount_value|floatformat:0 }}%</span>
+          <span class="unit">off{% if campaign.max_discount_amount %}, up to {{ campaign.currency }} {{ campaign.max_discount_amount|floatformat:0 }}{% endif %}</span>
+        {% else %}
+          <span class="value">{{ campaign.currency }} {{ campaign.discount_value|floatformat:0 }}</span>
+          <span class="unit">off per item</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- INFO STRIP -->
+  <!-- ============================================================ -->
+  <div class="cd-info-strip">
+    <div class="cd-info-cell">
+      <p class="cd-info-label">Applies to</p>
+      <p class="cd-info-value">{{ campaign.get_applies_to_display }}</p>
+    </div>
+    <div class="cd-info-cell">
+      <p class="cd-info-label">Window</p>
+      <p class="cd-info-value">{{ campaign.start_at|date:"M j" }}{% if campaign.end_at %} – {{ campaign.end_at|date:"M j, Y" }}{% else %}, ongoing{% endif %}</p>
+    </div>
+    <div class="cd-info-cell">
+      <p class="cd-info-label">Minimum order</p>
+      {% if campaign.min_order_amount %}
+        <p class="cd-info-value">{{ campaign.currency }} {{ campaign.min_order_amount|floatformat:0 }}</p>
+      {% else %}
+        <p class="cd-info-value muted">No minimum</p>
+      {% endif %}
+    </div>
+    <div class="cd-info-cell">
+      <p class="cd-info-label">Availability</p>
+      {% if campaign.usage_limit_total %}
+        <p class="cd-info-value">{{ campaign.remaining_uses }} of {{ campaign.usage_limit_total }} left</p>
+      {% else %}
+        <p class="cd-info-value muted">Unlimited</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DESCRIPTION / TERMS -->
+  <!-- ============================================================ -->
+  {% if campaign.description or campaign.terms_conditions %}
+    <div class="cd-copy-grid">
+      {% if campaign.description %}
+        <div class="cd-copy-block">
+          <p class="cd-copy-heading">About this campaign</p>
+          <p class="cd-copy-text">{{ campaign.description }}</p>
+        </div>
+      {% endif %}
+      {% if campaign.terms_conditions %}
+        <div class="cd-copy-block">
+          <p class="cd-copy-heading">Terms &amp; conditions</p>
+          <p class="cd-copy-text small">{{ campaign.terms_conditions }}</p>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- ============================================================ -->
+  <!-- PRODUCTS -->
+  <!-- ============================================================ -->
+  <h2 class="cd-section-title">Products in this campaign</h2>
+  <p class="cd-section-sub">
+    {% if products_with_prices %}
+      {{ products_with_prices|length }} product{{ products_with_prices|length|pluralize }} discounted right now.
+    {% elif campaign_is_active and not campaign_visible_on_web %}
+      This campaign is live on {{ campaign.get_channel_display }} only — it isn't available on the website.
+    {% elif campaign_is_active %}
+      No products are currently included.
+    {% elif campaign.status == 'scheduled' %}
+      Products will appear here once the campaign starts.
+    {% elif campaign.status == 'pending_approval' %}
+      This campaign is awaiting approval and isn't live yet.
+    {% elif campaign.status == 'rejected' or campaign.status == 'draft' %}
+      This campaign isn't live.
+    {% else %}
+      This campaign has ended.
+    {% endif %}
+  </p>
+
+  {% if products_with_prices %}
+    <div class="cd-product-grid">
+      {% for entry in products_with_prices %}
+        {% with product=entry.product price=entry.price %}
+          <a class="cd-product-card" href="{{ product.product_url }}">
+            <div class="cd-product-media">
+              <img src="{{ product.image_url }}" alt="{{ product.product_name }}" loading="lazy">
+              {% if price.has_discount %}
+                <span class="cd-product-discount-tag">
+                  -{{ price.total_discount|floatformat:0 }}
+                </span>
+              {% endif %}
+              {% if not product.is_in_stock %}
+                <div class="cd-product-out-of-stock">Out of stock</div>
+              {% endif %}
+            </div>
+            <div class="cd-product-body">
+              <p class="cd-product-name">{{ product.product_name }}</p>
+              <div class="cd-product-prices">
+                <span class="cd-price-final">{{ product.currency }} {{ price.final_price|floatformat:0 }}</span>
+                {% if price.has_discount %}
+                  <span class="cd-price-original">{{ product.currency }} {{ price.original_price|floatformat:0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </a>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="cd-empty">
+      <p>
+        {% if campaign_is_active and not campaign_visible_on_web %}
+          This campaign is running on {{ campaign.get_channel_display }} — it won't show products here on the website.
+        {% elif campaign_is_active %}
+          Check back soon — products will appear here once they're added to this campaign.
+        {% else %}
+          This campaign isn't currently active.
+        {% endif %}
+      </p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

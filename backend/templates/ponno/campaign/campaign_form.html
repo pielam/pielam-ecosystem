@@ -1,0 +1,1272 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if campaign.pk %}Edit Campaign{% else %}Create Campaign{% endif %}{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --cf-ink:#1b1f23;
+    --cf-paper:#fbfaf7;
+    --cf-line:#e2ddd2;
+    --cf-accent:#0f6b5c;
+    --cf-accent-dark:#0b4f44;
+    --cf-accent-tint:#eef7f4;
+    --cf-danger:#b3261e;
+    --cf-danger-bg:#fdecea;
+    --cf-muted:#6b6558;
+    --cf-field-bg:#ffffff;
+  }
+
+  .cf-wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:2.5rem 1.25rem 6.5rem;
+    color:var(--cf-ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  .cf-eyebrow{
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    font-size:.72rem;
+    font-weight:700;
+    color:var(--cf-accent);
+    margin:0 0 .35rem;
+  }
+
+  .cf-title{
+    font-size:2rem;
+    line-height:1.15;
+    font-weight:700;
+    margin:0 0 .4rem;
+    letter-spacing:-.01em;
+  }
+
+  .cf-sub{
+    color:var(--cf-muted);
+    margin:0 0 2.25rem;
+    max-width:60ch;
+  }
+
+  .cf-nonfield{
+    background:var(--cf-danger-bg);
+    border:1px solid #f2c6c2;
+    color:var(--cf-danger);
+    padding:.85rem 1rem;
+    border-radius:8px;
+    margin-bottom:1.75rem;
+    font-size:.92rem;
+  }
+  .cf-nonfield ul{ margin:.25rem 0 0 1.1rem; padding:0; }
+
+  form.cf-form{ display:flex; flex-direction:column; gap:1.5rem; }
+
+  .cf-section{
+    border:1px solid var(--cf-line);
+    border-radius:12px;
+    background:var(--cf-paper);
+    padding:1.5rem 1.5rem 1.75rem;
+    scroll-margin-top:1.5rem;
+  }
+
+  .cf-section-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:.6rem;
+    margin-bottom:1.1rem;
+    padding-bottom:.75rem;
+    border-bottom:1px solid var(--cf-line);
+  }
+
+  .cf-section-head-text{ display:flex; align-items:baseline; gap:.6rem; }
+
+  .cf-section-num{
+    font-variant-numeric:tabular-nums;
+    font-weight:700;
+    color:var(--cf-accent);
+    font-size:.85rem;
+  }
+
+  .cf-section-title{
+    font-size:1.05rem;
+    font-weight:700;
+    margin:0;
+  }
+
+  .cf-section-hint{
+    color:var(--cf-muted);
+    font-size:.85rem;
+    margin:.15rem 0 0;
+  }
+
+  .cf-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:1.1rem 1.25rem;
+  }
+
+  .cf-grid-3{ grid-template-columns:repeat(3,1fr); }
+
+  .cf-field{ display:flex; flex-direction:column; gap:.4rem; }
+  .cf-field.cf-span-2{ grid-column:span 2; }
+  .cf-field.cf-span-3{ grid-column:1 / -1; }
+
+  .cf-label{
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--cf-ink);
+    display:flex;
+    align-items:center;
+    gap:.35rem;
+  }
+
+  .cf-label-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:.5rem;
+  }
+
+  .cf-required{ color:var(--cf-danger); font-weight:700; }
+  .cf-optional{
+    font-size:.7rem;
+    font-weight:600;
+    color:var(--cf-muted);
+    text-transform:uppercase;
+    letter-spacing:.03em;
+  }
+
+  .cf-counter{
+    font-size:.72rem;
+    color:var(--cf-muted);
+    font-variant-numeric:tabular-nums;
+    flex-shrink:0;
+  }
+  .cf-counter.is-near-limit{ color:var(--cf-danger); }
+
+  .cf-help{
+    font-size:.78rem;
+    color:var(--cf-muted);
+    margin:-.15rem 0 0;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="datetime-local"],
+  input[type="file"],
+  textarea,
+  select{
+    font:inherit;
+    font-size:.92rem;
+    padding:.6rem .7rem;
+    border:1px solid var(--cf-line);
+    border-radius:8px;
+    background:var(--cf-field-bg);
+    color:var(--cf-ink);
+    width:100%;
+    box-sizing:border-box;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+
+  textarea{ resize:vertical; min-height:5.5rem; font-family:inherit; }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible{
+    outline:none;
+    border-color:var(--cf-accent);
+    box-shadow:0 0 0 3px rgba(15,107,92,.15);
+  }
+
+  .cf-field.has-error input,
+  .cf-field.has-error textarea,
+  .cf-field.has-error select{
+    border-color:var(--cf-danger);
+  }
+  .cf-field.has-error input:focus-visible,
+  .cf-field.has-error textarea:focus-visible,
+  .cf-field.has-error select:focus-visible{
+    box-shadow:0 0 0 3px rgba(179,38,30,.13);
+  }
+
+  .cf-error{
+    font-size:.8rem;
+    color:var(--cf-danger);
+    margin:0;
+    display:flex;
+    align-items:flex-start;
+    gap:.35rem;
+  }
+  .cf-error i{ margin-top:.15rem; flex-shrink:0; font-size:.75rem; }
+
+  .cf-checkrow{
+    display:flex;
+    align-items:flex-start;
+    gap:.6rem;
+    padding:.7rem .85rem;
+    border:1px solid var(--cf-line);
+    border-radius:8px;
+    background:var(--cf-field-bg);
+    cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  .cf-checkrow:hover{ border-color:var(--cf-accent); }
+
+  .cf-checkrow input[type="checkbox"]{
+    margin-top:.2rem;
+    width:1.05rem;
+    height:1.05rem;
+    accent-color:var(--cf-accent);
+    flex-shrink:0;
+  }
+
+  .cf-checkrow-text{ display:flex; flex-direction:column; gap:.1rem; }
+  .cf-checkrow-title{ font-weight:600; font-size:.88rem; }
+  .cf-checkrow-desc{ font-size:.78rem; color:var(--cf-muted); }
+
+  .cf-staff-badge{
+    display:inline-block;
+    font-size:.68rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--cf-accent-dark);
+    background:var(--cf-accent-tint);
+    border:1px solid #bfe0d6;
+    border-radius:999px;
+    padding:.1rem .5rem;
+  }
+
+  .cf-locked-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:.3rem;
+    font-size:.68rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--cf-muted);
+    background:#f3f2ee;
+    border:1px solid var(--cf-line);
+    border-radius:999px;
+    padding:.15rem .55rem .15rem .5rem;
+  }
+
+  .cf-scope-panel{
+    display:none;
+    margin-top:1.1rem;
+    padding-top:1.1rem;
+    border-top:1px dashed var(--cf-line);
+  }
+  .cf-scope-panel.is-visible{ display:block; animation:cf-fade-in .15s ease; }
+
+  @keyframes cf-fade-in{ from{ opacity:0; transform:translateY(-2px);} to{ opacity:1; transform:translateY(0);} }
+
+  /* ── Applies-to: card picker ── */
+  .cf-scope-cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:.65rem;
+  }
+  .cf-scope-card{
+    position:relative;
+    display:block;
+    border:1px solid var(--cf-line);
+    border-radius:10px;
+    background:var(--cf-field-bg);
+    padding:.85rem .9rem;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .cf-scope-card:hover:not(.is-disabled){ border-color:var(--cf-accent); }
+  .cf-scope-card input[type="radio"]{
+    position:absolute; top:.75rem; right:.75rem;
+    width:1rem; height:1rem;
+    accent-color:var(--cf-accent);
+    margin:0;
+  }
+  .cf-scope-card.is-checked{
+    border-color:var(--cf-accent);
+    background:var(--cf-accent-tint);
+    box-shadow:0 0 0 3px rgba(15,107,92,.12);
+  }
+  .cf-scope-card.is-disabled{
+    opacity:.55;
+    cursor:not-allowed;
+    background:#f3f2ee;
+  }
+  .cf-scope-card-icon{
+    font-size:1.1rem;
+    color:var(--cf-accent);
+    margin-bottom:.35rem;
+    display:block;
+  }
+  .cf-scope-card-title{
+    font-weight:700;
+    font-size:.86rem;
+    margin:0 0 .15rem;
+    padding-right:1.2rem;
+  }
+  .cf-scope-card-desc{
+    font-size:.74rem;
+    color:var(--cf-muted);
+    margin:0;
+    line-height:1.35;
+  }
+
+  /* ── Searchable checkbox picker (products / categories / brands) ── */
+  .cf-picker{
+    border:1px solid var(--cf-line);
+    border-radius:10px;
+    background:var(--cf-field-bg);
+    overflow:hidden;
+  }
+  .cf-picker-search{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    padding:.55rem .7rem;
+    border-bottom:1px solid var(--cf-line);
+    background:#fcfbf8;
+  }
+  .cf-picker-search i{ color:var(--cf-muted); font-size:.85rem; flex-shrink:0; }
+  .cf-picker-search input{
+    border:none;
+    padding:.15rem 0;
+    font-size:.88rem;
+    background:transparent;
+  }
+  .cf-picker-search input:focus-visible{ outline:none; box-shadow:none; }
+
+  .cf-picker-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:.4rem .7rem;
+    border-bottom:1px solid var(--cf-line);
+    background:#fcfbf8;
+    font-size:.74rem;
+  }
+  .cf-picker-count{ color:var(--cf-muted); font-weight:600; }
+  .cf-picker-actions{ display:flex; gap:.75rem; }
+  .cf-picker-actions button{
+    background:none; border:none; padding:0; cursor:pointer;
+    font:inherit; font-size:.74rem; font-weight:700;
+    color:var(--cf-accent);
+  }
+  .cf-picker-actions button:hover{ text-decoration:underline; }
+  .cf-picker-actions button:disabled{
+    color:var(--cf-muted);
+    cursor:not-allowed;
+    text-decoration:none;
+  }
+
+  .cf-picker-list{
+    max-height:220px;
+    overflow-y:auto;
+    padding:.35rem;
+  }
+  .cf-picker-empty{
+    padding:1.25rem .75rem;
+    text-align:center;
+    color:var(--cf-muted);
+    font-size:.82rem;
+  }
+  .cf-picker-row{
+    display:flex;
+    align-items:center;
+    gap:.55rem;
+    padding:.45rem .5rem;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .cf-picker-row:hover{ background:#f4f2ec; }
+  .cf-picker-row input[type="checkbox"]{
+    width:1.02rem; height:1.02rem;
+    accent-color:var(--cf-accent);
+    flex-shrink:0;
+  }
+  .cf-picker-row-label{
+    font-size:.85rem;
+    color:var(--cf-ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .cf-picker-row-sub{
+    font-size:.72rem;
+    color:var(--cf-muted);
+    margin-left:.15rem;
+  }
+  .cf-picker-row.is-hidden{ display:none; }
+
+  /* ── Locked picker rows (reserved by another of this creator's
+       still-live campaigns — see Campaign.objects.locked_*_map()) ── */
+  .cf-picker-row.is-locked{
+    opacity:.55;
+    cursor:not-allowed;
+  }
+  .cf-picker-row.is-locked:hover{ background:transparent; }
+  .cf-picker-row-lock{
+    display:inline-flex;
+    align-items:center;
+    gap:.25rem;
+    font-size:.68rem;
+    font-weight:700;
+    color:var(--cf-muted);
+    margin-left:.4rem;
+    white-space:nowrap;
+  }
+
+  .cf-picker-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.4rem;
+    padding:.55rem .7rem;
+    border-top:1px solid var(--cf-line);
+    background:#fcfbf8;
+  }
+  .cf-picker-chips:empty{ display:none; }
+  .cf-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:.3rem;
+    background:var(--cf-accent-tint);
+    border:1px solid #bfe0d6;
+    color:var(--cf-accent-dark);
+    font-size:.74rem;
+    font-weight:600;
+    padding:.2rem .3rem .2rem .55rem;
+    border-radius:999px;
+  }
+  .cf-chip button{
+    background:none; border:none; cursor:pointer;
+    color:var(--cf-accent-dark); font-size:.85rem; line-height:1;
+    padding:.1rem;
+    display:flex; align-items:center;
+  }
+  .cf-chip button:hover{ color:var(--cf-danger); }
+
+  /* ── Discount live preview ── */
+  .cf-preview{
+    display:flex;
+    align-items:center;
+    gap:.6rem;
+    margin-top:1.1rem;
+    padding:.75rem .9rem;
+    border-radius:8px;
+    background:var(--cf-accent-tint);
+    border:1px solid #bfe0d6;
+    font-size:.85rem;
+    color:var(--cf-accent-dark);
+  }
+  .cf-preview i{ flex-shrink:0; }
+  .cf-preview strong{ font-weight:700; }
+  .cf-preview.cf-preview-warn{
+    background:var(--cf-danger-bg);
+    border-color:#f2c6c2;
+    color:var(--cf-danger);
+  }
+
+  /* ── Banner upload / preview ── */
+  .cf-upload{
+    display:flex;
+    align-items:center;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+  .cf-upload-thumb{
+    width:96px;
+    height:64px;
+    border-radius:8px;
+    border:1px solid var(--cf-line);
+    background:var(--cf-field-bg) center/cover no-repeat;
+    display:none;
+    flex-shrink:0;
+    position:relative;
+  }
+  .cf-upload-thumb.is-visible{ display:block; }
+  .cf-upload-controls{ display:flex; flex-direction:column; gap:.35rem; flex:1; min-width:200px; }
+  .cf-upload-filename{ font-size:.8rem; color:var(--cf-muted); }
+  .cf-upload-remove{
+    align-self:flex-start;
+    background:none; border:none; padding:0;
+    font:inherit; font-size:.76rem; font-weight:700;
+    color:var(--cf-danger); cursor:pointer; display:none;
+  }
+  .cf-upload-remove.is-visible{ display:inline; }
+
+  /* ── Sticky action bar ── */
+  .cf-actions{
+    position:sticky;
+    bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:.75rem;
+    padding:1rem 1.25rem;
+    margin:0 -1.25rem;
+    background:rgba(251,250,247,.92);
+    backdrop-filter:blur(6px);
+    border-top:1px solid var(--cf-line);
+  }
+
+  .cf-btn{
+    font:inherit;
+    font-size:.9rem;
+    font-weight:600;
+    padding:.65rem 1.3rem;
+    border-radius:8px;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:transform .05s ease, background .15s ease, border-color .15s ease;
+  }
+  .cf-btn:active{ transform:translateY(1px); }
+
+  .cf-btn-primary{
+    background:var(--cf-accent);
+    color:#fff;
+  }
+  .cf-btn-primary:hover{ background:var(--cf-accent-dark); }
+
+  .cf-btn-ghost{
+    background:transparent;
+    color:var(--cf-ink);
+    border-color:var(--cf-line);
+  }
+  .cf-btn-ghost:hover{ border-color:var(--cf-muted); }
+
+  @media (max-width:640px){
+    .cf-grid, .cf-grid-3{ grid-template-columns:1fr; }
+    .cf-field.cf-span-2, .cf-field.cf-span-3{ grid-column:auto; }
+    .cf-actions{ flex-direction:column-reverse; align-items:stretch; }
+    .cf-btn{ width:100%; text-align:center; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .cf-scope-panel.is-visible{ animation:none; }
+  }
+</style>
+
+<div class="cf-wrap">
+  <p class="cf-eyebrow">{% if campaign.pk %}Editing “{{ campaign.name }}”{% else %}New Promotion{% endif %}</p>
+  <h1 class="cf-title">{% if campaign.pk %}Edit campaign{% else %}Create a campaign{% endif %}</h1>
+  <p class="cf-sub">
+    Set up a percentage or fixed-amount discount, choose what it applies to, and give it a
+    schedule. Pricing is resolved at checkout — this never changes a product's own price directly.
+    As a dealer, campaigns you create are scoped to products you own and go into the approval
+    queue before they can go live.
+  </p>
+
+  {% if errors.non_field %}
+    <div class="cf-nonfield" role="alert">
+      <strong>We couldn't save this campaign:</strong>
+      <ul>
+        {% for message in errors.non_field %}<li>{{ message }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <form class="cf-form" method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ============================================================ -->
+    <!-- 1. BASICS -->
+    <!-- ============================================================ -->
+    <section class="cf-section" id="section-basics">
+      <div class="cf-section-head">
+        <div class="cf-section-head-text">
+          <span class="cf-section-num">01</span>
+          <div>
+            <p class="cf-section-title">Basics</p>
+            <p class="cf-section-hint">Name, description, and creative for the campaign.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-grid">
+        <div class="cf-field cf-span-2 {% if errors.name %}has-error{% endif %}">
+          <label class="cf-label" for="id_name">Campaign name <span class="cf-required">*</span></label>
+          <input type="text" id="id_name" name="name" maxlength="150" required
+                 placeholder="e.g. Eid Flash Sale"
+                 aria-describedby="hint_name{% if errors.name %} error_name{% endif %}"
+                 value="{{ data.name }}">
+          <p class="cf-help" id="hint_name">Shown internally in the campaign list and in reports.</p>
+          {% for message in errors.name %}<p class="cf-error" id="error_name" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field cf-span-2 {% if errors.campaign_code %}has-error{% endif %}">
+          <label class="cf-label" for="id_campaign_code">Campaign code <span class="cf-optional">Optional</span></label>
+          <input type="text" id="id_campaign_code" name="campaign_code" maxlength="40"
+                 placeholder="e.g. EID2026"
+                 value="{{ data.campaign_code }}">
+          <p class="cf-help">
+            An external reference code — for POS lookups or coupon-style entry — separate from the
+            auto-generated URL slug. Leave blank if this campaign should only resolve automatically
+            by scope and schedule. Must be unique across all campaigns.
+          </p>
+          {% for message in errors.campaign_code %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field cf-span-2 {% if errors.description %}has-error{% endif %}">
+          <div class="cf-label-row">
+            <label class="cf-label" for="id_description">Description</label>
+            <span class="cf-counter" data-counter-for="id_description" data-max="2000">0 / 2000</span>
+          </div>
+          <textarea id="id_description" name="description" maxlength="2000"
+                    placeholder="Shown to customers, e.g. on the campaign landing page.">{{ data.description }}</textarea>
+          {% for message in errors.description %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field cf-span-2 {% if errors.terms_conditions %}has-error{% endif %}">
+          <div class="cf-label-row">
+            <label class="cf-label" for="id_terms_conditions">Terms &amp; conditions <span class="cf-optional">Optional</span></label>
+            <span class="cf-counter" data-counter-for="id_terms_conditions" data-max="2000">0 / 2000</span>
+          </div>
+          <textarea id="id_terms_conditions" name="terms_conditions" maxlength="2000"
+                    placeholder="Optional fine print.">{{ data.terms_conditions }}</textarea>
+          {% for message in errors.terms_conditions %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field cf-span-2 {% if errors.banner_image %}has-error{% endif %}">
+          <label class="cf-label" for="id_banner_image">Banner image <span class="cf-optional">Optional</span></label>
+          <div class="cf-upload">
+            <div class="cf-upload-thumb {% if banner_image_url %}is-visible{% endif %}"
+                 id="bannerThumb"
+                 style="{% if banner_image_url %}background-image:url('{{ banner_image_url }}');{% endif %}"></div>
+            <div class="cf-upload-controls">
+              <input type="file" id="id_banner_image" name="banner_image" accept="image/*">
+              <span class="cf-upload-filename" id="bannerFilename">
+                {% if banner_image_url %}Current banner shown. Choose a new file to replace it.{% else %}Used on campaign banners and listing pages. PNG or JPG, up to 5MB.{% endif %}
+              </span>
+              <button type="button" class="cf-upload-remove {% if banner_image_url %}is-visible{% endif %}" id="bannerRemove">Clear selection</button>
+            </div>
+          </div>
+          {% for message in errors.banner_image %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 2. DISCOUNT -->
+    <!-- ============================================================ -->
+    <section class="cf-section" id="section-discount">
+      <div class="cf-section-head">
+        <div class="cf-section-head-text">
+          <span class="cf-section-num">02</span>
+          <div>
+            <p class="cf-section-title">Discount</p>
+            <p class="cf-section-hint">How much comes off, and any caps, minimums, or budget.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-grid-3 cf-grid">
+        <div class="cf-field {% if errors.campaign_type %}has-error{% endif %}">
+          <label class="cf-label" for="id_campaign_type">Type <span class="cf-required">*</span></label>
+          <select id="id_campaign_type" name="campaign_type">
+            {% for value, label in campaign_types %}
+              <option value="{{ value }}" {% if data.campaign_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% for message in errors.campaign_type %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.discount_value %}has-error{% endif %}">
+          <label class="cf-label" for="id_discount_value">Discount value <span class="cf-required">*</span></label>
+          <input type="number" id="id_discount_value" name="discount_value" step="0.01" min="0.01" required
+                 placeholder="e.g. 20"
+                 value="{{ data.discount_value }}">
+          <p class="cf-help" id="discountHelp">Percent (0–100) or a fixed currency amount, depending on type.</p>
+          {% for message in errors.discount_value %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.currency %}has-error{% endif %}">
+          <label class="cf-label" for="id_currency">Currency</label>
+          <input type="text" id="id_currency" name="currency" maxlength="3" minlength="3"
+                 placeholder="BDT" style="text-transform:uppercase;"
+                 value="{{ data.currency|default:'BDT' }}">
+          <p class="cf-help">ISO 4217 code. Governs fixed-amount discount, cap, minimum order, and budget below.</p>
+          {% for message in errors.currency %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.max_discount_amount %}has-error{% endif %}">
+          <label class="cf-label" for="id_max_discount_amount">Max discount amount <span class="cf-optional">Optional</span></label>
+          <input type="number" id="id_max_discount_amount" name="max_discount_amount" step="0.01" min="0.01"
+                 placeholder="No cap"
+                 value="{{ data.max_discount_amount }}">
+          <p class="cf-help">e.g. "30% off, up to ৳500."</p>
+          {% for message in errors.max_discount_amount %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.min_order_amount %}has-error{% endif %}">
+          <label class="cf-label" for="id_min_order_amount">Minimum order amount <span class="cf-optional">Optional</span></label>
+          <input type="number" id="id_min_order_amount" name="min_order_amount" step="0.01" min="0"
+                 placeholder="No minimum"
+                 value="{{ data.min_order_amount }}">
+          <p class="cf-help">Cart subtotal must reach this to apply.</p>
+          {% for message in errors.min_order_amount %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.budget_limit %}has-error{% endif %}">
+          <label class="cf-label" for="id_budget_limit">Budget limit <span class="cf-optional">Optional</span></label>
+          <input type="number" id="id_budget_limit" name="budget_limit" step="0.01" min="0.01"
+                 placeholder="No budget cap"
+                 value="{{ data.budget_limit }}">
+          <p class="cf-help">Total discount amount this campaign may give away across every redemption combined.</p>
+          {% for message in errors.budget_limit %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.priority %}has-error{% endif %}">
+          <label class="cf-label" for="id_priority">Priority</label>
+          <input type="number" id="id_priority" name="priority" step="1"
+                 placeholder="0"
+                 value="{{ data.priority }}">
+          <p class="cf-help">Higher priority wins when campaigns conflict on a product.</p>
+          {% for message in errors.priority %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field">
+          <label class="cf-label" id="stackingLabel">Stacking</label>
+          <label class="cf-checkrow" for="id_is_stackable">
+            <input type="checkbox" id="id_is_stackable" name="is_stackable" value="true"
+                   aria-labelledby="stackingLabel"
+                   {% if data.is_stackable %}checked{% endif %}>
+            <span class="cf-checkrow-text">
+              <span class="cf-checkrow-title">Stackable</span>
+              <span class="cf-checkrow-desc">Can combine with other stackable campaigns.</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cf-preview" id="discountPreview" role="status" aria-live="polite">
+        <i class="fa-solid fa-tag" aria-hidden="true"></i>
+        <span id="discountPreviewText">Enter a discount value to see how it will read to customers.</span>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 3. SCOPE & CHANNEL -->
+    <!-- ============================================================ -->
+    <section class="cf-section" id="section-scope">
+      <div class="cf-section-head">
+        <div class="cf-section-head-text">
+          <span class="cf-section-num">03</span>
+          <div>
+            <p class="cf-section-title">Scope &amp; channel</p>
+            <p class="cf-section-hint">What this campaign applies to, and where it's allowed to run.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-field {% if errors.applies_to %}has-error{% endif %}">
+        <label class="cf-label" id="scopeLabel">
+          Applies to <span class="cf-required">*</span>
+          {% if not is_staff %}<span class="cf-staff-badge">Staff-only scopes locked</span>{% endif %}
+        </label>
+
+        <div class="cf-scope-cards" id="scopeCards" role="radiogroup" aria-labelledby="scopeLabel">
+          {% for value, label in applies_to_choices %}
+            <label class="cf-scope-card" data-scope-card="{{ value }}">
+              <input type="radio" name="applies_to" value="{{ value }}"
+                     {% if not is_staff and value != 'specific_products' %}disabled{% endif %}
+                     {% if data.applies_to == value %}checked{% endif %}>
+              {% if value == 'all_products' %}
+                <i class="fa-solid fa-globe cf-scope-card-icon" aria-hidden="true"></i>
+                <p class="cf-scope-card-title">{{ label }}</p>
+                <p class="cf-scope-card-desc">Every active product in the catalog.</p>
+              {% elif value == 'specific_products' %}
+                <i class="fa-solid fa-box cf-scope-card-icon" aria-hidden="true"></i>
+                <p class="cf-scope-card-title">{{ label }}</p>
+                <p class="cf-scope-card-desc">Hand-pick individual products.</p>
+              {% elif value == 'specific_categories' %}
+                <i class="fa-solid fa-layer-group cf-scope-card-icon" aria-hidden="true"></i>
+                <p class="cf-scope-card-title">{{ label }}</p>
+                <p class="cf-scope-card-desc">Every product in the chosen categories.</p>
+              {% elif value == 'specific_brands' %}
+                <i class="fa-solid fa-award cf-scope-card-icon" aria-hidden="true"></i>
+                <p class="cf-scope-card-title">{{ label }}</p>
+                <p class="cf-scope-card-desc">Every product from the chosen brands.</p>
+              {% else %}
+                <i class="fa-solid fa-circle-dot cf-scope-card-icon" aria-hidden="true"></i>
+                <p class="cf-scope-card-title">{{ label }}</p>
+              {% endif %}
+            </label>
+          {% endfor %}
+        </div>
+
+        {% if not is_staff %}
+          <p class="cf-help">Only staff can scope a campaign to all products, a whole category, or a whole brand. As a dealer, your campaigns apply to specific products you own.</p>
+        {% endif %}
+        {% for message in errors.applies_to %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+      </div>
+
+      <div class="cf-field {% if errors.channel %}has-error{% endif %}" style="margin-top:1.1rem;">
+        <label class="cf-label" for="id_channel">
+          Channel
+          {% if not is_staff %}<span class="cf-staff-badge">POS is staff-only</span>{% endif %}
+        </label>
+        <select id="id_channel" name="channel">
+          {% for value, label in channel_choices %}
+            <option value="{{ value }}"
+                    {% if not is_staff and value == 'pos' %}disabled{% endif %}
+                    {% if data.channel == value or not data.channel and value == 'all' %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="cf-help">
+          Which storefront surface this campaign is allowed to run on.
+          {% if not is_staff %}Point-of-sale campaigns can only be created by staff.{% endif %}
+        </p>
+        {% for message in errors.channel %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+      </div>
+
+      <!-- ── Products picker ── -->
+      <div class="cf-scope-panel" data-scope-panel="specific_products">
+        <div class="cf-field {% if errors.products %}has-error{% endif %}">
+          <label class="cf-label" id="productsLabel">
+            Products
+            {% if not is_staff %}<span class="cf-locked-badge"><i class="fa-solid fa-lock" aria-hidden="true"></i>Your products only</span>{% endif %}
+          </label>
+
+          <div class="cf-picker" data-picker="products">
+            <div class="cf-picker-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input type="text" placeholder="Search products by name or SKU…" data-picker-search aria-label="Search products">
+            </div>
+            <div class="cf-picker-toolbar">
+              <span class="cf-picker-count" data-picker-count aria-live="polite">0 selected</span>
+              <span class="cf-picker-actions">
+                <button type="button" data-picker-select-all>Select all</button>
+                <button type="button" data-picker-clear>Clear</button>
+              </span>
+            </div>
+            <div class="cf-picker-list" data-picker-list role="group" aria-labelledby="productsLabel">
+              {% for product in products %}
+              <label class="cf-picker-row {% if product.lock %}is-locked{% endif %}"
+                     data-picker-row
+                     {% if not product.lock %}data-search-text="{{ product.product_name|lower }} {{ product.sku|default:''|lower }}"{% endif %}>
+                <input type="checkbox" name="products" value="{{ product.pk }}"
+                       {% if product.pk|stringformat:"s" in selected_products %}checked{% endif %}
+                       {% if product.lock %}disabled{% endif %}
+                       data-picker-checkbox data-chip-label="{{ product.product_name }}">
+                <span class="cf-picker-row-label">
+                  {{ product.product_name }}{% if product.sku %}<span class="cf-picker-row-sub">— {{ product.sku }}</span>{% endif %}
+                </span>
+                {% if product.lock %}
+                  <span class="cf-picker-row-lock" title="Locked by {{ product.lock.campaign_name }}{% if product.lock.unlocks_at %} until {{ product.lock.unlocks_at|date:'M j, Y' }}{% endif %}">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    {{ product.lock.campaign_name }}{% if product.lock.unlocks_at %} · until {{ product.lock.unlocks_at|date:'M j' }}{% else %} · indefinite{% endif %}
+                  </span>
+                {% endif %}
+              </label>
+              {% empty %}
+              <p class="cf-picker-empty">
+                {% if is_staff %}No products available.{% else %}You don't have any active products yet.{% endif %}
+              </p>
+              {% endfor %}
+            </div>
+            <div class="cf-picker-chips" data-picker-chips></div>
+          </div>
+
+          <p class="cf-help">Search, then check the products this campaign should apply to. Products already locked by one of your other active campaigns are shown greyed out until that campaign ends.</p>
+          {% for message in errors.products %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <!-- ── Categories picker ── -->
+      <div class="cf-scope-panel" data-scope-panel="specific_categories">
+        <div class="cf-field {% if errors.categories %}has-error{% endif %}">
+          <label class="cf-label" id="categoriesLabel">Categories</label>
+
+          <div class="cf-picker" data-picker="categories">
+            <div class="cf-picker-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input type="text" placeholder="Search categories…" data-picker-search aria-label="Search categories">
+            </div>
+            <div class="cf-picker-toolbar">
+              <span class="cf-picker-count" data-picker-count aria-live="polite">0 selected</span>
+              <span class="cf-picker-actions">
+                <button type="button" data-picker-select-all>Select all</button>
+                <button type="button" data-picker-clear>Clear</button>
+              </span>
+            </div>
+            <div class="cf-picker-list" data-picker-list role="group" aria-labelledby="categoriesLabel">
+              {% for category in categories %}
+              <label class="cf-picker-row {% if category.lock %}is-locked{% endif %}"
+                     data-picker-row
+                     {% if not category.lock %}data-search-text="{{ category.category_name|lower }}"{% endif %}>
+                <input type="checkbox" name="categories" value="{{ category.pk }}"
+                       {% if category.pk|stringformat:"s" in selected_categories %}checked{% endif %}
+                       {% if category.lock %}disabled{% endif %}
+                       data-picker-checkbox data-chip-label="{{ category.category_name }}">
+                <span class="cf-picker-row-label">{{ category.category_name }}</span>
+                {% if category.lock %}
+                  <span class="cf-picker-row-lock" title="Locked by {{ category.lock.campaign_name }}{% if category.lock.unlocks_at %} until {{ category.lock.unlocks_at|date:'M j, Y' }}{% endif %}">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    {{ category.lock.campaign_name }}{% if category.lock.unlocks_at %} · until {{ category.lock.unlocks_at|date:'M j' }}{% else %} · indefinite{% endif %}
+                  </span>
+                {% endif %}
+              </label>
+              {% empty %}
+              <p class="cf-picker-empty">No categories available.</p>
+              {% endfor %}
+            </div>
+            <div class="cf-picker-chips" data-picker-chips></div>
+          </div>
+
+          {% for message in errors.categories %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <!-- ── Brands picker ── -->
+      <div class="cf-scope-panel" data-scope-panel="specific_brands">
+        <div class="cf-field {% if errors.brands %}has-error{% endif %}">
+          <label class="cf-label" id="brandsLabel">Brands</label>
+
+          <div class="cf-picker" data-picker="brands">
+            <div class="cf-picker-search">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+              <input type="text" placeholder="Search brands…" data-picker-search aria-label="Search brands">
+            </div>
+            <div class="cf-picker-toolbar">
+              <span class="cf-picker-count" data-picker-count aria-live="polite">0 selected</span>
+              <span class="cf-picker-actions">
+                <button type="button" data-picker-select-all>Select all</button>
+                <button type="button" data-picker-clear>Clear</button>
+              </span>
+            </div>
+            <div class="cf-picker-list" data-picker-list role="group" aria-labelledby="brandsLabel">
+              {% for brand in brands %}
+              <label class="cf-picker-row {% if brand.lock %}is-locked{% endif %}"
+                     data-picker-row
+                     {% if not brand.lock %}data-search-text="{{ brand.brand_name|lower }}"{% endif %}>
+                <input type="checkbox" name="brands" value="{{ brand.pk }}"
+                       {% if brand.pk|stringformat:"s" in selected_brands %}checked{% endif %}
+                       {% if brand.lock %}disabled{% endif %}
+                       data-picker-checkbox data-chip-label="{{ brand.brand_name }}">
+                <span class="cf-picker-row-label">{{ brand.brand_name }}</span>
+                {% if brand.lock %}
+                  <span class="cf-picker-row-lock" title="Locked by {{ brand.lock.campaign_name }}{% if brand.lock.unlocks_at %} until {{ brand.lock.unlocks_at|date:'M j, Y' }}{% endif %}">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                    {{ brand.lock.campaign_name }}{% if brand.lock.unlocks_at %} · until {{ brand.lock.unlocks_at|date:'M j' }}{% else %} · indefinite{% endif %}
+                  </span>
+                {% endif %}
+              </label>
+              {% empty %}
+              <p class="cf-picker-empty">No brands available.</p>
+              {% endfor %}
+            </div>
+            <div class="cf-picker-chips" data-picker-chips></div>
+          </div>
+
+          {% for message in errors.brands %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4. SCHEDULE & LIMITS -->
+    <!-- ============================================================ -->
+    <section class="cf-section" id="section-schedule">
+      <div class="cf-section-head">
+        <div class="cf-section-head-text">
+          <span class="cf-section-num">04</span>
+          <div>
+            <p class="cf-section-title">Schedule &amp; limits</p>
+            <p class="cf-section-hint">When it runs and how many times it can be used.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-grid">
+        <div class="cf-field {% if errors.start_at %}has-error{% endif %}">
+          <label class="cf-label" for="id_start_at">Start date <span class="cf-required">*</span></label>
+          <input type="datetime-local" id="id_start_at" name="start_at" required value="{{ data.start_at }}">
+          {% for message in errors.start_at %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.end_at %}has-error{% endif %}">
+          <label class="cf-label" for="id_end_at">End date <span class="cf-optional">Optional</span></label>
+          <input type="datetime-local" id="id_end_at" name="end_at" value="{{ data.end_at }}">
+          <p class="cf-help" id="endDateHelp">Leave blank for no end date.</p>
+          {% for message in errors.end_at %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.usage_limit_total %}has-error{% endif %}">
+          <label class="cf-label" for="id_usage_limit_total">Total usage limit</label>
+          <input type="number" id="id_usage_limit_total" name="usage_limit_total" min="0" step="1"
+                 placeholder="0 = unlimited"
+                 value="{{ data.usage_limit_total }}">
+          {% for message in errors.usage_limit_total %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field {% if errors.usage_limit_per_user %}has-error{% endif %}">
+          <label class="cf-label" for="id_usage_limit_per_user">Per-user usage limit</label>
+          <input type="number" id="id_usage_limit_per_user" name="usage_limit_per_user" min="0" step="1"
+                 placeholder="0 = unlimited"
+                 value="{{ data.usage_limit_per_user }}">
+          {% for message in errors.usage_limit_per_user %}<p class="cf-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ message }}</p>{% endfor %}
+        </div>
+
+        <div class="cf-field cf-span-2">
+          <label class="cf-checkrow" for="id_is_enabled">
+            <input type="checkbox" id="id_is_enabled" name="is_enabled" value="true"
+                   {% if data.is_enabled %}checked{% endif %}>
+            <span class="cf-checkrow-text">
+              <span class="cf-checkrow-title">Enabled</span>
+              <span class="cf-checkrow-desc">
+                Manual on/off switch, independent of the schedule above. As a dealer, enabling this
+                submits the campaign for staff approval — it won't go live until approved, even if
+                enabled and inside its date window.
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <div class="cf-actions">
+      <a class="cf-btn cf-btn-ghost"
+         href="{% if campaign.pk %}{% url 'ponno:campaign_detail' slug=campaign.slug %}{% else %}{% url 'ponno:campaign_list' %}{% endif %}">
+        Cancel
+      </a>
+      <button class="cf-btn cf-btn-primary" type="submit">
+        {% if campaign.pk %}Save changes{% else %}Create campaign{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function () {
+    /* ── Character counters ── */
+    document.querySelectorAll('[data-counter-for]').forEach(function (counter) {
+      var field = document.getElementById(counter.getAttribute('data-counter-for'));
+      var max = parseInt(counter.getAttribute('data-max'), 10);
+      if (!field) return;
+
+      function update() {
+        var len = field.value.length;
+        counter.textContent = len + ' / ' + max;
+        counter.classList.toggle('is-near-limit', len >= max * 0.9);
+      }
+      field.addEventListener('input', update);
+      update();
+    });
+
+    /* ── Applies-to card selector drives which scope panel shows ── */
+    var scopeCards = document.querySelectorAll('.cf-scope-card');
+    var panels     = document.querySelectorAll('[data-scope-panel]');
+
+    function syncScopePanels() {
+      var checked = document.querySelector('input[name="applies_to"]:checked');
+      var current = checked ? checked.value : null;
+
+      scopeCards.forEach(function (card) {
+        var input = card.querySelector('input[type="radio"]');
+        card.classList.toggle('is-checked', input.checked);
+        card.classList.toggle('is-disabled', input.disabled);
+      });
+
+      panels.forEach(function (panel) {
+        panel.classList.toggle('is-visible', panel.getAttribute('data-scope-panel') === current);
+      });
+    }
+
+    scopeCards.forEach(function (card) {
+      var input = card.querySelector('input[type="radio"]');
+      card.addEventListener('click', function (e) {
+        if (input.disabled) return;
+        if (e.target !== input) input.checked = true;
+        syncScopePanels();
+      });
+      card.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && !input.disabled) {
+          e.preventDefault();
+          input.checked = true;
+          syncScopePanels();
+        }
+      });
+    });
+
+    syncScopePanels();
+
+    /* ── Searchable checkbox pickers (products / categories / brands) ── */
+    document.querySelectorAll('[data-picker]').forEach(function (picker) {
+      var searchInput  = picker.querySelector('[data-picker-search]');
+      var rows         = picker.querySelectorAll('[data-picker-row]');
+      var checkboxes   = picker.querySelectorAll('[data-picker-checkbox]');
+      var countEl      = picker.querySelector('[data-picker-count]');
+      var chipsEl      = picker.querySelector('[data-picker-chips]');
+      var selectAllBtn = picker.querySelector('[data-picker-select-all]');
+      var clearBtn     = picker.querySelector('[data-picker-clear]');
+
+      function refreshCountAndChips() {
+        var checked = Array.prototype.filter.call(checkboxes, function (cb) { return cb.checked; });
+        countEl.textContent = checked.length + ' selected';
+        if (clearBtn) clearBtn.disabled = checked.length === 0;
+
+        chipsEl.innerHTML = '';
+        checked.forEach(function (cb) {
+          var chip = document.createElement('span');
+          chip.className = 'cf-chip';
+          chip.textContent = cb.getAttribute('data-chip-label');
+
+          var removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.setAttribute('aria-label', 'Remove ' + cb.getAttribute('data-chip-label'));
+          removeBtn.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+          removeBtn.addEventListener('click', function () {
+            cb.checked = false;
+            refreshCountAndChips();
+          });
+
+          chip.appendChild(removeBtn);
+          chipsEl.appendChild(chip);
+        });
+      }
+
+      checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', refreshCountAndChips);
+      });
+
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          var q = searchInput.value.trim().toLowerCase();
+          var anyVisible = false;
+          rows.forEach(function (row) {
+            var haystack = row.getAttribute('data-search-text') || '';
+            var match = !q || haystack.indexOf(q) !== -1;
+            row.classList.toggle('is-hidden', !match);
+            if (match) anyVisible = true;
+          });
+
+          var emptyMsg = picker.querySelector('[data-picker-empty-search]');
+          if (!anyVisible) {
+            if (!emptyMsg) {
+              emptyMsg = document.createElement('p');
+              emptyMsg.className = 'cf-picker-empty';
+              emptyMsg.setAttribute('data-picker-empty-search', '');
+              picker.querySelector('[data-picker-list]').appendChild(emptyMsg);
+            }
+            emptyMsg.textContent = 'No matches for "' + searchInput.value + '"';
+          } else if (emptyMsg) {
+            emptyMsg.remove();
+          }
+        });
+      }
+
+      if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function () {
+          rows.forEach(function (row) {
+            if (row.classList.contains('is-hidden')) return;
+            var cb = row.querySelector('[data-picker-checkbox]');
+            if (cb && !cb.disabled) cb.checked = true;
+          });
+          refreshCountAndChips();
+        });
+      }
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+          checkboxes.forEach(function (cb) { cb.checked = false; });
+          refreshCountAndChips();
+        });
+      }
+
+      refreshCountAndChips();
+    });
+
+    /* ── Banner image preview ── */
+    var bannerInput    = document.getElementById('id_banner_image');
+    var bannerThumb    = document.getElementById('bannerThumb');
+    var bannerFilename = document.getElementById('bannerFilename');
+    var bannerRemove   = document.getElementById('bannerRemove');
+    var bannerDefaultText = bannerFilename ? bannerFilename.textContent.trim() : '';
+
+    if (bannerInput) {
+      bannerInput.addEventListener('change', function () {
+        var file = bannerInput.files && bannerInput.files[0];
+        if (!file) return;
+        var url = URL.createObjectURL(file);
+        bannerThumb.style.backgroundImage = 'url(' + url + ')';
+        bannerThumb.classList.add('is-visible');
+        bannerFilename.textContent = file.name;
+        bannerRemove.classList.add('is-visible');
+      });
+    }
+
+    if (bannerRemove) {
+      bannerRemove.addEventListener('click', function () {
+        bannerInput.value = '';
+        bannerFilename.textContent = bannerDefaultText;
+      });
+    }
+
+    /* ── Live discount preview ── */
+    var typeSelect   = document.getElementById('id_campaign_type');
+    var valueInput   = document.getElementById('id_discount_value');
+    var capInput     = document.getElementById('id_max_discount_amount');
+    var minInput     = document.getElementById('id_min_order_amount');
+    var previewBox   = document.getElementById('discountPreview');
+    var previewText  = document.getElementById('discountPreviewText');
+
+    function isPercentType(value) {
+      return /percent/i.test(value);
+    }
+
+    function updateDiscountPreview() {
+      if (!typeSelect || !valueInput || !previewText) return;
+      var typeValue = typeSelect.value;
+      var typeLabel = typeSelect.options[typeSelect.selectedIndex] ? typeSelect.options[typeSelect.selectedIndex].text : '';
+      var val = parseFloat(valueInput.value);
+      var cap = parseFloat(capInput ? capInput.value : '');
+      var min = parseFloat(minInput ? minInput.value : '');
+      var percent = isPercentType(typeValue) || isPercentType(typeLabel);
+
+      previewBox.classList.remove('cf-preview-warn');
+
+      if (isNaN(val) || val <= 0) {
+        previewText.textContent = 'Enter a discount value to see how it will read to customers.';
+        return;
+      }
+
+      if (percent && val > 100) {
+        previewBox.classList.add('cf-preview-warn');
+        previewText.textContent = 'A percentage discount over 100% will read as invalid to customers — check this value.';
+        return;
+      }
+
+      var sentence = percent ? val + '% off' : val + ' off';
+      if (percent && !isNaN(cap) && cap > 0) sentence += ', up to ৳' + cap;
+      if (!isNaN(min) && min > 0) sentence += ' on orders over ৳' + min;
+
+      previewText.innerHTML = 'Customers will see: <strong>' + sentence + '</strong>';
+    }
+
+    [typeSelect, valueInput, capInput, minInput].forEach(function (el) {
+      if (el) el.addEventListener('input', updateDiscountPreview);
+    });
+    if (typeSelect) typeSelect.addEventListener('change', updateDiscountPreview);
+    updateDiscountPreview();
+
+    /* ── End date must be after start date ── */
+    var startInput = document.getElementById('id_start_at');
+    var endInput   = document.getElementById('id_end_at');
+    if (startInput && endInput) {
+      function syncEndMin() {
+        if (startInput.value) endInput.min = startInput.value;
+      }
+      startInput.addEventListener('change', syncEndMin);
+      syncEndMin();
+    }
+  })();
+</script>
+{% endblock %}

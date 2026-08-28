@@ -1,0 +1,1299 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<!-- ==================================================================
+     campaign_profile.html — page-specific fonts + styles.
+     Subject: a dealer's promo/campaign ledger inside the PIELAM
+     marketplace admin. Treated like a financial instrument — every
+     campaign has a budget, a usage cap, and an audit trail — so the
+     visual language borrows from ledgers: a colored status "tab" on
+     every row/card, a mono face for money and codes, disciplined,
+     legible, not playful.
+
+     Also covers the customer-facing "Your campaigns" mode (savings
+     summary + active offers feed + redemption history), which is
+     deliberately built from the SAME tokens/components (stat-rail,
+     ledger table, pill/stripe status colors) rather than a separate
+     visual language, since it's the same template file branching on
+     `mode`, not a different product surface.
+
+     These tokens/components are namespaced enough (--ink, --brand,
+     --gold, --green, --amber, --red, --slate, .shell, .ledger, .pill,
+     etc.) that they don't collide with base.html's --nav-*/--drawer-*
+     header tokens; both :root blocks coexist. base.html's own
+     body{font-family:'roboto'} rule loads after this block though, so
+     a small font-family override is reasserted at the top of the
+     content block below to keep this page on Inter/Sora/mono.
+     ================================================================== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:            #14213D;
+  --ink-soft:       #4A5578;
+  --line:           #E2E5F0;
+  --surface:        #FFFFFF;
+  --workspace:      #F6F7FB;
+  --brand:          #2A3EB1;
+  --brand-dark:     #1E2E8A;
+  --brand-tint:     #EAEDFB;
+  --gold:           #C98A2C;
+  --gold-tint:      #FBF1DF;
+  --green:          #1E8E5A;
+  --green-tint:     #E4F5EC;
+  --amber:          #B7791F;
+  --amber-tint:     #FBF0DD;
+  --red:            #C0362C;
+  --red-tint:       #FBE7E5;
+  --slate:          #6B7390;
+  --slate-tint:     #EEF0F6;
+
+  --font-display: 'Sora', 'Segoe UI', sans-serif;
+  --font-body:    'Inter', 'Segoe UI', sans-serif;
+  --font-mono:    'IBM Plex Mono', 'Courier New', monospace;
+
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20,33,61,0.06), 0 8px 24px -12px rgba(20,33,61,0.12);
+  --shell-pad: 24px;
+  --tap: 44px; /* minimum comfortable touch target */
+}
+
+.shell *,
+.shell *::before,
+.shell *::after{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+.shell h1,.shell h2,.shell h3{ font-family: var(--font-display); color: var(--ink); margin: 0; }
+.shell a{ color: var(--brand); text-decoration: none; }
+.shell a:hover{ text-decoration: underline; }
+.shell :focus-visible{ outline: 2px solid var(--brand); outline-offset: 2px; }
+.shell button, .shell input, .shell select, .shell textarea{ font-family: inherit; font-size: inherit; color: inherit; }
+.shell img{ max-width: 100%; }
+
+.mono{ font-family: var(--font-mono); }
+
+/* ---- shell ------------------------------------------------------ */
+.shell{
+  max-width: 1180px; margin: 0 auto;
+  padding: 0 var(--shell-pad) 64px;
+  padding-left: max(var(--shell-pad), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad), env(safe-area-inset-right));
+  font-family: var(--font-body);
+  color: var(--ink);
+}
+
+/* ---- identity bar (dealer profile + at-a-glance campaign counts)
+   Light card, sits below base.html's global sticky nav+drawer.
+   Replaces the old dark gradient topbar — avatar/name/email on the
+   left, four compact stat tiles (Total/Active/Errors/Pending) on the
+   right. Errors reads off status_summary.rejected. --------------- */
+.identity-bar{
+  position: relative;
+  max-width: 1180px; margin: 20px auto 0; padding: 14px 22px 14px 20px;
+  margin-left: auto; margin-right: auto;
+  background: linear-gradient(180deg, #EEF3FC 0%, var(--surface) 70%);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+.identity-bar::before{
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--brand) 0%, #7C93E8 55%, transparent 100%);
+  opacity: .8;
+}
+.identity-profile{ display:flex; align-items:center; gap: 14px; min-width: 0; }
+.identity-avatar-wrap{ position: relative; flex-shrink: 0; }
+.identity-avatar{
+  width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display:block;
+  border: 1px solid var(--line); background: #fff;
+}
+.identity-avatar-fallback{
+  width: 44px; height: 44px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+  background: var(--brand-tint); border: 1px solid var(--line);
+  font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--brand);
+}
+.identity-dot{
+  position: absolute; right: -1px; bottom: -1px; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--green); border: 2px solid var(--surface);
+}
+.identity-who{ min-width: 0; line-height: 1.3; }
+.identity-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--ink); }
+.identity-email{ font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; word-break: break-all; }
+
+.identity-stats{ display:flex; gap: 10px; flex-shrink: 0; }
+.id-stat{
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 7px 16px; text-align: center; min-width: 62px;
+}
+.id-stat .lbl{ font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.id-stat .val{ font-family: var(--font-display); font-weight: 700; font-size: 19px; margin-top: 2px; color: var(--ink); }
+.id-stat.total .val{ color: var(--brand); }
+.id-stat.active .val{ color: var(--green); }
+.id-stat.errors .val{ color: var(--red); }
+.id-stat.pending .val{ color: var(--gold); }
+
+/* ---- page header: title/breadcrumb/primary action, sits below the
+   identity bar — light replacement for what the old dark topbar
+   used to carry alongside the profile chip. -------------------- */
+.page-header{
+  max-width: 1180px; margin: 18px auto 0; padding: 0 var(--shell-pad);
+  padding-left: max(var(--shell-pad), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad), env(safe-area-inset-right));
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.page-header h1{ font-size: clamp(18px, 4vw, 22px); color: var(--ink); }
+.page-header .crumb{ color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
+.page-header .crumb a{ color: var(--brand); }
+
+.btn{
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; border-radius: 8px; border: 1px solid transparent;
+  font-weight: 600; font-size: 14px; cursor: pointer; line-height: 1;
+  min-height: var(--tap);
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn:hover{ text-decoration:none; }
+.btn:active{ transform: translateY(1px); }
+.btn-gold{ background: var(--gold); color: #241804; }
+.btn-gold:hover{ background: #B47A20; }
+.btn-primary{ background: var(--brand); color: #fff; }
+.btn-primary:hover{ background: var(--brand-dark); }
+.btn-ghost{ background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.35); }
+.btn-ghost:hover{ background: rgba(255,255,255,0.16); }
+.btn-line{ background: #fff; color: var(--ink); border-color: var(--line); }
+.btn-line:hover{ border-color: var(--brand); color: var(--brand); }
+.btn-danger{ background: #fff; color: var(--red); border-color: #EFC9C5; }
+.btn-danger:hover{ background: var(--red-tint); }
+.btn-sm{ padding: 7px 12px; font-size: 13px; border-radius: 7px; min-height: 36px; }
+.btn-block{ width: 100%; }
+.btn[disabled]{ opacity:.45; cursor:not-allowed; }
+
+/* ---- alerts / messages ------------------------------------------ */
+.alerts{
+  max-width: 1180px; margin: 18px auto 0; padding: 0 var(--shell-pad);
+  padding-left: max(var(--shell-pad), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad), env(safe-area-inset-right));
+  display:flex; flex-direction:column; gap:8px;
+}
+.alert{ padding: 12px 16px; border-radius: 8px; font-size: 14px; border: 1px solid transparent; }
+.alert-success{ background: var(--green-tint); color: #12583B; border-color: #BFE6D3; }
+.alert-error{ background: var(--red-tint); color: #7A211A; border-color: #F0C6C2; }
+.alert-warning{ background: var(--amber-tint); color: #6E4A0E; border-color: #EAD3A2; }
+.alert-info{ background: var(--brand-tint); color: #202F87; border-color: #C9D1F5; }
+
+/* ---- stat chips (status rail) ------------------------------------ */
+.stat-rail{
+  display:flex; gap:10px; margin: 24px 0 18px;
+  flex-wrap: wrap;
+}
+.stat-chip{
+  flex: 1 1 140px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; display:flex; flex-direction:column; gap:4px; box-shadow: var(--shadow);
+  transition: border-color .12s ease, transform .12s ease;
+  min-height: var(--tap);
+}
+.stat-chip:hover{ border-color: var(--brand); transform: translateY(-1px); text-decoration:none; }
+.stat-chip.is-active{ border-color: var(--brand); background: var(--brand-tint); }
+.stat-chip .n{ font-family: var(--font-display); font-size: clamp(20px, 4vw, 26px); font-weight: 700; color: var(--ink); }
+.stat-chip .l{ font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- filter bar --------------------------------------------------- */
+.filter-bar{
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; display:flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px;
+}
+.filter-bar .fld{ display:flex; flex-direction:column; gap:5px; }
+.filter-bar label{ font-size: 12px; color: var(--ink-soft); font-weight:600; }
+.filter-bar input[type=text], .filter-bar select{
+  border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px; min-width: 160px; background:#fff;
+  min-height: var(--tap);
+}
+.filter-bar .grow{ flex: 1 1 220px; }
+.filter-bar .btn{ flex: 0 0 auto; }
+
+/* ---- status pill ---------------------------------------------------*/
+.pill{ display:inline-flex; align-items:center; gap:6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space:nowrap; }
+.pill .d{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.pill-draft{ background: var(--slate-tint); color: var(--slate); } .pill-draft .d{ background: var(--slate); }
+.pill-pending_approval{ background: var(--amber-tint); color: var(--amber); } .pill-pending_approval .d{ background: var(--amber); }
+.pill-rejected{ background: var(--red-tint); color: var(--red); } .pill-rejected .d{ background: var(--red); }
+.pill-scheduled{ background: var(--brand-tint); color: var(--brand); } .pill-scheduled .d{ background: var(--brand); }
+.pill-active{ background: var(--green-tint); color: var(--green); } .pill-active .d{ background: var(--green); }
+.pill-paused{ background: var(--gold-tint); color: #8C5F1E; } .pill-paused .d{ background: var(--gold); }
+.pill-ended{ background: var(--slate-tint); color: var(--slate); } .pill-ended .d{ background: var(--slate); }
+.pill-cancelled{ background: var(--red-tint); color: var(--red); } .pill-cancelled .d{ background: var(--red); }
+.pill-archived{ background: var(--slate-tint); color: var(--slate); } .pill-archived .d{ background: var(--slate); }
+
+/* stripe color reused on cards, keyed the same way as pills */
+.stripe-draft{ background: var(--slate); } .stripe-pending_approval{ background: var(--amber); }
+.stripe-rejected{ background: var(--red); } .stripe-scheduled{ background: var(--brand); }
+.stripe-active{ background: var(--green); } .stripe-paused{ background: var(--gold); }
+.stripe-ended{ background: var(--slate); } .stripe-cancelled{ background: var(--red); }
+.stripe-archived{ background: var(--slate); }
+
+/* ---- campaign table / cards --------------------------------------- */
+.ledger{ background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+.ledger-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.ledger-table{ width: 100%; border-collapse: collapse; min-width: 720px; }
+.ledger-table thead th{
+  text-align:left; font-size: 11px; text-transform: uppercase; letter-spacing:.05em; color: var(--ink-soft);
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: #FBFBFD; white-space: nowrap;
+}
+.ledger-table tbody tr{ border-bottom: 1px solid var(--line); }
+.ledger-table tbody tr:last-child{ border-bottom: none; }
+.ledger-table tbody tr:hover{ background: #FAFAFD; }
+.ledger-table td{ padding: 14px 16px; vertical-align: top; }
+.row-stripe{ width: 4px; padding: 0 !important; }
+.row-stripe > span{ display:block; width:4px; height: 100%; min-height: 44px; }
+.camp-name{ font-weight: 600; color: var(--ink); }
+.camp-name a{ color: var(--ink); }
+.camp-code{ font-size: 12px; color: var(--ink-soft); }
+.camp-scope{ font-size: 13px; color: var(--ink-soft); }
+.progress{ width: 130px; height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; margin-top: 6px; }
+.progress > span{ display:block; height:100%; background: var(--brand); }
+.progress-label{ font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
+
+/* native <details> action menu, no JS required */
+.actions-menu{ position: relative; text-align:right; }
+.actions-menu summary{
+  list-style:none; cursor:pointer; padding: 8px 12px; border: 1px solid var(--line); border-radius: 7px;
+  font-size: 13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; color: var(--ink-soft);
+  min-height: var(--tap);
+}
+.actions-menu summary::-webkit-details-marker{ display:none; }
+.actions-menu summary:hover{ border-color: var(--brand); color: var(--brand); }
+.actions-menu[open] summary{ border-color: var(--brand); color: var(--brand); }
+.actions-panel{
+  position:absolute; right:0; top: calc(100% + 6px); z-index: 20; min-width: 200px; max-width: calc(100vw - 32px);
+  background:#fff; border:1px solid var(--line); border-radius: 9px; box-shadow: var(--shadow); padding: 6px; text-align:left;
+}
+.actions-panel form{ margin:0; }
+.actions-panel button, .actions-panel a.menu-link{
+  width:100%; text-align:left; background:none; border:none; padding: 11px 10px; border-radius:6px;
+  font-size: 13.5px; color: var(--ink); cursor:pointer; display:block; min-height: 40px;
+}
+.actions-panel button:hover, .actions-panel a.menu-link:hover{ background: var(--brand-tint); color: var(--brand); text-decoration:none; }
+.actions-panel button.danger:hover{ background: var(--red-tint); color: var(--red); }
+.actions-panel hr{ border:none; border-top:1px solid var(--line); margin: 5px 2px; }
+
+/* ---- empty state ---------------------------------------------------*/
+.empty{ padding: 56px 20px; text-align:center; }
+.empty h3{ font-size: clamp(17px, 3.6vw, 19px); margin-bottom: 6px; }
+.empty p{ color: var(--ink-soft); margin: 0 0 18px; }
+
+/* ---- pagination ------------------------------------------------- */
+.pagination{ display:flex; justify-content:center; gap:6px; margin-top: 20px; flex-wrap: wrap; }
+.pagination a, .pagination span{
+  min-width: 38px; height:38px; display:inline-flex; align-items:center; justify-content:center;
+  border-radius:7px; border: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); background:#fff;
+}
+.pagination a:hover{ border-color: var(--brand); color: var(--brand); text-decoration:none; }
+.pagination .current{ background: var(--brand); color:#fff; border-color: var(--brand); font-weight:600; }
+
+/* ---- page head ---------------------------------------------------*/
+.page-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; margin: 28px 0 6px; flex-wrap: wrap; }
+.page-head h2{ font-size: clamp(19px, 4vw, 24px); }
+.page-head .sub{ color: var(--ink-soft); font-size: 13.5px; margin-top: 4px; }
+.back-link{ font-size: 13.5px; color: var(--ink-soft); display:inline-block; margin: 22px 0 4px; }
+.section-heading{ font-size: 15px; margin: 32px 0 12px; }
+.section-heading:first-of-type{ margin-top: 8px; }
+
+/* ---- form (create / edit) ----------------------------------------*/
+.form-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+fieldset.section{ border: none; padding: 20px var(--shell-pad); margin: 0; border-bottom: 1px solid var(--line); min-width:0; }
+fieldset.section:last-of-type{ border-bottom:none; }
+fieldset.section legend{ font-family: var(--font-display); font-weight: 700; font-size: 15px; padding: 0 0 14px; color: var(--ink); width: 100%; }
+.section .eyebrow{ font-size: 12px; color: var(--ink-soft); margin: -8px 0 16px; }
+.field-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px 18px; }
+.field-grid .span-2{ grid-column: 1 / -1; }
+.field{ display:flex; flex-direction:column; gap: 6px; min-width: 0; }
+.field label{ font-size: 13px; font-weight: 600; color: var(--ink); }
+.field .req{ color: var(--red); }
+.field input[type=text], .field input[type=number], .field input[type=datetime-local],
+.field input[type=file], .field select, .field textarea{
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 11px; background:#fff; width: 100%;
+  min-height: var(--tap);
+}
+.field select[multiple]{ min-height: 132px; }
+.field textarea{ resize: vertical; min-height: 84px; }
+.field .hint{ font-size: 12px; color: var(--ink-soft); margin: 0; }
+.field .field-error{ font-size: 12.5px; color: var(--red); margin: 0; }
+.field.has-error input, .field.has-error select, .field.has-error textarea{ border-color: var(--red); }
+.checkline{ display:flex; align-items:center; gap: 9px; min-height: var(--tap); }
+.checkline input[type=checkbox]{ width: 18px; height:18px; flex-shrink:0; }
+.readonly-strip{ display:flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--ink-soft); }
+.readonly-strip b{ color: var(--ink); font-weight:600; }
+.form-actions{
+  display:flex; justify-content:flex-end; gap: 10px; padding: 16px var(--shell-pad);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background:#FBFBFD; border-top: 1px solid var(--line); position: sticky; bottom: 0;
+  border-radius: 0 0 var(--radius) var(--radius); flex-wrap: wrap;
+}
+.non-field-errors{ background: var(--red-tint); color:#7A211A; padding: 12px 16px; border-radius:8px; margin: 0 0 18px; font-size: 13.5px; }
+
+/* ---- detail --------------------------------------------------------*/
+.detail-grid{ display:grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items:start; }
+.hero-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow:hidden; }
+.hero-stripe{ height: 5px; }
+.hero-body{ padding: 20px var(--shell-pad); }
+.hero-body h2{ font-size: clamp(19px, 4vw, 22px); margin-bottom: 6px; word-break: break-word; }
+.hero-meta{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom: 14px; }
+.kv-grid{ display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px 20px; margin-top: 18px; }
+.kv{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+.kv .k{ font-size: 11px; text-transform:uppercase; letter-spacing:.04em; color: var(--ink-soft); }
+.kv .v{ font-size: 14.5px; font-weight: 600; word-break: break-word; }
+.divider{ border:none; border-top:1px solid var(--line); margin: 20px 0; }
+.prose{ font-size: 14px; color: var(--ink-soft); line-height:1.7; white-space:pre-line; word-break: break-word; }
+.side-card{ background:var(--surface); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 16px; }
+.side-card h3{ font-size: 14px; margin-bottom: 12px; }
+.action-stack{ display:flex; flex-direction:column; gap:8px; }
+.action-stack form{ margin:0; }
+.banner-preview{ width:100%; max-height:220px; object-fit:cover; display:block; }
+.reject-note{ background: var(--red-tint); border:1px solid #F0C6C2; color:#7A211A; padding: 12px 14px; border-radius:8px; font-size:13.5px; margin-top:14px; }
+
+/* ---- redemption ledger ---------------------------------------------*/
+.ledger-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+
+/* ---- customer mode: active offers feed ------------------------------
+   Same card language as .hero-card/.side-card (surface, line, shadow,
+   radius) and the same stripe-<status> colors the owner views use for
+   pills, so an "active" offer here reads visually identical to an
+   "active" campaign row in the dealer ledger. -------------------- */
+.promo-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.promo-card{ background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display:flex; flex-direction:column; }
+.promo-stripe{ height: 4px; flex-shrink: 0; }
+.promo-body{ padding: 16px 18px; display:flex; flex-direction:column; gap: 8px; flex: 1; }
+.promo-name{ font-family: var(--font-display); font-weight: 700; font-size: 15px; word-break: break-word; }
+.promo-discount{ font-size: 14px; font-weight: 700; color: var(--green); }
+.promo-desc{ font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+.promo-meta{ font-size: 11.5px; color: var(--ink-soft); margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--line); }
+
+/* ---- detail: scoped products grid -----------------------------------
+   Renders products_with_prices from _detail_context() — the same
+   context key/shape apps/ponno/views/campaign_detail.py's public
+   landing page uses via CampaignPricingService.get_effective_prices_bulk().
+   Kept visually distinct from .promo-card (that's for whole campaigns
+   in the customer feed) since this is one row per *product*, with
+   both the pre-discount and post-discount price shown side by side. */
+.product-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 14px; }
+.product-card{ background:#fff; border:1px solid var(--line); border-radius: 8px; padding: 12px 13px; min-width:0; }
+.product-card .pname{ font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 8px; word-break: break-word; line-height:1.35; }
+.product-price-row{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.product-final{ font-family: var(--font-mono); font-weight: 700; font-size: 14px; color: var(--green); }
+.product-final.no-discount{ color: var(--ink); }
+.product-original{ font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); text-decoration: line-through; }
+.product-off{ font-size: 11px; color: var(--green); font-weight:600; margin-top:4px; }
+
+/* ==================================================================
+   RESPONSIVE BREAKPOINTS
+   ================================================================== */
+
+/* ---- ≤1023px: tablet — detail collapses, table goes to cards ---- */
+@media (max-width: 1023px){
+  .detail-grid{ grid-template-columns: 1fr; }
+}
+
+@media (max-width: 859px){
+  :root{ --shell-pad: 18px; }
+  .field-grid{ grid-template-columns: 1fr; }
+  .kv-grid{ grid-template-columns: 1fr; }
+  .ledger-scroll{ overflow-x: visible; }
+  .ledger-table{ min-width: 0; }
+  .ledger-table thead{ display:none; }
+  .ledger-table, .ledger-table tbody, .ledger-table tr, .ledger-table td{ display:block; width:100%; }
+  .ledger-table tr{ border-bottom: 1px solid var(--line); padding: 14px 16px 14px 16px; position:relative; }
+  .row-stripe{ position:absolute; left:0; top:0; height:100%; width:4px; }
+  .row-stripe > span{ min-height: 0; height:100%; }
+  .ledger-table td{ padding: 4px 0 4px 8px; border:none; }
+  .ledger-table td[data-label]::before{ content: attr(data-label); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color: var(--ink-soft); margin-bottom:2px; }
+  .actions-menu{ text-align:left; margin-top: 8px; }
+  .actions-panel{ right:auto; left:0; }
+  .identity-stats{ gap: 8px; }
+  .id-stat{ min-width: 54px; padding: 6px 12px; }
+}
+
+/* ---- ≤699px: small tablet / large phone ---- */
+@media (max-width: 699px){
+  :root{ --shell-pad: 16px; }
+  .identity-bar{ padding: 14px 16px; gap: 12px; }
+  .identity-stats{
+    width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px; justify-content: flex-start;
+  }
+  .identity-stats::-webkit-scrollbar{ height: 0; }
+  .id-stat{ flex: 0 0 auto; }
+  .page-header{ flex-direction: column; }
+  .page-header > div:last-child a.btn{ width: 100%; }
+  .stat-rail{
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity; padding-bottom: 4px; margin-left: calc(-1 * var(--shell-pad)); margin-right: calc(-1 * var(--shell-pad));
+    padding-left: var(--shell-pad); padding-right: var(--shell-pad);
+  }
+  .stat-rail::-webkit-scrollbar{ height: 0; }
+  .stat-chip{ flex: 0 0 128px; scroll-snap-align: start; }
+  .filter-bar{ flex-direction: column; align-items: stretch; }
+  .filter-bar .fld, .filter-bar .grow{ min-width: 0; width: 100%; }
+  .filter-bar .btn{ width: 100%; }
+  fieldset.section{ padding: 18px 16px; }
+  .form-actions{ padding: 14px 16px; padding-bottom: max(14px, env(safe-area-inset-bottom)); flex-direction: column-reverse; }
+  .form-actions .btn{ width: 100%; }
+  .page-head{ flex-direction: column; }
+  .hero-body{ padding: 18px 16px; }
+  .side-card{ padding: 16px; }
+  .banner-preview{ max-height: 160px; }
+  .promo-grid{ grid-template-columns: 1fr; }
+  .product-grid{ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+
+/* ---- ≤479px: phone ---- */
+@media (max-width: 479px){
+  .identity-email{ display:none; }
+  .id-stat{ min-width: 50px; padding: 6px 10px; }
+  .id-stat .val{ font-size: 17px; }
+  .page-header h1{ font-size: 18px; }
+  .stat-chip .n{ font-size: 20px; }
+  .pagination a, .pagination span{ min-width: 34px; height: 34px; font-size: 12.5px; }
+  .checkline{ align-items: flex-start; }
+  .readonly-strip{ flex-direction: column; gap: 6px; }
+  .product-grid{ grid-template-columns: 1fr 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .shell *{ transition: none !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Reassert this page's own font stack: base.html's global
+     body{font-family:'roboto'} rule (in its own <style>, in <head>)
+     loads after extra_css, so without this the ledger UI above would
+     silently fall back to Roboto instead of Inter. Same-specificity
+     rule declared later in source order (here, inside <body>) wins. -->
+<style>body{ font-family: var(--font-body); background: var(--workspace); color: var(--ink); }</style>
+
+<!-- Identity bar: dealer profile + at-a-glance campaign counts.
+     Errors reads off status_summary.rejected; Total falls back to
+     the current queryset's paginator count when a dedicated
+     status_summary.total isn't provided by the view. -->
+{% if profile %}
+<div class="identity-bar">
+  <div class="identity-profile">
+    <div class="identity-avatar-wrap">
+      {% if profile.profile_photo %}
+        <img class="identity-avatar" src="{{ profile.get_profile_photo_url }}" alt="">
+      {% else %}
+        <span class="identity-avatar-fallback">{{ profile.full_name|default:profile_user.email_or_phone|slice:":1"|upper }}</span>
+      {% endif %}
+      {% if profile.is_verified %}<span class="identity-dot" title="Verified"></span>{% endif %}
+    </div>
+    <div class="identity-who">
+      <div class="identity-name">{{ profile.full_name|default:profile_user.email_or_phone }}</div>
+      <div class="identity-email mono">{{ profile_user.email_or_phone }}</div>
+    </div>
+  </div>
+
+  <div class="identity-stats">
+    <div class="id-stat total">
+      <div class="lbl">Total</div>
+      <div class="val">{{ status_summary.total|default:campaigns.paginator.count|default:"0" }}</div>
+    </div>
+    <div class="id-stat active">
+      <div class="lbl">Active</div>
+      <div class="val">{{ status_summary.active|default:"0" }}</div>
+    </div>
+    <div class="id-stat errors">
+      <div class="lbl">Errors</div>
+      <div class="val">{{ status_summary.rejected|default:"0" }}</div>
+    </div>
+    <div class="id-stat pending">
+      <div class="lbl">Pending</div>
+      <div class="val">{{ status_summary.pending_approval|default:"0" }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="page-header">
+  <div>
+    <h1>
+      {% if mode == 'create' %}New campaign
+      {% elif mode == 'edit' %}Edit campaign
+      {% elif mode == 'redemptions' %}Redemption ledger
+      {% elif mode == 'detail' %}Campaign
+      {% elif mode == 'customer' %}Your campaigns
+      {% else %}Your campaigns{% endif %}
+    </h1>
+    <div class="crumb">
+      
+      {% if mode == 'create' %} / New
+      {% elif mode == 'edit' %} / {{ campaign.name }} / Edit
+      {% elif mode == 'detail' %} / {{ campaign.name }}
+      {% elif mode == 'redemptions' %} / {{ campaign.name }} / Redemptions
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    {% if mode == 'list' %}
+      <a class="btn btn-gold" href="{% url 'customer:campaign_profile' %}?action=create">+ New campaign</a>
+    {% elif mode == 'detail' or mode == 'redemptions' %}
+      <a class="btn btn-line" href="{% url 'customer:campaign_profile' %}">Back to campaigns</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if messages %}
+<div class="alerts">
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="shell">
+
+{% comment %} =================== FORM: CREATE / EDIT =================== {% endcomment %}
+{% if mode == 'create' or mode == 'edit' %}
+
+  <div class="page-head">
+    <div>
+      <h2>{% if mode == 'edit' %}Edit "{{ campaign.name }}"{% else %}Set up a new campaign{% endif %}</h2>
+      <div class="sub">{% if mode == 'edit' %}Changes to pricing or eligibility will send this campaign back for approval.{% else %}New campaigns go to admin review before they can go live.{% endif %}</div>
+    </div>
+  </div>
+
+  {% if mode == 'edit' %}
+  <div class="readonly-strip" style="margin-bottom:14px;">
+    <span>Approval: <b>{{ approval_status }}</b></span>
+    <span>Times used: <b>{{ times_used }}</b></span>
+    <span>Budget spent: <b>{{ budget_spent }}</b></span>
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="action" value="{{ mode }}">
+    {% if campaign %}<input type="hidden" name="pk" value="{{ campaign.pk }}">{% endif %}
+
+    {% if errors.non_field %}
+      <div class="non-field-errors">
+        {% for e in errors.non_field %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="form-card">
+
+      <fieldset class="section">
+        <legend>Basics</legend>
+        <div class="field-grid">
+          <div class="field span-2 {% if errors.name %}has-error{% endif %}">
+            <label for="id_name">Campaign name <span class="req">*</span></label>
+            <input type="text" id="id_name" name="name" value="{{ data.name|default:'' }}" maxlength="150" required>
+            {% for e in errors.name %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.campaign_code %}has-error{% endif %}">
+            <label for="id_campaign_code">Reference code</label>
+            <input type="text" id="id_campaign_code" name="campaign_code" value="{{ data.campaign_code|default:'' }}" maxlength="40">
+            <p class="hint">Optional — for POS lookups or coupon-style entry.</p>
+            {% for e in errors.campaign_code %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.channel %}has-error{% endif %}">
+            <label for="id_channel">Channel</label>
+            <select id="id_channel" name="channel">
+              {% for value, label in channel_choices %}
+                {% if is_staff or value != 'pos' %}
+                <option value="{{ value }}" {% if data.channel == value %}selected{% endif %}>{{ label }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            {% if not is_staff %}<p class="hint">POS campaigns are staff-only.</p>{% endif %}
+            {% for e in errors.channel %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field span-2 {% if errors.description %}has-error{% endif %}">
+            <label for="id_description">Description</label>
+            <textarea id="id_description" name="description" maxlength="2000">{{ data.description|default:'' }}</textarea>
+            {% for e in errors.description %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.banner_image %}has-error{% endif %}">
+            <label for="id_banner_image">Banner image</label>
+            <input type="file" id="id_banner_image" name="banner_image" accept="image/*">
+            {% if banner_image_url %}<img class="banner-preview" style="max-height:110px; border-radius:8px; margin-top:6px;" src="{{ banner_image_url }}" alt="Current banner">{% endif %}
+            {% for e in errors.banner_image %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field span-2 {% if errors.terms_conditions %}has-error{% endif %}">
+            <label for="id_terms_conditions">Terms &amp; conditions</label>
+            <textarea id="id_terms_conditions" name="terms_conditions">{{ data.terms_conditions|default:'' }}</textarea>
+            {% for e in errors.terms_conditions %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="section">
+        <legend>Discount</legend>
+        <div class="field-grid">
+          <div class="field {% if errors.campaign_type %}has-error{% endif %}">
+            <label for="id_campaign_type">Type <span class="req">*</span></label>
+            <select id="id_campaign_type" name="campaign_type">
+              {% for value, label in campaign_types %}
+                <option value="{{ value }}" {% if data.campaign_type == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {% for e in errors.campaign_type %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.discount_value %}has-error{% endif %}">
+            <label for="id_discount_value">Discount value <span class="req">*</span></label>
+            <input type="number" step="0.01" min="0.01" id="id_discount_value" name="discount_value" value="{{ data.discount_value|default:'' }}" required>
+            <p class="hint">Percentage (0–100) or a fixed currency amount, depending on type.</p>
+            {% for e in errors.discount_value %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.max_discount_amount %}has-error{% endif %}">
+            <label for="id_max_discount_amount">Max discount amount</label>
+            <input type="number" step="0.01" min="0.01" id="id_max_discount_amount" name="max_discount_amount" value="{{ data.max_discount_amount|default:'' }}">
+            <p class="hint">Optional cap, e.g. "30% off, up to ৳500".</p>
+            {% for e in errors.max_discount_amount %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.min_order_amount %}has-error{% endif %}">
+            <label for="id_min_order_amount">Minimum order amount</label>
+            <input type="number" step="0.01" min="0" id="id_min_order_amount" name="min_order_amount" value="{{ data.min_order_amount|default:'' }}">
+            {% for e in errors.min_order_amount %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.currency %}has-error{% endif %}">
+            <label for="id_currency">Currency</label>
+            <input type="text" id="id_currency" name="currency" value="{{ data.currency|default:'BDT' }}" maxlength="3" style="text-transform:uppercase;">
+            <p class="hint">3-letter ISO 4217 code.</p>
+            {% for e in errors.currency %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="section">
+        <legend>Scope</legend>
+        <div class="field-grid">
+          <div class="field {% if errors.applies_to %}has-error{% endif %}">
+            <label for="id_applies_to">Applies to <span class="req">*</span></label>
+            <select id="id_applies_to" name="applies_to">
+              {% for value, label in applies_to_choices %}
+                {% if is_staff or value == 'specific_products' %}
+                <option value="{{ value }}" {% if data.applies_to == value %}selected{% endif %}>{{ label }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            {% if not is_staff %}<p class="hint">Only staff can scope beyond specific products.</p>{% endif %}
+            {% for e in errors.applies_to %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div></div>
+          <div class="field {% if errors.products %}has-error{% endif %}">
+            <label for="id_products">Specific products</label>
+            <select id="id_products" name="products" multiple size="6">
+              {% for p in products %}
+                <option value="{{ p.pk }}" {% if p.pk|stringformat:"s" in selected_products %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+            {% for e in errors.products %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.categories %}has-error{% endif %}">
+            <label for="id_categories">Specific categories</label>
+            <select id="id_categories" name="categories" multiple size="6" {% if not is_staff %}disabled{% endif %}>
+              {% for c in categories %}
+                <option value="{{ c.pk }}" {% if c.pk|stringformat:"s" in selected_categories %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+            {% for e in errors.categories %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.brands %}has-error{% endif %}">
+            <label for="id_brands">Specific brands</label>
+            <select id="id_brands" name="brands" multiple size="6" {% if not is_staff %}disabled{% endif %}>
+              {% for b in brands %}
+                <option value="{{ b.pk }}" {% if b.pk|stringformat:"s" in selected_brands %}selected{% endif %}>{{ b }}</option>
+              {% endfor %}
+            </select>
+            {% for e in errors.brands %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="section">
+        <legend>Schedule</legend>
+        <div class="field-grid">
+          <div class="field {% if errors.start_at %}has-error{% endif %}">
+            <label for="id_start_at">Starts <span class="req">*</span></label>
+            <input type="datetime-local" id="id_start_at" name="start_at" value="{{ data.start_at|default:'' }}" required>
+            {% for e in errors.start_at %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.end_at %}has-error{% endif %}">
+            <label for="id_end_at">Ends</label>
+            <input type="datetime-local" id="id_end_at" name="end_at" value="{{ data.end_at|default:'' }}">
+            <p class="hint">Leave blank for no end date.</p>
+            {% for e in errors.end_at %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="section">
+        <legend>Limits &amp; priority</legend>
+        <div class="field-grid">
+          <div class="field {% if errors.usage_limit_total %}has-error{% endif %}">
+            <label for="id_usage_limit_total">Total usage limit</label>
+            <input type="number" min="0" step="1" id="id_usage_limit_total" name="usage_limit_total" value="{{ data.usage_limit_total|default:'0' }}">
+            <p class="hint">0 = unlimited.</p>
+            {% for e in errors.usage_limit_total %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.usage_limit_per_user %}has-error{% endif %}">
+            <label for="id_usage_limit_per_user">Per-customer limit</label>
+            <input type="number" min="0" step="1" id="id_usage_limit_per_user" name="usage_limit_per_user" value="{{ data.usage_limit_per_user|default:'0' }}">
+            <p class="hint">0 = unlimited.</p>
+            {% for e in errors.usage_limit_per_user %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.budget_limit %}has-error{% endif %}">
+            <label for="id_budget_limit">Budget cap</label>
+            <input type="number" step="0.01" min="0.01" id="id_budget_limit" name="budget_limit" value="{{ data.budget_limit|default:'' }}">
+            <p class="hint">Total discount amount this campaign may give away. Leave blank for no cap.</p>
+            {% for e in errors.budget_limit %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field {% if errors.priority %}has-error{% endif %}">
+            <label for="id_priority">Priority</label>
+            <input type="number" step="1" id="id_priority" name="priority" value="{{ data.priority|default:'0' }}">
+            <p class="hint">Higher priority wins when campaigns can't stack.</p>
+            {% for e in errors.priority %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field span-2">
+            <label class="checkline" for="id_is_stackable">
+              <input type="checkbox" id="id_is_stackable" name="is_stackable" value="true" {% if data.is_stackable %}checked{% endif %}>
+              Allow this campaign to stack with other stackable campaigns
+            </label>
+            {% for e in errors.is_stackable %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="field span-2">
+            <label class="checkline" for="id_is_enabled">
+              <input type="checkbox" id="id_is_enabled" name="is_enabled" value="true" {% if data.is_enabled %}checked{% endif %}>
+              Enabled — go live as soon as it's approved and in its scheduled window
+            </label>
+            {% for e in errors.is_enabled %}<p class="field-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="form-actions">
+        <a class="btn btn-line" href="{% if campaign %}{% url 'customer:campaign_detail' slug=campaign.slug %}{% else %}{% url 'customer:campaign_profile' %}{% endif %}">Cancel</a>
+        <button type="submit" class="btn btn-primary">{% if mode == 'edit' %}Save changes{% else %}Create campaign{% endif %}</button>
+      </div>
+    </div>
+  </form>
+
+{% comment %} =================== REDEMPTION LEDGER (owner) =================== {% endcomment %}
+{% elif mode == 'redemptions' %}
+
+  <a class="back-link" href="{% url 'customer:campaign_detail' slug=campaign.slug %}">← Back to {{ campaign.name }}</a>
+
+  <div class="page-head">
+    <div>
+      <h2>Redemption ledger</h2>
+      <div class="sub">{{ campaign.name }} · {{ campaign.times_used }} redemption{{ campaign.times_used|pluralize }} recorded</div>
+    </div>
+    <a class="btn btn-line" href="{% url 'customer:campaign_profile' %}?action=redemptions_export&pk={{ campaign.pk }}">Export CSV</a>
+  </div>
+
+  {% if redemptions %}
+  <div class="ledger">
+    <div class="ledger-scroll">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>Redeemed at</th><th>Customer</th><th>Product</th><th>Order</th>
+          <th>Original price</th><th>Discount</th><th>Final price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in redemptions %}
+        <tr>
+          <td data-label="Redeemed at" class="mono">{{ r.redeemed_at|date:"d M Y, H:i" }}</td>
+          <td data-label="Customer">{{ r.user|default:"—" }}</td>
+          <td data-label="Product">{{ r.product|default:"—" }}</td>
+          <td data-label="Order" class="mono">{{ r.order_id|default:"—" }}</td>
+          <td data-label="Original price" class="mono">{{ r.original_price }}</td>
+          <td data-label="Discount" class="mono">−{{ r.discount_amount }}</td>
+          <td data-label="Final price" class="mono">{{ r.final_price }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    {% if redemptions.has_previous %}
+      <a href="?action=redemptions&amp;pk={{ campaign.pk }}&amp;page={{ redemptions.previous_page_number }}">‹</a>
+    {% endif %}
+    <span class="current">{{ redemptions.number }} / {{ redemptions.paginator.num_pages }}</span>
+    {% if redemptions.has_next %}
+      <a href="?action=redemptions&amp;pk={{ campaign.pk }}&amp;page={{ redemptions.next_page_number }}">›</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="ledger">
+    <div class="empty">
+      <h3>No redemptions yet</h3>
+      <p>Once customers use this campaign, every redemption will show up here.</p>
+    </div>
+  </div>
+  {% endif %}
+
+{% comment %} =================== DETAIL =================== {% endcomment %}
+{% elif mode == 'detail' %}
+
+  {% with status=campaign.status %}
+  <div class="detail-grid" style="margin-top:22px;">
+    <div>
+      <div class="hero-card">
+        <div class="hero-stripe stripe-{{ status }}"></div>
+        {% if campaign.banner_image %}<img class="banner-preview" src="{{ campaign.banner_image.url }}" alt="">{% endif %}
+        <div class="hero-body">
+          <div class="hero-meta">
+            {% if status == 'draft' %}<span class="pill pill-draft"><span class="d"></span>Draft</span>
+            {% elif status == 'pending_approval' %}<span class="pill pill-pending_approval"><span class="d"></span>Pending approval</span>
+            {% elif status == 'rejected' %}<span class="pill pill-rejected"><span class="d"></span>Rejected</span>
+            {% elif status == 'scheduled' %}<span class="pill pill-scheduled"><span class="d"></span>Scheduled</span>
+            {% elif status == 'active' %}<span class="pill pill-active"><span class="d"></span>Active</span>
+            {% elif status == 'paused' %}<span class="pill pill-paused"><span class="d"></span>Paused</span>
+            {% elif status == 'ended' %}<span class="pill pill-ended"><span class="d"></span>Ended</span>
+            {% elif status == 'cancelled' %}<span class="pill pill-cancelled"><span class="d"></span>Cancelled</span>
+            {% elif status == 'archived' %}<span class="pill pill-archived"><span class="d"></span>Archived</span>
+            {% endif %}
+            {% if campaign.campaign_code %}<span class="camp-code mono">{{ campaign.campaign_code }}</span>{% endif %}
+          </div>
+          <h2>{{ campaign.name }}</h2>
+          {% if campaign.description %}<p class="prose">{{ campaign.description }}</p>{% endif %}
+
+          {% if campaign.approval_status == 'rejected' and campaign.rejection_reason %}
+          <div class="reject-note"><strong>Rejected:</strong> {{ campaign.rejection_reason }}</div>
+          {% endif %}
+
+          <hr class="divider">
+
+          <div class="kv-grid">
+            <div class="kv"><span class="k">Discount</span><span class="v mono">
+              {% if campaign.campaign_type == 'percentage' %}{{ campaign.discount_value }}% off{% else %}{{ campaign.currency }} {{ campaign.discount_value }} off{% endif %}
+            </span></div>
+            <div class="kv"><span class="k">Max discount</span><span class="v mono">{{ campaign.max_discount_amount|default:"No cap" }}</span></div>
+            <div class="kv"><span class="k">Minimum order</span><span class="v mono">{{ campaign.min_order_amount|default:"None" }}</span></div>
+            <div class="kv"><span class="k">Applies to</span><span class="v">{{ campaign.get_applies_to_display }}</span></div>
+            <div class="kv"><span class="k">Channel</span><span class="v">{{ campaign.get_channel_display }}</span></div>
+            <div class="kv"><span class="k">Stackable</span><span class="v">{{ campaign.is_stackable|yesno:"Yes,No" }}</span></div>
+            <div class="kv"><span class="k">Starts</span><span class="v mono">{{ campaign.start_at|date:"d M Y, H:i" }}</span></div>
+            <div class="kv"><span class="k">Ends</span><span class="v mono">{{ campaign.end_at|date:"d M Y, H:i"|default:"No end date" }}</span></div>
+          </div>
+
+          {% if campaign.applies_to == 'specific_products' and campaign.products.all %}
+          <hr class="divider"><div class="kv"><span class="k">Products</span><span class="v">{% for p in campaign.products.all %}{{ p }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>
+          {% elif campaign.applies_to == 'specific_categories' and campaign.categories.all %}
+          <hr class="divider"><div class="kv"><span class="k">Categories</span><span class="v">{% for c in campaign.categories.all %}{{ c }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>
+          {% elif campaign.applies_to == 'specific_brands' and campaign.brands.all %}
+          <hr class="divider"><div class="kv"><span class="k">Brands</span><span class="v">{% for b in campaign.brands.all %}{{ b }}{% if not forloop.last %}, {% endif %}{% endfor %}</span></div>
+          {% endif %}
+
+          <hr class="divider">
+          <div class="kv-grid">
+            <div class="kv"><span class="k">Created</span><span class="v mono">{{ campaign.created_at|date:"d M Y" }}</span></div>
+            <div class="kv"><span class="k">Last updated</span><span class="v mono">{{ campaign.updated_at|date:"d M Y" }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      {% comment %}
+        Scoped products, with resolved campaign pricing — from
+        products_with_prices in _detail_context(), built via
+        CampaignPricingService.products_for_campaign() +
+        get_effective_prices_bulk(). Sample of up to 12; a campaign
+        with a wide scope (ALL_PRODUCTS / a large category) can have
+        far more matching products than are shown here — this is a
+        preview, not the full catalog view.
+      {% endcomment %}
+      <div class="side-card" style="margin-top:16px;">
+        <h3>Products in this campaign</h3>
+        {% if products_with_prices %}
+          <div class="product-grid">
+            {% for entry in products_with_prices %}
+            <div class="product-card">
+              <div class="pname">{{ entry.product }}</div>
+              <div class="product-price-row">
+                {% if entry.price.has_discount %}
+                  <span class="product-final">{{ campaign.currency }} {{ entry.price.final_price }}</span>
+                  <span class="product-original">{{ entry.price.original_price }}</span>
+                {% else %}
+                  <span class="product-final no-discount">{{ campaign.currency }} {{ entry.price.final_price }}</span>
+                {% endif %}
+              </div>
+              {% if entry.price.has_discount %}
+                <div class="product-off">Save {{ campaign.currency }} {{ entry.price.total_discount }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="hint">
+            {% if campaign.applies_to == 'specific_products' %}
+              No products have been assigned to this campaign yet.
+            {% else %}
+              No active products currently match this campaign's scope ({{ campaign.get_applies_to_display }}).
+            {% endif %}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="side-card">
+        <h3>Recent redemptions</h3>
+        {% if recent_redemptions %}
+          <div class="ledger-scroll">
+          <table class="ledger-table" style="border:none; min-width:0;">
+            <tbody>
+            {% for r in recent_redemptions %}
+              <tr>
+                <td data-label="When" class="mono" style="padding-left:0;">{{ r.redeemed_at|date:"d M, H:i" }}</td>
+                <td data-label="Customer" style="padding-left:0;">{{ r.user|default:"—" }}</td>
+                <td data-label="Discount" class="mono" style="padding-left:0;">−{{ r.discount_amount }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          </div>
+          <a href="{% url 'customer:campaign_profile' %}?action=redemptions&pk={{ campaign.pk }}" style="font-size:13.5px;">View full ledger →</a>
+        {% else %}
+          <p class="hint">No redemptions yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      <div class="side-card">
+        <h3>Usage &amp; budget</h3>
+        <div class="progress-label">Redemptions: {{ campaign.times_used }}{% if campaign.usage_limit_total %} / {{ campaign.usage_limit_total }}{% else %} (unlimited){% endif %}</div>
+        {% if campaign.usage_limit_total %}
+          <div class="progress"><span style="width: {% widthratio campaign.times_used campaign.usage_limit_total 100 %}%;"></span></div>
+        {% endif %}
+        <div class="progress-label" style="margin-top:14px;">Budget spent: {{ campaign.budget_spent }}{% if campaign.budget_limit %} / {{ campaign.budget_limit }}{% else %} (no cap){% endif %}</div>
+        {% if campaign.budget_limit %}
+          <div class="progress"><span style="width: {% widthratio campaign.budget_spent campaign.budget_limit 100 %}%;"></span></div>
+        {% endif %}
+      </div>
+
+      <div class="side-card">
+        <h3>Manage</h3>
+        <div class="action-stack">
+          {% if can_edit %}
+            <a class="btn btn-line btn-block" href="{% url 'customer:campaign_profile' %}?action=edit&pk={{ campaign.pk }}">Edit campaign</a>
+          {% endif %}
+
+          {% if can_enable %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="enable"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-primary btn-block">Enable campaign</button>
+          </form>
+          {% endif %}
+
+          {% if can_disable %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="disable"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-line btn-block">Pause campaign</button>
+          </form>
+          {% endif %}
+
+          {% if can_submit_for_approval %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="submit_for_approval"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-gold btn-block">Resubmit for approval</button>
+          </form>
+          {% endif %}
+
+          <form method="post" action="{% url 'customer:campaign_profile' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="duplicate"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-line btn-block">Duplicate as new draft</button>
+          </form>
+
+          {% if can_restore %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}">{% csrf_token %}
+            <input type="hidden" name="action" value="restore"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-line btn-block">Restore from archive</button>
+          </form>
+          {% endif %}
+
+          {% if can_cancel %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}" onsubmit="return confirm('Cancel this campaign? This can\'t be undone.');">{% csrf_token %}
+            <input type="hidden" name="action" value="cancel"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-danger btn-block">Cancel campaign</button>
+          </form>
+          {% endif %}
+
+          {% if can_archive %}
+          <form method="post" action="{% url 'customer:campaign_profile' %}" onsubmit="return confirm('Archive this campaign?');">{% csrf_token %}
+            <input type="hidden" name="action" value="archive"><input type="hidden" name="pk" value="{{ campaign.pk }}">
+            <button type="submit" class="btn btn-danger btn-block">Archive campaign</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+
+{% comment %} =================== CUSTOMER DASHBOARD (non-owner) ===================
+     Context supplied by _build_customer_context() in the view:
+     redemptions (paginated CampaignRedemption qs), total_saved,
+     active_campaigns (list of currently-active, ALL_PRODUCTS Campaign
+     rows). Read-only — no action menu, no create/edit entry points.
+{% endcomment %}
+{% elif mode == 'customer' %}
+
+  <div class="page-head">
+    <div>
+      <h2>Your campaigns</h2>
+      <div class="sub">Offers you can use right now, and everything you've already redeemed.</div>
+    </div>
+  </div>
+
+  <div class="stat-rail">
+    <div class="stat-chip">
+      <span class="n mono">{{ total_saved }}</span>
+      <span class="l">Total saved</span>
+    </div>
+    <div class="stat-chip">
+      <span class="n">{{ redemptions.paginator.count|default:0 }}</span>
+      <span class="l">Redemptions</span>
+    </div>
+    <div class="stat-chip">
+      <span class="n">{{ active_campaigns|length }}</span>
+      <span class="l">Active offers</span>
+    </div>
+  </div>
+
+  <h3 class="section-heading">Active offers</h3>
+  {% if active_campaigns %}
+  <div class="promo-grid">
+    {% for c in active_campaigns %}
+    <div class="promo-card">
+      <div class="promo-stripe stripe-active"></div>
+      <div class="promo-body">
+        <div class="promo-name">{{ c.name }}</div>
+        <div class="promo-discount mono">
+          {% if c.campaign_type == 'percentage' %}{{ c.discount_value }}% off{% else %}{{ c.currency }} {{ c.discount_value }} off{% endif %}
+        </div>
+        {% if c.description %}<p class="promo-desc">{{ c.description|truncatechars:120 }}</p>{% endif %}
+        <div class="promo-meta">
+          {% if c.min_order_amount %}Min order {{ c.currency }} {{ c.min_order_amount }} · {% endif %}
+          {% if c.end_at %}Ends {{ c.end_at|date:"d M Y" }}{% else %}No end date{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="ledger">
+    <div class="empty">
+      <h3>No active offers right now</h3>
+      <p>Check back soon — storewide promotions show up here as soon as they go live.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <h3 class="section-heading">Redemption history</h3>
+  {% if redemptions %}
+  <div class="ledger">
+    <div class="ledger-scroll">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th>Redeemed at</th><th>Campaign</th><th>Product</th><th>Order</th>
+          <th>Original price</th><th>Discount</th><th>Final price</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in redemptions %}
+        <tr>
+          <td data-label="Redeemed at" class="mono">{{ r.redeemed_at|date:"d M Y, H:i" }}</td>
+          <td data-label="Campaign">{{ r.campaign.name|default:"—" }}</td>
+          <td data-label="Product">{{ r.product|default:"—" }}</td>
+          <td data-label="Order" class="mono">{{ r.order_id|default:"—" }}</td>
+          <td data-label="Original price" class="mono">{{ r.original_price }}</td>
+          <td data-label="Discount" class="mono">−{{ r.discount_amount }}</td>
+          <td data-label="Final price" class="mono">{{ r.final_price }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    {% if redemptions.has_previous %}
+      <a href="?page={{ redemptions.previous_page_number }}">‹</a>
+    {% endif %}
+    <span class="current">{{ redemptions.number }} / {{ redemptions.paginator.num_pages }}</span>
+    {% if redemptions.has_next %}
+      <a href="?page={{ redemptions.next_page_number }}">›</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="ledger">
+    <div class="empty">
+      <h3>No redemptions yet</h3>
+      <p>Discounts you use at checkout will show up here.</p>
+    </div>
+  </div>
+  {% endif %}
+
+{% comment %} =================== LIST (owner default) =================== {% endcomment %}
+{% else %}
+
+  <div class="stat-rail">
+    <a class="stat-chip {% if filter_status == 'active' %}is-active{% endif %}" href="?status=active"><span class="n">{{ status_summary.active }}</span><span class="l">Active</span></a>
+    <a class="stat-chip {% if filter_status == 'scheduled' %}is-active{% endif %}" href="?status=scheduled"><span class="n">{{ status_summary.scheduled }}</span><span class="l">Scheduled</span></a>
+    <a class="stat-chip {% if filter_status == 'pending_approval' %}is-active{% endif %}" href="?status=pending_approval"><span class="n">{{ status_summary.pending_approval }}</span><span class="l">Pending</span></a>
+    <a class="stat-chip {% if filter_status == 'paused' %}is-active{% endif %}" href="?status=paused"><span class="n">{{ status_summary.paused }}</span><span class="l">Paused</span></a>
+    <a class="stat-chip {% if filter_status == 'draft' %}is-active{% endif %}" href="?status=draft"><span class="n">{{ status_summary.draft }}</span><span class="l">Draft</span></a>
+    <a class="stat-chip {% if filter_status == 'ended' %}is-active{% endif %}" href="?status=ended"><span class="n">{{ status_summary.ended }}</span><span class="l">Ended</span></a>
+  </div>
+
+  <form class="filter-bar" method="get">
+    <div class="fld grow">
+      <label for="id_q">Search</label>
+      <input type="text" id="id_q" name="q" value="{{ filter_q|default:'' }}" placeholder="Name, code, or slug">
+    </div>
+    <div class="fld">
+      <label for="id_status">Status</label>
+      <select id="id_status" name="status">
+        <option value="" {% if not filter_status %}selected{% endif %}>All statuses</option>
+        <option value="draft" {% if filter_status == 'draft' %}selected{% endif %}>Draft</option>
+        <option value="pending_approval" {% if filter_status == 'pending_approval' %}selected{% endif %}>Pending approval</option>
+        <option value="rejected" {% if filter_status == 'rejected' %}selected{% endif %}>Rejected</option>
+        <option value="scheduled" {% if filter_status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+        <option value="active" {% if filter_status == 'active' %}selected{% endif %}>Active</option>
+        <option value="paused" {% if filter_status == 'paused' %}selected{% endif %}>Paused</option>
+        <option value="ended" {% if filter_status == 'ended' %}selected{% endif %}>Ended</option>
+        <option value="cancelled" {% if filter_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        <option value="archived" {% if filter_status == 'archived' %}selected{% endif %}>Archived</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label for="id_order">Sort</label>
+      <select id="id_order" name="order">
+        <option value="-created_at" {% if filter_order == '-created_at' %}selected{% endif %}>Newest first</option>
+        <option value="created_at" {% if filter_order == 'created_at' %}selected{% endif %}>Oldest first</option>
+        <option value="-priority" {% if filter_order == '-priority' %}selected{% endif %}>Priority (high–low)</option>
+        <option value="name" {% if filter_order == 'name' %}selected{% endif %}>Name (A–Z)</option>
+        <option value="-start_at" {% if filter_order == '-start_at' %}selected{% endif %}>Start date (latest)</option>
+        <option value="start_at" {% if filter_order == 'start_at' %}selected{% endif %}>Start date (soonest)</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-line">Filter</button>
+    {% if filter_q or filter_status %}<a class="btn btn-line" href="{% url 'customer:campaign_profile' %}">Clear</a>{% endif %}
+  </form>
+
+  {% if campaigns %}
+  <div class="ledger">
+    <div class="ledger-scroll">
+    <table class="ledger-table">
+      <thead>
+        <tr>
+          <th></th><th>Campaign</th><th>Discount</th><th>Scope</th><th>Window</th><th>Usage</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for campaign in campaigns %}
+        {% with status=campaign.status %}
+        <tr>
+          <td class="row-stripe"><span class="stripe-{{ status }}"></span></td>
+          <td data-label="Campaign">
+            <div class="camp-name"><a href="{% url 'customer:campaign_detail' slug=campaign.slug %}">{{ campaign.name }}</a></div>
+            {% if campaign.campaign_code %}<div class="camp-code mono">{{ campaign.campaign_code }}</div>{% endif %}
+          </td>
+          <td data-label="Discount" class="mono">
+            {% if campaign.campaign_type == 'percentage' %}{{ campaign.discount_value }}%{% else %}{{ campaign.currency }} {{ campaign.discount_value }}{% endif %}
+          </td>
+          <td data-label="Scope" class="camp-scope">{{ campaign.get_applies_to_display }}</td>
+          <td data-label="Window" class="mono camp-scope">
+            {{ campaign.start_at|date:"d M Y" }}{% if campaign.end_at %} – {{ campaign.end_at|date:"d M Y" }}{% else %} – open{% endif %}
+          </td>
+          <td data-label="Usage">
+            {{ campaign.times_used }}{% if campaign.usage_limit_total %} / {{ campaign.usage_limit_total }}{% endif %}
+            {% if campaign.usage_limit_total %}
+            <div class="progress"><span style="width: {% widthratio campaign.times_used campaign.usage_limit_total 100 %}%;"></span></div>
+            {% endif %}
+          </td>
+          <td data-label="Status">
+            {% if status == 'draft' %}<span class="pill pill-draft"><span class="d"></span>Draft</span>
+            {% elif status == 'pending_approval' %}<span class="pill pill-pending_approval"><span class="d"></span>Pending</span>
+            {% elif status == 'rejected' %}<span class="pill pill-rejected"><span class="d"></span>Rejected</span>
+            {% elif status == 'scheduled' %}<span class="pill pill-scheduled"><span class="d"></span>Scheduled</span>
+            {% elif status == 'active' %}<span class="pill pill-active"><span class="d"></span>Active</span>
+            {% elif status == 'paused' %}<span class="pill pill-paused"><span class="d"></span>Paused</span>
+            {% elif status == 'ended' %}<span class="pill pill-ended"><span class="d"></span>Ended</span>
+            {% elif status == 'cancelled' %}<span class="pill pill-cancelled"><span class="d"></span>Cancelled</span>
+            {% elif status == 'archived' %}<span class="pill pill-archived"><span class="d"></span>Archived</span>
+            {% endif %}
+          </td>
+          <td data-label="">
+            <details class="actions-menu">
+              <summary>Actions ▾</summary>
+              <div class="actions-panel">
+                <a class="menu-link" href="{% url 'customer:campaign_detail' slug=campaign.slug %}">View</a>
+                {% if not campaign.is_archived and not campaign.is_cancelled %}
+                <a class="menu-link" href="{% url 'customer:campaign_profile' %}?action=edit&pk={{ campaign.pk }}">Edit</a>
+                {% endif %}
+                <hr>
+                {% if not campaign.is_archived and not campaign.is_cancelled and not campaign.is_enabled and campaign.approval_status == 'approved' or campaign.approval_status == 'not_required' %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}"><input type="hidden" name="action" value="enable"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit">Enable</button></form>
+                {% endif %}
+                {% if campaign.is_enabled %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}"><input type="hidden" name="action" value="disable"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit">Pause</button></form>
+                {% endif %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}"><input type="hidden" name="action" value="duplicate"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit">Duplicate</button></form>
+                {% if campaign.is_archived %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}"><input type="hidden" name="action" value="restore"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit">Restore</button></form>
+                {% else %}
+                <hr>
+                {% if not campaign.is_cancelled %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}" onsubmit="return confirm('Cancel this campaign? This can\'t be undone.');"><input type="hidden" name="action" value="cancel"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit" class="danger">Cancel</button></form>
+                {% endif %}
+                <form method="post" action="{% url 'customer:campaign_profile' %}" onsubmit="return confirm('Archive this campaign?');"><input type="hidden" name="action" value="archive"><input type="hidden" name="pk" value="{{ campaign.pk }}">{% csrf_token %}<button type="submit" class="danger">Archive</button></form>
+                {% endif %}
+              </div>
+            </details>
+          </td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="pagination">
+    {% if campaigns.has_previous %}
+      <a href="?status={{ filter_status }}&amp;q={{ filter_q }}&amp;order={{ filter_order }}&amp;page={{ campaigns.previous_page_number }}">‹</a>
+    {% endif %}
+    <span class="current">{{ campaigns.number }} / {{ campaigns.paginator.num_pages }}</span>
+    {% if campaigns.has_next %}
+      <a href="?status={{ filter_status }}&amp;q={{ filter_q }}&amp;order={{ filter_order }}&amp;page={{ campaigns.next_page_number }}">›</a>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="ledger">
+    <div class="empty">
+      <h3>No campaigns here yet</h3>
+      <p>Start a flash sale or a percentage-off promo — it'll go to admin review, then you can enable it.</p>
+      <a class="btn btn-gold" href="{% url 'customer:campaign_profile' %}?action=create">+ New campaign</a>
+    </div>
+  </div>
+  {% endif %}
+
+{% endif %}
+
+</div>
+{% endblock %}
