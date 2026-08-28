@@ -37,6 +37,7 @@ Thumbs.db
 
 # Cache
 .pytest_cache/
+<<<<<<<< HEAD:.gitignore
 .mypy_cache/
 
 # Django migrations (keep package files)
@@ -44,3 +45,7 @@ Thumbs.db
 !**/migrations/__init__.py
 **/migrations/*.pyc
 **/migrations/__pycache__/
+========
+.mypy_cache/../venv/
+venv/
+>>>>>>>> 1bc0fb4a (Remove virtual environment from repository):backend/.gitignore
