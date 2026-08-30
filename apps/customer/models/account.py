@@ -13,6 +13,49 @@ Features:
 - Audit trail
 - Soft delete
 - Enhanced security
+
+CHANGELOG (bug-fix pass)
+-------------------------
+1. soft_delete() was silently undone. save() called full_clean() -> clean(),
+   and clean() unconditionally re-copies email_or_phone into email/phone
+   whenever they're empty. Since soft_delete() nulls email/phone but never
+   touches email_or_phone, clean() was re-populating both fields in the
+   SAME save() call that was supposed to erase them -> the "GDPR delete"
+   never actually persisted. Fixed by gating that auto-copy behind
+   `self.deleted_at is None` in clean().
+
+2. save() called self.full_clean() unconditionally, ignoring
+   `update_fields`. That meant hot paths like record_successful_login()
+   (every login) and force_password_change() (every reset) were paying
+   for full-instance validation + uniqueness queries against
+   email_or_phone/email/phone/uuid just to flip a couple of booleans.
+   Fixed by only running full_clean() on full saves (no update_fields),
+   which is when it actually matters (create/edit flows).
+
+3. get_by_natural_key() used a Q(email_or_phone=username) |
+   Q(email=username) OR-query, which can raise MultipleObjectsReturned
+   if a login string happens to match one user's email_or_phone and a
+   different user's separate email field. Fixed to look up by the
+   canonical identifier (email_or_phone) first and only fall back to
+   email if that lookup misses.
+
+4. There was no User.delete() override, so `user.delete()` hard-deleted
+   the row even though soft_delete() exists as the intended path
+   (ProfileInfo has the same override, User didn't -> inconsistent).
+   Also, queryset-level bulk deletes (`User.objects.filter(...).delete()`)
+   bypass any instance-level override entirely. Fixed both: added
+   User.delete() -> soft_delete(), and a custom QuerySet whose delete()
+   soft-deletes each row, with an explicit hard_delete() escape hatch
+   for the rare case a real delete is actually required.
+
+5. Fix #4 has a side effect worth calling out: because delete() no
+   longer performs a real row delete, ProfileViewLog.viewer's
+   on_delete=SET_NULL never fires anymore, so a "deleted" user's
+   viewing history (who they viewed, when, from what IP) would
+   otherwise live on forever, still attached to their (undeleted)
+   User row and its still-present email_or_phone. soft_delete() now
+   proactively detaches those rows (viewer=None, ip_address=None) to
+   compensate -- see soft_delete()'s docstring below.
 """
 
 import uuid
@@ -33,10 +76,49 @@ from apps.customer.validators import email_or_phone_validator
 
 
 # ====================================================================
+# QUERYSET
+# ====================================================================
+
+class UserQuerySet(models.QuerySet):
+    """
+    Custom queryset so the soft-delete guarantee also holds for
+    queryset-level bulk operations, not just instance.delete() calls.
+    """
+
+    def delete(self):
+        """
+        Redirect bulk `.delete()` to soft_delete() for every row in the
+        queryset, so `User.objects.filter(...).delete()` can't silently
+        bypass the GDPR soft-delete path the rest of this model is built
+        around. Returns a Django-delete-style (count, {label: count})
+        tuple for API compatibility with callers that inspect the result.
+        """
+        count = 0
+        for obj in self:
+            obj.soft_delete()
+            count += 1
+        return count, {self.model._meta.label: count}
+
+    def hard_delete(self):
+        """Escape hatch for an actual, irreversible bulk delete."""
+        return super().delete()
+
+    def active_users(self):
+        return self.filter(is_active=True, deleted_at__isnull=True)
+
+    def verified_users(self):
+        return self.filter(
+            Q(email_verified=True) | Q(phone_verified=True),
+            is_active=True,
+            deleted_at__isnull=True,
+        )
+
+
+# ====================================================================
 # USER MANAGER
 # ====================================================================
 
-class UserManager(BaseUserManager):
+class UserManager(BaseUserManager.from_queryset(UserQuerySet)):
     """
     Custom user manager for handling email/phone authentication
     """
@@ -108,24 +190,28 @@ class UserManager(BaseUserManager):
     
     def get_by_natural_key(self, username):
         """
-        Support for authentication with email OR phone
+        Support for authentication with email OR phone.
+
+        Looks up by the canonical identifier (email_or_phone) first,
+        since that's guaranteed unique and is what USERNAME_FIELD points
+        at. Only falls back to the separate `email` field if that lookup
+        misses. Doing this as two sequential .get() calls (rather than
+        one OR-query) avoids MultipleObjectsReturned in the edge case
+        where `username` matches one user's email_or_phone AND a
+        different user's standalone email field.
         """
-        return self.get(
-            Q(email_or_phone=username) | 
-            Q(email=username)
-        )
+        try:
+            return self.get(email_or_phone=username)
+        except self.model.DoesNotExist:
+            return self.get(email=username)
     
     def active_users(self):
         """Get all active, non-deleted users"""
-        return self.filter(is_active=True, deleted_at__isnull=True)
+        return self.get_queryset().active_users()
     
     def verified_users(self):
         """Get users with verified email or phone"""
-        return self.filter(
-            Q(email_verified=True) | Q(phone_verified=True),
-            is_active=True,
-            deleted_at__isnull=True
-        )
+        return self.get_queryset().verified_users()
 
 
 # ====================================================================
@@ -152,8 +238,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     # ================================================================
     class Role(models.TextChoices):
         ADMIN = 'admin', _('Admin')
-        DEALER = 'dealer', _('Dealer')
-        CUSTOMER = 'customer', _('Customer')
+        BUSINESS = 'business', _('Business')
+        USER = 'user', _('User')
         STAFF = 'staff', _('Staff')
         MODERATOR = 'moderator', _('Moderator')
     
@@ -215,7 +301,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         _("User Role"),
         max_length=20,
         choices=Role.choices,
-        default=Role.CUSTOMER,
+        default=Role.USER,
         db_index=True,
         help_text=_("User role for permission management")
     )
@@ -367,27 +453,27 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     language = models.CharField(
         _("Language"),
-        max_length=10,
-        default='en',
+        max_length=20,
+        default='English',
         choices=[
-            ('en', _('English')),
-            ('bn', _('Bengali')),
-            ('es', _('Spanish')),
-            ('fr', _('French')),
-            ('de', _('German')),
-            ('zh', _('Chinese')),
-            ('ar', _('Arabic')),
-            ('hi', _('Hindi')),
+            ('English', _('English')),
+            ('Bengali', _('Bengali')),
+            ('Spanish', _('Spanish')),
+            ('French', _('French')),
+            ('German', _('German')),
+            ('Chinese', _('Chinese')),
+            ('Arabic', _('Arabic')),
+            ('Hindi', _('Hindi')),
         ],
         help_text=_("User's preferred language")
     )
     
     country = models.CharField(
         _("Country"),
-        max_length=2,
+        max_length=100,
         null=True,
         blank=True,
-        help_text=_("ISO 3166-1 alpha-2 country code")
+        help_text=_("Country name, e.g. 'Bangladesh', 'Japan', 'England'")
     )
     
     currency = models.CharField(
@@ -573,28 +659,21 @@ class User(AbstractBaseUser, PermissionsMixin):
         # Try to get from related profile if exists
         if hasattr(self, 'profileinfo') and self.profileinfo.profile_name:
             return self.profileinfo.profile_name
-        
-        # Fallback to email or phone
-        if self.email:
-            return self.email.split('@')[0]
-        return self.email_or_phone
-    
-    @property
-    def full_name(self) -> str:
-        """Get full name from profile or fallback"""
-        if hasattr(self, 'profileinfo') and self.profileinfo.profile_name:
-            return self.profileinfo.profile_name
-        return self.display_name
+
+        # No profile name set yet — show a neutral placeholder instead
+        # of leaking email/phone or returning None to callers (e.g.
+        # get_display_name(), templates) that expect a string.
+        return "Anonymous"
     
     @property
     def is_dealer(self) -> bool:
-        """Check if user is a dealer"""
-        return self.role == self.Role.DEALER
+        """Check if user is a business/dealer account"""
+        return self.role == self.Role.BUSINESS
     
     @property
     def is_customer(self) -> bool:
-        """Check if user is a customer"""
-        return self.role == self.Role.CUSTOMER
+        """Check if user is a regular (non-business) user"""
+        return self.role == self.Role.USER
     
     @property
     def is_admin(self) -> bool:
@@ -762,8 +841,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def soft_delete(self, deleted_by_user=None, save: bool = True) -> None:
         """
-        Soft delete the user account (GDPR compliant)
-        Keeps the record but marks as deleted
+        Soft delete the user account (GDPR compliant).
+        Keeps the record but marks as deleted and anonymizes contact
+        fields.
+
+        IMPORTANT: `deleted_at` must be set BEFORE this reaches save(),
+        because save() -> full_clean() -> clean() will otherwise see
+        email/phone as empty and re-copy email_or_phone straight back
+        into them (see clean()'s guard on self.deleted_at). Setting it
+        here, on the same instance, in the same call, is what makes the
+        anonymization actually stick.
+
+        Also detaches this user's own viewing history (ProfileViewLog
+        rows where they're the `viewer`). That FK is on_delete=SET_NULL,
+        but since User.delete() and bulk deletes now route through this
+        method instead of a real row delete (see UserQuerySet above),
+        the row is never actually removed and SET_NULL never fires on
+        its own -- so without this, someone who deletes their account
+        would still show up in every profile's "recent viewers" list
+        under their (still-present) email_or_phone, with their original
+        IP address attached, forever. We proactively null both here to
+        get the same end result the FK's on_delete was meant to produce.
         """
         self.deleted_at = dj_timezone.now()
         self.deleted_by = deleted_by_user
@@ -777,6 +875,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         
         if save:
             self.save()
+
+            # Local import to avoid a circular/early import between
+            # account.py and profile_view_log.py at app-loading time.
+            from apps.customer.models.profile_view_log import ProfileViewLog
+            ProfileViewLog.objects.filter(viewer=self).update(
+                viewer=None, ip_address=None
+            )
     
     def restore(self, save: bool = True) -> None:
         """Restore a soft-deleted account"""
@@ -908,13 +1013,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     # HELPER METHODS
     # ================================================================
     
-    def get_short_name(self) -> str:
-        """Return short name for the user"""
+    def get_display_name(self) -> str:
+        """Return short/display name for the user"""
         return self.display_name
-    
-    def get_full_name(self) -> str:
-        """Return full name for the user"""
-        return self.full_name
     
     def has_perm(self, perm, obj=None) -> bool:
         """
@@ -939,16 +1040,22 @@ class User(AbstractBaseUser, PermissionsMixin):
         Validate model fields before saving
         """
         super().clean()
-        
-        # Ensure email_or_phone is either email or phone
-        if '@' in self.email_or_phone:
-            # If email_or_phone is email, copy to email field if empty
-            if not self.email:
-                self.email = self.email_or_phone
-        else:
-            # If email_or_phone is phone, copy to phone field if empty
-            if not self.phone:
-                self.phone = self.email_or_phone
+
+        # Skip the email_or_phone auto-copy entirely for soft-deleted
+        # accounts. soft_delete() intentionally nulls email/phone; without
+        # this guard, this exact block would immediately copy
+        # email_or_phone right back into whichever field was just
+        # cleared, and the anonymization would never persist.
+        if self.deleted_at is None:
+            # Ensure email_or_phone is either email or phone
+            if '@' in self.email_or_phone:
+                # If email_or_phone is email, copy to email field if empty
+                if not self.email:
+                    self.email = self.email_or_phone
+            else:
+                # If email_or_phone is phone, copy to phone field if empty
+                if not self.phone:
+                    self.phone = self.email_or_phone
         
         # Validate that superusers must have email
         if self.is_superuser and not self.email:
@@ -956,7 +1063,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def save(self, *args, **kwargs):
         """
-        Override save to run clean validation
+        Override save to run clean validation.
+
+        full_clean() is only run for full saves (no `update_fields`).
+        Most of the helper methods above (record_successful_login,
+        verify_email, lock_account, etc.) already pass a narrow
+        `update_fields` list because they're only ever meant to touch a
+        couple of fields; running full-instance validation (plus the
+        associated validate_unique() queries against email_or_phone,
+        email, phone, and uuid) on every one of those calls was pure
+        overhead on some of the hottest paths in the app (e.g. every
+        login) and could make an unrelated, pre-existing bad field
+        reject an otherwise-safe partial update.
         """
-        self.full_clean()
+        if kwargs.get('update_fields') is None:
+            self.full_clean()
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """
+        Override instance delete to route through soft_delete(), so
+        `user.delete()` behaves the same way ProfileInfo.delete() does
+        and never silently hard-deletes an account that GDPR tooling
+        expects to be recoverable/anonymized instead of destroyed.
+        Use User.objects.filter(...).hard_delete() (see UserQuerySet)
+        for the rare case a real delete is actually required.
+        """
+        self.soft_delete()

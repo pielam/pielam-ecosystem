@@ -179,10 +179,6 @@
   .engine-attrib .meta-row .stale-flag::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--warn); }
   .attrib-link { text-decoration: none; min-width: 0; }
 
-  .own-badge {
-    flex-shrink: 0; font-size: var(--text-xs); font-weight: 700; color: var(--muted);
-    border: 1px solid var(--line); border-radius: 999px; padding: .3rem .7rem;
-  }
   .follow-btn {
     appearance: none; flex-shrink: 0; cursor: pointer;
     padding: .38rem .9rem; border-radius: 999px; border: 1px solid var(--accent, #4a90e2);
@@ -190,7 +186,8 @@
     font-size: var(--text-xs); font-weight: 700; transition: all var(--t-fast, .15s ease);
   }
   .follow-btn:hover { background: rgba(74,144,226,.08); }
-  .follow-btn[data-following="true"] { background: var(--accent, #4a90e2); color: #fff; }
+  .follow-btn[data-following="true"] { background: rgba(74,144,226,.12); color: var(--accent, #4a90e2); border-color: rgba(74,144,226,.3); }
+  .follow-btn[data-following="true"]:hover { background: rgba(74,144,226,.2); }
   .follow-btn[disabled] { opacity: .6; cursor: default; }
 
   /* ── Panels ─────────────────────────────────────────────── */
@@ -205,60 +202,68 @@
 
   .post-stream {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.1rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.35rem;
     align-items: start;
   }
   @media (max-width: 640px) {
     .post-stream { grid-template-columns: 1fr; }
   }
 
+  /* ── Featured cards: rhythm-breaking variation so the grid doesn't
+     read as one monotonous repeating template — every post with rich
+     media, plus a periodic rhythm card, spans two grid tracks and gets
+     a taller, more generous media area. Naturally collapses back to a
+     single column's width on narrow viewports since grid `span` is
+     clamped to however many tracks actually exist. */
+  .post-card--featured { grid-column: span 2; }
+  .post-card--featured .post-media { max-height: min(60vh, 460px); }
+  .post-card--featured .post-card-title { font-size: calc(var(--text-base) * 1.18); }
+  @media (max-width: 900px) { .post-card--featured { grid-column: span 1; } }
+
   .post-card {
     min-width: 0;
     background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line);
     box-shadow: var(--shadow-sm); overflow: hidden;
     display: flex; flex-direction: column;
-    transition: box-shadow var(--t-fast, .15s ease);
+    transition: box-shadow var(--t-fast, .2s ease), transform var(--t-fast, .2s ease), border-color var(--t-fast, .2s ease);
   }
-  .post-card:hover { box-shadow: 0 8px 24px rgba(15,31,54,.08); }
+  .post-card:hover { box-shadow: 0 14px 34px rgba(15,31,54,.12); transform: translateY(-3px); border-color: rgba(10,37,64,.14); }
 
   .post-card-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .9rem 1.1rem; }
   .post-card-head-right { display: flex; align-items: center; gap: .7rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
-  .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
-  .signal-bars i { display: block; width: 4px; border-radius: 2px; background: var(--line); min-height: 3px; }
-  .signal-bars i.on.image { background: var(--sig-image); }
-  .signal-bars i.on.video { background: var(--sig-video); }
-
-  .stamp {
-    display: inline-flex; align-items: center; gap: 6px;
-    margin: 0 1.1rem .7rem; padding: 3px 10px 3px 8px;
-    border: 1.5px solid currentColor; border-radius: 999px;
-    font-family: var(--font-mono, ui-monospace, monospace);
-    font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
-  }
-  .stamp::before { content: "●"; font-size: 7px; }
-  .post-card[data-service-type="product"]       .stamp { color: #0e6b55; }
-  .post-card[data-service-type="brand"]         .stamp { color: #8f5f12; }
-  .post-card[data-service-type="category"]      .stamp { color: var(--verified); }
-  .post-card[data-service-type="subcategory"]   .stamp { color: #7a5aa6; }
-  .post-card[data-service-type="education"]     .stamp { color: var(--verified); }
-  .post-card[data-service-type="news"]          .stamp { color: var(--danger); }
-  .post-card[data-service-type="location"]      .stamp { color: #0e6b55; }
-  .post-card[data-service-type="api"]           .stamp { color: #8f5f12; }
-  .post-card[data-service-type="person"]        .stamp { color: #0e6b55; }
-  .post-card[data-service-type="business"]      .stamp { color: #7a5aa6; }
-  .post-card[data-service-type="entertainment"] .stamp { color: var(--danger); }
+  /* signal-bars indicator removed — the header no longer shows an
+     unlabeled mini-bar; image/video/link counts are communicated
+     clearly via .pcard-pills lower in the card instead. */
 
   .post-card-body { --card-pad-x: 1.1rem; padding: 0 var(--card-pad-x) 1rem; display: flex; flex-direction: column; flex: 1; }
   .post-card-title { font-weight: 700; color: var(--ink); margin: 0 0 .3rem; font-size: var(--text-base); overflow-wrap: anywhere; word-break: break-word; }
   .post-card-title a { color: inherit; text-decoration: none; }
   .post-card-title a:hover { text-decoration: underline; }
+
+  .pcard-title-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin: 0 0 .7rem; }
+  .pcard-title-btn {
+    appearance: none; display: inline-flex; align-items: center; gap: .35rem;
+    font-size: 11.5px; font-weight: 600; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 999px; padding: .32rem .65rem; cursor: pointer;
+    transition: all var(--t-fast, .15s ease);
+  }
+  .pcard-title-btn:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); background: rgba(74,144,226,.06); }
+  .pcard-title-btn:disabled { opacity: .6; cursor: default; }
+  .pcard-title-btn i.spin, .pcard-title-btn i.fa-spin { animation: spin .9s linear infinite; }
+  @media (max-width: 380px) { .pcard-title-btn { padding: .3rem .55rem; font-size: 11px; } }
+
   .post-card-desc {
     color: var(--muted); font-size: var(--text-sm); line-height: 1.55; margin: 0 0 .8rem;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     overflow-wrap: anywhere; word-break: break-word;
   }
+  .pcard-desc-toggle-inline {
+    appearance: none; background: none; border: none; padding: 0; margin-left: 3px;
+    font-size: inherit; font-weight: 700; color: var(--accent, #4a90e2); cursor: pointer; white-space: nowrap;
+  }
+  .pcard-desc-toggle-inline:hover { text-decoration: underline; }
 
   .status-row {
     display: flex; align-items: center; gap: 8px; font-size: var(--text-xs);
@@ -392,11 +397,11 @@
     border: 1px solid var(--line); background: var(--surface); cursor: pointer;
     transition: all var(--t-fast, .15s ease);
   }
-  .pcard-btn.pcard-refresh { color: var(--accent, #4a90e2); border-color: rgba(74,144,226,.35); background: rgba(74,144,226,.06); }
-  .pcard-btn.pcard-refresh:hover { background: rgba(74,144,226,.12); }
+  .pcard-btn.pcard-refresh { color: var(--muted); border-color: var(--line); background: var(--surface); flex: 0 0 auto; padding: .5rem .75rem; }
+  .pcard-btn.pcard-refresh:hover { color: var(--accent, #4a90e2); border-color: rgba(74,144,226,.35); background: rgba(74,144,226,.06); }
   .pcard-btn.pcard-refresh[disabled] { opacity: .6; cursor: default; }
-  .pcard-btn.pcard-details { color: var(--muted); }
-  .pcard-btn.pcard-details:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); }
+  .pcard-btn.pcard-details { flex: 1; color: #fff; background: var(--ink); border-color: var(--ink); font-weight: 800; }
+  .pcard-btn.pcard-details:hover { background: var(--accent, #4a90e2); border-color: var(--accent, #4a90e2); color: #fff; box-shadow: 0 4px 14px rgba(74,144,226,.35); }
   .pcard-btn i.spin { animation: spin .9s linear infinite; }
 
   /* ── Skeletons ──────────────────────────────────────────── */
@@ -864,7 +869,6 @@
     .engine-legend { gap: .7rem .9rem; }
     .post-card-head { padding: .8rem .9rem; }
     .post-card-body { --card-pad-x: .9rem; padding: 0 var(--card-pad-x) .9rem; }
-    .stamp { margin: 0 .9rem .7rem; }
     .post-media { max-height: 60vh; }
     .video-grid { grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: .9rem; }
     .gallery-modal { padding: 1rem; }
@@ -1187,29 +1191,14 @@
   }
 
   function headRightHTML(post) {
-    let actionBtn = '';
-    if (post.is_own_post) {
-      actionBtn = '<span class="own-badge"></span>';
-    } else {
-      actionBtn = `<button type="button" class="follow-btn" data-user-id="${esc(post.user_id)}"
+    if (post.is_own_post) return '';
+    const actionBtn = `<button type="button" class="follow-btn" data-user-id="${esc(post.user_id)}"
                      data-username="${esc(post.username)}" data-following="${post.is_following ? 'true' : 'false'}">
-                     ${post.is_following ? 'Following' : 'Follow'}
+                     ${post.is_following ? '<i class="fa-solid fa-check"></i> Following' : 'Follow'}
                    </button>`;
-    }
-    return `<div class="post-card-head-right">${signalBars(post)}${actionBtn}</div>`;
+    return `<div class="post-card-head-right">${actionBtn}</div>`;
   }
 
-  function signalBars(post) {
-    const vals = [post.images_count || 0, effectiveVideoCount(post)];
-    const max = Math.max(1, ...vals);
-    const cls = ['image', 'video'];
-    return `<span class="signal-bars" title="${vals[0]} photos · ${vals[1]} videos">
-      ${vals.map((v, i) => {
-        const h = v ? Math.max(4, Math.round((v / max) * 14)) : 3;
-        return `<i class="${v ? 'on ' + cls[i] : ''}" style="height:${h}px"></i>`;
-      }).join('')}
-    </span>`;
-  }
 
   function statusRowHTML(post) {
     if (post.fetch_status === 'error') {
@@ -1435,29 +1424,43 @@
     return pills.join('');
   }
 
-  function renderPostCard(post) {
+  function renderPostCard(post, index) {
     const media = buildMediaSet(post);
+    const isFeatured = effectiveVideoCount(post) > 0 || (post.images_count || 0) >= 4 || (index % 7 === 0);
     return `
-      <article class="post-card enter" data-service-type="${esc(post.svc_type)}" data-fetch="${esc(post.fetch_status)}">
+      <article class="post-card enter${isFeatured ? ' post-card--featured' : ''}" data-service-type="${esc(post.svc_type)}" data-fetch="${esc(post.fetch_status)}">
         <div class="post-card-head">
           ${attribHTML(post)}
           ${headRightHTML(post)}
         </div>
-        <div class="stamp">${esc(post.action_label || ACTION_LABELS[post.svc_type] || 'connected a new source')}</div>
         <div class="post-card-body">
           <p class="post-card-title"><a href="${esc(post.svc_url)}" target="_blank" rel="noopener noreferrer">${esc(post.fetch_status === 'error' ? post.svc_name : (post.og_title || post.svc_name))}</a></p>
-          ${post.fetch_status !== 'error' && post.og_description ? `<p class="post-card-desc">${esc(post.og_description)}</p>` : ''}
+          <div class="pcard-title-actions">
+            <button type="button" class="pcard-title-btn" title="Copy link" aria-label="Copy link"
+                    onclick="navigator.clipboard.writeText('${escJsAttr(post.svc_url)}').then(()=>toast('Link copied!'))">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+            <button type="button" class="pcard-title-btn" title="Deep crawl this link" aria-label="Deep crawl this link"
+                    onclick="deepCrawlLink('${escJsAttr(post.svc_id)}', '${escJsAttr(post.svc_url)}', this)">
+              <i class="fa-solid fa-magnifying-glass-chart"></i> Deep crawl
+            </button>
+            <button type="button" class="pcard-title-btn" title="Share this link" aria-label="Share this link"
+                    onclick="shareLink('${escJsAttr(post.svc_url)}', '${escJsAttr(post.og_title || post.svc_name)}')">
+              <i class="fa-solid fa-share-nodes"></i> Share
+            </button>
+          </div>
+          ${post.fetch_status !== 'error' && post.og_description ? buildDescBlock(post.og_description) : ''}
           ${statusRowHTML(post)}
           ${mosaicHTML(post)}
           ${post.fetch_status !== 'error' ? sourceLineHTML(post) : ''}
           ${post.fetch_status !== 'error' ? stripHTML(post, media) : ''}
           <div class="pcard-pills">${post.fetch_status !== 'error' ? pillsHTML(post) : ''}</div>
           <div class="pcard-actions">
-            <button type="button" class="pcard-btn pcard-refresh retry-btn" data-retry-id="${esc(post.svc_id)}">
-              <i class="fa-solid fa-rotate"></i><span class="pcard-btn-label">Refresh</span>
+            <button type="button" class="pcard-btn pcard-refresh retry-btn" data-retry-id="${esc(post.svc_id)}" title="Refresh this post" aria-label="Refresh this post">
+              <i class="fa-solid fa-rotate"></i>
             </button>
             <button type="button" class="pcard-btn pcard-details" data-open-details="${esc(post.svc_id)}">
-              <i class="fa-regular fa-eye"></i><span>Details</span>
+              <i class="fa-regular fa-eye"></i><span>View details</span>
             </button>
           </div>
         </div>
@@ -1471,7 +1474,7 @@
 
   function renderAll() {
     const posts = filteredPosts();
-    const frag = posts.map((post) => renderPostCard(post));
+    const frag = posts.map((post, i) => renderPostCard(post, i));
     els.streamAll.innerHTML = frag.join('');
     bindSoloAspectRatios(els.streamAll);
     updateEmptyState();
@@ -1534,7 +1537,7 @@
     function setState(following) {
       allBtns.forEach((b) => {
         b.setAttribute('data-following', following ? 'true' : 'false');
-        b.textContent = following ? 'Following' : 'Follow';
+        b.innerHTML = following ? '<i class="fa-solid fa-check"></i> Following' : 'Follow';
       });
     }
 
@@ -1571,13 +1574,13 @@
     const btn = e.target.closest('.retry-btn');
     if (!btn || btn.disabled) return;
     const svcId = btn.getAttribute('data-retry-id');
-    const label = btn.querySelector('.pcard-btn-label');
     const icon = btn.querySelector('i');
-    const originalLabel = label ? label.textContent : btn.textContent;
+    const originalTitle = btn.getAttribute('title') || 'Refresh this post';
 
     btn.disabled = true;
     if (icon) icon.classList.add('spin');
-    if (label) label.textContent = 'Refreshing…'; else btn.textContent = 'Refreshing…';
+    btn.setAttribute('title', 'Refreshing…');
+    btn.setAttribute('aria-label', 'Refreshing…');
 
     fetch(RETRY_URL_TMPL.replace('{id}', svcId), {
       method: 'POST',
@@ -1593,7 +1596,8 @@
       .finally(() => {
         btn.disabled = false;
         if (icon) icon.classList.remove('spin');
-        if (label) label.textContent = originalLabel; else btn.textContent = originalLabel;
+        btn.setAttribute('title', originalTitle);
+        btn.setAttribute('aria-label', originalTitle);
       });
   });
 
@@ -1930,6 +1934,28 @@
     el.style.display = open ? 'block' : 'none';
     if (chev) chev.className = `fas fa-chevron-${open ? 'up' : 'down'}`;
   }
+  const DESC_TRUNCATE_LEN = 140;
+  function buildDescBlock(fullText) {
+    const isLong = fullText.length > DESC_TRUNCATE_LEN;
+    const shortText = isLong ? fullText.slice(0, DESC_TRUNCATE_LEN).trim() : fullText;
+    const toggle = isLong
+      ? `…<button type="button" class="pcard-desc-toggle-inline" onclick="toggleCardDesc(this)">See more</button>`
+      : '';
+    return `<p class="post-card-desc" data-full="${esc(fullText)}" data-short="${esc(shortText)}" data-expanded="false">${esc(shortText)}${toggle}</p>`;
+  }
+  function toggleCardDesc(btn) {
+    const p = btn.closest('.post-card-desc');
+    if (!p) return;
+    const expanded = p.getAttribute('data-expanded') === 'true';
+    if (expanded) {
+      p.setAttribute('data-expanded', 'false');
+      p.innerHTML = `${esc(p.dataset.short)}…<button type="button" class="pcard-desc-toggle-inline" onclick="toggleCardDesc(this)">See more</button>`;
+    } else {
+      p.setAttribute('data-expanded', 'true');
+      p.innerHTML = `${esc(p.dataset.full)} <button type="button" class="pcard-desc-toggle-inline" onclick="toggleCardDesc(this)">See less</button>`;
+    }
+  }
+
   function switchDetailTab(btn, panelId) {
     const section = btn.closest('.detail-section');
     section.querySelectorAll('.tab-btn').forEach((t) => t.classList.remove('active'));
@@ -2600,7 +2626,8 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 429) { toast(data.error || 'A crawl was just run — please wait before trying again.'); return; }
-      if (res.status === 400 || data.success === false) { toast(data.error || data.detail || 'Could not run the crawl.'); return; }
+      if (!res.ok) { toast(data.error || data.detail || `Could not run the crawl (server said ${res.status}).`); return; }
+      if (data.success === false) { toast(data.error || data.detail || 'Could not run the crawl.'); return; }
       window._svcScanReport[sid] = data;
       window._svcIntelResultFilter[sid] = { query: '', sort: 'default' };
       const panel = document.getElementById(`tab-li-${sid}`);
@@ -2856,7 +2883,8 @@
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 429) { toast(data.error || 'Please wait before scanning again.'); return; }
-      if (res.status === 400 || data.success === false) { toast(data.error || data.detail || 'Could not scan this link.'); return; }
+      if (!res.ok) { toast(data.error || data.detail || `Could not scan this link (server said ${res.status}).`); return; }
+      if (data.success === false) { toast(data.error || data.detail || 'Could not scan this link.'); return; }
       LC.open(renderSingleLinkOutcome(data, href, sid), href);
     } catch (err) {
       toast('Scan failed: ' + err.message);
@@ -3161,7 +3189,7 @@
     deepCrawlLink, runLinkScan, setIntelConfig, filterIntelResults, sortIntelResults,
     toggleIntelMore, toggleIntelSnippet, openScanImage,
     searchText, stepTextMatch, clearTextSearch, toggleTextExpand,
-    toggleRaw, switchDetailTab,
+    toggleRaw, switchDetailTab, toggleCardDesc,
     imgLoadError, imgThumbError,
   });
 

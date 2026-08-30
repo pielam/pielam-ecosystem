@@ -1665,7 +1665,7 @@ def _serialize_service(service: ConnectedService) -> dict:
     rather than the raw {"url", "type"} shape. Links go through
     megamind.utils.link_info.prepare_links_for_display instead —
     display-layer sanitization (HTML-escaped text, dangerous schemes
-    dropped) plus domain/favicon/is_external, since these are hrefs
+    dropped) plus domain/favicon/is_external/rel, since these are hrefs
     scraped from an untrusted third-party page, not first-party data.
     """
     og_title       = service.og_title       or ""
@@ -2319,6 +2319,16 @@ def scan_service_links(request, service_id):
     its own cooldown window so rapid double-clicks can't stack up
     redundant outbound fetch batches against the same service.
 
+    NOTE: this plain-Django endpoint is scoped to the requesting user's
+    OWN services only (get_object_or_404(..., user=request.user, ...))
+    — it predates the ponno global feed and was never wired up to be
+    reachable from it. The feed's Deep-crawl button calls the DRF
+    ConnectedServiceViewSet.link_scan action below instead, which DOES
+    allow scanning another user's public, connected, active post (see
+    that action's docstring for why). If you need this legacy endpoint
+    to support the same public-post case, apply the same
+    get_queryset()-then-public-fallback pattern used there.
+
     Optional JSON body: {"max_links": int, "max_per_domain": int,
     "max_depth": int} — each still clamped to its hard cap regardless
     of what's requested (see _clamp_scan_param).
@@ -2420,6 +2430,7 @@ class ConnectedServiceViewSet(ModelViewSet):
     POST   /api/connected-services/{id}/fetch/   → scrape & persist (throttled)
     POST   /api/connected-services/{id}/refresh/ → alias of fetch/ (throttled)
     GET    /api/connected-services/{id}/preview/ → cached data only
+    POST   /api/connected-services/{id}/link-scan/ → on-demand link-intelligence scan (throttled)
     """
     permission_classes = [IsAuthenticated]
     pagination_class = ConnectedServicePagination
@@ -2461,6 +2472,32 @@ class ConnectedServiceViewSet(ModelViewSet):
         # trail. get_queryset()'s is_active=True filter is what makes
         # this row disappear from every future list/retrieve.
         instance.soft_delete()
+
+    def _get_owned_or_public_service(self, pk):
+        """
+        Shared lookup for actions that must also work against another
+        user's post as it appears in the GLOBAL ponno home feed — not
+        just the requesting user's own services. Tries the normal,
+        user-scoped queryset first (so an owner always sees their own
+        row regardless of its status/connection state), and only falls
+        back to the public-post criteria when that lookup misses.
+
+        Used by refresh(), preview(), and link_scan() — every action a
+        feed viewer can trigger from a post card that isn't necessarily
+        theirs. fetch() deliberately does NOT use this: fetch() is only
+        ever called against the requester's own dashboard, so it keeps
+        the stricter self.get_object() (get_queryset()-scoped) lookup.
+        """
+        try:
+            return self.get_queryset().get(pk=pk)
+        except ConnectedService.DoesNotExist:
+            return get_object_or_404(
+                ConnectedService,
+                pk=pk,
+                is_active=True,
+                is_connected=True,
+                status="public",
+            )
 
     def _do_scrape(self, service: ConnectedService):
         """
@@ -2556,17 +2593,7 @@ class ConnectedServiceViewSet(ModelViewSet):
         guarded fetch pipeline, locking, throttling and bookkeeping remain
         unchanged.
         """
-        try:
-            service = self.get_queryset().get(pk=pk)
-        except ConnectedService.DoesNotExist:
-            service = get_object_or_404(
-                ConnectedService,
-                pk=pk,
-                is_active=True,
-                is_connected=True,
-                status="public",
-            )
-
+        service = self._get_owned_or_public_service(pk)
         _, response = self._do_scrape(service)
         return response
 
@@ -2579,16 +2606,7 @@ class ConnectedServiceViewSet(ModelViewSet):
         Public GLOBAL-feed services can also be viewed by other
         authenticated users.
         """
-        try:
-            service = self.get_queryset().get(pk=pk)
-        except ConnectedService.DoesNotExist:
-            service = get_object_or_404(
-                ConnectedService,
-                pk=pk,
-                is_active=True,
-                is_connected=True,
-                status="public",
-            )
+        service = self._get_owned_or_public_service(pk)
 
         if service.fetch_status != "success":
             return Response(
@@ -2651,10 +2669,24 @@ class ConnectedServiceViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="link-scan", throttle_classes=[ConnectedServiceFetchThrottle])
     def link_scan(self, request, pk=None):
-        try:
-            service = self.get_queryset().get(pk=pk)
-        except ConnectedService.DoesNotExist:
-            service = get_object_or_404(ConnectedService, pk=pk, is_active=True, is_connected=True, status="public")
+        """
+        On-demand link-intelligence scan — either against a service's
+        whole extracted_links list, or (when `href` is supplied) a
+        single clicked link, which is what the feed/profile "Deep
+        crawl" buttons call.
+
+        FIX: previously this action called self.get_object(), which is
+        scoped to the requesting user's OWN services via get_queryset()
+        — so clicking "Deep crawl" on any post surfaced from the GLOBAL
+        ponno home feed (almost always owned by someone else) 404'd
+        every time for every viewer except the post's own owner, and
+        the front end had no special handling for a plain 404, so the
+        popup just opened with nothing in it. Now uses the same
+        owned-or-public lookup refresh()/preview() already use, so a
+        logged-in viewer can deep-crawl a link on any public, connected,
+        active post — not only their own.
+        """
+        service = self._get_owned_or_public_service(pk)
 
         href = (request.data.get("href") or "").strip() or None
 
@@ -2686,6 +2718,3 @@ class ConnectedServiceViewSet(ModelViewSet):
             )
 
         return Response({"success": True, **display_report}, status=status.HTTP_200_OK)
-
-
-        

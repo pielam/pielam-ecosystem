@@ -291,8 +291,14 @@ def _get_public_services(profile_user, request):
 
 @login_required(login_url='/customer/signin/')
 def PublicProfileView(request, username):
+    # .active_users() (is_active=True, deleted_at__isnull=True) so a
+    # soft-deleted account's profile isn't still fully browsable at its
+    # old URL just because email/phone are intentionally kept on the
+    # row for referential integrity -- see User.soft_delete()'s
+    # docstring in account.py. Same reasoning applies to every other
+    # User-by-username lookup in this file below.
     profile_user = get_object_or_404(
-        User.objects.select_related("profileinfo"),
+        User.objects.active_users().select_related("profileinfo"),
         email_or_phone=username,
     )
     profile_info         = get_object_or_404(ProfileInfo, user=profile_user)
@@ -439,7 +445,7 @@ def load_more_products(request, username):
     # when profile_user.role == 'dealer' — gets a standard 404 like
     # any other "this resource doesn't exist for this profile" case,
     # instead of a bespoke JSON 400 error path nothing consumes.
-    profile_user = get_object_or_404(User, email_or_phone=username, role="dealer")
+    profile_user = get_object_or_404(User.objects.active_users(), email_or_phone=username, role="dealer")
 
     profile_info = get_object_or_404(ProfileInfo, user=profile_user)
     page_obj, total_products, *_ = _get_dealer_products(profile_user, request)
@@ -460,7 +466,7 @@ def load_more_products(request, username):
 
 @login_required(login_url='/customer/signin/')
 def load_more_services(request, username):
-    profile_user = get_object_or_404(User, email_or_phone=username)
+    profile_user = get_object_or_404(User.objects.active_users(), email_or_phone=username)
     profile_info = get_object_or_404(ProfileInfo, user=profile_user)
 
     current_user_profile = get_object_or_404(ProfileInfo, user=request.user)
@@ -495,7 +501,7 @@ from django.urls import reverse
 @require_POST
 @login_required(login_url='/customer/signin/')
 def follow(request, username):
-    user_to_follow = get_object_or_404(User, email_or_phone=username)
+    user_to_follow = get_object_or_404(User.objects.active_users(), email_or_phone=username)
 
     if request.user == user_to_follow:
         return JsonResponse({"error": "You cannot follow yourself."}, status=400)
@@ -527,7 +533,7 @@ def follow(request, username):
 @require_POST
 @login_required(login_url='/customer/signin/')
 def unfollow(request, username):
-    user_to_unfollow = get_object_or_404(User, email_or_phone=username)
+    user_to_unfollow = get_object_or_404(User.objects.active_users(), email_or_phone=username)
 
     current_profile = get_object_or_404(ProfileInfo, user=request.user)
     target_profile  = get_object_or_404(ProfileInfo, user=user_to_unfollow)

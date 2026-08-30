@@ -8,3 +8,4 @@ class CustomerConfig(AppConfig):
 
     def ready(self):
         import apps.customer.signals
+        import apps.customer.models.account_log  # wires up AccountLog's pre/post_save signals

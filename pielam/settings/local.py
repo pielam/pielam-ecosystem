@@ -6,15 +6,15 @@ ALLOWED_HOSTS = ["*"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#         'OPTIONS': {
-#             'timeout': 20,  # seconds to wait for the lock instead of failing immediately
-#         },
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,  # seconds to wait for the lock instead of failing immediately
+        },
+    }
+}
 
 
 ### Removing SQLite db and adding PostgreSQL ====>>
@@ -27,16 +27,16 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # ALTER ROLE pielam_user SET timezone TO 'UTC';
 # GRANT ALL PRIVILEGES ON DATABASE pielam_db TO pielam_user;
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_DB_USER"),
-        "PASSWORD": os.getenv("POSTGRES_DB_PASSWORD"),
-        "HOST": os.getenv("POSTGRES_DB_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_DB_PORT", "5435"),
-    }
-}
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.getenv("POSTGRES_DB"),
+#         "USER": os.getenv("POSTGRES_DB_USER"),
+#         "PASSWORD": os.getenv("POSTGRES_DB_PASSWORD"),
+#         "HOST": os.getenv("POSTGRES_DB_HOST", "localhost"),
+#         "PORT": os.getenv("POSTGRES_DB_PORT", "5435"),
+#     }
+# }
 
 
 STATIC_URL = '/static/'

@@ -752,8 +752,8 @@ def _load_admin_context(user, profile_info) -> dict:
 # ═══════════════════════════════════════════════════════════════════
 
 _ROLE_LOADERS = {
-    User.Role.CUSTOMER:  _load_customer_context,
-    User.Role.DEALER:    _load_dealer_context,
+    User.Role.USER:  _load_customer_context,
+    User.Role.BUSINESS:    _load_dealer_context,
     User.Role.STAFF:     _load_staff_context,
     User.Role.MODERATOR: _load_moderator_context,
     User.Role.ADMIN:     _load_admin_context,
