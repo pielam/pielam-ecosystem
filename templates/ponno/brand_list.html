@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+
+{% block title %}{% if query %}"{{ query }}" — {% endif %}Brand Directory · Ponno{% endblock %}
+
+{% block extra_css %}
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}{% else %}
+<style>
+  /* ============================================================
+     TOKENS
+     Reuses base.html's palette/typography/spacing/shadow system
+     (--accent, --active-from/to, --shadow-*, --ease, --focus-ring,
+     'roboto' font, --header-h/--content-max/--content-pad) and
+     only adds the few surface/text/status tokens base.html doesn't
+     define for light page content.
+     ============================================================ */
+  :root{
+    --ink:        #14293F;
+    --ink-soft:   #4D6072;
+    --ink-faint:  #8695A5;
+    --paper:      #F2F6FB;
+    --surface:    #FFFFFF;
+    --surface-2:  #EAF1F9;
+    --line:       #DDE6EF;
+    --line-soft:  #E9EFF5;
+
+    /* gold mirrors base.html's literal "gold" accent used for
+       active/hover states in the nav + drawer, and its logo's
+       #b8960c gradient stop for anything needing solid contrast. */
+    --gold:       gold;
+    --gold-deep:  #B8960C;
+    --gold-ink:   #7A5C00;
+    --gold-tint:  #FFF6D6;
+
+    --trend:      #1F8A5F;
+    --trend-tint: #DFF3EA;
+
+    --danger:      #C0392B;
+    --danger-tint: #FBE3DF;
+
+    --font-body: 'roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    --shadow-header: 0 1px 0 var(--line);
+
+    --container: var(--content-max, 1400px);
+    --gutter:    var(--content-pad, clamp(16px, 4vw, 40px));
+  }
+
+  /* Page body sits inside base.html's own body — only reset what this
+     page's components need, don't touch global body rules (base.html
+     already sets padding-top / font-family for the whole site). */
+  .brand-directory-page{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .brand-directory-page img{ max-width:100%; display:block; }
+  .brand-directory-page a{ color:inherit; text-decoration:none; }
+  .brand-directory-page button{ font:inherit; }
+  .brand-directory-page ul{ margin:0; padding:0; list-style:none; }
+  .brand-directory-page h1,
+  .brand-directory-page h2,
+  .brand-directory-page h3{ margin:0; font-family:var(--font-body); font-weight:700; }
+  .tnum{ font-variant-numeric: tabular-nums; }
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  .skip-link{
+    position:absolute; left:-999px; top:auto;
+    background:var(--ink); color:#fff; padding:10px 16px; border-radius:var(--radius-sm);
+    z-index:2100; /* above base.html's drawer (2000) so keyboard users can reach it */
+  }
+  .skip-link:focus{ left:16px; top:16px; }
+
+  .brand-directory-page :focus-visible{
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  .wrap{ max-width:var(--container); margin:0 auto; padding-left:var(--gutter); padding-right:var(--gutter); }
+
+  /* ============================================================
+     DIRECTORY SUB-HEADER (search)
+     Sits BELOW base.html's fixed site nav — top offset uses
+     base.html's own --header-h variable so it never gets hidden
+     underneath the global nav on scroll.
+     ============================================================ */
+  .site-header{
+    position:sticky; top:var(--header-h, 64px); z-index:40;
+    background:rgba(242,246,251,0.92);
+    -webkit-backdrop-filter:saturate(140%) blur(8px);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);
+    transition: box-shadow .2s var(--ease);
+  }
+  .site-header.is-scrolled{ box-shadow:var(--shadow-header), 0 8px 20px -12px rgba(20,25,43,0.25); }
+
+  .header-bar{
+    display:flex; align-items:center; gap:24px;
+    padding:18px 0;
+    flex-wrap:wrap;
+  }
+  .search-form{
+    flex:1 1 auto; width:100%;
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:6px 8px 6px 16px;
+    transition:border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .search-form:focus-within{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(74,144,226,0.18); }
+  .search-form svg{ flex:none; color:var(--ink-faint); }
+  .search-form input[type="text"]{
+    flex:1; border:0; outline:0; background:transparent;
+    font:inherit; font-size:14px; color:var(--ink); min-width:0;
+  }
+  .search-form input::placeholder{ color:var(--ink-faint); }
+  .search-form button{
+    flex:none; color:#fff; border:0;
+    background:linear-gradient(135deg, var(--nav-bg-from) 0%, var(--nav-bg-to) 100%);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:background .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .search-form button:hover{
+    background:linear-gradient(135deg, var(--active-from) 0%, var(--active-to) 100%);
+    box-shadow:var(--active-shadow);
+  }
+
+  /* ============================================================
+     LEDGER — the stat ribbon
+     ============================================================ */
+  .ledger{
+    border-bottom:1px solid var(--line);
+    background:
+      repeating-linear-gradient(90deg, transparent, transparent 119px, var(--line-soft) 119px, var(--line-soft) 120px),
+      var(--surface-2);
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .ledger::-webkit-scrollbar{ display:none; }
+  .ledger-row{
+    display:flex; gap:0;
+    padding:14px var(--gutter);
+    min-width:max-content;
+  }
+  .ledger-item{
+    padding:0 24px; display:flex; flex-direction:column; gap:2px;
+    border-right:1px solid var(--line-soft);
+  }
+  .ledger-item:first-child{ padding-left:0; }
+  .ledger-item:last-child{ border-right:0; }
+  .ledger-value{
+    font-family:var(--font-body); font-size:19px; font-weight:700; color:var(--ink);
+  }
+  .ledger-label{
+    font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint);
+  }
+
+  /* ============================================================
+     FILTER / SORT CONTROL BAR
+     ============================================================ */
+  .control-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:16px 0 20px;
+    flex-wrap:wrap;
+  }
+  .filter-tabs{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none;
+    max-width:100%;
+  }
+  .filter-tabs::-webkit-scrollbar{ display:none; }
+  .filter-tab{
+    flex:none;
+    display:flex; align-items:center; gap:7px;
+    padding:8px 14px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink-soft);
+    font-size:13px; font-weight:500; white-space:nowrap;
+    transition:all .15s var(--ease);
+  }
+  .filter-tab:hover{ border-color:var(--accent); color:var(--ink); }
+  .filter-tab[aria-current="true"]{
+    background:linear-gradient(135deg, var(--active-from) 0%, var(--active-to) 100%);
+    border-color:var(--gold); color:var(--gold);
+    box-shadow:var(--active-shadow);
+  }
+  .filter-tab .count{
+    font-family:var(--font-body); font-size:11px; font-weight:700;
+    background:rgba(255,255,255,0.14); padding:1px 6px; border-radius:999px;
+  }
+  .filter-tab:not([aria-current="true"]) .count{
+    background:var(--paper); color:var(--ink-faint);
+  }
+
+  .sort-control{ flex:none; display:flex; align-items:center; gap:8px; }
+  .sort-control label{ font-size:12px; color:var(--ink-faint); white-space:nowrap; }
+  .sort-select-wrap{ position:relative; }
+  .sort-select-wrap svg{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    pointer-events:none; color:var(--ink-faint);
+  }
+  select#sort-select{
+    appearance:none; -webkit-appearance:none;
+    font:inherit; font-size:13px; font-weight:500; color:var(--ink);
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:8px 32px 8px 12px; cursor:pointer;
+  }
+  select#sort-select:hover{ border-color:var(--accent); }
+  .sort-noscript button{
+    border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-md);
+    padding:8px 12px; font-size:13px; cursor:pointer;
+  }
+  html.js .sort-noscript{ display:none; }
+
+  .active-query-banner, .highlight-banner{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--gold-tint); border:1px solid var(--gold-deep);
+    color:var(--gold-ink); border-radius:var(--radius-md);
+    padding:10px 16px; font-size:13px; margin-bottom:18px;
+  }
+  .active-query-banner a, .highlight-banner a{ text-decoration:underline; font-weight:600; }
+
+  /* ============================================================
+     RESULTS META
+     ============================================================ */
+  .results-meta{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding-bottom:16px; color:var(--ink-faint); font-size:13px;
+    flex-wrap:wrap; gap:6px 16px;
+  }
+  .results-meta strong{ color:var(--ink); font-weight:600; }
+
+  /* ============================================================
+     BRAND GRID
+     ============================================================ */
+  .brand-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+    gap:20px;
+    padding-bottom:32px;
+  }
+
+  .brand-card{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:20px;
+    display:flex; flex-direction:column; gap:14px;
+    box-shadow:var(--shadow-sm);
+    transition:transform .18s var(--ease), box-shadow .18s var(--ease), border-color .18s var(--ease);
+  }
+  .brand-card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--shadow-lg);
+    border-color:var(--line-soft);
+  }
+  .brand-card.is-highlighted{
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(255,215,0,0.25), var(--shadow-sm);
+  }
+  .brand-card.is-highlighted::before{
+    content:"Highlighted";
+    position:absolute; top:-1px; right:16px;
+    background:var(--gold-deep); color:#fff;
+    font-family:var(--font-body); font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    padding:3px 9px; border-radius:0 0 6px 6px;
+  }
+
+  .card-top{ display:flex; align-items:center; gap:12px; }
+  .card-logo{
+    flex:none; width:52px; height:52px; border-radius:var(--radius-md);
+    border:1px solid var(--line-soft); background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .card-logo img{ width:100%; height:100%; object-fit:contain; }
+  .card-heading{ min-width:0; }
+  .card-heading .name{
+    font-family:var(--font-body); font-weight:700; font-size:17px;
+    display:flex; align-items:center; gap:6px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .card-heading .name a{ overflow:hidden; text-overflow:ellipsis; }
+  .card-heading .type{
+    font-size:11px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  .seal-rail{ display:flex; gap:6px; flex:none; }
+  .seal{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--gold-tint); color:var(--gold-ink);
+    border:1px solid var(--gold);
+    flex:none;
+  }
+  .seal.trending{ background:var(--trend-tint); color:var(--trend); border-color:var(--trend); }
+  .seal svg{ width:12px; height:12px; }
+
+  .tagline{
+    color:var(--ink-soft); font-size:13.5px; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    min-height:2.6em;
+  }
+
+  .card-meta{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:12px; border-top:1px dashed var(--line);
+    font-family:var(--font-body); font-size:11.5px; color:var(--ink-faint);
+    gap:8px; flex-wrap:wrap;
+  }
+  .card-meta .country{
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--ink-soft); font-weight:600;
+  }
+  .card-meta .stats{ display:flex; gap:10px; flex-wrap:wrap; }
+  .card-meta .score{
+    display:inline-flex; align-items:center; gap:4px;
+    color:var(--gold-ink);
+  }
+  .card-meta .score svg{ width:10px; height:10px; }
+
+  .card-cta{
+    position:absolute; inset:0; border-radius:inherit;
+  }
+
+  /* ============================================================
+     EMPTY / ERROR STATES
+     ============================================================ */
+  .state-panel{
+    text-align:center; padding:72px 24px; background:var(--surface);
+    border:1px dashed var(--line); border-radius:var(--radius-lg);
+    margin-bottom:48px;
+  }
+  .state-panel h2{ font-size:20px; margin-bottom:8px; }
+  .state-panel p{ color:var(--ink-soft); font-size:14px; margin:0 0 18px; }
+  .state-panel .clear-link{
+    display:inline-block; color:#fff; padding:9px 18px;
+    background:linear-gradient(135deg, var(--nav-bg-from) 0%, var(--nav-bg-to) 100%);
+    border-radius:999px; font-size:13px; font-weight:600;
+  }
+  .state-panel.is-error{ border-color:var(--danger); border-style:solid; background:var(--danger-tint); }
+  .state-panel.is-error h2{ color:var(--danger); }
+
+  /* ============================================================
+     INFINITE SCROLL — sentinel / loader / end-of-list / retry
+     ============================================================ */
+  .scroll-sentinel{ height:1px; width:100%; }
+
+  .scroll-loader{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:28px 0; color:var(--ink-faint); font-size:13px;
+  }
+  .scroll-loader[hidden]{ display:none; }
+  .scroll-loader .spinner{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--line); border-top-color:var(--gold-deep);
+    animation:spin .6s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .scroll-end{
+    text-align:center; padding:20px 0 8px; color:var(--ink-faint); font-size:12.5px;
+  }
+  .scroll-end[hidden]{ display:none; }
+
+  .scroll-retry{
+    display:block; margin:8px auto 24px;
+    border:1px solid var(--danger); background:var(--danger-tint); color:var(--danger);
+    border-radius:999px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  @media (max-width: 720px){
+    .header-bar{ padding:14px 0; }
+    .ledger-row{ padding:12px var(--gutter); }
+    .ledger-item{ padding:0 16px; }
+    .control-bar{ flex-direction:column; align-items:stretch; }
+    .sort-control{ justify-content:space-between; }
+    .brand-grid{ grid-template-columns:1fr; gap:14px; }
+    .results-meta{ flex-direction:column; align-items:flex-start; gap:4px; }
+  }
+
+  @media (min-width: 1600px){
+    .brand-grid{ grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .brand-directory-page *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  /* Print */
+  @media print{
+    .site-header, .ledger, .control-bar, .scroll-sentinel, .scroll-loader, .scroll-end{ display:none; }
+    .brand-card{ break-inside:avoid; box-shadow:none; }
+  }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}
+  {# Infinite-scroll fragment: bare <li> cards only — no chrome, no wrapper.
+     infinite-scroll.js pulls these out with querySelectorAll('.brand-card')
+     and appends them straight into #brand-results-grid. #}
+  {% for brand in brands %}
+    <li class="brand-card{% if brand.highlighted %} is-highlighted{% endif %}">
+      <div class="card-top">
+        <div class="card-logo">
+          <img src="{{ brand.logo }}" alt="" loading="lazy" width="52" height="52"
+               onerror="this.onerror=null;this.src='/static/defaults/default-brand-logo.png';">
+        </div>
+        <div class="card-heading">
+          <p class="name">
+            <a href="{{ brand.brand_url }}">{{ brand.name }}</a>
+          </p>
+          <p class="type">
+            {% if brand.type == 'private_label' %}Private Label
+            {% elif brand.type == 'manufacturer' %}Manufacturer
+            {% elif brand.type == 'distributor' %}Distributor
+            {% elif brand.type == 'retailer' %}Retailer
+            {% else %}Other{% endif %}
+          </p>
+        </div>
+        <div class="seal-rail">
+          {% if brand.is_verified %}
+            <span class="seal" title="Verified brand"><svg><use href="#icon-verified"/></svg></span>
+          {% endif %}
+          {% if brand.is_official %}
+            <span class="seal" title="Official account"><svg><use href="#icon-official"/></svg></span>
+          {% endif %}
+          {% if brand.is_trusted %}
+            <span class="seal" title="Trusted brand"><svg><use href="#icon-trusted"/></svg></span>
+          {% endif %}
+          {% if brand.is_trending %}
+            <span class="seal trending" title="Trending now"><svg><use href="#icon-trending"/></svg></span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if brand.tagline %}
+        <p class="tagline">{{ brand.tagline }}</p>
+      {% else %}
+        <p class="tagline" aria-hidden="true"></p>
+      {% endif %}
+
+      <div class="card-meta">
+        {% if brand.country %}
+          <span class="country" data-country="{{ brand.country }}">{{ brand.country }}</span>
+        {% else %}
+          <span></span>
+        {% endif %}
+        <span class="stats tnum">
+          <span data-num="{{ brand.product_count }}">{{ brand.product_count }}</span>&nbsp;products
+          <span>·</span>
+          <span data-num="{{ brand.view_count }}">{{ brand.view_count }}</span>&nbsp;views
+          <span>·</span>
+          <span class="score" title="Popularity score">
+            <svg><use href="#icon-spark"/></svg>
+            <span data-num="{{ brand.popularity_score|default_if_none:0|floatformat:0 }}">{{ brand.popularity_score|default_if_none:0|floatformat:0 }}</span>
+          </span>
+        </span>
+      </div>
+
+      <a class="card-cta" href="{{ brand.brand_url }}" aria-label="View {{ brand.name }}"></a>
+    </li>
+  {% endfor %}
+{% else %}
+<div class="brand-directory-page">
+
+<a href="#brand-results" class="skip-link">Skip to brand results</a>
+
+<!-- shared icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-verified" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-official" viewBox="0 0 24 24"><path d="M12 2l2.6 5.9L21 8.6l-4.7 4.2 1.3 6.3L12 15.9 6.4 19.1l1.3-6.3L3 8.6l6.4-.7z" fill="currentColor"/></symbol>
+    <symbol id="icon-trusted" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-trending" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="15 6 21 6 21 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<header class="site-header" id="brand-directory-header">
+  <div class="wrap header-bar">
+    <form class="search-form" method="get" role="search" aria-label="Search brands">
+      <svg width="16" height="16"><use href="#icon-search"/></svg>
+      <input type="text" name="q" value="{{ query }}" placeholder="Search brands by name or description…" maxlength="120" autocomplete="off">
+      <input type="hidden" name="type" value="{{ current_filter }}">
+      <input type="hidden" name="sort" value="{{ current_sort }}">
+      {% if highlighted_brand %}
+        <input type="hidden" name="brand" value="{{ highlighted_brand.slug }}">
+      {% endif %}
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</header>
+
+<div class="ledger" aria-label="Directory totals">
+  <div class="ledger-row wrap tnum">
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.total }}</span>
+      <span class="ledger-label">Total brands</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.verified }}</span>
+      <span class="ledger-label">Verified</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.featured }}</span>
+      <span class="ledger-label">Featured</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.trending }}</span>
+      <span class="ledger-label">Trending</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.official }}</span>
+      <span class="ledger-label">Official</span>
+    </div>
+    <div class="ledger-item">
+      <span class="ledger-value">{{ stats.trusted }}</span>
+      <span class="ledger-label">Trusted</span>
+    </div>
+  </div>
+</div>
+
+<main class="wrap" id="brand-results">
+
+  <div class="control-bar">
+    <nav class="filter-tabs" aria-label="Filter brands by status">
+      {% for tab in filter_tabs %}
+        <a class="filter-tab"
+           href="?q={{ query|urlencode }}&amp;type={{ tab.value }}&amp;sort={{ current_sort }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+           {% if tab.active %}aria-current="true"{% endif %}>
+          {{ tab.label }}
+          <span class="count tnum">{{ tab.count }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+
+    <div class="sort-control">
+      <label for="sort-select">Sort by</label>
+      <div class="sort-select-wrap">
+        <select id="sort-select"
+                data-base-href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}&amp;sort=">
+          {% for opt in sort_options %}
+            <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+        <svg width="14" height="14"><use href="#icon-chevron"/></svg>
+      </div>
+      <noscript>
+        <form class="sort-noscript" method="get" style="display:flex; gap:6px;">
+          <input type="hidden" name="q" value="{{ query }}">
+          <input type="hidden" name="type" value="{{ current_filter }}">
+          <input type="hidden" name="page" value="1">
+          {% if highlighted_brand %}
+            <input type="hidden" name="brand" value="{{ highlighted_brand.slug }}">
+          {% endif %}
+          <select name="sort">
+            {% for opt in sort_options %}
+              <option value="{{ opt.value }}" {% if opt.active %}selected{% endif %}>{{ opt.label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit">Apply</button>
+        </form>
+      </noscript>
+    </div>
+  </div>
+
+  {% if query %}
+    <div class="active-query-banner">
+      <span>Showing results for <strong>&ldquo;{{ query }}&rdquo;</strong></span>
+      <a href="?type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page=1{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}">Clear search</a>
+    </div>
+  {% endif %}
+
+  {% if highlighted_brand %}
+    <div class="highlight-banner">
+      <span>Jumped in from a link to <strong>{{ highlighted_brand.brand_name }}</strong> — it's marked below.</span>
+      <a href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page=1">Clear</a>
+    </div>
+  {% endif %}
+
+  <div aria-live="polite">
+
+  {% if error %}
+
+    <div class="state-panel is-error">
+      <h2>Brand directory is temporarily unavailable</h2>
+      <p>We're having trouble reaching the catalog right now. Your search and filters weren't lost — try refreshing in a moment.</p>
+      <a class="clear-link" href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}">Try again</a>
+    </div>
+
+  {% elif brands %}
+
+    <p class="results-meta">
+      <span><strong class="tnum" id="results-count">{{ total_count }}</strong> brand{{ total_count|pluralize }} found</span>
+    </p>
+
+    <ul class="brand-grid"
+        id="brand-results-grid"
+        data-current-page="{{ page_obj.number }}"
+        data-has-next="{{ page_obj.has_next|yesno:'true,false' }}"
+        data-fetch-url="{{ request.path }}?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}">
+      {% for brand in brands %}
+        <li class="brand-card{% if brand.highlighted %} is-highlighted{% endif %}">
+          <div class="card-top">
+            <div class="card-logo">
+              <img src="{{ brand.logo }}" alt="" loading="lazy" width="52" height="52"
+                   onerror="this.onerror=null;this.src='/static/defaults/default-brand-logo.png';">
+            </div>
+            <div class="card-heading">
+              <p class="name">
+                <a href="{{ brand.brand_url }}">{{ brand.name }}</a>
+              </p>
+              <p class="type">
+                {% if brand.type == 'private_label' %}Private Label
+                {% elif brand.type == 'manufacturer' %}Manufacturer
+                {% elif brand.type == 'distributor' %}Distributor
+                {% elif brand.type == 'retailer' %}Retailer
+                {% else %}Other{% endif %}
+              </p>
+            </div>
+            <div class="seal-rail">
+              {% if brand.is_verified %}
+                <span class="seal" title="Verified brand"><svg><use href="#icon-verified"/></svg></span>
+              {% endif %}
+              {% if brand.is_official %}
+                <span class="seal" title="Official account"><svg><use href="#icon-official"/></svg></span>
+              {% endif %}
+              {% if brand.is_trusted %}
+                <span class="seal" title="Trusted brand"><svg><use href="#icon-trusted"/></svg></span>
+              {% endif %}
+              {% if brand.is_trending %}
+                <span class="seal trending" title="Trending now"><svg><use href="#icon-trending"/></svg></span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if brand.tagline %}
+            <p class="tagline">{{ brand.tagline }}</p>
+          {% else %}
+            <p class="tagline" aria-hidden="true"></p>
+          {% endif %}
+
+          <div class="card-meta">
+            {% if brand.country %}
+              <span class="country" data-country="{{ brand.country }}">{{ brand.country }}</span>
+            {% else %}
+              <span></span>
+            {% endif %}
+            <span class="stats tnum">
+              <span data-num="{{ brand.product_count }}">{{ brand.product_count }}</span>&nbsp;products
+              <span>·</span>
+              <span data-num="{{ brand.view_count }}">{{ brand.view_count }}</span>&nbsp;views
+              <span>·</span>
+              <span class="score" title="Popularity score">
+                <svg><use href="#icon-spark"/></svg>
+                <span data-num="{{ brand.popularity_score|default_if_none:0|floatformat:0 }}">{{ brand.popularity_score|default_if_none:0|floatformat:0 }}</span>
+              </span>
+            </span>
+          </div>
+
+          <a class="card-cta" href="{{ brand.brand_url }}" aria-label="View {{ brand.name }}"></a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- Infinite scroll: sentinel triggers the next fetch, loader/end/retry
+         are toggled by infinite-scroll JS below. No-JS users get the
+         classic pagination links inside <noscript>. -->
+    <div class="scroll-sentinel" id="scroll-sentinel" aria-hidden="true"></div>
+    <p class="scroll-loader" id="scroll-loader" hidden>
+      <span class="spinner" aria-hidden="true"></span> Loading more brands…
+    </p>
+    <p class="scroll-end" id="scroll-end" hidden>You've reached the end of the list.</p>
+
+    <noscript>
+      {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Brand directory pages" style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; padding-bottom:64px;">
+          {% if page_obj.has_previous %}
+            <a class="page-link"
+               href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page={{ page_obj.previous_page_number }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+               aria-label="Previous page">&lsaquo; Prev</a>
+          {% endif %}
+          <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a class="page-link"
+               href="?q={{ query|urlencode }}&amp;type={{ current_filter }}&amp;sort={{ current_sort }}&amp;page={{ page_obj.next_page_number }}{% if highlighted_brand %}&amp;brand={{ highlighted_brand.slug|urlencode }}{% endif %}"
+               aria-label="Next page">Next &rsaquo;</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    </noscript>
+
+  {% else %}
+
+    <div class="state-panel">
+      <h2>No brands match those filters</h2>
+      <p>
+        {% if query %}Nothing matched &ldquo;{{ query }}&rdquo; in this view.{% else %}This filter has no brands right now.{% endif %}
+        Try clearing your search or switching filters.
+      </p>
+      <a class="clear-link" href="?type=all&amp;sort=popular&amp;page=1">Clear all filters</a>
+    </div>
+
+  {% endif %}
+
+  </div><!-- /aria-live results region -->
+
+</main>
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if request.META.HTTP_X_REQUESTED_WITH == "XMLHttpRequest" or request.GET.ajax == "1" %}{% else %}
+<script>
+  document.documentElement.classList.add('js');
+
+  // Sticky sub-header shadow on scroll (below the global site nav)
+  (function(){
+    var header = document.getElementById('brand-directory-header');
+    if(!header) return;
+    var onScroll = function(){
+      header.classList.toggle('is-scrolled', window.scrollY > 4);
+    };
+    window.addEventListener('scroll', onScroll, { passive:true });
+    onScroll();
+  })();
+
+  // Sort select navigates on change (progressive enhancement over the noscript form)
+  (function(){
+    var select = document.getElementById('sort-select');
+    if(!select) return;
+    select.addEventListener('change', function(){
+      var base = select.getAttribute('data-base-href');
+      window.location.href = base + encodeURIComponent(select.value);
+    });
+  })();
+
+  // Country code -> flag emoji, and locale-formatted counts. Extracted
+  // into reusable functions so infinite-scroll can re-run them on each
+  // freshly appended batch of cards, not just the initial page.
+  function decorateCountryFlags(root){
+    (root || document).querySelectorAll('[data-country]').forEach(function(el){
+      if (el.dataset.flagged) return; // avoid re-decorating on re-run
+      var code = (el.getAttribute('data-country') || '').trim().toUpperCase();
+      if(code.length !== 2) return;
+      var flag = String.fromCodePoint.apply(null, [...code].map(function(c){ return 127397 + c.charCodeAt(0); }));
+      el.textContent = flag + ' ' + code;
+      el.dataset.flagged = '1';
+    });
+  }
+
+  function decorateNumbers(root){
+    (root || document).querySelectorAll('[data-num]').forEach(function(el){
+      if (el.dataset.formatted) return;
+      var n = Number(el.getAttribute('data-num'));
+      if(!isNaN(n)) el.textContent = n.toLocaleString();
+      el.dataset.formatted = '1';
+    });
+  }
+
+  decorateCountryFlags();
+  decorateNumbers();
+
+  // ============================================================
+  // INFINITE SCROLL
+  // Fetches this same view (AJAX branch keyed on X-Requested-With)
+  // and appends the returned <li class="brand-card"> elements into
+  // #brand-results-grid as the sentinel scrolls into view. Falls
+  // back cleanly to the <noscript> pagination links above when JS
+  // is unavailable.
+  // ============================================================
+  (function(){
+    var grid     = document.getElementById('brand-results-grid');
+    var sentinel = document.getElementById('scroll-sentinel');
+    var loader   = document.getElementById('scroll-loader');
+    var endMsg   = document.getElementById('scroll-end');
+    var countEl  = document.getElementById('results-count');
+
+    if (!grid || !sentinel) return;
+
+    var currentPage = parseInt(grid.dataset.currentPage, 10) || 1;
+    var hasNext     = grid.dataset.hasNext === 'true';
+    var fetchBase   = grid.dataset.fetchUrl; // already has q/type/sort/brand params
+    var isLoading   = false;
+    var retryBtn    = null;
+
+    if (!hasNext) {
+      sentinel.remove();
+      endMsg.hidden = false;
+      return;
+    }
+
+    function buildUrl(page){
+      var sep = fetchBase.indexOf('?') === -1 ? '?' : '&';
+      return fetchBase + sep + 'page=' + page;
+    }
+
+    function clearRetry(){
+      if (retryBtn){ retryBtn.remove(); retryBtn = null; }
+    }
+
+    function showRetry(page){
+      clearRetry();
+      retryBtn = document.createElement('button');
+      retryBtn.type = 'button';
+      retryBtn.className = 'scroll-retry';
+      retryBtn.textContent = 'Couldn\u2019t load more brands — tap to retry';
+      retryBtn.addEventListener('click', function(){
+        clearRetry();
+        fetchNextPage(page);
+      }, { once:true });
+      sentinel.before(retryBtn);
+    }
+
+    function fetchNextPage(page){
+      if (isLoading) return;
+      isLoading = true;
+      loader.hidden = false;
+
+      fetch(buildUrl(page), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(res){
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var nextHeader  = res.headers.get('X-Has-Next-Page');
+          var totalHeader = res.headers.get('X-Total-Count');
+          return res.text().then(function(html){
+            return { html: html, hasNext: nextHeader === 'true', total: totalHeader };
+          });
+        })
+        .then(function(result){
+          var temp = document.createElement('div');
+          temp.innerHTML = result.html;
+
+          var cards = temp.querySelectorAll('.brand-card');
+          var fragment = document.createDocumentFragment();
+          cards.forEach(function(card){ fragment.appendChild(card); });
+          grid.appendChild(fragment);
+
+          decorateCountryFlags(grid);
+          decorateNumbers(grid);
+
+          if (countEl && result.total) {
+            var n = Number(result.total);
+            if (!isNaN(n)) countEl.textContent = n.toLocaleString();
+          }
+
+          currentPage = page;
+          hasNext = result.hasNext;
+
+          if (!hasNext) {
+            sentinelObserver.unobserve(sentinel);
+            sentinel.remove();
+            endMsg.hidden = false;
+          }
+        })
+        .catch(function(err){
+          console.error('Infinite scroll fetch failed:', err);
+          showRetry(page);
+        })
+        .finally(function(){
+          isLoading = false;
+          loader.hidden = true;
+        });
+    }
+
+    var sentinelObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting && hasNext && !isLoading) {
+          fetchNextPage(currentPage + 1);
+        }
+      });
+    }, { root: null, rootMargin: '600px 0px', threshold: 0 });
+
+    sentinelObserver.observe(sentinel);
+  })();
+</script>
+{% endif %}
+{% endblock %}

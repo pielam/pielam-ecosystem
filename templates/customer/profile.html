@@ -1,0 +1,2957 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} â€” Profile | PIELAM{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+
+<style>
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       GLOBAL â€” Design Tokens, Reset, Base
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+    :root {
+      --r: 12px;
+      --r-sm: 8px;
+      --purple: #7c3aed;
+      --shadow-xs: 0 1px 3px rgba(10,37,64,.05);
+
+      --ink:        #0f0f0f;
+      --ink-2:      #3a3a3a;
+      --ink-3:      #6b6b6b;
+      --ink-4:      #9b9b9b;
+      --surface:    #ffffff;
+      --surface-2:  #f5f5f3;
+      --surface-3:  #eeede9;
+      --border:     #e4e3df;
+      --border-2:   #d0cfc9;
+      --accent:     #4a90e2;
+      --accent-2:   #6aa9f0;
+      --gold:       #d4af37;
+      --gold-2:     #8b6a00;
+      --green:      #1a6b3a;
+      --green-bg:   #edf7f1;
+      --warn:       #92400e;
+      --warn-bg:    #fffbeb;
+      --blue:       #1565c0;
+      --blue-light: #4a90e2;
+      --primary-dark:    #0a2540;
+      --primary-blue:    #0d47a1;
+      --primary-light:   #1e88e5;
+      --accent-gold:     #d4af37;
+      --accent-amber:    #ffb300;
+      --success-emerald: #00b894;
+      --danger-crimson:  #e74c3c;
+      --text-primary:    #1a202c;
+      --text-secondary:  #4a5568;
+      --text-muted:      #718096;
+      --bg-primary:      #ffffff;
+      --bg-secondary:    #f7fafc;
+      --bg-tertiary:     #edf2f7;
+      --border-light:    #e2e8f0;
+      --border-medium:   #cbd5e0;
+      --shadow-xs: 0 1px 3px  rgba(10,37,64,.05);
+      --shadow-sm: 0 2px 6px  rgba(10,37,64,.08);
+      --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+      --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+      --shadow-xl: 0 20px 50px rgba(10,37,64,.2);
+      --font-display: 'roboto', serif;
+      --font-body:    'roboto', sans-serif;
+      --f-mono:       'roboto', monospace;
+      --f-display:    'roboto', serif;
+      --f-body:       'roboto', sans-serif;
+      --header-h:          64px;
+      --bg:       var(--bg-primary);
+      --nav-h:             64px;
+      --bottom-bar-height: 68px;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+      --ease:            cubic-bezier(.4,0,.2,1);
+      --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: .15s ease;
+      --transition-base: .25s ease;
+      --transition-slow: .4s  cubic-bezier(.4,0,.2,1);
+      --t-primary:   #0f0f0f;
+      --t-secondary: #3a3a3a;
+      --t-muted:     #6b6b6b;
+      --t-ghost:     #9b9b9b;
+      --rim:         #e4e3df;
+      --raised:      #f5f5f3;
+      --overlay:     #eeede9;
+      --abyss:       #0f0f0f;
+      --gold-pure:   #d4af37;
+      --gold-dim:    rgba(212,175,55,.40);
+      --gold-trace:  rgba(212,175,55,.08);
+      --gold-bright: #ffe680;
+      --emerald:  #1a6b3a;
+      --amber:    #92400e;
+      --ruby:     #c8102e;
+      --sapphire: #1565c0;
+
+
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; scrollbar-gutter:stable; }
+    body {
+      font-family: 'roboto';
+      background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;  /* â† safe cross-browser fix */
+
+      padding-bottom: var(--bottom-bar-height);
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    a      { text-decoration:none; color:inherit; }
+    img    { max-width:100%; display:block; }
+    button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+    ::-webkit-scrollbar       { width:8px; }
+    ::-webkit-scrollbar-track { background:var(--surface-3); }
+    ::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:8px; border:2px solid var(--surface-3); }
+    ::-webkit-scrollbar-thumb:hover { background:var(--ink-4); }
+    .hide-mobile { display:none; }
+@media (max-width: 768px) { :root { --header-h: 58px; } }
+@media (max-width: 480px) { :root { --header-h: 54px; } }
+@media (max-width: 360px) { :root { --header-h: 50px; } }
+@media (max-width: 320px) { :root { --header-h: 48px; } }
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .navbar-glow{display:none}
+  .avatar-glow-ring{animation:none}
+  .profile-cover:hover .cover-image{transform:none}
+  .profile-avatar-wrap:hover .profile-avatar{transform:none}
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+/* â•â•â• PROFILE COVER â•â•â• */
+.profile-cover {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  margin-top: 0rem;
+  background-color: #1a1a2e;
+}
+
+.cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;        /* fills container, crops if needed */
+  object-position: center;
+  display: block;
+}
+
+/* â”€â”€ button group â”€â”€ */
+.profile-cover .cover-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+
+  background: var(--gold, #d4af37);
+  color: #fff;
+  border: 1px solid #000;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+
+  white-space: nowrap;
+}
+
+.profile-cover .cover-edit-btn:hover {
+  background: var(--gold-2, #8b6a00);
+  border-color: #000;
+}
+
+.profile-cover .cover-edit-btn:active {
+  transform: scale(0.97);
+}
+
+/* icon size */
+.profile-cover .cover-edit-btn i {
+  font-size: 15px;
+  line-height: 1;
+  color: #fff;
+}
+
+.profile-cover .cover-edit-btn svg {
+  stroke: #fff;
+}
+
+/* â”€â”€ position all buttons bottom-right â”€â”€ */
+.profile-cover .cover-edit-btn:nth-child(n+2) {
+  position: absolute;
+}
+
+/* "Edit cover" â€” bottom-right */
+.profile-cover .cover-edit-btn:nth-child(2) {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+}
+
+/* "Edit" â€” top-right */
+.profile-cover .cover-edit-btn:nth-child(3) {
+  top: 16px;
+  right: 130px;
+}
+
+/* "Settings" â€” top-right edge */
+.profile-cover .cover-edit-btn:nth-child(4) {
+  top: 16px;
+  right: 16px;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE BREAKPOINTS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Tablet (â‰¤ 1024px) â”€â”€ */
+@media (max-width: 1024px) {
+  .profile-cover {
+    height: 260px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-cover {
+    height: auto;
+    min-height: 160px;
+    margin-top: 0;     /* was already 0rem here, keep it explicit */
+  }
+
+  .profile-cover .cover-edit-btn span {
+    display: none;
+  }
+
+  .profile-cover .cover-edit-btn {
+    padding: 8px 10px;
+    gap: 0;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(3) {
+    top: 10px;
+    right: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    top: 52px;
+    right: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(2) {
+    bottom: 10px;
+    right: 10px;
+    top: unset;
+  }
+
+  .cover-image {
+    height: auto;
+    object-fit: contain;
+    max-height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-cover {
+    margin-top: 0;      /* was: 2.85rem (or var(--header-h)) */
+    min-height: 130px;
+  }
+
+  .profile-cover .cover-edit-btn {
+    padding: 7px 9px;
+    font-size: 13px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(2) {
+    bottom: 10px;
+    right: 10px;
+    top: unset;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(3),
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    right: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(3) {
+    top: 10px;
+  }
+
+  .profile-cover .cover-edit-btn:nth-child(4) {
+    top: 52px;
+  }
+
+  .cover-image {
+    max-height: 220px;
+  }
+}
+
+</style>
+
+      <div class="profile-cover">
+        <img src="{{ profile_info.profile_cover_photo }}"
+            alt="Cover photo" class="cover-image" loading="lazy">
+        <a href="{% url 'customer:update_cover_photo' %}" class="cover-edit-btn">
+          <i class="fa-solid fa-camera"></i><span>Cover Photo</span>
+        </a>
+        {% comment %} <a href="{% url 'customer:edit_profile' %}" class="cover-edit-btn">
+              <i class="fa-solid fa-user-pen"></i><span>Edit</span>
+            </a> {% endcomment %}
+            <a href="{% url 'customer:profile_manager' %}" class="cover-edit-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+            <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5"/>
+            <path d="M18.5 13.2v1.2M18.5 19.6v1.2M21.4 14.9l-1 .6M16.6 17.5l-1 .6M21.4 19.1l-1-.6M16.6 15.5l-1-.6"/>
+            <circle cx="18.5" cy="17" r="1.6"/>
+        </svg>
+        <span>Manager</span>
+            </a>
+      </div>
+{# â•â•â• COVER â•â•â• #}
+
+
+
+<style>
+
+/* â•â•â• IDENTITY SECTION â•â•â• */
+.profile-identity-section {
+  background: #fff;
+  padding: 0 24px 20px;
+  border-top: 3px solid #fff; /* clean cut-off line */
+  box-shadow: 0 -1px 0 #e5e7eb; /* subtle separator */
+}
+
+
+.profile-identity-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: -28px; /* less overlap, avatar still peeks over */
+}
+
+/* â•â•â• AVATAR â•â•â• */
+.profile-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+
+.profile-avatar {
+  width: 102px;
+  height: 102px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 4px solid #fff; /* thicker = clearer separation */
+  background-color: #e5e7eb;
+}
+
+/* Camera edit button */
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1565c0;
+  color: #fff;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.avatar-edit-btn:hover {
+  background: #155a8a;
+}
+
+
+/* â•â•â• NAME + PILLS â•â•â• */
+.profile-identity-main {
+  flex: 1;
+  min-width: 0; /* prevents overflow on small screens */
+  padding-bottom: 6px;
+}
+
+.profile-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-fullname {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Verified checkmark badge */
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1565c0;
+  color: #fff;
+  font-size: 10px;
+}
+
+
+/* â•â•â• PILLS ROW â•â•â• */
+.profile-pills-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.profile-pills-row::-webkit-scrollbar { display: none; }
+
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.profile-pill i {
+  font-size: 13px;
+}
+
+.pill-blue {
+  background: whitesmoke;
+  color: black;
+}
+
+.pill-gray {
+  background: whitesmoke;
+  color: black;
+}
+
+.pill-amber {
+  background: whitesmoke;
+  color: black;
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
+@media (max-width: 768px) {
+  .profile-identity-section { padding: 0 16px 16px; }
+  .profile-identity-row { margin-top: -22px; }
+  .profile-avatar { border-width: 3px; }
+  .profile-fullname { font-size: 18px; }
+  .profile-pill { font-size: 11px; padding: 3px 10px; }
+}
+
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
+@media (max-width: 480px) {
+  .profile-identity-section { padding: 0 12px 14px; }
+  .profile-identity-row { margin-top: -18px; }
+  .profile-avatar { width: 82px; height: 82px; }
+  .profile-fullname { font-size: 16px; }
+  .profile-pill { font-size: 10px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
+}
+
+</style>
+
+    {# â•â•â• IDENTITY ROW â•â•â• #}
+    <div class="profile-identity-section">
+      <div class="profile-identity-row">
+
+        {# Avatar #}
+        <div class="profile-avatar-wrap">
+          {% if profile_info.is_profile_verified %}
+            <div class="avatar-glow-ring"></div>
+          {% else %}
+            <div class="avatar-glow-ring simple"></div>
+          {% endif %}
+          <img src="{{ profile_info.profile_photo }}"
+     alt="{{ profile_info.profile_name|default:'Profile Photo' }}"
+     class="profile-avatar" loading="lazy">
+          <a href="{% url 'customer:update_profile_photo' %}" class="avatar-edit-btn" title="Change photo">
+            <i class="fa-solid fa-camera"></i>
+          </a>
+        </div>
+
+        {# Name + Actions #}
+        <div class="profile-identity-main">
+          <div class="profile-name-block">
+            <h1 class="profile-fullname">
+              <a href="{% url 'customer:profile_view' username=user.email_or_phone %}" style="color:inherit;text-decoration:none">
+                {{ profile_info.profile_name|default:user.email_or_phone }}
+              </a>
+              {% if profile_info.is_profile_verified %}
+                <span class="verified-badge" title="Verified">
+                  <i class="fa-solid fa-check"></i>
+                </span>
+              {% endif %}
+            </h1>
+            <div class="profile-pills-row">
+              <span class="profile-pill pill-blue">
+                {{ followers_count }} Followers
+              </span>
+              <span class="profile-pill pill-gray">
+                {{ followings_count }} Following
+              </span>
+
+              {% if avg_rating_received > 0 %}
+              <span class="profile-pill pill-amber">
+                {{ avg_rating_received }} Rating
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+
+        </div>
+
+      </div>
+{# /.profile-identity-section #}
+
+
+
+<style>
+
+/* â•â•â• PROFILE ACTIONS â•â•â• */
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.profile-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, color 0.2s ease,
+              border-color 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.profile-action-btn i {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profile-action-btn:active {
+  transform: scale(0.97);
+}
+
+/* â”€â”€ Ghost variant â”€â”€ */
+.profile-action-btn--ghost {
+  background: transparent;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.profile-action-btn--ghost:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (max-width: 768px) {
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* two buttons â€” 50% each */
+  .profile-action-btn {
+    flex: 0 0 calc(50% - 4px);
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  /* one button (non-dealer) â€” full width */
+  .profile-action-btn:only-child {
+    flex: 0 0 100%;
+  }
+}
+
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
+@media (max-width: 480px) {
+  .profile-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* two buttons â€” 50% each */
+  .profile-action-btn {
+    flex: 0 0 calc(50% - 4px);
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  /* one button (non-dealer) â€” full width */
+  .profile-action-btn:only-child {
+    flex: 0 0 100%;
+  }
+}
+
+</style>
+
+<div class="profile-actions">
+
+
+  <a href="{% url 'business_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fa-solid fa-building"></i>
+    <span>Business</span>
+  </a>
+
+  <a href="{% url 'service_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fas fa-spider"></i>
+    <span>Engine</span>
+  </a>
+
+
+  <a href="{% url 'customer:campaign_profile' %}" class="profile-action-btn profile-action-btn--ghost">
+    <i class="fas fa-bullhorn"></i>
+    <span>Campaign</span>
+  </a>
+
+
+
+  <a href="{% url 'customer:dashboard' %}" class="profile-action-btn profile-action-btn--ghost">
+
+    <span>Dashboard</span>
+  </a>
+
+</div>
+
+<style>
+
+  /* â•â•â• BANNER STRIP â•â•â• */
+.banner-strip {
+  width: 100%;
+  padding: 12px 24px 16px;
+}
+
+.promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #fff8e7;
+  border: 1.5px solid #f5c842;
+  border-radius: 12px;
+}
+
+/* â”€â”€ Icon box â”€â”€ */
+.promo-banner-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f59e0b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+/* â”€â”€ Text block â”€â”€ */
+.promo-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-banner-text h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 3px;
+  line-height: 1.3;
+}
+
+.promo-banner-text p {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* â”€â”€ CTA button â”€â”€ */
+.promo-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #f59e0b;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.promo-banner-btn:hover {
+  background: #d97706;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.promo-banner-btn:active {
+  transform: scale(0.97);
+}
+
+.promo-banner-btn i {
+  font-size: 13px;
+  line-height: 1;
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
+@media (max-width: 768px) {
+  .banner-strip {
+    padding: 10px 16px 14px;
+  }
+
+  .promo-banner {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .promo-banner-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  .promo-banner-text h4 {
+    font-size: 13px;
+  }
+
+  .promo-banner-text p {
+    font-size: 11px;
+  }
+
+  .promo-banner-btn {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+}
+
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
+@media (max-width: 480px) {
+  .banner-strip {
+    padding: 8px 12px 12px;
+  }
+
+  .promo-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  /* icon + text stay side by side on mobile */
+  .promo-banner-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  /* wrap icon and text together */
+  .promo-banner-icon,
+  .promo-banner-text {
+    display: inline-flex;
+  }
+
+  .promo-banner-icon ~ .promo-banner-text {
+    flex: 1;
+  }
+
+  /* pull icon + text into their own row */
+  .promo-banner::before {
+    content: '';
+    display: none;
+  }
+
+  /* button goes full width on mobile */
+  .promo-banner-btn {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+}
+
+
+</style>
+
+<!-- â•â•â• PROMO BANNER STRIP â•â•â• -->
+<div class="banner-strip">
+  {% if user.role != 'business' %}
+  <div class="promo-banner">
+    <div class="promo-banner-icon">
+      <i class="fa-solid fa-building-circle-check"></i>
+    </div>
+    <div class="promo-banner-text">
+      <h4>Unlock Your Business Profile</h4>
+      <p>List products, access analytics, and reach thousands of buyers.</p>
+    </div>
+    <a href="{% url 'create_business_profile' %}" class="promo-banner-btn">
+      <i class="fa-solid fa-rocket"></i><span>Get Started</span>
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+
+<style>
+
+  /* â•â•â• COMPLETION STRIP â•â•â• */
+.completion-strip {
+  width: 100%;
+  padding: 6px 24px 16px;
+}
+
+.completion-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1.5px solid #e4e3df;
+  border-radius: 12px;
+}
+
+
+/* â”€â”€ Circle â”€â”€ */
+.completion-circle {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.completion-circle svg {
+  transform: rotate(-90deg);
+}
+
+.completion-circle-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 4;
+}
+
+.completion-circle-fill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke: url(#completionGrad);
+  transition: stroke-dashoffset 0.9s cubic-bezier(.4, 0, .2, 1);
+}
+
+.completion-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+
+/* â”€â”€ Info block â”€â”€ */
+.completion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.completion-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5568;
+  margin-bottom: 6px;
+}
+
+.completion-bar-track {
+  height: 6px;
+  background: #e4e3df;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.completion-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #1877f2, #8b5cf6);
+  transition: width 0.8s cubic-bezier(.4, 0, .2, 1);
+}
+
+.completion-tip {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+
+/* â”€â”€ Divider â”€â”€ */
+.section-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0 24px;
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
+@media (max-width: 768px) {
+  .completion-strip {
+    padding: 6px 12px 12px;
+  }
+
+  .completion-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .completion-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-circle svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-pct {
+    font-size: 10px;
+  }
+
+  .section-divider {
+    margin: 0 12px;
+  }
+}
+
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
+@media (max-width: 480px) {
+  .completion-strip {
+    padding: 6px 12px 12px;
+  }
+
+  .completion-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .completion-circle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-circle svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .completion-pct {
+    font-size: 10px;
+  }
+
+  .section-divider {
+    margin: 0 12px;
+  }
+}
+
+
+</style>
+
+{% if profile_completion < 100 %}
+<!-- â•â•â• PROFILE COMPLETION BAR â•â•â• -->
+<div class="completion-strip">
+  <div class="completion-card">
+
+    <div class="completion-circle">
+      <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="completionGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   style="stop-color:#1877f2"/>
+            <stop offset="100%" style="stop-color:#8b5cf6"/>
+          </linearGradient>
+        </defs>
+        <circle class="completion-circle-bg"   cx="26" cy="26" r="22"/>
+        <circle class="completion-circle-fill"
+                cx="26" cy="26" r="22"
+                stroke-dasharray="138.23"
+                stroke-dashoffset="138.23"
+                data-pct="{{ profile_completion }}"
+                id="completionCircle"/>
+      </svg>
+      <span class="completion-pct">{{ profile_completion }}%</span>
+    </div>
+
+    <div class="completion-info">
+      <div class="completion-label">Profile Completion</div>
+      <div class="completion-bar-track">
+        <div class="completion-bar-fill"
+             style="width: 0%"
+             id="completionBar"
+             data-w="{{ profile_completion }}%">
+        </div>
+      </div>
+      <div class="completion-tip">
+        Complete your profile to build trust with buyers.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section-divider"></div>
+{% endif %}
+
+
+<script>
+function animateCompletionCircle() {
+  const circle = document.getElementById('completionCircle');
+  const bar    = document.getElementById('completionBar');
+  if (!circle) return; // block doesn't exist at all when profile is 100% complete
+
+  const pct           = parseFloat(circle.dataset.pct) || 0;
+  const radius         = 22;
+  const circumference   = 2 * Math.PI * radius;
+  const offset         = circumference - (pct / 100) * circumference;
+
+  setTimeout(() => {
+    circle.style.strokeDashoffset = offset;
+    if (bar) bar.style.width = bar.dataset.w || (pct + '%');
+  }, 200);
+}
+</script>
+
+
+<style>
+
+  /* â•â•â• PROFILE TAB BAR â•â•â• */
+.profile-tabs-bar {
+  position: sticky;
+  top: var(--header-h); /* â† instead of hardcoded 64px */
+  z-index: 100;
+  background: #fff;
+  border-radius: 1rem;
+  font-family: 'roboto';
+  border: 1px solid #8b6a00;
+  box-shadow: 0 2px 8px rgba(13, 15, 26, .06);
+}
+
+.profile-tabs-inner {
+  width: 100%;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.profile-tabs-inner::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 14px clamp(10px, 2.5vw, 16px);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  color: #718096;
+  font-weight: 600;
+  font-size: .86rem;
+  cursor: pointer;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color .2s, border-color .2s, background .2s;
+  border-radius: 8px 8px 0 0;
+  letter-spacing: .01em;
+}
+
+.tab-btn:hover {
+  background: #f0f2f5;
+  color: #4a5568;
+}
+
+.tab-btn.active {
+  color: #1565c0;
+  border-bottom-color: #1565c0;
+  font-weight: 700;
+}
+
+.tab-btn i {
+  font-size: .8rem;
+  opacity: .8;
+}
+
+.tab-btn.active i { opacity: 1; }
+
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #eff6ff;
+  color: #1565c0;
+  border-radius: 10px;
+  font-size: .65rem;
+  font-weight: 800;
+}
+
+.tab-btn.active .tab-count {
+  background: #1565c0;
+  color: #fff;
+}
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESPONSIVE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ 1400px+ â”€â”€ */
+@media (min-width: 1400px) {
+  .profile-tabs-inner { padding: 0 3rem; }
+  .tab-btn { font-size: .9rem; }
+}
+
+/* â”€â”€ 1024px â”€â”€ */
+@media (max-width: 1024px) {
+  .profile-tabs-inner { padding: 0 1.5rem; }
+}
+
+/* â”€â”€ 768px â”€â”€ */
+@media (max-width: 768px) {
+  .profile-tabs-inner { padding: 0 1rem; }
+  .tab-btn {
+    padding: 12px clamp(8px, 2vw, 14px);
+    font-size: .82rem;
+  }
+}
+
+/* â”€â”€ 640px â”€â”€ */
+@media (max-width: 640px) {
+  .profile-tabs-inner { padding: 0 .875rem; }
+  .tab-btn {
+    padding: 11px clamp(7px, 2vw, 12px);
+    font-size: .8rem;
+    gap: 5px;
+  }
+  .tab-btn i { font-size: .72rem; }
+  .tab-count {
+    min-width: 16px;
+    height: 16px;
+    font-size: .6rem;
+    padding: 0 4px;
+  }
+}
+
+/* â”€â”€ 480px â”€â”€ */
+@media (max-width: 480px) {
+  .profile-tabs-inner { padding: 0 .75rem; }
+  .tab-btn {
+    padding: 10px 9px;
+    font-size: .75rem;
+    gap: 4px;
+  }
+
+  /* hide text labels â€” icons only */
+  .tab-btn span:not(.tab-count) { display: none; }
+}
+
+/* â”€â”€ 360px â”€â”€ */
+@media (max-width: 360px) {
+  .profile-tabs-inner { padding: 0 .625rem; }
+  .tab-btn {
+    padding: 9px 7px;
+    font-size: .7rem;
+    gap: 3px;
+  }
+  .tab-btn i { font-size: .65rem; }
+  .tab-count {
+    min-width: 14px;
+    height: 14px;
+    font-size: .55rem;
+  }
+}
+
+/* â”€â”€ 320px â”€â”€ */
+@media (max-width: 320px) {
+  .profile-tabs-inner { padding: 0 .5rem; }
+  .tab-btn { padding: 8px 6px; font-size: .65rem; }
+}
+
+/* â”€â”€ Reduced motion â”€â”€ */
+@media (prefers-reduced-motion: reduce) {
+  .tab-btn { transition: none; }
+}
+
+/* â”€â”€ High contrast â”€â”€ */
+@media (forced-colors: active) {
+  .tab-btn.active {
+    border-bottom-color: Highlight;
+    color: Highlight;
+  }
+  .tab-count { border: 1px solid ButtonText; }
+}
+
+.card {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+</style>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TAB BAR
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="profile-tabs-bar">
+  <nav class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
+
+    <button class="tab-btn active" data-tab="products"
+            role="tab" aria-selected="true" aria-controls="tab-products">
+      <i class="fa-solid fa-box"></i> Products
+    </button>
+
+    <button class="tab-btn" data-tab="videos"
+            role="tab" aria-selected="false" aria-controls="tab-videos">
+      <i class="fa-solid fa-video"></i> Videos
+    </button>
+
+    <button class="tab-btn" data-tab="media"
+            role="tab" aria-selected="false" aria-controls="tab-media">
+      <i class="fa-solid fa-images"></i> Media
+    </button>
+
+    <button class="tab-btn" data-tab="info"
+            role="tab" aria-selected="false" aria-controls="tab-info">
+      <i class="fa-solid fa-circle-info"></i> About
+    </button>
+
+  </nav>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TWO-COLUMN LAYOUT â€” open tag only (closed in part 3)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="profile-content">
+
+
+  <!-- â”€â”€ MAIN PANEL â”€â”€ -->
+  <main class="fb-main">
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TAB: PRODUCTS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<style>
+/* â•â•â• UPGRADED PRODUCT CARD â•â•â• */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 0;
+}
+
+.product-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 16px 18px 20px;
+}
+
+/* â”€â”€ Card shell â”€â”€ */
+.pcard {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e4e3df;
+  border-radius: 14px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+  position: relative;
+}
+
+.pcard:hover {
+  box-shadow: 0 8px 24px rgba(10,37,64,.14);
+  transform: translateY(-4px);
+  border-color: #1565c0;
+}
+
+/* â”€â”€ Thumb â”€â”€ */
+.pcard-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #f5f5f3;
+  overflow: hidden;
+}
+
+.pcard-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease;
+}
+
+.pcard:hover .pcard-thumb img {
+  transform: scale(1.07);
+}
+
+/* â”€â”€ Quick View overlay â”€â”€ */
+.pcard-quickview {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #d4af37;
+  color: #1a1a2e;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 20px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(212,175,55,.4);
+}
+
+.pcard:hover .pcard-quickview {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* â”€â”€ Wishlist heart (top-right) â”€â”€ */
+.pcard-wish {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255,255,255,.92);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  color: #9ca3af;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+  transition: color .2s, background .2s;
+  cursor: pointer;
+}
+
+.pcard-wish:hover,
+.pcard-wish.active { color: #ef4444; background: #fff; }
+
+/* â”€â”€ Wishlist count (below heart) â”€â”€ */
+.pcard-wish-count {
+  position: absolute;
+  top: 46px;
+  right: 10px;
+  font-size: .6rem;
+  font-weight: 700;
+  color: #718096;
+  text-align: center;
+  z-index: 2;
+  line-height: 1;
+}
+
+/* â”€â”€ Views badge (bottom-left) â”€â”€ */
+.pcard-views {
+  position: absolute;
+  bottom: 52px;
+  left: 10px;
+  background: rgba(10,15,35,.65);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+/* â”€â”€ Sale badge (top-left) â”€â”€ */
+.pcard-sale {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 5px;
+  z-index: 2;
+  letter-spacing: .3px;
+}
+
+/* â”€â”€ Stock badge (top-left, below sale) â”€â”€ */
+.pcard-stock {
+  position: absolute;
+  top: 36px;
+  left: 10px;
+  font-size: .6rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 5px;
+  z-index: 2;
+}
+.pcard-stock.out { background: #dc2626; color: #fff; }
+.pcard-stock.low { background: #ea580c; color: #fff; }
+
+/* â”€â”€ Body â”€â”€ */
+.pcard-body {
+  padding: 12px 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+/* product_title â€” big bold name */
+.pcard-title {
+  font-size: .88rem;
+  font-weight: 700;
+  color: #1a202c;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* product_name â€” model/SKU in blue */
+.pcard-model {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #1565c0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* â”€â”€ Stars â”€â”€ */
+.pcard-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .72rem;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.pcard-stars i { font-size: .68rem; }
+
+.pcard-stars .review-count {
+  color: #718096;
+  font-weight: 500;
+}
+
+/* â”€â”€ Price box â”€â”€ */
+.pcard-price-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.pcard-price-col {
+  background: #f8f9ff;
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pcard-price-col:last-child { background: #f0fdf4; }
+
+.pcard-price-label {
+  font-size: .57rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #718096;
+}
+
+.pcard-price-val {
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.pcard-price-col:first-child .pcard-price-val {
+  color: #dc2626;
+  text-decoration: line-through;
+}
+
+.pcard-price-col:last-child .pcard-price-val {
+  color: #15803d;
+}
+
+/* â”€â”€ Tags row â”€â”€ */
+.pcard-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.pcard-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.pcard-tag.brand {
+  background: #eff6ff;
+  color: #1565c0;
+  border: 1px solid #bfdbfe;
+}
+
+.pcard-tag.category {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.pcard-tag.subcategory {
+  background: #fdf4ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+/* â”€â”€ Time label â”€â”€ */
+.pcard-time {
+  font-size: .6rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+/* â•â•â•â•â•â•â•â• RESPONSIVE â•â•â•â•â•â•â•â• */
+@media (max-width: 1024px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px 14px 16px;
+  }
+  .pcard-title { font-size: .82rem; }
+  .pcard-price-val { font-size: .78rem; }
+}
+
+@media (max-width: 480px) {
+  .product-grid-v2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px 10px 12px;
+  }
+  .pcard-body { padding: 9px 10px 11px; gap: 3px; }
+  .pcard-title { font-size: .76rem; }
+  .pcard-model { font-size: .68rem; }
+  .pcard-price-val { font-size: .74rem; }
+  .pcard-price-label { font-size: .52rem; }
+  .pcard-price-col { padding: 5px 7px; }
+  .pcard-tag { font-size: .55rem; padding: 2px 5px; }
+}
+
+@media (max-width: 360px) {
+  .product-grid-v2 { gap: 6px; padding: 8px 8px 10px; }
+  .pcard-body { padding: 8px 8px 9px; }
+  .pcard-title { font-size: .7rem; }
+  .pcard-price-val { font-size: .7rem; }
+}
+
+@media (max-width: 320px) {
+  .product-grid-v2 { gap: 5px; padding: 7px 7px 9px; }
+  .pcard-title { font-size: .65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard, .pcard-thumb img, .pcard-quickview { transition: none; }
+  .pcard:hover { transform: none; }
+  .pcard:hover .pcard-thumb img { transform: none; }
+  .pcard:hover .pcard-quickview { opacity: 0; }
+}
+</style>
+
+<div class="tab-panel active" id="tab-products" role="tabpanel">
+  <div class="card">
+    <div class="section-head">
+      <h2 class="card-title">Recently Viewed</h2>
+      {% if recently_viewed %}
+      <span style="font-size:.78rem;color:var(--text-muted);font-weight:600">
+        {{ recently_viewed|length }} product{{ recently_viewed|length|pluralize }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if recently_viewed %}
+    <div class="product-grid-v2">
+      {% for pv in recently_viewed %}
+      <a href="{% url 'ponno:product_detail' slug=pv.product.slug %}" class="pcard">
+
+        <!-- â”€â”€ Thumbnail â”€â”€ -->
+        <div class="pcard-thumb">
+          <img src="{{ pv.product.image_url }}"
+               alt="{{ pv.product.product_name }}" loading="lazy">
+
+          <!-- Sale badge -->
+          {% if pv.product.is_on_sale %}
+          <span class="pcard-sale">-{{ pv.product.discount_percentage|floatformat:0 }}%</span>
+          {% endif %}
+
+          <!-- Stock badge -->
+          {% if pv.product.stock_status == 'out_of_stock' %}
+            <span class="pcard-stock out">Out</span>
+          {% elif pv.product.stock_status == 'low_stock' %}
+            <span class="pcard-stock low">Low</span>
+          {% endif %}
+
+          <!-- Wishlist heart -->
+          <div class="pcard-wish" title="Wishlist">
+            <i class="fa-{% if pv.product.wishlist_count > 0 %}solid{% else %}regular{% endif %} fa-heart"></i>
+          </div>
+          {% if pv.product.wishlist_count > 0 %}
+          <span class="pcard-wish-count">{{ pv.product.wishlist_count }}</span>
+          {% endif %}
+
+          <!-- Views badge -->
+          <span class="pcard-views">
+            <i class="fa-solid fa-eye"></i> {{ pv.view_count }}
+          </span>
+
+          <!-- Quick View -->
+          <span class="pcard-quickview">
+            <i class="fa-solid fa-eye"></i> Quick View
+          </span>
+        </div>
+
+        <!-- â”€â”€ Body â”€â”€ -->
+        <div class="pcard-body">
+
+          <!-- Product title (full name) -->
+          {% if pv.product.product_title %}
+          <p class="pcard-title">{{ pv.product.product_title }}</p>
+          {% else %}
+          <p class="pcard-title">{{ pv.product.product_name }}</p>
+          {% endif %}
+
+          <!-- Product name (model/SKU) -->
+          {% if pv.product.product_title %}
+          <span class="pcard-model">{{ pv.product.product_name }}</span>
+          {% endif %}
+
+          <!-- Stars -->
+          {% if pv.product.rating_average > 0 %}
+          <div class="pcard-stars">
+            {% with avg=pv.product.rating_average|floatformat:0|add:"0" %}
+              {% for i in "12345" %}
+                {% if forloop.counter <= avg %}
+                  <i class="fa-solid fa-star"></i>
+                {% else %}
+                  <i class="fa-regular fa-star" style="color:#d1d5db"></i>
+                {% endif %}
+              {% endfor %}
+            {% endwith %}
+            <span>{{ pv.product.rating_average }}</span>
+            {% if pv.product.review_count > 0 %}
+            <span class="review-count">({{ pv.product.review_count }})</span>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Price box -->
+          <div class="pcard-price-box">
+            <div class="pcard-price-col">
+              <span class="pcard-price-label">Brand Price</span>
+              <span class="pcard-price-val">
+                {% if pv.product.brand_price %}
+                  {{ pv.product.brand_price|floatformat:0 }} Tk
+                {% else %}
+                  {{ pv.product.selling_price|floatformat:0 }} Tk
+                {% endif %}
+              </span>
+            </div>
+            <div class="pcard-price-col">
+              <span class="pcard-price-label">Selling Price</span>
+              <span class="pcard-price-val">
+                {{ pv.product.final_price|default:pv.product.selling_price|floatformat:0 }} Tk
+              </span>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="pcard-tags">
+            {% if pv.product.brand %}
+            <span class="pcard-tag brand">
+              <i class="fa-solid fa-registered" style="font-size:.5rem"></i>
+              {{ pv.product.brand.brand_name }}
+            </span>
+            {% endif %}
+            {% if pv.product.category %}
+            <span class="pcard-tag category">
+              <i class="fa-solid fa-tag" style="font-size:.5rem"></i>
+              {{ pv.product.category.category_name }}
+            </span>
+            {% endif %}
+            {% if pv.product.sub_category %}
+            <span class="pcard-tag subcategory">
+              <i class="fa-solid fa-list-ul" style="font-size:.5rem"></i>
+              {{ pv.product.sub_category.sub_category_name }}
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Time -->
+          <span class="pcard-time">
+            <i class="fa-regular fa-clock"></i>
+            {{ pv.viewed_at|timesince }} ago
+          </span>
+
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fa-solid fa-binoculars"></i></div>
+      <h3 class="empty-title">Nothing browsed yet</h3>
+      <p class="empty-text">Products you view will appear here for quick re-access.</p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /#tab-products -->
+
+<style>
+.video-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.video-count-label{font-size:12px;color:var(--text-secondary,#6b7280);margin-left:auto}
+
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.video-card{border:1px solid var(--border-color,#e5e7eb);border-radius:12px;overflow:hidden;background:#fff;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.video-card:hover{border-color:#1565c0;box-shadow:0 6px 16px rgba(10,37,64,.1)}
+
+.video-embed-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;overflow:hidden}
+.video-embed-wrap iframe,
+.video-embed-wrap video{width:100%;height:100%;border:0;display:block;object-fit:cover}
+
+.video-platform-pill{position:absolute;top:8px;left:8px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(0,0,0,.6);color:#fff;text-transform:capitalize;z-index:2}
+.video-fallback-pill{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(202,138,4,.85);color:#fff;z-index:2}
+
+.video-body{padding:10px 12px 12px}
+.video-title{font-size:13px;font-weight:600;color:var(--text-primary,#111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:4px}
+.video-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary,#6b7280)}
+.video-watch-link{font-size:11px;color:#1565c0;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.video-watch-link:hover{text-decoration:underline}
+
+.engine-empty-state{display:flex;flex-direction:column;align-items:center;padding:48px 24px;text-align:center}
+.engine-empty-icon{width:48px;height:48px;border-radius:50%;background:var(--surface-2,#f3f4f6);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-secondary,#9ca3af);margin-bottom:14px}
+.engine-empty-title{font-size:15px;font-weight:500;color:var(--text-primary,#111827);margin-bottom:6px}
+.engine-empty-text{font-size:13px;color:var(--text-secondary,#6b7280);max-width:280px;line-height:1.5}
+
+@media (max-width:768px){
+  .video-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+}
+</style>
+
+<div class="tab-panel" id="tab-videos" role="tabpanel">
+  <div class="card">
+    <div class="section-head">
+      <h2 class="card-title">Videos</h2>
+      {% if gallery_videos %}
+      <span style="font-size:.78rem;color:var(--text-muted);font-weight:600">
+        {{ videos_count }} video{{ videos_count|pluralize }}
+      </span>
+      {% endif %}
+    </div>
+
+    {% if gallery_videos %}
+    <div class="video-grid">
+      {% for v in gallery_videos %}
+      <div class="video-card">
+        <div class="video-embed-wrap">
+          {% if v.platform %}
+          <span class="video-platform-pill">{{ v.platform }}</span>
+          {% endif %}
+          {% if v.is_fallback %}
+          <span class="video-fallback-pill">Sample</span>
+          {% endif %}
+
+          {% if v.type == 'video' %}
+            <video src="{{ v.embed_url }}" controls preload="metadata"
+                   {% if v.thumbnail %}poster="{{ v.thumbnail }}"{% endif %}></video>
+          {% else %}
+            <iframe src="{{ v.embed_url }}"
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+          {% endif %}
+        </div>
+
+        <div class="video-body">
+          <p class="video-title">{{ v.title|default:"Untitled"|truncatechars:60 }}</p>
+
+          {% if v.service_name %}
+          <div class="video-svc-row">
+            <i class="fa-solid fa-plug"></i>
+            {{ v.service_name|truncatechars:28 }}
+          </div>
+          {% endif %}
+
+          {% if v.watch_url %}
+          <a href="{{ v.watch_url }}" target="_blank" rel="noopener" class="video-watch-link">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Watch on {{ v.platform|default:"source" }}
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="engine-empty-state">
+      <div class="engine-empty-icon"><i class="fa-solid fa-video"></i></div>
+      <h3 class="engine-empty-title">No videos yet</h3>
+      <p class="engine-empty-text">
+        Videos from your connected services will appear here once they've been fetched.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div><!-- /#tab-videos -->
+
+<style>
+.media-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.media-filters{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
+.media-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:12px;border:1px solid var(--border-color,#e5e7eb);cursor:pointer;background:var(--surface-2,#f9fafb);color:var(--text-secondary,#6b7280);white-space:nowrap;transition:all .15s}
+.media-filter-btn.active{background:#fff;color:var(--text-primary,#111827);border-color:var(--border-color-strong,#9ca3af);font-weight:500}
+.media-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-all{background:var(--text-secondary,#9ca3af)}
+.dot-success{background:#3B6D11}
+.dot-error{background:#A32D2D}
+.dot-pending{background:#854F0B}
+.media-view-toggle{display:flex;border:1px solid var(--border-color,#e5e7eb);border-radius:8px;overflow:hidden}
+.media-vbtn{padding:5px 9px;cursor:pointer;background:var(--surface-2,#f9fafb);color:var(--text-secondary,#6b7280);border:none;display:flex;align-items:center;transition:all .15s}
+.media-vbtn.active{background:#fff;color:var(--text-primary,#111827)}
+.media-count-label{font-size:12px;color:var(--text-secondary,#6b7280);margin-left:auto;white-space:nowrap}
+
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.media-card{border:1px solid var(--border-color,#e5e7eb);border-radius:12px;overflow:hidden;background:#fff;text-decoration:none;display:flex;flex-direction:column;transition:border-color .15s}
+.media-card:hover{border-color:var(--border-color-strong,#9ca3af)}
+.media-thumb{position:relative;aspect-ratio:16/10;background:var(--surface-2,#f3f4f6);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.media-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.media-thumb-fb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary,#9ca3af);font-size:28px}
+.media-status-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;border:2px solid #fff}
+.media-status-dot.dot-success{background:#3B6D11}
+.media-status-dot.dot-error{background:#A32D2D}
+.media-status-dot.dot-pending{background:#854F0B}
+.media-fetch-time{position:absolute;bottom:7px;right:7px;font-size:10px;background:rgba(0,0,0,.5);color:#fff;padding:2px 6px;border-radius:10px}
+.media-body{padding:10px 12px 12px}
+.media-title{font-size:13px;font-weight:500;color:var(--text-primary,#111827);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;margin-bottom:6px}
+.media-svc-row{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary,#6b7280);margin-bottom:4px}
+.media-src-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.media-src-domain{font-size:11px;color:var(--text-secondary,#6b7280);display:flex;align-items:center;gap:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* list view */
+.media-list-view .media-grid{grid-template-columns:1fr;gap:6px}
+.media-list-view .media-card{flex-direction:row}
+.media-list-view .media-thumb{width:88px;flex-shrink:0;aspect-ratio:unset;border-radius:0}
+
+.media-empty-filtered{display:none}
+</style>
+
+<div class="tab-panel" id="tab-media" role="tabpanel">
+  <div class="card">
+
+    {% if gallery_media %}
+
+    <div class="media-toolbar">
+      <div class="media-filters">
+        <button class="media-filter-btn active" data-filter="all" onclick="mediaSetFilter('all')">
+          <span class="media-dot dot-all"></span>All
+        </button>
+        <button class="media-filter-btn" data-filter="success" onclick="mediaSetFilter('success')">
+          <span class="media-dot dot-success"></span>Fetched
+        </button>
+        <button class="media-filter-btn" data-filter="error" onclick="mediaSetFilter('error')">
+          <span class="media-dot dot-error"></span>Error
+        </button>
+        <button class="media-filter-btn" data-filter="pending" onclick="mediaSetFilter('pending')">
+          <span class="media-dot dot-pending"></span>Pending
+        </button>
+      </div>
+
+      <div class="media-view-toggle">
+        <button class="media-vbtn active" id="media-vbtn-grid" onclick="mediaSetView('grid')" aria-label="Grid view">
+          <i class="fa-solid fa-grip"></i>
+        </button>
+        <button class="media-vbtn" id="media-vbtn-list" onclick="mediaSetView('list')" aria-label="List view">
+          <i class="fa-solid fa-list"></i>
+        </button>
+      </div>
+
+      <span class="media-count-label" id="media-count-label">
+        {{ gallery_media|length }} image{{ gallery_media|length|pluralize }}
+      </span>
+    </div>
+
+    <div class="media-grid" id="media-grid">
+      {% for item in gallery_media %}
+      <a href="{{ item.source_url }}" target="_blank" rel="noopener"
+         class="media-card"
+         data-status="{{ item.fetch_status|default:'pending' }}">
+
+        <div class="media-thumb">
+          {% if item.file_url %}
+          <img src="{{ item.file_url }}" alt="{{ item.alt|default:item.title|default:'Image' }}" loading="lazy"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <span class="media-thumb-fb" style="display:none"><i class="fa-solid fa-image"></i></span>
+          {% else %}
+          <span class="media-thumb-fb"><i class="fa-solid fa-image"></i></span>
+          {% endif %}
+
+          <span class="media-status-dot
+            {% if item.fetch_status == 'success' %}dot-success
+            {% elif item.fetch_status == 'error' %}dot-error
+            {% else %}dot-pending{% endif %}"
+            title="Fetch status: {{ item.fetch_status|default:'pending' }}"></span>
+
+          {% if item.last_fetch_time %}
+          <span class="media-fetch-time">{{ item.last_fetch_time|timesince }} ago</span>
+          {% endif %}
+        </div>
+
+        <div class="media-body">
+          <p class="media-title">{{ item.title|default:"Untitled"|truncatechars:60 }}</p>
+
+          {% if item.service_name %}
+          <div class="media-svc-row">
+            <i class="fa-solid fa-plug"></i>
+            {{ item.service_name|truncatechars:28 }}
+          </div>
+          {% endif %}
+
+          <div class="media-src-row">
+            <span class="media-src-domain">
+              <i class="fa-solid fa-globe"></i>
+              {{ item.source_domain|default:item.source_url|truncatechars:22 }}
+            </span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="engine-empty-state media-empty-filtered" id="media-empty-filtered">
+      <div class="engine-empty-icon"><i class="fa-solid fa-filter"></i></div>
+      <h3 class="engine-empty-title">No media matches this filter</h3>
+      <p class="engine-empty-text">Try a different status.</p>
+    </div>
+
+    {% else %}
+    <div class="engine-empty-state">
+      <div class="engine-empty-icon"><i class="fa-solid fa-image"></i></div>
+      <h3 class="engine-empty-title">No media yet</h3>
+      <p class="engine-empty-text">
+        Images from your connected services will appear here once they've been fetched.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div><!-- /#tab-media -->
+
+<script>
+(function(){
+  var currentFilter = 'all';
+
+  window.mediaSetFilter = function(f){
+    currentFilter = f;
+    document.querySelectorAll('.media-filter-btn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.filter === f);
+    });
+    applyMediaFilter();
+  };
+
+  window.mediaSetView = function(v){
+    var grid = document.getElementById('media-grid');
+    if (!grid) return;
+    grid.parentElement.classList.toggle('media-list-view', v === 'list');
+    document.getElementById('media-vbtn-grid').classList.toggle('active', v === 'grid');
+    document.getElementById('media-vbtn-list').classList.toggle('active', v === 'list');
+  };
+
+  function applyMediaFilter(){
+    var cards = document.querySelectorAll('#media-grid .media-card');
+    var visible = 0;
+    cards.forEach(function(c){
+      var show = currentFilter === 'all' || c.dataset.status === currentFilter;
+      c.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    var lbl = document.getElementById('media-count-label');
+    if (lbl) lbl.textContent = visible + ' image' + (visible === 1 ? '' : 's');
+    var empty = document.getElementById('media-empty-filtered');
+    var grid  = document.getElementById('media-grid');
+    if (empty) {
+      empty.style.display = visible === 0 ? 'flex' : 'none';
+      if (grid) grid.style.display = visible === 0 ? 'none' : '';
+    }
+  }
+})();
+</script>
+
+<style>
+
+
+  /* â•â•â• ABOUT TAB â•â•â• */
+  .info-blocks-wrap {
+    padding: 4px 18px 16px;
+  }
+
+  .info-section-title {
+    font-size: .7rem;
+    font-weight: 800;
+    color: #1565c0;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 14px 0 6px;
+    border-bottom: 2px solid #eff6ff;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .info-section-title i { font-size: .8rem; }
+
+  .info-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e8f0;
+    transition: all .15s;
+  }
+
+  .info-block:last-child { border-bottom: none; }
+
+  .info-block-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: #f0f2f5;
+    border: 1px solid #e4e3df;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1565c0;
+    font-size: .95rem;
+    margin-top: 2px;
+    transition: all .2s;
+  }
+
+  .info-block:hover .info-block-icon {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .info-block-details { flex: 1; min-width: 0; }
+
+  .info-block-label {
+    font-size: .68rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin: 0 0 3px;
+  }
+
+  .info-block-value {
+    font-size: .9rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .info-block-value a { color: #1565c0; text-decoration: none; }
+  .info-block-value a:hover { text-decoration: underline; }
+
+  /* badges */
+  .info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 20px;
+  }
+  .info-badge-green  { background: #f0fdf4; color: #16a34a; }
+  .info-badge-red    { background: #fef2f2; color: #dc2626; }
+  .info-badge-blue   { background: #eff6ff; color: #2563eb; }
+  .info-badge-amber  { background: #fefce8; color: #ca8a04; }
+  .info-badge-purple { background: #f5f3ff; color: #7c3aed; }
+  .info-badge-gray   { background: #f3f4f6; color: #6b7280; }
+
+  /* social row */
+  .social-links-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .social-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px solid #e4e3df;
+    background: #f8fafc;
+    color: #374151;
+    transition: all .15s;
+  }
+  .social-link-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #1565c0; }
+
+  /* progress bar */
+  .completion-bar-wrap {
+    margin-top: 5px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    height: 7px;
+    overflow: hidden;
+  }
+  .completion-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #1565c0, #7c3aed);
+    transition: width .4s ease;
+  }
+  .completion-label {
+    font-size: .7rem;
+    color: #718096;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* â•â• RESPONSIVE â•â• */
+  @media (min-width: 1400px) {
+    .info-blocks-wrap { padding: 6px 22px 18px; }
+    .info-block-icon  { width: 44px; height: 44px; font-size: 1rem; }
+    .info-block-value { font-size: .95rem; }
+    .info-block       { gap: 15px; padding: 14px 0; }
+  }
+  @media (max-width: 768px) {
+    .info-blocks-wrap { padding: 4px 14px 14px; }
+    .info-block       { gap: 11px; padding: 11px 0; }
+    .info-block-icon  { width: 38px; height: 38px; font-size: .88rem; }
+    .info-block-value { font-size: .88rem; }
+  }
+  @media (max-width: 640px) {
+    .info-blocks-wrap { padding: 4px 12px 12px; }
+    .info-block-icon  { width: 36px; height: 36px; }
+    .info-block-value { font-size: .85rem; }
+  }
+  @media (max-width: 480px) {
+    .info-blocks-wrap { padding: 2px 10px 10px; }
+    .info-block-icon  { width: 34px; height: 34px; font-size: .8rem; }
+    .info-block-value { font-size: .82rem; }
+  }
+  @media (max-width: 360px) {
+    .info-blocks-wrap { padding: 2px 8px 8px; }
+    .info-block-icon  { width: 30px; height: 30px; font-size: .75rem; }
+    .info-block-value { font-size: .78rem; }
+  }
+  @media (max-width: 320px) {
+    .info-block-icon  { width: 28px; height: 28px; font-size: .7rem; }
+    .info-block-value { font-size: .75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .info-block, .info-block-icon, .completion-bar-fill { transition: none; }
+  }
+  @media (forced-colors: active) {
+    .info-block-icon { border-color: ButtonText; }
+    .info-block      { border-bottom-color: ButtonText; }
+  }
+</style>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TAB: ABOUT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div class="tab-panel" id="tab-info" role="tabpanel">
+  <div class="card">
+    <div class="card-header"><h2 class="card-title">About</h2></div>
+    <div class="info-blocks-wrap">
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: PROFILE
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-id-card"></i> Profile</p>
+
+      <!-- Profile completion -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-circle-half-stroke"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Profile Completion</p>
+          <p class="info-block-value">{{ profile_completion }}%</p>
+          <div class="completion-bar-wrap">
+            <div class="completion-bar-fill" style="width:{{ profile_completion }}%"></div>
+          </div>
+          <span class="completion-label">
+            {% if profile_completion == 100 %}Profile is complete!
+            {% elif profile_completion >= 70 %}Almost there â€” fill in the remaining fields.
+            {% else %}Complete your profile to build trust with buyers.
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Role -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Role</p>
+          <p class="info-block-value">{{ user.get_role_display }}</p>
+        </div>
+      </div>
+
+      <!-- Verification status -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Verification</p>
+          <p class="info-block-value">
+            {% if profile_info.is_profile_verified %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Verified</span>
+              {% if profile_info.verified_at %}
+                &nbsp;<span style="font-size:.78rem;color:#718096;font-weight:500">
+                  since {{ profile_info.verified_at|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-clock"></i> Not Verified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Engagement score -->
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#7c3aed"><i class="fa-solid fa-bolt"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Engagement Score</p>
+          <p class="info-block-value">{{ engagement_score }}</p>
+        </div>
+      </div>
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: PERSONAL
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-person"></i> Personal</p>
+
+      {% if profile_info.profile_gender %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-venus-mars"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Gender</p>
+          <p class="info-block-value">{{ profile_info.get_profile_gender_display }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.show_dob and profile_info.profile_dob %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Date of Birth</p>
+          <p class="info-block-value">{{ profile_info.profile_dob|date:"M d, Y" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.profile_language %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-language"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Language</p>
+          <p class="info-block-value">{{ profile_info.profile_language }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.profile_phone %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-phone"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Contact Phone</p>
+          <p class="info-block-value">
+            <a href="tel:{{ profile_info.profile_phone }}">{{ profile_info.profile_phone }}</a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: ACCOUNT
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-lock"></i> Account</p>
+
+      <!-- Account status -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-toggle-on"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Account Status</p>
+          <p class="info-block-value">
+            {% if user.account_status == 'active' %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-circle"></i> Active</span>
+            {% elif user.account_status == 'suspended' %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-ban"></i> Suspended</span>
+            {% elif user.account_status == 'locked' %}
+              <span class="info-badge info-badge-amber"><i class="fa-solid fa-lock"></i> Locked</span>
+            {% elif user.account_status == 'pending' %}
+              <span class="info-badge info-badge-blue"><i class="fa-solid fa-hourglass"></i> Pending Verification</span>
+            {% else %}
+              <span class="info-badge info-badge-gray">{{ user.account_status|capfirst }}</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Email verification -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-envelope"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Email</p>
+          <p class="info-block-value">
+            {{ user.email|default:"â€”" }}
+            {% if user.email_verified %}
+              <span class="info-badge info-badge-green" style="margin-left:6px"><i class="fa-solid fa-check"></i> Verified</span>
+            {% else %}
+              <span class="info-badge info-badge-red" style="margin-left:6px"><i class="fa-solid fa-xmark"></i> Unverified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Phone verification -->
+      {% if user.phone %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-phone"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Phone</p>
+          <p class="info-block-value">
+            {{ user.phone }}
+            {% if user.phone_verified %}
+              <span class="info-badge info-badge-green" style="margin-left:6px"><i class="fa-solid fa-check"></i> Verified</span>
+            {% else %}
+              <span class="info-badge info-badge-red" style="margin-left:6px"><i class="fa-solid fa-xmark"></i> Unverified</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- MFA -->
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-key"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Two-Factor Authentication</p>
+          <p class="info-block-value">
+            {% if user.mfa_enabled %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-shield-check"></i> Enabled</span>
+              {% if user.mfa_method %}
+                &nbsp;<span style="font-size:.78rem;color:#718096;font-weight:500">({{ user.mfa_method|upper }})</span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-shield"></i> Disabled</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <!-- Country / currency -->
+      {% if user.country %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-flag"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Country</p>
+          <p class="info-block-value">{{ user.country }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-coins"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Currency</p>
+          <p class="info-block-value">{{ user.currency }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Timezone</p>
+          <p class="info-block-value">{{ user.timezone }}</p>
+        </div>
+      </div>
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: LOCATION
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      {% if profile_info.show_location and profile_info.location_display %}
+      <p class="info-section-title"><i class="fa-solid fa-location-dot"></i> Location</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-map-pin"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Location</p>
+          <p class="info-block-value">{{ profile_info.location_display }}</p>
+        </div>
+      </div>
+
+      {% if profile_info.profile_address %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-house"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Address</p>
+          <p class="info-block-value">{{ profile_info.profile_address }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if profile_info.profile_postal_code %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-mailbox"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Postal Code</p>
+          <p class="info-block-value">{{ profile_info.profile_postal_code }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: SOCIAL MEDIA
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      {% if profile_info.social_facebook or profile_info.social_twitter or profile_info.social_instagram or profile_info.social_linkedin or profile_info.social_youtube or profile_info.social_tiktok or profile_info.social_whatsapp %}
+      <p class="info-section-title"><i class="fa-solid fa-share-nodes"></i> Social Media</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-link"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Links</p>
+          <div class="social-links-row">
+            {% if profile_info.social_facebook %}
+            <a href="{{ profile_info.social_facebook }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-facebook" style="color:#1877f2"></i> Facebook
+            </a>
+            {% endif %}
+            {% if profile_info.social_twitter %}
+            <a href="{{ profile_info.social_twitter }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-x-twitter"></i> X / Twitter
+            </a>
+            {% endif %}
+            {% if profile_info.social_instagram %}
+            <a href="{{ profile_info.social_instagram }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-instagram" style="color:#e1306c"></i> Instagram
+            </a>
+            {% endif %}
+            {% if profile_info.social_linkedin %}
+            <a href="{{ profile_info.social_linkedin }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-linkedin" style="color:#0a66c2"></i> LinkedIn
+            </a>
+            {% endif %}
+            {% if profile_info.social_youtube %}
+            <a href="{{ profile_info.social_youtube }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-youtube" style="color:#ff0000"></i> YouTube
+            </a>
+            {% endif %}
+            {% if profile_info.social_tiktok %}
+            <a href="{{ profile_info.social_tiktok }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-tiktok"></i> TikTok
+            </a>
+            {% endif %}
+            {% if profile_info.social_whatsapp %}
+            <a href="{{ profile_info.social_whatsapp }}" target="_blank" rel="noopener" class="social-link-btn">
+              <i class="fa-brands fa-whatsapp" style="color:#25d366"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: SELLER STATS
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-chart-line"></i> Seller Stats</p>
+
+      {% if ratings_received_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-star"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Seller Rating</p>
+          <p class="info-block-value">
+            {{ avg_rating_received }}â˜…
+            <span style="font-size:.78rem;color:#718096;font-weight:500">
+              from {{ ratings_received_count }} review{{ ratings_received_count|pluralize }}
+            </span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Products Listed</p>
+          <p class="info-block-value">
+            {{ products_listed_count }}
+            <span style="font-size:.78rem;color:#718096;font-weight:500">
+              ({{ active_products_count }} active)
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {% if featured_products_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-certificate"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Featured Products</p>
+          <p class="info-block-value">{{ featured_products_count }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-eye"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Total Product Views</p>
+          <p class="info-block-value">{{ total_product_views }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-tag"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Brands</p>
+          <p class="info-block-value">{{ brands_count }}</p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Categories</p>
+          <p class="info-block-value">{{ categories_count }}</p>
+        </div>
+      </div>
+
+      {% if out_of_stock_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#dc2626"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Out of Stock</p>
+          <p class="info-block-value">
+            <span class="info-badge info-badge-red">{{ out_of_stock_count }} product{{ out_of_stock_count|pluralize }}</span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if low_stock_count > 0 %}
+      <div class="info-block">
+        <div class="info-block-icon" style="color:#ca8a04"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Low Stock</p>
+          <p class="info-block-value">
+            <span class="info-badge info-badge-amber">{{ low_stock_count }} product{{ low_stock_count|pluralize }}</span>
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: GDPR / PRIVACY
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-user-shield"></i> Privacy & Consent</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-file-contract"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Terms Accepted</p>
+          <p class="info-block-value">
+            {% if user.terms_accepted %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Yes</span>
+              {% if user.terms_accepted_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.terms_accepted_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> No</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-lock-open"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Privacy Policy Accepted</p>
+          <p class="info-block-value">
+            {% if user.privacy_accepted %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Yes</span>
+              {% if user.privacy_accepted_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.privacy_accepted_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> No</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-bullhorn"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Marketing Consent</p>
+          <p class="info-block-value">
+            {% if user.marketing_consent %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Opted In</span>
+              {% if user.marketing_consent_date %}
+                <span style="font-size:.78rem;color:#718096;font-weight:500;margin-left:6px">
+                  {{ user.marketing_consent_date|date:"M d, Y" }}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="info-badge info-badge-gray"><i class="fa-solid fa-xmark"></i> Opted Out</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-database"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Data Processing Consent</p>
+          <p class="info-block-value">
+            {% if user.data_processing_consent %}
+              <span class="info-badge info-badge-green"><i class="fa-solid fa-check"></i> Granted</span>
+            {% else %}
+              <span class="info-badge info-badge-red"><i class="fa-solid fa-xmark"></i> Revoked</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           SECTION: TIMESTAMPS
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <p class="info-section-title"><i class="fa-solid fa-clock"></i> Timeline</p>
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Member Since</p>
+          <p class="info-block-value">{{ user.date_joined|date:"M d, Y" }}</p>
+        </div>
+      </div>
+
+      {% if user.last_login %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-right-to-bracket"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Last Login</p>
+          <p class="info-block-value">{{ user.last_login|date:"M d, Y Â· H:i" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if user.password_changed_at %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-key"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Password Last Changed</p>
+          <p class="info-block-value">{{ user.password_changed_at|date:"M d, Y" }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-rotate"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Profile Last Updated</p>
+          <p class="info-block-value">{{ profile_info.profile_updated_time|date:"M d, Y Â· H:i" }}</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /#tab-info -->
+</main>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+/* â”€â”€ Tab Switching â”€â”€ */
+const tabBtns    = document.querySelectorAll('.tab-btn');
+const tabPanels  = document.querySelectorAll('.tab-panel');
+const bottomBtns = document.querySelectorAll('.bottom-bar-btn[data-tab]');
+
+/* â”€â”€ Entry-animation observer â”€â”€
+   Declared at top level (not inside DOMContentLoaded) so switchTab()
+   can also reach it to release cards from observation once a tab
+   reveals them. */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity   = '1';
+      e.target.style.transform = 'translateY(0)';
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+function switchTab(targetId) {
+  tabBtns.forEach(b => {
+    const isActive = b.dataset.tab === targetId;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  tabPanels.forEach(p => {
+    p.classList.toggle('active', p.id === `tab-${targetId}`);
+  });
+
+  // Force any cards in the newly active panel to be visible right away.
+  // They may have been assigned opacity:0 + observer.observe() at page
+  // load while their panel was hidden (display:none), and a tab switch
+  // alone doesn't trigger a new IntersectionObserver check â€” only a
+  // scroll/resize event does. Without this, content stays invisible
+  // until the user happens to scroll.
+  const activePanel = document.getElementById(`tab-${targetId}`);
+  if (activePanel) {
+    activePanel.querySelectorAll('.card').forEach(card => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+      observer.unobserve(card);
+    });
+  }
+
+  bottomBtns.forEach(b => {
+    b.classList.toggle('active-tab-btn', b.dataset.tab === targetId);
+  });
+  const activeBtn = document.querySelector(`.tab-btn[data-tab="${targetId}"]`);
+  if (activeBtn) {
+    activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+}
+
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+bottomBtns.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+
+/* â”€â”€ Engagement Bar â”€â”€ */
+function animateEngBar() {
+  const el = document.getElementById('engBarFill');
+  if (!el) return;
+  const w = el.dataset.w || '0%';
+  setTimeout(() => { el.style.width = w; }, 300);
+}
+
+
+/* â”€â”€ Entry Animations â”€â”€ */
+document.addEventListener('DOMContentLoaded', () => {
+
+  animateCompletionCircle();
+  animateEngBar();
+
+  const initialActive = document.querySelector('.tab-btn.active');
+  if (initialActive) {
+    initialActive.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'center' });
+  }
+
+  document.querySelectorAll('.pov-stat, .s-stat, .a-stat').forEach((el, i) => {
+    el.style.opacity   = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      el.style.transition = 'opacity .35s ease, transform .35s ease';
+      el.style.opacity    = '1';
+      el.style.transform  = 'translateY(0)';
+    }, 80 + i * 40);
+  });
+
+  // NEW â€” skip cards already in the viewport
+  document.querySelectorAll('.card').forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+    if (alreadyVisible) {
+      // already in view â€” show immediately, no animation
+      card.style.opacity   = '1';
+      card.style.transform = 'translateY(0)';
+    } else {
+      // below the fold â€” animate on scroll
+      card.style.opacity    = '0';
+      card.style.transform  = 'translateY(12px)';
+      card.style.transition = 'opacity .4s ease, transform .4s ease';
+      observer.observe(card);
+    }
+  });
+
+});
+
+</script>
+{% endblock %}

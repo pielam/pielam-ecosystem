@@ -1,0 +1,1621 @@
+{# templates/ponno/home.html #}
+{# Rendered by apps.ponno.views.home.HomeEngineView #}
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  .engine-wrap {
+    --sig-image: var(--accent, #4a90e2);
+    --sig-video: #8b5cf6;
+    --ink:    #0f1f36;
+    --muted:  #64748b;
+    --faint:  #94a3b8;
+    --line:   rgba(10, 37, 64, .08);
+    --surface: #fff;
+    --radius: 14px;
+    --verified: var(--accent, #4a90e2);
+    --warn:     #b45309;
+    --warn-bg:  #fef3e2;
+    --danger:   #b3432e;
+    --danger-bg:#fbeae5;
+
+    max-width: var(--content-max, 1400px);
+    margin: 0 auto;
+    padding: var(--content-pad, clamp(1rem, 4vw, 2.5rem));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .engine-wrap * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+
+  .engine-wrap :focus-visible {
+    outline: 2px solid var(--accent, #4a90e2);
+    outline-offset: 2px;
+  }
+
+  .engine-wrap img { max-width: 100%; }
+  .engine-wrap button { font-family: inherit; }
+
+  /* ── Header ─────────────────────────────────────────────── */
+
+  .engine-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .engine-head h1 {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 900;
+    letter-spacing: -.01em;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .engine-head h1 i { color: var(--accent, #4a90e2); }
+
+  .engine-sub {
+    margin: .3rem 0 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    max-width: 46ch;
+  }
+
+  .engine-live {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: #16a34a;
+    background: #ecfdf3;
+    border: 1px solid #b8f0cd;
+    padding: .35rem .75rem .35rem .6rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .engine-live .dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; }
+  .engine-live .dot::after {
+    content: ''; position: absolute; inset: -5px; border-radius: 50%;
+    border: 1.5px solid #16a34a; animation: ring 1.8s ease-out infinite;
+  }
+  @keyframes ring { 0% { transform: scale(.4); opacity: .9; } 100% { transform: scale(1.8); opacity: 0; } }
+
+  .engine-legend {
+    display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+    padding: .6rem .9rem; margin-bottom: 1.2rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    font-size: var(--text-xs); color: var(--muted);
+  }
+  .engine-legend .legend-label { font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: .4rem; }
+  .engine-legend .legend-item { display: flex; align-items: center; gap: .4rem; }
+  .engine-legend .legend-bar { display: inline-block; width: 4px; height: 12px; border-radius: 2px; }
+  .engine-legend .legend-bar.image { background: var(--sig-image); }
+  .engine-legend .legend-bar.video { background: var(--sig-video); }
+  .engine-legend .legend-hint { margin-left: auto; }
+
+  /* ── Two-column layout: feed + rail ─────────────────────── */
+
+  .engine-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 1.6rem; align-items: start; }
+  .engine-main { min-width: 0; }
+  .engine-rail { min-width: 0; }
+  @media (max-width: 1180px) and (min-width: 981px) {
+    .engine-layout { grid-template-columns: minmax(0, 1fr) 220px; gap: 1.1rem; }
+  }
+  @media (max-width: 980px) { .engine-layout { grid-template-columns: 1fr; } .engine-rail { order: 3; } }
+
+  /* ── Toolbar: filter chips ───────────────────────────────── */
+
+  .engine-toolbar {
+    display: flex; align-items: flex-end; gap: .75rem 1.2rem; flex-wrap: nowrap;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    border-bottom: 1px solid var(--line); margin-bottom: 1.5rem;
+    position: sticky; top: var(--header-h, 64px); z-index: 20;
+    background: var(--surface, #fff);
+  }
+
+  /* ── Service-type filter chips ──────────────────────────── */
+
+  .engine-filters { display: flex; align-items: center; gap: .5rem; flex-wrap: nowrap; padding: .8rem 0 .6rem; flex: 0 0 auto; }
+  .filter-chip {
+    appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: .4rem; flex-shrink: 0;
+    font-size: var(--text-xs); font-weight: 600; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: .4rem .8rem; transition: all var(--t-fast, .15s ease);
+  }
+  .filter-chip:hover { border-color: var(--accent, #4a90e2); color: var(--ink); }
+  .filter-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .filter-chip .fx-clear { display: none; }
+  .filter-chip.active .fx-clear { display: inline; opacity: .7; margin-left: .1rem; }
+
+  /* ── Attribution ─────────────────────────────────────────── */
+
+  .engine-attrib { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+  .engine-attrib img.avatar {
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+    flex-shrink: 0; background: #e2e8f0; border: 1px solid var(--line);
+  }
+  .engine-attrib .who { min-width: 0; line-height: 1.25; }
+  .engine-attrib .name-row {
+    display: flex; align-items: center; gap: .3rem; font-weight: 700;
+    font-size: var(--text-sm); color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .engine-attrib .name-row i.verified { color: var(--verified); font-size: .8em; }
+  .engine-attrib .meta-row {
+    display: flex; align-items: center; gap: .35rem;
+    font-size: var(--text-xs); color: var(--faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .engine-attrib .meta-row .stale-flag { display: inline-flex; align-items: center; gap: .3rem; color: var(--warn); flex-shrink: 0; }
+  .engine-attrib .meta-row .stale-flag::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--warn); }
+  .attrib-link { text-decoration: none; min-width: 0; }
+
+  .own-badge {
+    flex-shrink: 0; font-size: var(--text-xs); font-weight: 700; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: .3rem .7rem;
+  }
+  .follow-btn {
+    appearance: none; flex-shrink: 0; cursor: pointer;
+    padding: .38rem .9rem; border-radius: 999px; border: 1px solid var(--accent, #4a90e2);
+    background: transparent; color: var(--accent, #4a90e2);
+    font-size: var(--text-xs); font-weight: 700; transition: all var(--t-fast, .15s ease);
+  }
+  .follow-btn:hover { background: rgba(74,144,226,.08); }
+  .follow-btn[data-following="true"] { background: var(--accent, #4a90e2); color: #fff; }
+  .follow-btn[disabled] { opacity: .6; cursor: default; }
+
+  /* ── Panels ─────────────────────────────────────────────── */
+
+  .engine-panel { display: none; }
+  .engine-panel.active { display: block; }
+
+  @keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .enter { animation: card-in .32s cubic-bezier(.2,.6,.3,1) both; }
+
+  /* ── ALL: stream of post cards ──────────────────────────── */
+
+  .post-stream { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 889px) {
+    .post-stream { grid-template-columns: 1fr; }
+  }
+  @media (min-width: 890px) {
+    .post-stream { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .post-card {
+    min-width: 0; /* Overrides the grid-item default of min-width:auto, which lets a
+      replaced element's (img/video) *intrinsic* pixel size leak into how wide this
+      card's grid track gets sized — even though the media itself is styled
+      width:100%. Without this, two side-by-side post-stream cards with different
+      media (e.g. a large photo vs. a <video>) can end up with unequal column
+      widths, leaving a visible gap next to whichever card "lost" the tug-of-war. */
+    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm); overflow: hidden;
+    transition: box-shadow var(--t-fast, .15s ease);
+  }
+  .post-card:hover { box-shadow: 0 8px 24px rgba(15,31,54,.08); }
+
+  .post-card-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .9rem 1.1rem; }
+  .post-card-head-right { display: flex; align-items: center; gap: .7rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+  .signal-bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+  .signal-bars i { display: block; width: 4px; border-radius: 2px; background: var(--line); min-height: 3px; }
+  .signal-bars i.on.image { background: var(--sig-image); }
+  .signal-bars i.on.video { background: var(--sig-video); }
+
+  /* Action stamp — colored per service_type, mirrors the original chip palette */
+  .stamp {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 0 1.1rem .7rem; padding: 3px 10px 3px 8px;
+    border: 1.5px solid currentColor; border-radius: 999px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .stamp::before { content: "●"; font-size: 7px; }
+  .post-card[data-service-type="product"]       .stamp { color: #0e6b55; }
+  .post-card[data-service-type="brand"]         .stamp { color: #8f5f12; }
+  .post-card[data-service-type="category"]      .stamp { color: var(--verified); }
+  .post-card[data-service-type="subcategory"]   .stamp { color: #7a5aa6; }
+  .post-card[data-service-type="education"]     .stamp { color: var(--verified); }
+  .post-card[data-service-type="news"]          .stamp { color: var(--danger); }
+  .post-card[data-service-type="location"]      .stamp { color: #0e6b55; }
+  .post-card[data-service-type="api"]           .stamp { color: #8f5f12; }
+  .post-card[data-service-type="person"]        .stamp { color: #0e6b55; }
+  .post-card[data-service-type="business"]      .stamp { color: #7a5aa6; }
+  .post-card[data-service-type="entertainment"] .stamp { color: var(--danger); }
+
+  .post-card-body { --card-pad-x: 1.1rem; padding: 0 var(--card-pad-x) 1rem; }
+  .post-card-title { font-weight: 700; color: var(--ink); margin: 0 0 .3rem; font-size: var(--text-base); overflow-wrap: anywhere; word-break: break-word; }
+  .post-card-title a { color: inherit; text-decoration: none; }
+  .post-card-title a:hover { text-decoration: underline; }
+  .post-card-desc {
+    color: var(--muted); font-size: var(--text-sm); line-height: 1.55; margin: 0 0 .8rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+
+  /* Fetch status row — reused from the original editorial layout,
+     restyled to engine's palette. Only own posts get a Retry button. */
+  .status-row {
+    display: flex; align-items: center; gap: 8px; font-size: var(--text-xs);
+    padding: 8px 11px; margin-bottom: .8rem; border-radius: 10px;
+  }
+  .status-row.is-error   { background: var(--danger-bg); color: var(--danger); }
+  .status-row.is-pending { background: var(--warn-bg);   color: var(--warn); }
+  .status-row i.spin { animation: spin .9s linear infinite; }
+  .status-text { flex: 1; min-width: 0; }
+  .retry-btn {
+    flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 4px 11px;
+    border-radius: 999px; border: 1px solid currentColor; background: transparent;
+    color: inherit; cursor: pointer;
+  }
+  .retry-btn:hover { background: rgba(0,0,0,.05); }
+  .retry-btn[disabled] { opacity: .5; cursor: default; }
+
+  /* Adaptive media mosaic — sizing is driven by aspect-ratio rather than
+     fixed pixel heights, so boxes scale fluidly with the card's width at
+     any screen size and can reflect the real shape of the underlying
+     image/video instead of always forcing a crop into a fixed box.
+
+     FLUSH-TO-EDGE FIX: .post-media used to sit inside .post-card-body's
+     1.1rem side padding like every other element (title, description,
+     etc.), which left a visible gap on both sides of the mosaic — unlike
+     native Facebook post cards, where the media block runs edge-to-edge
+     under the text and is only ever inset by the *card's* own border,
+     never by inner text padding. The negative margin below cancels out
+     the parent's 1.1rem padding on each side so the mosaic bleeds flush
+     to the card edges; .post-card's own `overflow: hidden` (see above)
+     still clips it to the card's rounded corners, so visually the top
+     of the media block appears to "meet" the card edge exactly like the
+     screenshot, while the card itself keeps its rounded shape. The
+     mosaic's own border-radius was removed since flush edges shouldn't
+     be independently rounded — rounding now comes only from the card. */
+  .post-media { display: grid; gap: 4px; overflow: hidden; margin: 0 calc(-1 * var(--card-pad-x, 1.1rem)) .8rem; }
+  .post-media img, .post-media video, .post-media iframe { border: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #eef2f7; }
+  .post-media a.media-link { display: block; width: 100%; height: 100%; cursor: pointer; }
+
+  /* Base ratio for every mosaic box; overridden per data-count below.
+     Capped so an extreme portrait/landscape source can never dominate
+     the whole viewport. */
+  .post-media { aspect-ratio: var(--media-ar, 4 / 3); max-height: min(70vh, 560px); }
+
+  /* Solo media: --media-ar is set dynamically in JS — either from a
+     known platform shape (iframe embeds like YouTube/TikTok/Twitch,
+     which are cross-origin and can't be measured), or from the real
+     intrinsic width/height of the image or <video> element (see
+     bindSoloAspectRatios), falling back to 4:3 until that resolves. */
+  .post-media.m-solo { grid-template-columns: 1fr; aspect-ratio: var(--media-ar, 4 / 3); }
+  .post-media.m-solo .cell { height: 100%; }
+
+  .post-media[data-count="2"] { grid-template-columns: 1fr 1fr; aspect-ratio: 16 / 9; }
+  .post-media[data-count="2"] .cell { height: 100%; }
+
+  .post-media[data-count="3"] { grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 4 / 3; }
+  .post-media[data-count="3"] .cell:nth-child(1) { grid-row: 1 / 3; height: 100%; }
+  .post-media[data-count="3"] .cell:nth-child(2), .post-media[data-count="3"] .cell:nth-child(3) { height: 100%; }
+
+  .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 1 / 1; }
+  .post-media[data-count="4"] .cell { height: 100%; }
+
+  .post-media .cell { position: relative; }
+  .post-media .cell.more-overlay::after {
+    content: attr(data-more); font-weight: 800; font-size: 1.1rem; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+    background: rgba(15, 20, 32, .55); pointer-events: none;
+  }
+  .cell-gallery-btn {
+    appearance: none; border: 0; padding: 0; margin: 0; width: 100%; height: 100%; display: block;
+    background-size: cover; background-position: center; background-color: #eef2f7; cursor: pointer;
+  }
+
+  /* Links preview strip (shown inline under a card's media, before the footer) */
+  .links-prev { display: flex; flex-direction: column; gap: 6px; margin-bottom: .8rem; }
+  .link-row {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 9px; text-decoration: none; color: inherit;
+    transition: border-color var(--t-fast, .15s ease);
+  }
+  .link-row:hover { border-color: var(--accent, #4a90e2); }
+  .link-ico {
+    width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+    background: rgba(74,144,226,.1); color: var(--accent, #4a90e2);
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .link-body { flex: 1; min-width: 0; }
+  .link-text { font-size: 12.5px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .link-host { font-family: var(--font-mono, monospace); font-size: 10.5px; color: var(--faint); }
+
+  /* Extracted-text preview strip */
+  .text-prev {
+    background: rgba(10,37,64,.03); border: 1px solid var(--line); border-left: 3px solid var(--accent, #4a90e2);
+    border-radius: 9px; padding: 10px 12px; margin-bottom: .8rem;
+  }
+  .text-prev-body {
+    font-size: 12.5px; color: var(--muted); line-height: 1.65; margin: 0;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .text-prev-expand {
+    margin-top: 6px; font-size: 11.5px; font-weight: 700; color: var(--accent, #4a90e2);
+    background: none; border: none; padding: 0; cursor: pointer;
+  }
+  .text-prev-expand:hover { text-decoration: underline; }
+
+  .post-card-counts { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; font-size: var(--text-xs); color: var(--faint); }
+  .post-card-counts .counts-left { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
+  .post-card-counts button.count-pill {
+    appearance: none; background: none; border: none; padding: 3px 4px; cursor: pointer;
+    color: var(--faint); font-size: var(--text-xs); display: flex; align-items: center; gap: .3rem;
+  }
+  .post-card-counts button.count-pill:hover { color: var(--accent, #4a90e2); }
+  .post-card-counts i.image { color: var(--sig-image); }
+  .post-card-counts i.video { color: var(--sig-video); }
+
+  .counts-right { display: flex; align-items: center; gap: .6rem; }
+  .icon-btn {
+    width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--surface); display: flex; align-items: center; justify-content: center;
+    color: var(--muted); cursor: pointer; font-size: 11px;
+  }
+  .icon-btn:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); }
+
+  .visit-source {
+    color: var(--muted); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: .3rem;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .visit-source:hover { color: var(--accent, #4a90e2); }
+  .favicon { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── PHOTOS: masonry ─────────────────────────────────────── */
+
+  .photo-masonry { column-count: 3; column-gap: .85rem; }
+  @media (max-width: 760px) { .photo-masonry { column-count: 1; } }
+
+  .photo-tile {
+    position: relative; break-inside: avoid; margin-bottom: .85rem; border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow-sm); display: block; text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--line);
+    transition: box-shadow var(--t-fast, .15s ease), transform var(--t-fast, .15s ease);
+  }
+  .photo-tile:hover { box-shadow: 0 8px 24px rgba(15,31,54,.1); transform: translateY(-1px); }
+
+  .ptile-head {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .6rem .7rem;
+  }
+  .ptile-avatar {
+    width: 24px; height: 24px; border-radius: 6px; object-fit: cover; flex-shrink: 0;
+    background: #e2e8f0; border: 1px solid var(--line);
+  }
+  .ptile-name {
+    flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ptile-stats { display: flex; align-items: center; gap: .55rem; flex-shrink: 0; }
+  .ptile-stat {
+    display: inline-flex; align-items: center; gap: .25rem;
+    font-size: 11px; font-weight: 600; color: var(--faint);
+  }
+  .ptile-stat i { font-size: 11px; }
+  .ptile-stat.liked i { color: #e05a6b; }
+
+  .ptile-media { display: block; position: relative; background: #eef2f7; }
+  .ptile-media img { display: block; width: 100%; height: auto; }
+
+  .ptile-body { padding: .65rem .75rem .75rem; }
+  .ptile-title {
+    margin: 0 0 .4rem; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .ptile-brand-row { display: flex; align-items: center; gap: .35rem; margin-bottom: .5rem; }
+  .ptile-brand-badge {
+    width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent, #4a90e2); color: #fff; font-size: 9px; font-weight: 800; text-transform: uppercase;
+  }
+  .ptile-brand-name {
+    font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .02em; text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ptile-brand-row i.verified { color: var(--verified); font-size: 10.5px; flex-shrink: 0; }
+
+  .ptile-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+  .ptile-rating { display: inline-flex; align-items: center; gap: .3rem; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+  .ptile-rating .stars { display: inline-flex; gap: 1px; color: #f5a623; font-size: 10px; }
+  .ptile-rating .stars i.empty { color: var(--line); }
+  .ptile-price { font-size: 14px; font-weight: 800; color: var(--ink); white-space: nowrap; }
+
+  /* ── VIDEOS: grid ───────────────────────────────────────── */
+
+  .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.1rem; }
+  .video-card { background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); border-left: 3px solid var(--sig-video); }
+  .video-card .video-wrap { position: relative; background: #0f1420; aspect-ratio: 16 / 9; }
+  .video-card video, .video-card iframe { width: 100%; height: 100%; display: block; border: 0; }
+  .video-card video { object-fit: contain; }
+  .video-card .video-wrap.has-iframe::after { display: none; }
+  .video-card .video-wrap::after {
+    content: '\f04b'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.9);
+    font-size: 1.4rem; pointer-events: none; transition: opacity var(--t-fast, .15s ease);
+  }
+  .video-card .video-wrap.playing::after { opacity: 0; }
+  .video-card-foot { padding: .7rem .85rem; }
+
+  /* Fallback "Watch on X ↗" link — shown under embeds from platforms
+     (Facebook, TikTok, Twitch, X) whose cross-origin iframe can fail
+     silently (private/region-blocked video, no app-domain association)
+     with no JS-visible error. Gives the post a way out even when the
+     embed itself renders blank. Also used, full-bleed (no iframe at
+     all), when video_info.embeddable === false — see videoTagHTML(). */
+  .embed-with-fallback { display: flex; flex-direction: column; height: 100%; }
+  .embed-with-fallback iframe { flex: 1; min-height: 0; }
+  .embed-fallback-link {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 8px; font-size: 11.5px; font-weight: 700; text-decoration: none;
+    color: #fff; background: rgba(15, 20, 32, .85);
+  }
+  .embed-fallback-link:hover { background: rgba(15, 20, 32, .95); }
+  /* Full-bleed variant: used when embeddable === false and no iframe
+     is attempted at all — a clickable thumbnail card instead of a
+     dead/blank iframe attempt. */
+  .embed-fallback-link.is-standalone {
+    width: 100%; height: 100%; padding: 0; background-color: #0f1420;
+    background-repeat: no-repeat;
+  }
+  .embed-fallback-link.is-standalone span {
+    background: rgba(15, 20, 32, .78); padding: 6px 12px; border-radius: 999px;
+  }
+
+  /* ── Skeletons ──────────────────────────────────────────── */
+
+  .skel-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; overflow: hidden; }
+  .skel-line, .skel-block, .skel-circle {
+    background: linear-gradient(90deg, #eef1f5 25%, #f6f8fa 37%, #eef1f5 63%);
+    background-size: 400% 100%; animation: shimmer 1.3s ease infinite; border-radius: 6px;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .skel-circle { width: 32px; height: 32px; border-radius: 50%; }
+  .skel-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .9rem; }
+  .skel-lines { flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+  .skel-line { height: 10px; }
+  .skel-line.w40 { width: 40%; } .skel-line.w70 { width: 70%; } .skel-line.w90 { width: 90%; }
+  .skel-block { height: 220px; margin-top: .8rem; }
+
+  /* ── Empty / sentinel ───────────────────────────────────── */
+
+  .engine-empty { text-align: center; padding: 4rem 1rem; color: var(--faint); }
+  .engine-empty i { font-size: 2rem; margin-bottom: .75rem; display: block; color: #cbd5e1; }
+  .engine-empty p { max-width: 34ch; margin: 0 auto; font-size: var(--text-sm); }
+
+  .engine-sentinel { height: 44px; display: flex; align-items: center; justify-content: center; gap: .6rem; color: var(--faint); font-size: var(--text-sm); }
+  .engine-sentinel .spinner {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(74,144,226,.25);
+    border-top-color: var(--accent, #4a90e2); animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sentinel-retry {
+    appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    font-weight: 700; font-size: var(--text-xs); padding: .4rem .9rem; border-radius: 999px; cursor: pointer;
+  }
+  .sentinel-retry:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); }
+
+  /* ── Rail (contributors + stats) ───────────────────────── */
+
+  .engine-rail section {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 1rem 1.1rem; margin-bottom: 1.1rem;
+  }
+  .engine-rail h2 {
+    font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 .8rem;
+  }
+  .contrib-list { list-style: none; margin: 0; padding: 0; }
+  .contrib-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+  .contrib-rank { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--faint); width: 20px; flex-shrink: 0; }
+  .contrib-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #e2e8f0; }
+  .contrib-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .contrib-name:hover { text-decoration: underline; }
+  .contrib-count { font-family: var(--font-mono, monospace); font-size: 11.5px; color: var(--faint); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-num { font-family: var(--font-mono, monospace); font-size: 20px; font-weight: 700; color: var(--ink); }
+  .stat-label { font-size: 11.5px; color: var(--faint); }
+
+  /* ── Post-details modal (Media / Links / Text) ─────────── */
+
+  .gallery-modal {
+    position: fixed; inset: 0; background: rgba(8, 12, 20, .78); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 2rem;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  }
+  .gallery-modal.open { opacity: 1; pointer-events: auto; }
+  .gallery-body {
+    max-width: 760px; width: 100%; max-height: 86vh; overflow: hidden;
+    border-radius: 14px; background: var(--surface); display: flex; flex-direction: column;
+  }
+  .gallery-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px 0; flex-shrink: 0; }
+  .gallery-title { font-weight: 800; font-size: 15px; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gallery-close {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface);
+    color: var(--muted); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .gallery-close:hover { border-color: var(--accent, #4a90e2); color: var(--accent, #4a90e2); }
+  .gallery-tabs { display: flex; gap: 4px; padding: 12px 18px 0; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .gallery-tab {
+    padding: 7px 12px; font-size: 12px; font-weight: 700; color: var(--muted);
+    background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .gallery-tab.active { color: var(--accent, #4a90e2); border-bottom-color: var(--accent, #4a90e2); }
+  .gallery-scroll { padding: 16px 18px 18px; overflow-y: auto; flex: 1; }
+  .gallery-tabpanel { display: none; }
+  .gallery-tabpanel.active { display: block; }
+
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .gallery-cell { position: relative; display: block; border-radius: 8px; overflow: hidden; background: #0f1420; aspect-ratio: 1 / 1; }
+  .gallery-cell img, .gallery-cell video, .gallery-cell iframe { width: 100%; height: 100%; object-fit: contain; display: block; border: 0; }
+  .gallery-empty { color: var(--faint); font-size: 12.5px; }
+
+  .modal-text-body {
+    font-size: 13.5px; line-height: 1.85; color: var(--ink); white-space: pre-line; margin: 0;
+    overflow-wrap: anywhere; word-break: break-word;
+  }
+  .modal-copy-btn {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12px; font-weight: 700;
+    color: var(--accent, #4a90e2); background: none; border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .modal-copy-btn:hover { border-color: var(--accent, #4a90e2); background: rgba(74,144,226,.06); }
+
+  /* ── Toasts ─────────────────────────────────────────────── */
+
+  .toast-shelf { position: fixed; bottom: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column; gap: 6px; }
+  .toast { padding: 10px 16px; background: var(--ink); color: #fff; border-radius: 9px; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+
+/* Card Video Container & Wrapper Styles — click-to-play */
+.card-video-wrapper {
+  position: relative;
+  width: 100%;
+  background: #000;
+  overflow: hidden;
+  border-radius: 8px;
+}
+/* Standalone use (outside a fixed-ratio grid cell): size by the
+   platform's real aspect ratio, set inline per-video. */
+.card-video-wrapper { aspect-ratio: 16 / 9; }
+/* Inside a mosaic cell / gallery cell, the parent already forces a
+   ratio (via --media-ar or a fixed square) — fill it instead of
+   fighting it with a second aspect-ratio. */
+.cell .card-video-wrapper,
+.gallery-cell .card-video-wrapper {
+  height: 100%;
+  aspect-ratio: unset;
+  border-radius: 0;
+}
+
+.video-container { position: absolute; inset: 0; }
+
+.video-cover {
+  position: absolute; inset: 0; cursor: pointer; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; padding: 0; width: 100%; height: 100%; background: none;
+}
+.cover-image { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s cubic-bezier(.16,1,.3,1); }
+.video-cover:hover .cover-image { transform: scale(1.02); }
+
+.play-button-overlay {
+  position: absolute; background: rgba(15,31,54,.85); color: #fff; border-radius: 50%;
+  width: 52px; height: 52px; box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  transition: all .25s cubic-bezier(.16,1,.3,1); display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.video-cover:hover .play-button-overlay { background: var(--platform-accent, var(--sig-video)); transform: scale(1.1); box-shadow: 0 12px 28px rgba(0,0,0,.4); }
+
+.platform-badge {
+  position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+  color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; letter-spacing: .5px;
+}
+
+.player-slot, .inline-iframe-player, .inline-html5-player {
+  position: absolute; inset: 0; width: 100%; height: 100%; background: #000; z-index: 1; border: 0;
+}
+  /* ══════════════════════════════════════════════════════════
+     Responsive breakpoints
+     ══════════════════════════════════════════════════════════ */
+
+  @media (max-width: 900px) { .engine-legend .legend-hint { display: none; } }
+
+  @media (max-width: 768px) {
+    .engine-head { gap: .7rem; }
+    .engine-sub { max-width: 100%; }
+    .engine-legend { gap: .7rem .9rem; }
+    .post-card-head { padding: .8rem .9rem; }
+    .post-card-body { --card-pad-x: .9rem; padding: 0 var(--card-pad-x) .9rem; }
+    .stamp { margin: 0 .9rem .7rem; }
+    /* Mosaic sizing is handled by aspect-ratio at every width now — just
+       tighten the height cap a bit for smaller screens. .post-media's
+       negative margin reads --card-pad-x directly (see base rule above),
+       so redefining the variable here is enough to keep the flush-edge
+       fix in sync — no separate margin value to maintain/drift here. */
+    .post-media { max-height: 60vh; }
+    .video-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .9rem; }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .gallery-modal { padding: 1rem; }
+  }
+
+  @media (max-width: 560px) {
+    .filter-chip { padding: .35rem .65rem; }
+    .post-card-head-right { gap: .55rem; }
+    .post-card-counts { justify-content: flex-start; }
+
+    /* At narrow widths, 2- and 3-image posts stack vertically instead of
+       squeezing side-by-side into thin slivers; each cell gets its own
+       aspect-ratio rather than sharing the mosaic's overall box. 4-image
+       posts stay a 2x2 grid using the base 1:1 ratio. */
+    .post-media[data-count="2"],
+    .post-media[data-count="3"] {
+      grid-template-columns: 1fr;
+      grid-template-rows: none;
+      aspect-ratio: unset;
+    }
+    .post-media[data-count="2"] .cell,
+    .post-media[data-count="3"] .cell {
+      height: auto;
+      aspect-ratio: 4 / 3;
+    }
+    .post-media[data-count="3"] .cell:nth-child(1) { grid-row: auto; }
+    .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; }
+
+    .video-grid { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+    .engine-attrib img.avatar { width: 28px; height: 28px; }
+    .gallery-body { max-height: 92vh; }
+    .icon-btn { width: 34px; height: 34px; font-size: 12px; }
+    .retry-btn { padding: 6px 13px; }
+    .follow-btn { padding: .5rem 1rem; }
+    .gallery-close { width: 38px; height: 38px; }
+    .filter-chip { padding: .45rem .8rem; }
+  }
+
+  @media (max-width: 380px) {
+    .engine-head h1 { font-size: 1.25rem; gap: .45rem; }
+    .engine-live { font-size: .68rem; padding: .3rem .6rem .3rem .5rem; }
+    .engine-legend { padding: .5rem .65rem; font-size: .68rem; }
+    .post-media { max-height: 50vh; }
+    .post-card-title { font-size: var(--text-sm); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="engine-wrap">
+  {% csrf_token %}
+
+  <div class="engine-layout">
+
+    <main class="engine-main">
+
+      <div class="engine-toolbar">
+        <div class="engine-filters" id="type-filters"></div>
+      </div>
+
+      <div id="panel-all" class="engine-panel active">
+        <div class="post-stream" id="stream-all"></div>
+      </div>
+
+      <div id="empty-state" class="engine-empty" hidden>
+        <i class="fa-solid fa-satellite-dish"></i>
+        <p id="empty-text">Nothing here yet. Posts show up as people connect services.</p>
+      </div>
+
+      <div class="engine-sentinel" id="sentinel">
+        <span class="spinner" id="sentinel-spinner" hidden></span>
+        <span id="sentinel-text"></span>
+      </div>
+
+    </main>
+
+    <aside class="engine-rail">
+      <section>
+        <h2>Top contributors</h2>
+        <ol class="contrib-list">
+          {% for c in top_contributors %}
+          <li class="contrib-row">
+            <span class="contrib-rank">{{ forloop.counter|stringformat:"02d" }}</span>
+            <img class="contrib-avatar" src="{{ c.profile_photo }}" alt="">
+            <a class="contrib-name" href="{{ c.profile_url }}">{{ c.profile_name|default:c.username }}</a>
+            <span class="contrib-count">{{ c.service_count }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section>
+        <h2>Marketplace</h2>
+        <div class="stat-grid">
+          <div>
+            <div class="stat-num">{{ total_services }}</div>
+            <div class="stat-label">Live listings</div>
+          </div>
+          <div>
+            <div class="stat-num">{{ total_users }}</div>
+            <div class="stat-label">Businesses</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+  </div>
+
+  <div class="gallery-modal" id="gallery-modal" role="dialog" aria-modal="true" aria-label="Post details">
+    <div class="gallery-body">
+      <div class="gallery-head">
+        <span class="gallery-title" id="gallery-title">Post details</span>
+        <button class="gallery-close" id="gallery-close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="gallery-tabs">
+        <button class="gallery-tab active" data-tab="media" type="button">Media</button>
+        <button class="gallery-tab" data-tab="links" type="button">Links</button>
+        <button class="gallery-tab" data-tab="text" type="button">Text</button>
+      </div>
+      <div class="gallery-scroll">
+        <div class="gallery-tabpanel active" data-panel="media"><div class="gallery-grid" id="gallery-grid"></div></div>
+        <div class="gallery-tabpanel" data-panel="links"><div id="gallery-links"></div></div>
+        <div class="gallery-tabpanel" data-panel="text">
+          <p class="modal-text-body" id="gallery-text"></p>
+          <button type="button" class="modal-copy-btn" id="gallery-copy-text">
+            <i class="fa-regular fa-copy"></i> Copy text
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-shelf" id="toast-shelf" aria-live="polite"></div>
+
+</div>
+
+{{ feed|json_script:"engine-initial-feed" }}
+{{ type_counts|json_script:"engine-type-counts" }}
+<script id="engine-initial-state" type="application/json">
+  {"nextCursor": {% if next_cursor %}"{{ next_cursor|escapejs }}"{% else %}null{% endif %}, "feedApiUrl": "{{ feed_api_url|escapejs }}"}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+(function () {
+  "use strict";
+
+  const initialFeed  = JSON.parse(document.getElementById('engine-initial-feed').textContent);
+  const typeCounts   = JSON.parse(document.getElementById('engine-type-counts').textContent) || {};
+  const initialState = JSON.parse(document.getElementById('engine-initial-state').textContent);
+
+  // "Load more" hits ponno:feed_load_more, which returns
+  // {items: [...], next_cursor: ...|null} — not the same shape as
+  // the public engine_feed_api (no `success`/`has_more`/`results`
+  // keys), so absence of next_cursor is what signals the end.
+  const LOAD_MORE_URL = initialState.feedApiUrl;
+  const RETRY_URL_TMPL = "/api/connected-services/{id}/refresh/";
+  const FOLLOW_URL_PREFIX   = "/customer/follow/";
+  const UNFOLLOW_URL_PREFIX = "/customer/unfollow/";
+
+  const SERVICE_ICONS = {
+    education: 'fa-graduation-cap', product: 'fa-box', brand: 'fa-tag', category: 'fa-shapes',
+    subcategory: 'fa-diagram-project', news: 'fa-newspaper', location: 'fa-location-dot',
+    api: 'fa-plug', person: 'fa-user', business: 'fa-building', entertainment: 'fa-clapperboard',
+  };
+  const SERVICE_LABELS = {
+    education: 'Education', product: 'Product', brand: 'Brand', category: 'Category',
+    subcategory: 'Subcategory', news: 'News', location: 'Location', api: 'API',
+    person: 'Person', business: 'Business', entertainment: 'Entertainment',
+  };
+  const ACTION_LABELS = {
+    product: 'listed a new product', brand: 'added a new brand', category: 'created a new category',
+    subcategory: 'created a new subcategory', education: 'shared an education resource',
+    news: 'posted a news update', location: 'added a new location', api: 'connected an API endpoint',
+    person: 'connected a new profile', business: 'connected a new business source',
+    entertainment: 'shared an entertainment listing',
+  };
+
+  const AVATAR_FALLBACK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23e2e8f0'/%3E%3Ccircle cx='50' cy='38' r='18' fill='%23fff'/%3E%3Cpath d='M20 88c0-22 16-34 30-34s30 12 30 34' fill='%23fff'/%3E%3C/svg%3E";
+
+  const state = {
+    posts: [],
+    nextCursor: initialState.nextCursor,
+    loading: false,
+    errored: false,
+    activeTypes: new Set(),
+    itemsByPostId: new Map(), // svc_id -> { post, media: [{kind,...}] } — full unsliced media, for the modal
+  };
+
+  const els = {
+    filters: document.getElementById('type-filters'),
+    streamAll: document.getElementById('stream-all'),
+    empty: document.getElementById('empty-state'),
+    emptyText: document.getElementById('empty-text'),
+    sentinel: document.getElementById('sentinel'),
+    spinner: document.getElementById('sentinel-spinner'),
+    sentinelText: document.getElementById('sentinel-text'),
+    modal: document.getElementById('gallery-modal'),
+    modalTitle: document.getElementById('gallery-title'),
+    modalGrid: document.getElementById('gallery-grid'),
+    modalLinks: document.getElementById('gallery-links'),
+    modalText: document.getElementById('gallery-text'),
+    modalClose: document.getElementById('gallery-close'),
+    modalTabs: document.querySelectorAll('.gallery-tab'),
+    modalPanels: document.querySelectorAll('.gallery-tabpanel'),
+    toastShelf: document.getElementById('toast-shelf'),
+  };
+
+  const esc = (s) => (s === null || s === undefined ? '' : String(s)).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  function domainOf(url, fallback) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return fallback || ''; }
+  }
+
+  function timeAgo(iso, fallback) {
+    if (fallback) return fallback;
+    if (!iso) return '';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  function faviconUrl(domainOrUrl) {
+    var host = domainOrUrl && domainOrUrl.indexOf('/') === -1 ? domainOrUrl : domainOf(domainOrUrl);
+    return host ? 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(host) + '&sz=64' : '';
+  }
+
+  function csrfToken() {
+    const cookieMatch = document.cookie.split(';').map((c) => c.trim()).find((c) => c.indexOf('csrftoken=') === 0);
+    if (cookieMatch) return cookieMatch.split('=')[1];
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) return meta.content;
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+  }
+
+  function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    els.toastShelf.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+
+  // Appends the right autoplay param per platform so the iframe starts
+  // playing immediately once the user has already clicked our own cover
+  // button, instead of showing the platform's OWN thumbnail + play
+  // button on top of ours (the "double play button" issue). TikTok has
+  // no such param — see the dedicated TikTok branch in videoTagHTML().
+  function withAutoplay(url, platform) {
+    if (!url) return url;
+    try {
+      const u = new URL(url, window.location.origin);
+      if (platform === 'youtube') {
+        u.searchParams.set('autoplay', '1');
+      } else if (platform === 'facebook') {
+        u.searchParams.set('autoplay', 'true');
+      }
+      return u.toString();
+    } catch (e) {
+      return url; // malformed/relative URL — fall back to original
+    }
+  }
+
+  // Image-load fallback for avatars, capture-phase so it also covers
+  // cards rendered later, not just the initial paint.
+  document.addEventListener('error', function (e) {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    if (img.classList.contains('avatar') || img.classList.contains('contrib-avatar')) {
+      if (img.src !== AVATAR_FALLBACK) img.src = AVATAR_FALLBACK;
+    } else if (img.classList.contains('favicon')) {
+      img.style.visibility = 'hidden';
+    }
+  }, true);
+
+  // ── Attribution / badges ────────────────────────────────────
+  // post.profile_url is now computed server-side in home.py
+  // (_serialize_service -> reverse('customer:profile_view', ...))
+  // instead of being rebuilt here from post.username.
+
+  function attribHTML(post) {
+    return `
+      <a class="engine-attrib attrib-link" href="${esc(post.profile_url)}">
+        <img class="avatar" src="${esc(post.profile_photo)}" alt="" loading="lazy">
+        <span class="who">
+          <span class="name-row">${esc(post.profile_name)}${post.profile_verified ? ' <i class="fa-solid fa-circle-check verified"></i>' : ''}</span>
+          <span class="meta-row">
+            <span>${esc(post.posted_at_human)}</span>
+            
+          </span>
+        </span>
+      </a>`;
+  }
+
+  function headRightHTML(post) {
+    let actionBtn = '';
+    if (post.is_own_post) {
+      actionBtn = '<span class="own-badge"></span>';
+    } else {
+      actionBtn = `<button type="button" class="follow-btn" data-user-id="${esc(post.user_id)}"
+                     data-username="${esc(post.username)}" data-following="${post.is_following ? 'true' : 'false'}">
+                     ${post.is_following ? 'Following' : 'Follow'}
+                   </button>`;
+    }
+    return `<div class="post-card-head-right">${signalBars(post)}${actionBtn}</div>`;
+  }
+
+  function signalBars(post) {
+    const vals = [post.images_count || 0, effectiveVideoCount(post)];
+    const max = Math.max(1, ...vals);
+    const cls = ['image', 'video'];
+    return `<span class="signal-bars" title="${vals[0]} photos · ${vals[1]} videos">
+      ${vals.map((v, i) => {
+        const h = v ? Math.max(4, Math.round((v / max) * 14)) : 3;
+        return `<i class="${v ? 'on ' + cls[i] : ''}" style="height:${h}px"></i>`;
+      }).join('')}
+    </span>`;
+  }
+
+  function statusRowHTML(post) {
+    if (post.fetch_status === 'error') {
+      const retryBtn = post.is_own_post
+        ? `<button type="button" class="retry-btn" data-retry-id="${esc(post.svc_id)}">Retry</button>` : '';
+      return `<div class="status-row is-error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span class="status-text">Couldn't load a preview${post.fetch_error ? ' — ' + esc(post.fetch_error) : ''}</span>
+                ${retryBtn}
+              </div>`;
+    }
+    if (post.fetch_status === 'pending') {
+      return `<div class="status-row is-pending">
+                <i class="fa-solid fa-circle-notch spin"></i>
+                <span class="status-text">Fetching preview — queued ${esc(post.posted_at_human)}</span>
+              </div>`;
+    }
+    return '';
+  }
+
+  function linksPreviewHTML(post) {
+    const links = (post.links || []).filter((l) => l.href).slice(0, 2);
+    if (!links.length) return '';
+    return `<div class="links-prev">${links.map((lnk) => `
+      <a href="${esc(lnk.href)}" target="_blank" rel="noopener noreferrer" class="link-row" onclick="event.stopPropagation()">
+        <span class="link-ico"><i class="fa-solid fa-link"></i></span>
+        <span class="link-body">
+          <span class="link-text">${esc(lnk.text || lnk.href)}</span>
+          <span class="link-host">${esc(domainOf(lnk.href, lnk.href))}</span>
+        </span>
+      </a>`).join('')}</div>`;
+  }
+
+  function textPreviewHTML(post) {
+    if (!post.has_text) return '';
+    const preview = (post.text || '').slice(0, 200);
+    return `<div class="text-prev">
+      <p class="text-prev-body">${esc(preview)}</p>
+      <button type="button" class="text-prev-expand" data-open-modal="${esc(post.svc_id)}" data-open-tab="text">Read full text →</button>
+    </div>`;
+  }
+
+  // ── Media (image link target, mosaic, gallery) ──────────────
+
+  function imageTarget(post, img) { return img.href || post.svc_url; }
+
+  // Platforms whose iframe embed can fail with zero JS-visible error
+  // (private/region-blocked video, no App-domain association, etc.)
+  // — cross-origin iframes never surface a load failure to the parent
+  // page. These get a small "Watch on X ↗" link so the post is never
+  // a dead end even when the embed silently renders blank.
+ 
+  const PLATFORM_LABELS = {
+    youtube: 'YouTube', vimeo: 'Vimeo', dailymotion: 'Dailymotion',
+    rumble: 'Rumble', streamable: 'Streamable', twitch: 'Twitch',
+    twitch_clip: 'Twitch', facebook: 'Facebook', tiktok: 'TikTok',
+    twitter: 'X', direct: 'source', unknown: 'source',
+  };
+
+  // Known native player shape per platform. Iframe embeds are
+  // cross-origin, so (unlike a same-origin <video>/<img>) there is no
+  // way to measure their real intrinsic size client-side — this table
+  // is used instead so a portrait TikTok embed isn't forced into the
+  // same generic landscape box as YouTube/Facebook/Vimeo/etc. Twitch
+  // clips are excerpts of a landscape broadcast, so they stay 16:9
+  // like the parent 'twitch' channel embed — only TikTok is natively
+  // vertical. Only platforms with a genuinely different native shape
+  // need an entry; anything missing falls back to the CSS default.
+  const PLATFORM_ASPECT_RATIOS = {
+    youtube: '16 / 9', vimeo: '16 / 9', dailymotion: '16 / 9',
+    rumble: '16 / 9', streamable: '16 / 9', twitch: '16 / 9',
+    facebook: '16 / 9', twitter: '16 / 9', twitch_clip: '16 / 9',
+    tiktok: '9 / 16',
+  };
+
+  // `v` is expected in the backend-normalized shape produced by
+  // megamind.utils.video_info.get_video_info_cached:
+  //   { platform, embed_url, watch_url, thumbnail, type, mime_type?, embeddable? }
+  // `type` is either 'iframe' or 'video' — set once, server-side, by
+  // the same resolver used for every platform (YouTube, Vimeo,
+  // Facebook, TikTok, Twitch, Rumble, Dailymotion, Streamable,
+  // Twitter/X, direct files). The frontend no longer guesses.
+  //
+  // `embeddable` is only ever explicitly set to `false` for Facebook
+  // entries the backend could NOT confirm via oEmbed (see
+  // video_info.py's Facebook branch) — in that case we skip the
+  // iframe attempt entirely rather than render a doomed blank frame,
+  // and go straight to a clickable "Watch on Facebook" thumbnail
+  // card. Any other platform (or a Facebook entry with
+  // embeddable === true) behaves exactly as before.
+  let playerSeq = 0;
+
+  function ratioForVideo(v) {
+    if (v.type === 'iframe' && v.platform && PLATFORM_ASPECT_RATIOS[v.platform]) return PLATFORM_ASPECT_RATIOS[v.platform];
+    return '16 / 9';
+  }
+
+  // Click-to-play design: renders a poster (thumbnail + play button +
+  // platform badge) first; the actual iframe/<video> is only created on
+  // click (see the data-play-video handler below). This replaces the old
+  // "attempt iframe, add a Watch-on-X link in case it silently fails"
+  // pattern — nothing is embedded eagerly, so there's nothing to fail
+  // silently, and the wrapper is sized to the platform's real aspect
+  // ratio from the start instead of guessing.
+  //
+  // TikTok special-case: TikTok's oEmbed iframe has no autoplay param
+  // at all, so stacking our own cover+play button on top of theirs just
+  // means the user has to click twice (once for our cover, once for
+  // TikTok's own play button inside the iframe). To avoid that double
+  // button, TikTok embeds skip our custom cover entirely and render
+  // the live iframe straight away — the same experience as opening the
+  // link directly, with a single, native TikTok play button.
+  function videoTagHTML(v) {
+    const ratio = ratioForVideo(v);
+    const src = v.embed_url || v.url || '';
+    const watchUrl = v.watch_url || src;
+    const label = PLATFORM_LABELS[v.platform] || 'Video';
+    const poster = v.thumbnail
+      ? `<img class="cover-image" src="${esc(v.thumbnail)}" alt="" loading="lazy">`
+      : `<div class="cover-image" style="background:#0f1420"></div>`;
+
+    // TikTok: no autoplay param exists for their embed, so our own
+    // cover would just produce a second, redundant play button once
+    // the iframe loads. Skip the cover and embed live instead.
+    if (v.type === 'iframe' && v.platform === 'tiktok') {
+      return `<div class="card-video-wrapper" style="aspect-ratio:${ratio}">
+        <iframe class="player-slot inline-iframe-player" src="${esc(src)}"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen loading="lazy"></iframe>
+        <span class="platform-badge">${esc(label)}</span>
+      </div>`;
+    }
+
+    // No playable embed at all — go straight to the source, no player UI.
+    if (v.type === 'iframe' && v.embeddable === false) {
+      return `<div class="card-video-wrapper" style="aspect-ratio:${ratio}">
+        <a class="video-cover" href="${esc(watchUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+          ${poster}
+          <span class="play-button-overlay"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+          <span class="platform-badge">${esc(label)}</span>
+        </a>
+      </div>`;
+    }
+
+    const id = 'vp' + (playerSeq++);
+    return `<div class="card-video-wrapper" id="${id}" style="aspect-ratio:${ratio}"
+                data-src="${esc(src)}" data-type="${esc(v.type)}" data-mime="${esc(v.mime_type || 'video/mp4')}"
+                data-platform="${esc(v.platform || '')}">
+      <div class="video-container">
+        <button type="button" class="video-cover" data-play-video aria-label="Play video">
+          ${poster}
+          <span class="play-button-overlay"><i class="fa-solid fa-play"></i></span>
+          <span class="platform-badge">${esc(label)}</span>
+        </button>
+      </div>
+    </div>`;
+  }
+
+  // Number of videos actually available to render for a post. Mirrors
+  // the fallback priority buildMediaSet() uses: real extracted videos
+  // first; if there are none, a single video only counts if
+  // post.video_info resolved to something real (is_fallback === false
+  // — i.e. either an extracted video or the service_url itself
+  // resolving to a known platform), never a themed placeholder clip.
+  // Used so the signal bar / count pill never shows "1 video" pointing
+  // at a placeholder, and never shows "0" when a source-URL video is
+  // actually about to render in the mosaic.
+  function effectiveVideoCount(post) {
+    if (post.videos && post.videos.length) return post.videos_count || post.videos.length;
+    if (post.video_info && post.video_info.is_fallback === false) return 1;
+    return 0;
+  }
+
+  // Full (unsliced) media set for a post — the card mosaic only shows
+  // the first 4; the "+N" overlay and the count pills open the modal
+  // to this complete set.
+  //
+  // Falls back to post.video_info when extracted videos are empty:
+  // resolve_post_video() (backend) already resolved the service_url
+  // itself to a known video platform in that case (e.g. a bare
+  // YouTube/TikTok/etc. link added as the connected service's URL,
+  // which the raw-HTML scraper can't pull a <video> tag out of).
+  // Only used when is_fallback === false, so a themed placeholder clip
+  // (used when nothing resolves) never gets rendered as if it were
+  // real media for this post.
+  function buildMediaSet(post) {
+    const videos = (post.videos && post.videos.length)
+      ? post.videos
+      : (post.video_info && post.video_info.is_fallback === false ? [post.video_info] : []);
+    return [
+      ...videos.map((v) => ({ kind: 'video', ...v })),
+      ...(post.images || []).map((im) => ({ kind: 'image', url: im.url, alt: im.alt, href: im.href })),
+    ];
+  }
+
+  function mosaicHTML(post) {
+    const media = buildMediaSet(post);
+    state.itemsByPostId.set(String(post.svc_id), { post, media });
+    if (!media.length) return '';
+
+    const shown = media.slice(0, 4);
+    const extra = media.length - shown.length;
+
+    const cells = shown.map((it, i) => {
+      const isLast = i === shown.length - 1 && extra > 0;
+      const classes = ['cell', it.kind === 'video' ? 'is-video' : ''];
+      if (isLast) classes.push('more-overlay');
+      const dataMore = isLast ? ` data-more="+${extra}"` : '';
+
+      let inner;
+      if (isLast) {
+        const thumb = it.kind === 'video' ? (it.thumbnail || post.og_thumbnail || '') : it.url;
+        inner = `<button type="button" class="cell-gallery-btn" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"
+                    aria-label="View all ${media.length} items for this post" style="background-image:url('${esc(thumb)}')"></button>`;
+      } else if (it.kind === 'video') {
+        // withFallbackLink: true — previously omitted here, which meant
+        // a Facebook (or TikTok/Twitch/X) video in the main "All" tab
+        // mosaic that silently failed to embed just showed a blank
+        // black box, with no way out. The modal and Videos-tab grid
+        // already passed this; now the mosaic matches them.
+        inner = videoTagHTML(it);
+      } else {
+        inner = `<a class="media-link" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+                    <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy"></a>`;
+      }
+      return `<div class="${classes.join(' ')}"${dataMore}>${inner}</div>`;
+    }).join('');
+
+    const variant = shown.length === 1 ? 'm-solo' : '';
+    // Tag the container with the solo item's platform/type so
+    // bindSoloAspectRatios can apply a known iframe shape immediately,
+    // instead of waiting on a load event that cross-origin embeds
+    // never usefully fire.
+    const soloVideoAttrs = (variant === 'm-solo' && shown[0].kind === 'video')
+      ? ` data-video-platform="${esc(shown[0].platform || '')}" data-video-type="${esc(shown[0].type || '')}"`
+      : '';
+    return `<div class="post-media ${variant}" data-count="${shown.length}"${soloVideoAttrs}>${cells}</div>`;
+  }
+
+  // Sets --media-ar on a solo-image/video mosaic container to reflect
+  // the real shape of its content, instead of always forcing the
+  // generic 4:3 fallback.
+  //
+  // Priority:
+  //  1. Iframe embed with a known platform shape (PLATFORM_ASPECT_RATIOS)
+  //     — set immediately. Cross-origin iframes (YouTube, Facebook,
+  //     TikTok, Twitch, ...) expose no intrinsic size to measure, so
+  //     this lookup is the only way to get a portrait TikTok clip its
+  //     correct 9:16 box instead of a squashed 4:3 one.
+  //  2. Same-origin <video>/<img> (direct video files, unknown
+  //     platform) — measure the real intrinsic size once available.
+  //  3. Otherwise keeps the CSS fallback (4/3).
+  function bindMediaAspectRatio(containerEl, mediaEl, kind) {
+    if (!containerEl || !mediaEl) return;
+    const apply = (w, h) => { if (w > 0 && h > 0) containerEl.style.setProperty('--media-ar', `${w} / ${h}`); };
+    if (kind === 'video' && mediaEl.tagName === 'VIDEO') {
+      if (mediaEl.readyState >= 1 && mediaEl.videoWidth) apply(mediaEl.videoWidth, mediaEl.videoHeight);
+      else mediaEl.addEventListener('loadedmetadata', () => apply(mediaEl.videoWidth, mediaEl.videoHeight), { once: true });
+    } else if (kind === 'image') {
+      if (mediaEl.complete && mediaEl.naturalWidth) apply(mediaEl.naturalWidth, mediaEl.naturalHeight);
+      else mediaEl.addEventListener('load', () => apply(mediaEl.naturalWidth, mediaEl.naturalHeight), { once: true });
+    }
+  }
+
+  // Runs after every render pass — finds solo-media mosaics within
+  // `root` and sets their aspect ratio (known platform shape for
+  // iframes, measured intrinsic size for <video>/<img>).
+  function bindSoloAspectRatios(root) {
+    root.querySelectorAll('.post-media.m-solo').forEach((container) => {
+      const cell = container.querySelector('.cell');
+      if (!cell) return;
+
+      const platform = container.getAttribute('data-video-platform');
+      const videoType = container.getAttribute('data-video-type');
+
+      if (videoType === 'iframe' && platform) {
+        const ratio = PLATFORM_ASPECT_RATIOS[platform];
+        if (ratio) { container.style.setProperty('--media-ar', ratio); return; }
+      }
+
+      const video = cell.querySelector('video');
+      const img = cell.querySelector('img');
+      if (video) bindMediaAspectRatio(container, video, 'video');
+      else if (img) bindMediaAspectRatio(container, img, 'image');
+    });
+  }
+
+  // ── Post-details modal (Media / Links / Text) ───────────────
+
+  function openPostModal(svcId, tab) {
+    const entry = state.itemsByPostId.get(String(svcId));
+    if (!entry) return;
+    const { post, media } = entry;
+
+    els.modalTitle.textContent = post.og_title || post.svc_name || 'Post details';
+
+    els.modalGrid.innerHTML = media.length
+      ? media.map((it) => it.kind === 'video'
+          ? `<div class="gallery-cell">${videoTagHTML(it)}</div>`
+          : `<a class="gallery-cell" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener">
+               <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" loading="lazy"></a>`
+        ).join('')
+      : '<p class="gallery-empty">No images or videos attached.</p>';
+
+    const links = (post.links || []).filter((l) => l.href);
+    els.modalLinks.innerHTML = links.length
+      ? links.map((lnk) => {
+          const fav = faviconUrl(lnk.href);
+          const favImg = fav
+            ? `<img class="favicon" style="width:30px;height:30px;border-radius:8px;padding:5px;background:rgba(74,144,226,.1);" src="${esc(fav)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+            : '<span class="link-ico"></span>';
+          return `<a href="${esc(lnk.href)}" target="_blank" rel="noopener noreferrer" class="link-row" style="margin-bottom:8px;">
+                    ${favImg}
+                    <span class="link-body">
+                      <span class="link-text">${esc(lnk.text || lnk.href)}</span>
+                      <span class="link-host">${esc(domainOf(lnk.href, lnk.href))}</span>
+                    </span>
+                  </a>`;
+        }).join('')
+      : '<p class="gallery-empty">No links extracted.</p>';
+
+    els.modalText.textContent = post.text || 'No text extracted for this listing.';
+
+    els.modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    switchModalTab(tab || 'media');
+  }
+
+  function closePostModal() {
+    els.modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function switchModalTab(tab) {
+    els.modalTabs.forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
+    els.modalPanels.forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
+  }
+
+  els.modalTabs.forEach((t) => t.addEventListener('click', () => switchModalTab(t.dataset.tab)));
+  els.modalClose.addEventListener('click', closePostModal);
+  els.modal.addEventListener('click', (e) => { if (e.target === els.modal) closePostModal(); });
+  document.getElementById('gallery-copy-text').addEventListener('click', () => {
+    navigator.clipboard.writeText(els.modalText.textContent || '')
+      .then(() => toast('Text copied')).catch(() => toast('Copy failed'));
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePostModal(); });
+
+  
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-open-modal]');
+    if (trigger) {
+      e.preventDefault();
+      openPostModal(trigger.getAttribute('data-open-modal'), trigger.getAttribute('data-open-tab') || 'media');
+    }
+  });
+
+  // ── Renderers ────────────────────────────────────────────────
+
+  function renderPostCard(post) {
+    const domain = post.service_domain || domainOf(post.svc_url, post.svc_name);
+    const videoCount = effectiveVideoCount(post);
+    return `
+      <article class="post-card enter" data-service-type="${esc(post.svc_type)}" data-fetch="${esc(post.fetch_status)}">
+        <div class="post-card-head">
+          ${attribHTML(post)}
+          ${headRightHTML(post)}
+        </div>
+        <div class="stamp">${esc(post.action_label || ACTION_LABELS[post.svc_type] || 'connected a new source')}</div>
+        <div class="post-card-body">
+          <p class="post-card-title"><a href="${esc(post.svc_url)}" target="_blank" rel="noopener noreferrer">${esc(post.fetch_status === 'error' ? post.svc_name : (post.og_title || post.svc_name))}</a></p>
+          ${post.fetch_status !== 'error' && post.og_description ? `<p class="post-card-desc">${esc(post.og_description)}</p>` : ''}
+          ${statusRowHTML(post)}
+          ${mosaicHTML(post)}
+          <div class="post-card-counts">
+            <span class="counts-left">
+  ${post.fetch_status !== 'error' && post.images_count ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"><i class="fa-solid fa-image image"></i>${post.images_count}</button>` : ''}
+  ${post.fetch_status !== 'error' && videoCount ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="media"><i class="fa-solid fa-video video"></i>${videoCount}</button>` : ''}
+  ${post.fetch_status !== 'error' && post.links_count ? `<button type="button" class="count-pill" data-open-modal="${esc(post.svc_id)}" data-open-tab="links"><i class="fa-solid fa-link"></i>${post.links_count}</button>` : ''}
+              <a class="visit-source" href="${esc(post.svc_url)}" target="_blank" rel="noopener">
+                <img class="favicon" src="https://www.google.com/s2/favicons?domain=${esc(domain)}&sz=32" alt="" loading="lazy">
+                ${esc(domain)} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+            </span>
+            <span class="counts-right">
+              <button type="button" class="icon-btn" title="Copy link" data-copy-link="${esc(post.svc_url)}"><i class="fa-regular fa-copy"></i></button>
+            </span>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  // ── Filtering + full render ────────────────────────────────
+
+  function filteredPosts() {
+    if (!state.activeTypes.size) return state.posts;
+    return state.posts.filter((p) => state.activeTypes.has(p.svc_type));
+  }
+
+  function renderAll() {
+    const posts = filteredPosts();
+    const frag = posts.map((post) => renderPostCard(post)); // also (re)populates state.itemsByPostId via mosaicHTML
+    els.streamAll.innerHTML = frag.join('');
+    bindSoloAspectRatios(els.streamAll); // set aspect ratio for solo-media posts (known platform shape or measured size)
+    updateEmptyState();
+  }
+
+  function updateEmptyState() {
+    const isEmpty = els.streamAll.children.length === 0 && !state.loading;
+    els.empty.hidden = !isEmpty;
+    if (isEmpty) {
+      const scoped = state.activeTypes.size ? ' matching this filter' : '';
+      els.emptyText.textContent = state.posts.length
+        ? `No posts${scoped}. Try another filter.`
+        : `Nothing here yet. Posts show up as people connect services.`;
+    }
+  }
+
+  // ── Skeletons ────────────────────────────────────────────────
+
+  function skeletonCard() {
+    return `<div class="skel-card">
+      <div class="skel-head"><div class="skel-circle"></div><div class="skel-lines"><div class="skel-line w40"></div><div class="skel-line w70"></div></div></div>
+      <div class="skel-line w90"></div>
+      <div class="skel-block"></div>
+    </div>`;
+  }
+  function showSkeletons(n) { els.streamAll.insertAdjacentHTML('beforeend', Array(n).fill(skeletonCard()).join('')); }
+  function clearSkeletons() { els.streamAll.querySelectorAll('.skel-card').forEach((n) => n.remove()); }
+
+  // ── Service-type filter chips (counts from the server-side global
+  //    aggregate, so every type is listed even before it's scrolled
+  //    into view; filtering itself only affects already-loaded posts) ──
+
+  function buildFilterChips() {
+    const types = Object.keys(typeCounts).sort((a, b) => typeCounts[b] - typeCounts[a]);
+    if (!types.length) { els.filters.hidden = true; return; }
+    els.filters.hidden = false;
+    els.filters.innerHTML = types.map((t) => `
+      <button class="filter-chip" data-type="${esc(t)}" type="button">
+        <i class="fa-solid ${SERVICE_ICONS[t] || 'fa-circle-nodes'}"></i>
+        ${esc(SERVICE_LABELS[t] || t)}
+        <i class="fa-solid fa-xmark fx-clear"></i>
+      </button>`).join('');
+
+    els.filters.querySelectorAll('.filter-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.type;
+        if (state.activeTypes.has(t)) { state.activeTypes.delete(t); chip.classList.remove('active'); }
+        else { state.activeTypes.add(t); chip.classList.add('active'); }
+        renderAll();
+      });
+    });
+  }
+  // ── Follow / unfollow ───────────────────────────────────────
+  // A poster can appear on multiple cards (several connected
+  // services); sync every button for that user_id, not just the one
+  // clicked, so state never drifts between cards for the same person.
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.follow-btn');
+    if (!btn || btn.disabled) return;
+
+    const username = btn.getAttribute('data-username');
+    const userId = btn.getAttribute('data-user-id');
+    if (!username || !userId) return;
+
+    const allBtns = document.querySelectorAll(`.follow-btn[data-user-id="${CSS.escape(userId)}"]`);
+    const wasFollowing = btn.getAttribute('data-following') === 'true';
+    const nowFollowing = !wasFollowing;
+
+    function setState(following) {
+      allBtns.forEach((b) => {
+        b.setAttribute('data-following', following ? 'true' : 'false');
+        b.textContent = following ? 'Following' : 'Follow';
+      });
+    }
+
+    allBtns.forEach((b) => { b.disabled = true; b.style.opacity = '0.6'; });
+    setState(nowFollowing);
+
+    const url = (nowFollowing ? FOLLOW_URL_PREFIX : UNFOLLOW_URL_PREFIX) + username + '/';
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken(), 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then((r) => {
+        if (!r.ok) {
+          const msg = r.status === 403 ? 'Please log in to follow users.' : r.status === 404 ? 'User not found.' : `Server error (${r.status}).`;
+          throw new Error(msg);
+        }
+        return r.json();
+      })
+      .then((data) => {
+        setState(!!data.following);
+        toast(data.following ? 'You are now following this user.' : 'Unfollowed successfully.');
+      })
+      .catch((err) => {
+        console.error('Follow/unfollow failed:', err);
+        setState(wasFollowing);
+        toast(err.message || "Couldn't update follow status — try again");
+      })
+      .finally(() => allBtns.forEach((b) => { b.disabled = false; b.style.opacity = ''; }));
+  });
+
+  // ── Retry (delegates straight to megamind's refresh endpoint) ─
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.retry-btn');
+    if (!btn || btn.disabled) return;
+    const svcId = btn.getAttribute('data-retry-id');
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Retrying…';
+
+    fetch(RETRY_URL_TMPL.replace('{id}', svcId), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken() },
+      credentials: 'same-origin',
+    })
+      .then((r) => {
+        if (r.status === 429) { toast('Please wait before retrying again'); return; }
+        if (!r.ok) throw new Error('refresh failed');
+        toast('Refresh queued');
+      })
+      .catch(() => toast('Retry failed — try again shortly'))
+      .finally(() => { btn.disabled = false; btn.textContent = original; });
+  });
+
+  // ── Copy link ──────────────────────────────────────────────
+
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-copy-link]');
+    if (!btn) return;
+    navigator.clipboard.writeText(btn.getAttribute('data-copy-link'))
+      .then(() => toast('Link copied')).catch(() => toast('Copy failed'));
+  });
+
+  // Instantiates the real player only when the poster is clicked.
+  // Reads the video's platform (set as data-platform on the wrapper by
+  // videoTagHTML) so YouTube/Facebook get an autoplay flag appended to
+  // their embed URL at play-time — this avoids showing the platform's
+  // own thumbnail + play button a second time after ours was already
+  // clicked. TikTok never reaches this handler since it has no cover
+  // to click in the first place (see the TikTok branch in videoTagHTML).
+  document.addEventListener('click', function (e) {
+    const cover = e.target.closest('[data-play-video]');
+    if (!cover) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const wrapper = cover.closest('.card-video-wrapper');
+    const container = wrapper && wrapper.querySelector('.video-container');
+    if (!wrapper || !container) return;
+
+    const src      = wrapper.getAttribute('data-src');
+    const type     = wrapper.getAttribute('data-type');
+    const mime     = wrapper.getAttribute('data-mime');
+    const platform = wrapper.getAttribute('data-platform');
+
+    let player;
+    if (type === 'iframe') {
+      player = document.createElement('iframe');
+      player.className = 'player-slot inline-iframe-player';
+      player.src = withAutoplay(src, platform);
+      player.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+      player.allowFullscreen = true;
+      player.loading = 'lazy';
+    } else {
+      player = document.createElement('video');
+      player.className = 'player-slot inline-html5-player';
+      player.controls = true;
+      player.autoplay = true;
+      player.innerHTML = `<source src="${esc(src)}" type="${esc(mime)}">`;
+    }
+
+    container.innerHTML = '';
+    container.appendChild(player);
+  });
+
+  // ── Video playback overlay sync (native controls do the real work) ─
+
+  document.addEventListener('play', (e) => { e.target.closest('.video-wrap')?.classList.add('playing'); }, true);
+  document.addEventListener('pause', (e) => { e.target.closest('.video-wrap')?.classList.remove('playing'); }, true);
+
+  // ── Infinite scroll ─────────────────────────────────────────
+
+  async function loadMore() {
+    if (state.loading || !state.nextCursor) return;
+    state.loading = true;
+    state.errored = false;
+    els.spinner.hidden = false;
+    els.sentinelText.textContent = 'Loading more…';
+    showSkeletons(3);
+
+    try {
+      const params = new URLSearchParams({ cursor: state.nextCursor });
+      const res = await fetch(`${LOAD_MORE_URL}?${params.toString()}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error('load-more failed');
+      const page = await res.json();
+
+      state.posts = state.posts.concat(page.items || []);
+      state.nextCursor = page.next_cursor || null;
+      buildFilterChips();
+      renderAll();
+    } catch (err) {
+      console.error('Feed load-more failed:', err);
+      state.errored = true;
+    } finally {
+      clearSkeletons();
+      state.loading = false;
+      els.spinner.hidden = true;
+      renderSentinelText();
+    }
+  }
+
+  function renderSentinelText() {
+    if (state.errored) {
+      els.sentinelText.innerHTML = `Couldn't load more posts. <button class="sentinel-retry" id="retry-sentinel-btn" type="button">Retry</button>`;
+      document.getElementById('retry-sentinel-btn')?.addEventListener('click', () => { state.errored = false; loadMore(); });
+      return;
+    }
+    els.sentinelText.textContent = state.nextCursor ? '' : (state.posts.length ? "You're all caught up" : '');
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+  observer.observe(els.sentinel);
+
+  // ── Boot ────────────────────────────────────────────────────
+
+  state.posts = initialFeed;
+  buildFilterChips();
+  renderAll();
+  renderSentinelText();
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'customer/css/profile_edit.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+    /* ============================================================
+       PAGE-LOCAL TOKENS
+       (only adds names base.html's :root doesn't already define —
+       nothing here overrides --accent, --shadow-*, --space-*, --text-*,
+       --header-h, etc. from base.html)
+    ============================================================ */
+    :root {
+        --primary-dark:     #0a2540;
+        --primary-blue:     #0d47a1;
+        --accent-gold:      #d4af37;
+        --accent-amber:     #ffb300;
+        --success-emerald:  #00b894;
+        --danger-crimson:   #e74c3c;
+        --green:            #1a6b3a;
+        --green-bg:         #edf7f1;
+        --gold-2:           #8b6508;
+        --text-primary:     #1a202c;
+        --text-secondary:   #4a5568;
+        --text-muted:       #718096;
+        --bg-primary:       #ffffff;
+        --bg-tertiary:      #edf2f7;
+        --border-light:     #e2e8f0;
+        --border-medium:    #cbd5e0;
+        --r-sm:  8px;
+        --r-md:  14px;
+        --r-lg:  20px;
+        --font-display: 'Playfair Display', serif;
+        --font-body:    'Outfit', 'roboto', sans-serif;
+    }
+
+    /* ============================================================
+       FLUID SIZING HELPERS
+       clamp() scales these smoothly between a 360px phone and a
+       1440px+ desktop instead of jumping at fixed breakpoints; the
+       breakpoints below then handle *layout* changes (columns,
+       stacking, tap targets) that clamp() can't do on its own.
+    ============================================================ */
+    :root {
+        --container-max: 1100px;
+        --gutter: clamp(16px, 4vw, 24px);
+    }
+
+    * { box-sizing: border-box; }
+
+    /* ============================================================
+       PAGE HEADER
+    ============================================================ */
+    .page-header {
+        padding: clamp(20px, 5vw, 28px) var(--gutter) 20px;
+        max-width: var(--container-max);
+        margin: 0 auto;
+        font-family: var(--font-body);
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 3vw, 16px);
+        flex-wrap: wrap;
+    }
+
+    .header-icon {
+        width: clamp(44px, 8vw, 52px);
+        height: clamp(44px, 8vw, 52px);
+        border-radius: var(--r-md);
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(1.15rem, 3vw, 1.4rem);
+        box-shadow: var(--shadow-md);
+        flex-shrink: 0;
+    }
+
+    .header-text { min-width: 0; }
+
+    .page-title {
+        font-family: var(--font-display);
+        font-size: clamp(1.5rem, 4.5vw, 1.9rem);
+        color: var(--text-primary);
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .title-accent { color: var(--primary-blue); }
+
+    .page-subtitle {
+        color: var(--text-secondary);
+        font-size: clamp(.85rem, 2.2vw, .95rem);
+        margin-top: 2px;
+    }
+
+    /* ============================================================
+       BUSINESS STATS
+    ============================================================ */
+    .business-stats-section {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--gutter) 8px;
+        font-family: var(--font-body);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: clamp(10px, 2.5vw, 14px);
+    }
+
+    .stat-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--r-md);
+        padding: clamp(12px, 3vw, 16px) clamp(14px, 3vw, 18px);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: var(--shadow-sm);
+        transition: box-shadow var(--t-base), transform var(--t-base);
+        min-width: 0;
+    }
+    .stat-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+
+    .stat-icon {
+        width: clamp(36px, 8vw, 42px);
+        height: clamp(36px, 8vw, 42px);
+        border-radius: var(--r-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(.9rem, 2.5vw, 1.05rem);
+        flex-shrink: 0;
+        background: var(--bg-tertiary);
+        color: var(--primary-blue);
+    }
+    .stat-card.accent-gold .stat-icon   { background: #fdf3e0; color: var(--gold-2); }
+    .stat-card.accent-green .stat-icon  { background: var(--green-bg); color: var(--green); }
+
+    .stat-value {
+        font-size: clamp(1.1rem, 3.2vw, 1.35rem);
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+    }
+
+    .stat-label {
+        font-size: clamp(.68rem, 1.8vw, .78rem);
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ============================================================
+       FORM (minimal fallback — profile_edit.css governs the rest)
+    ============================================================ */
+    .profile-content {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: clamp(18px, 4vw, 24px) var(--gutter) 40px;
+        font-family: var(--font-body);
+    }
+    .section-card {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .card-header { padding: clamp(16px, 3.5vw, 20px) clamp(16px, 4vw, 24px); border-bottom: 1px solid var(--border-light); }
+    .section-title { font-family: var(--font-display); font-size: clamp(1.1rem, 3vw, 1.25rem); color: var(--text-primary); }
+    .card-body.form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: clamp(14px, 3vw, 18px);
+        padding: clamp(16px, 4vw, 22px) clamp(16px, 4vw, 24px);
+    }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-label {
+        display: flex; align-items: center; gap: 8px;
+        font-size: clamp(.8rem, 2vw, .85rem); font-weight: 700; color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .form-input, .form-textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1px solid var(--border-medium);
+        border-radius: var(--r-sm);
+        font-family: var(--font-body);
+        font-size: max(.95rem, 16px); /* >=16px prevents iOS auto-zoom on focus */
+        color: var(--text-primary);
+        background: var(--bg-primary);
+        transition: border-color var(--t-fast);
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    select.form-input {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234a5568'><path d='M5.5 7.5l4.5 5 4.5-5z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 18px;
+        padding-right: 36px;
+    }
+    .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 3px rgba(13, 71, 161, .12);
+    }
+    /* Keep a visible focus ring for keyboard users on non-form controls too */
+    a:focus-visible, button:focus-visible {
+        outline: 2px solid var(--primary-blue);
+        outline-offset: 2px;
+    }
+    .form-textarea { resize: vertical; min-height: 96px; }
+    .form-hint { display: block; margin-top: 5px; font-size: clamp(.72rem, 1.8vw, .78rem); color: var(--text-muted); }
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+    }
+    .btn-primary, .btn-secondary {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 12px 22px;
+        border-radius: var(--r-sm);
+        font-weight: 700;
+        font-size: .92rem;
+        min-height: 44px; /* comfortable touch target */
+        flex: 1 1 auto;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
+        color: #fff;
+        box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+    /* Messages */
+    .messages-section { margin-bottom: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .alert {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 13px 16px;
+        border-radius: var(--r-sm);
+        font-size: .9rem;
+    }
+    .alert-success { background: var(--green-bg); color: var(--green); }
+    .alert-error   { background: #fdecea; color: var(--danger-crimson); }
+    .alert-info    { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .alert-close { margin-left: auto; opacity: .6; flex-shrink: 0; }
+
+    /* ============================================================
+       BREAKPOINTS
+       Fluid clamp()s above cover most in-between sizing; these
+       handle actual layout shifts (column counts, stacking, order).
+    ============================================================ */
+
+    /* Large desktop / wide monitors: give the form a touch more
+       breathing room instead of stretching inputs edge to edge. */
+    @media (min-width: 1400px) {
+        :root { --container-max: 1240px; }
+        .card-body.form-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Small laptop / large tablet */
+    @media (max-width: 1024px) {
+        .card-body.form-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Tablet portrait */
+    @media (max-width: 768px) {
+        .card-body.form-grid { grid-template-columns: 1fr; }
+        .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* Phones */
+    @media (max-width: 560px) {
+        .header-content { gap: 12px; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .stat-card { padding: 12px 14px; gap: 10px; }
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn-primary,
+        .form-actions .btn-secondary { width: 100%; }
+        .alert { font-size: .85rem; }
+    }
+
+    /* Very small phones (older/small-screen devices) */
+    @media (max-width: 360px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-value { font-size: 1.05rem; }
+        .header-icon { display: none; } /* reclaim space for the title on the narrowest screens */
+    }
+
+    /* Respect users who've asked for reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        .stat-card { transition: none; }
+        .stat-card:hover { transform: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-container">
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <div class="header-text">
+                <h1 class="page-title">
+                    <span class="title-accent">Business Profile</span>
+                </h1>
+               <p class="page-subtitle">Update your business information</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Stats (from view context) -->
+<div class="business-stats-section">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-box-open"></i></div>
+            <div>
+                <div class="stat-value">{{ products_listed_count }}</div>
+                <div class="stat-label">Products Listed</div>
+            </div>
+        </div>
+        <div class="stat-card accent-green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">{{ active_products_count }}</div>
+                <div class="stat-label">Active Products</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <div class="stat-value">{{ followers_count }}</div>
+                <div class="stat-label">Followers</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-user-group"></i></div>
+            <div>
+                <div class="stat-value">{{ followings_count }}</div>
+                <div class="stat-label">Following</div>
+            </div>
+        </div>
+        <div class="stat-card accent-gold">
+            <div class="stat-icon"><i class="fa-solid fa-tags"></i></div>
+            <div>
+                <div class="stat-value">{{ brands_count }}</div>
+                <div class="stat-label">Brands on Platform</div>
+            </div>
+        </div>
+        <div class="stat-card accent-gold">
+            <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div>
+                <div class="stat-value">{{ categories_count }}</div>
+                <div class="stat-label">Categories</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="profile-content">
+    <div class="content-container">
+        <main class="main-content" role="main">
+
+            {% if messages %}
+            <section class="messages-section">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <div class="alert-icon">
+                        {% if message.tags == 'success' %}
+                            <i class="fa-solid fa-circle-check"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-info"></i>
+                        {% endif %}
+                    </div>
+                    <div class="alert-content"><p>{{ message }}</p></div>
+                    <button class="alert-close" onclick="this.parentElement.style.display='none'" aria-label="Dismiss">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <form method="POST" class="edit-form" novalidate>
+                {% csrf_token %}
+                <!-- BUSINESS INFO (dealers only)
+                     Field names match request.POST.get(...) keys read by
+                     CreateBusinessProfileView exactly. Values are now
+                     sourced from `business_info` (apps.customer.models.
+                     business_info.BusinessInfo), not `profile_info` --
+                     business_name/business_type/business_email/
+                     business_phone live there under the same names,
+                     while the old business_website/business_description
+                     fields are now BusinessInfo.website / .description. -->
+
+                <section class="edit-profile-section">
+                    <div class="section-card">
+                        <div class="card-header">
+                            <h2 class="section-title">
+                                <span class="title-accent">Business</span> Information
+                            </h2>
+                        </div>
+                        <div class="card-body form-grid">
+
+                            <div class="form-group">
+                                <label for="business_name" class="form-label">
+                                    <i class="fa-solid fa-building"></i>
+                                    Business Name
+                                </label>
+                                <input type="text" name="business_name" id="business_name"
+                                       value="{{ business_info.business_name|default:'' }}"
+                                       class="form-input"
+                                       placeholder="Acme Electronics Ltd."
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_type" class="form-label">
+                                    <i class="fa-solid fa-industry"></i>
+                                    Business Type
+                                </label>
+                                <select name="business_type" id="business_type" class="form-input">
+                                    <option value="" {% if not business_info.business_type %}selected{% endif %}>
+                                        Select a business type
+                                    </option>
+                                    {% for value, label in business_info.BusinessType.choices %}
+                                    <option value="{{ value }}" {% if business_info.business_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <span class="form-hint">Defaults to "Other" if left unselected.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_email" class="form-label">
+                                    <i class="fa-solid fa-envelope"></i>
+                                    Business Email
+                                </label>
+                                <input type="email" name="business_email" id="business_email"
+                                       value="{{ business_info.business_email|default:'' }}"
+                                       class="form-input"
+                                       placeholder="contact@business.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="business_phone" class="form-label">
+                                    <i class="fa-solid fa-phone"></i>
+                                    Business Phone
+                                </label>
+                                <input type="tel" name="business_phone" id="business_phone"
+                                       value="{{ business_info.business_phone|default:'' }}"
+                                       class="form-input"
+                                       placeholder="+1 234 567 8900">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="business_website" class="form-label">
+                                    <i class="fa-solid fa-globe"></i>
+                                    Website
+                                </label>
+                                <input type="url" name="business_website" id="business_website"
+                                       value="{{ business_info.website|default:'' }}"
+                                       class="form-input"
+                                       placeholder="https://www.yourbusiness.com">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="business_description" class="form-label">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                    Business Description
+                                </label>
+                                <textarea name="business_description" id="business_description" rows="4"
+                                          maxlength="1000"
+                                          class="form-textarea"
+                                          placeholder="Describe your business and services...">{{ business_info.description|default:'' }}</textarea>
+                                <span class="form-hint">{{ business_info.description|default:''|length }} / 1000 characters</span>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Changes</span>
+                    </button>
+                    <!-- Points at the same URL name the view itself redirects
+                         to on success ("business_profile" -- see
+                         CreateBusinessProfileView's `return redirect(...)`),
+                         so Save and Cancel both land the user on the same
+                         page instead of Cancel bouncing them somewhere else. -->
+                    <a href="{% url 'business_profile' %}" class="btn-secondary">
+                        <i class="fa-solid fa-xmark"></i>
+                        <span>Cancel</span>
+                    </a>
+                </div>
+
+            </form>
+        </main>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live character counter for business description.
+// (Drawer open/close is already wired up in base.html — no need to
+// duplicate that JS here.)
+const bizDesc = document.getElementById('business_description');
+if (bizDesc) {
+    const hint = bizDesc.nextElementSibling;
+    bizDesc.addEventListener('input', () => {
+        const max = 1000;
+        const remaining = max - bizDesc.value.length;
+        if (hint) hint.textContent = `${bizDesc.value.length} / ${max} characters`;
+        hint.style.color = remaining < 20 ? 'var(--danger-crimson)' : '';
+    });
+}
+</script>
+{% endblock %}

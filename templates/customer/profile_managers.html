@@ -1,0 +1,2469 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} — Profile Settings | PIELAM{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+
+:root {
+  --r: 12px; --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
+
+  --ink: #0f0f0f; --ink-2: #3a3a3a; --ink-3: #6b6b6b; --ink-4: #9b9b9b;
+  --surface: #ffffff; --surface-2: #f7f6f2; --surface-3: #eeede9;
+  --border: #e4e3df; --border-2: #d0cfc9;
+
+  --ruby: #c8102e; --ruby-dim: #a00d24;
+  --gold: #b8860b; --gold-bright: #d4a017; --gold-trace: rgba(184,134,11,.08); --gold-dim: rgba(184,134,11,.35);
+  --emerald: #1a6b3a; --emerald-bg: #edf7f1;
+  --sapphire: #1e3a8a; --sapphire-bg: #eef2fb;
+  --amber: #92400e; --amber-bg: #fffbeb;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --shadow-xs: 0 1px 3px rgba(10,37,64,.05);
+  --shadow-sm: 0 2px 6px rgba(10,37,64,.08);
+  --shadow-md: 0 4px 12px rgba(10,37,64,.12);
+  --shadow-lg: 0 10px 30px rgba(10,37,64,.15);
+
+  --ease: cubic-bezier(.4,0,.2,1);
+  --t-fast: .15s ease;
+  --t-base: .25s ease;
+
+  --shell-pad: clamp(16px, 3vw + 4px, 32px);
+  --shell-maxw: 1200px;
+
+  --fs-page-title: clamp(1.35rem, 1rem + 2.2vw, 2.4rem);
+  --fs-card-title: clamp(1.15rem, 1rem + 0.6vw, 1.5rem);
+  --fs-stat-num:   clamp(1.35rem, 1.1rem + 0.9vw, 1.8rem);
+
+  --header-pad-top: clamp(24px, 3vw + 10px, 40px);
+  --header-pad-bot: clamp(48px, 5vw + 20px, 76px);
+  --shell-pull-up: clamp(-40px, -3vw - 10px, -20px);
+
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+.profile-manager,
+.profile-manager *,
+.profile-manager *::before,
+.profile-manager *::after {
+  box-sizing: border-box;
+}
+.profile-manager {
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.6;
+}
+.profile-manager a { text-decoration:none; color:inherit; }
+.profile-manager img { max-width:100%; display:block; }
+.profile-manager button { font-family:var(--font-body); cursor:pointer; border:none; background:none; }
+.profile-manager input,
+.profile-manager select,
+.profile-manager textarea { font-family: var(--font-body); }
+.profile-manager input,
+.profile-manager select,
+.profile-manager textarea,
+.profile-manager button { font-size: max(16px, 1em); }
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-manager *,
+  .profile-manager *::before,
+  .profile-manager *::after {
+    animation-duration:.01ms!important; transition-duration:.01ms!important;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .profile-manager .pl-logout-link:hover,
+  .profile-manager .btn-primary:hover,
+  .profile-manager .btn-gold:hover,
+  .profile-manager .nav-btn:hover { transform:none; }
+}
+
+/* ── Page header ─────────────────────────────── */
+.profile-manager .page-header {
+  background: linear-gradient(135deg, var(--ink) 0%, #262626 100%);
+  padding: var(--header-pad-top) calc(var(--shell-pad) + var(--safe-r)) var(--header-pad-bot) calc(var(--shell-pad) + var(--safe-l));
+  position:relative; overflow:hidden;
+}
+.profile-manager .page-header::after {
+  content:''; position:absolute; inset:0;
+  background-image: radial-gradient(circle at 85% 20%, var(--gold-trace) 0%, transparent 55%);
+}
+.profile-manager .page-header-container { max-width: var(--shell-maxw); margin:0 auto; position:relative; z-index:1; }
+
+.profile-manager .header-content {
+  display:flex;
+  align-items:center;
+  gap:clamp(10px, 1.5vw, 18px);
+  flex-wrap: nowrap;
+}
+
+.profile-manager .header-icon {
+  width:clamp(38px, 3.5vw + 20px, 52px); height:clamp(38px, 3.5vw + 20px, 52px);
+  border-radius:50%; flex-shrink:0;
+  border:1px solid var(--gold-dim);
+  display:flex; align-items:center; justify-content:center;
+  color: var(--gold-bright); font-size:clamp(.85rem, .5vw + .7rem, 1.15rem);
+}
+
+.profile-manager .header-text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.profile-manager .page-title { font-family:var(--font-display); font-weight:600; font-size: var(--fs-page-title); color:#fff; letter-spacing:.2px; line-height:1.15; overflow-wrap:anywhere; }
+.profile-manager .title-accent { color: var(--gold-bright); font-style:italic; }
+.profile-manager .page-subtitle { font-family:var(--font-mono); font-size:clamp(.62rem, .3vw + .55rem, .72rem); letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-top:4px; }
+
+/* ── Logout bar ──────────────────────────────── */
+
+.profile-manager .pl-logout-bar {
+  display:flex;
+  justify-content:flex-end;
+  flex: 0 0 auto;
+}
+
+.profile-manager .pl-logout-link {
+  display:inline-flex; align-items:center; gap:.55rem; padding:.6rem 1.2rem;
+  background:#fff; border:1.5px solid rgba(200,16,46,.28); border-radius:10px;
+  color:var(--ruby); font-weight:700; font-size:.85rem; box-shadow:var(--shadow-xs);
+  min-height:44px; white-space:nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+}
+.profile-manager .pl-logout-link:hover { background:#fef2f2; border-color:rgba(200,16,46,.55); transform:translateY(-2px); box-shadow:0 6px 16px rgba(200,16,46,.16); }
+.profile-manager .pl-logout-link:active { transform:translateY(0); }
+
+/* ── Django messages ─────────────────────────── */
+.profile-manager .settings-messages {
+  max-width: var(--shell-maxw); margin:18px auto 0;
+  padding:0 calc(var(--shell-pad) + var(--safe-r)) 0 calc(var(--shell-pad) + var(--safe-l));
+  display:flex; flex-direction:column; gap:8px;
+}
+.profile-manager .settings-msg {
+  padding:12px 16px; border-radius:var(--r-sm); font-size:.9rem; font-weight:600;
+  border-left:3px solid; display:flex; align-items:flex-start; gap:10px;
+}
+.profile-manager .settings-msg.success { background:var(--emerald-bg); color:var(--emerald); border-color:var(--emerald); }
+.profile-manager .settings-msg.error { background:#fef2f2; color:var(--ruby-dim); border-color:var(--ruby); }
+.profile-manager .settings-msg.info,
+.profile-manager .settings-msg.debug { background:var(--sapphire-bg); color:var(--sapphire); border-color:var(--sapphire); }
+.profile-manager .settings-msg.warning { background:var(--amber-bg); color:var(--amber); border-color:var(--amber); }
+
+/* ── Shell: sidebar + content ────────────────── */
+.profile-manager .settings-shell {
+  max-width: var(--shell-maxw);
+  margin: var(--shell-pull-up) auto 60px;
+  padding:0 calc(var(--shell-pad) + var(--safe-r)) 0 calc(var(--shell-pad) + var(--safe-l));
+  display:grid; grid-template-columns:280px 1fr; gap:28px; align-items:start; position:relative; z-index:2;
+}
+@media (min-width: 901px) and (min-height: 480px) {
+  .profile-manager .settings-shell > .settings-aside {
+    position:sticky; top:calc(var(--header-h, 64px) + 16px);
+    max-height:calc(100vh - var(--header-h, 64px) - 32px); overflow-y:auto;
+  }
+}
+.profile-manager .settings-aside {
+  min-width: 0;
+}
+.profile-manager .settings-nav-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+.profile-manager .settings-nav {
+  list-style:none; background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r-lg); box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.profile-manager .settings-nav li + li { border-top:1px solid var(--border); }
+.profile-manager .nav-btn {
+  width:100%; display:flex; align-items:center; gap:12px; padding:14px 18px;
+  font-size:.9rem; font-weight:600; color:var(--ink-2); text-align:left; min-height:44px;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.profile-manager .nav-btn i { width:18px; color:var(--ink-4); transition:color var(--t-fast); flex-shrink:0; }
+.profile-manager .nav-btn:hover { background:var(--surface-2); }
+.profile-manager .nav-btn.active { background:var(--ink); color:#fff; }
+.profile-manager .nav-btn.active i { color:var(--gold-bright); }
+.profile-manager .nav-btn:focus-visible { outline:2px solid var(--gold); outline-offset:-2px; }
+
+/* ── Content panels ──────────────────────────── */
+.profile-manager .panel { display:none; min-width:0; }
+.profile-manager .panel.active { display:block; animation:pmFadeIn .28s var(--ease); }
+@keyframes pmFadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+.profile-manager .card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm); padding:clamp(18px, 1.5vw + 10px, 30px) clamp(14px, 2vw + 8px, 32px);
+  margin-bottom:22px;
+}
+.profile-manager .card + .card { margin-top:0; }
+.profile-manager .card-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:clamp(14px, 1.5vw, 22px); padding-bottom:clamp(12px, 1vw, 16px); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.profile-manager .card-title { font-family:var(--font-display); font-weight:700; font-size: var(--fs-card-title); }
+.profile-manager .card-desc { font-size:.82rem; color:var(--ink-3); margin-top:4px; }
+
+.profile-manager .stat-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:clamp(10px, 1vw, 14px); margin-bottom:24px; }
+.profile-manager .stat-card { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); padding:clamp(12px, 1vw, 16px) clamp(14px, 1.2vw, 18px); min-width:0; }
+.profile-manager .stat-card .num { font-family:var(--font-display); font-weight:700; font-size: var(--fs-stat-num); }
+.profile-manager .stat-card .lbl { font-family:var(--font-mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-top:2px; overflow-wrap:anywhere; }
+
+/* ── Forms (still used by Security / Danger Zone / multi-field actions) ── */
+.profile-manager .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 20px; }
+.profile-manager .form-grid.single { grid-template-columns:1fr; }
+.profile-manager .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-manager .field.span-2 { grid-column: span 2; }
+.profile-manager .field label { font-size:.78rem; font-weight:700; color:var(--ink-2); letter-spacing:.01em; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.profile-manager .field .hint { font-size:.72rem; color:var(--ink-4); font-weight:400; }
+.profile-manager .field input[type="text"],
+.profile-manager .field input[type="email"],
+.profile-manager .field input[type="url"],
+.profile-manager .field input[type="tel"],
+.profile-manager .field input[type="date"],
+.profile-manager .field input[type="number"],
+.profile-manager .field input[type="password"],
+.profile-manager .field select,
+.profile-manager .field textarea {
+  width:100%; padding:11px 13px; border:1px solid var(--border-2); border-radius:var(--r-sm);
+  color:var(--ink); background:var(--surface); min-height:44px;
+  transition:border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.profile-manager .field textarea { resize:vertical; min-height:90px; }
+.profile-manager .field input:focus,
+.profile-manager .field select:focus,
+.profile-manager .field textarea:focus {
+  outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-trace);
+}
+.profile-manager .field input[type="file"] { font-size:.82rem; padding:8px 0; min-height:auto; }
+
+.profile-manager .form-subhead {
+  grid-column: 1 / -1;
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-4); margin:18px 0 -6px; padding-top:16px; border-top:1px dashed var(--border);
+}
+.profile-manager .form-subhead:first-of-type { margin-top:0; padding-top:0; border-top:none; }
+
+.profile-manager .form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:24px; flex-wrap:wrap; }
+.profile-manager .form-actions.align-start { justify-content:flex-start; }
+
+.profile-manager .btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 22px; border-radius:var(--r-sm);
+  font-weight:700; font-size:.85rem; min-height:44px;
+  transition:transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  white-space:nowrap;
+}
+.profile-manager .btn-primary { background:var(--ink); color:#fff; box-shadow:var(--shadow-xs); }
+.profile-manager .btn-primary:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); background:#000; }
+.profile-manager .btn-gold { background:linear-gradient(135deg, var(--gold), var(--gold-bright)); color:#fff; }
+.profile-manager .btn-gold:hover { transform:translateY(-1px); box-shadow:0 6px 16px var(--gold-dim); }
+.profile-manager .btn-ghost { background:transparent; border:1.5px solid var(--border-2); color:var(--ink-2); }
+.profile-manager .btn-ghost:hover { border-color:var(--ink-3); }
+.profile-manager .btn-danger { background:transparent; border:1.5px solid rgba(200,16,46,.4); color:var(--ruby); }
+.profile-manager .btn-danger:hover { background:#fef2f2; border-color:var(--ruby); }
+.profile-manager .btn-danger.solid { background:var(--ruby); color:#fff; border-color:var(--ruby); }
+.profile-manager .btn-danger.solid:hover { background:var(--ruby-dim); }
+.profile-manager .btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+.profile-manager .btn[disabled] { opacity:.6; cursor:default; transform:none !important; }
+
+/* ── Field display + edit button (NEW — replaces raw inline inputs) ── */
+.profile-manager .field-view-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px 20px; }
+.profile-manager .field-view-grid.single { grid-template-columns:1fr; }
+.profile-manager .field-view { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-manager .field-view.span-2 { grid-column: span 2; }
+.profile-manager .field-view .fv-label { font-size:.78rem; font-weight:700; color:var(--ink-2); letter-spacing:.01em; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.profile-manager .field-view .fv-label .hint { font-size:.72rem; color:var(--ink-4); font-weight:400; }
+.profile-manager .field-view .fv-row {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 13px; border:1px solid var(--border-2); border-radius:var(--r-sm);
+  background:var(--surface); min-height:44px;
+}
+.profile-manager .field-view .fv-value { font-size:.92rem; color:var(--ink); overflow-wrap:anywhere; }
+.profile-manager .field-view .fv-value.empty { color:var(--ink-4); font-style:italic; }
+.profile-manager .field-view .fv-edit-btn {
+  flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:20px; font-size:.75rem; font-weight:700;
+  color:var(--gold); border:1px solid var(--gold-dim); background:transparent;
+  transition: background var(--t-fast), color var(--t-fast); min-height:32px;
+}
+.profile-manager .field-view .fv-edit-btn:hover { background:var(--gold-trace); }
+.profile-manager .field-view .fv-edit-btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+.profile-manager .fv-subhead {
+  grid-column: 1 / -1;
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-4); margin:18px 0 -4px; padding-top:16px; border-top:1px dashed var(--border);
+}
+.profile-manager .fv-subhead:first-of-type { margin-top:0; padding-top:0; border-top:none; }
+
+/* ── Edit-field modal ────────────────────────────────────────────── */
+.pm-modal-backdrop {
+  position:fixed; inset:0; background:rgba(15,15,15,.5); z-index:1000;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.pm-modal-backdrop.open { opacity:1; pointer-events:auto; }
+.pm-modal {
+  background:#fff; border-radius:16px; width:100%; max-width:440px;
+  padding:24px; box-shadow:0 20px 50px rgba(0,0,0,.25);
+  transform:translateY(10px); transition:transform .2s ease;
+  font-family:'Syne', sans-serif;
+}
+.pm-modal-backdrop.open .pm-modal { transform:translateY(0); }
+.pm-modal h3 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:1.35rem; margin:0 0 4px; color:#0f0f0f; }
+.pm-modal .pm-modal-hint { font-size:.78rem; color:#6b6b6b; margin-bottom:16px; }
+.pm-modal .pm-field-wrap input,
+.pm-modal .pm-field-wrap select,
+.pm-modal .pm-field-wrap textarea {
+  width:100%; padding:11px 13px; border:1px solid #d0cfc9; border-radius:8px; font-size:1rem; font-family:inherit;
+}
+.pm-modal .pm-field-wrap textarea { min-height:110px; resize:vertical; }
+.pm-modal .pm-field-wrap input:focus,
+.pm-modal .pm-field-wrap select:focus,
+.pm-modal .pm-field-wrap textarea:focus { outline:none; border-color:#b8860b; box-shadow:0 0 0 3px rgba(184,134,11,.08); }
+.pm-modal .pm-error { color:#c8102e; font-size:.8rem; margin-top:10px; display:none; }
+.pm-modal .pm-error.show { display:block; }
+.pm-modal .pm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.pm-modal .pm-btn { padding:10px 20px; border-radius:8px; font-weight:700; font-size:.85rem; min-height:40px; }
+.pm-modal .pm-btn-cancel { background:transparent; border:1px solid #d0cfc9; color:#3a3a3a; }
+.pm-modal .pm-btn-cancel:hover { border-color:#9b9b9b; }
+.pm-modal .pm-btn-save { background:#0f0f0f; color:#fff; display:inline-flex; align-items:center; gap:8px; }
+.pm-modal .pm-btn-save[disabled] { opacity:.6; cursor:default; }
+.pm-spinner {
+  width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff; animation:pmSpin .6s linear infinite; display:none;
+}
+.pm-btn-save.loading .pm-spinner { display:inline-block; }
+.pm-btn-save.loading .pm-btn-save-text { opacity:.7; }
+@keyframes pmSpin { to { transform: rotate(360deg); } }
+
+/* Small inline toast for AJAX success/error, since we no longer redirect */
+.pm-toast-stack {
+  position:fixed; top:16px; right:16px; z-index:1100;
+  display:flex; flex-direction:column; gap:8px; max-width:min(360px, calc(100vw - 32px));
+}
+.pm-toast {
+  padding:12px 16px; border-radius:8px; font-size:.85rem; font-weight:600;
+  border-left:3px solid; box-shadow:0 6px 16px rgba(0,0,0,.12);
+  background:#fff; opacity:0; transform:translateY(-6px); transition:opacity .2s ease, transform .2s ease;
+}
+.pm-toast.show { opacity:1; transform:translateY(0); }
+.pm-toast.success { color:#1a6b3a; border-color:#1a6b3a; }
+.pm-toast.error { color:#a00d24; border-color:#c8102e; }
+
+/* ── Toggle switches ─────────────────────────── */
+.profile-manager .toggle-list { display:flex; flex-direction:column; }
+.profile-manager .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 0; }
+.profile-manager .toggle-row + .toggle-row { border-top:1px solid var(--border); }
+.profile-manager .toggle-copy { min-width:0; }
+.profile-manager .toggle-copy .t-label { font-weight:700; font-size:.9rem; }
+.profile-manager .toggle-copy .t-desc { font-size:.78rem; color:var(--ink-3); margin-top:2px; max-width:46ch; }
+.profile-manager .switch { position:relative; width:44px; height:25px; flex-shrink:0; }
+.profile-manager .switch input { opacity:0; width:0; height:0; position:absolute; }
+.profile-manager .switch .track { position:absolute; inset:0; background:var(--border-2); border-radius:20px; cursor:pointer; transition:background var(--t-fast); }
+.profile-manager .switch .track::before {
+  content:''; position:absolute; width:19px; height:19px; left:3px; top:3px; background:#fff; border-radius:50%;
+  box-shadow:var(--shadow-xs); transition:transform var(--t-fast);
+}
+.profile-manager .switch input:checked + .track { background:var(--gold); }
+.profile-manager .switch input:checked + .track::before { transform:translateX(19px); }
+.profile-manager .switch input:focus-visible + .track { box-shadow:0 0 0 3px var(--gold-trace); }
+@media (hover: none), (pointer: coarse) {
+  .profile-manager .switch { width:48px; height:28px; }
+}
+
+/* ── Badges & alerts ─────────────────────────── */
+.profile-manager .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; letter-spacing:.03em; white-space:nowrap; }
+.profile-manager .badge.ok { background:var(--emerald-bg); color:var(--emerald); }
+.profile-manager .badge.warn { background:var(--amber-bg); color:var(--amber); }
+.profile-manager .badge.danger { background:#fef2f2; color:var(--ruby-dim); }
+.profile-manager .inline-alert { display:flex; gap:10px; align-items:flex-start; padding:14px 16px; border-radius:var(--r-sm); font-size:.85rem; margin-bottom:20px; }
+.profile-manager .inline-alert.warn { background:var(--amber-bg); color:var(--amber); border-left:3px solid var(--amber); }
+.profile-manager .inline-alert.info { background:var(--sapphire-bg); color:var(--sapphire); border-left:3px solid var(--sapphire); }
+
+.profile-manager .account-meta { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+.profile-manager .meta-item { padding:14px 16px; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-md); min-width:0; }
+.profile-manager .meta-item .m-label { font-family:var(--font-mono); font-size:.65rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3); }
+.profile-manager .meta-item .m-value { font-weight:700; margin-top:3px; font-size:.92rem; word-break:break-word; display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+
+/* ── Activity list ────────────────────────────── */
+.profile-manager .viewer-list { list-style:none; }
+.profile-manager .viewer-row { display:flex; align-items:center; gap:12px; padding:12px 0; flex-wrap:wrap; }
+.profile-manager .viewer-row + .viewer-row { border-top:1px solid var(--border); }
+.profile-manager .viewer-row img { width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.profile-manager .viewer-name { font-weight:700; font-size:.88rem; min-width:0; overflow-wrap:anywhere; }
+.profile-manager .viewer-time { font-family:var(--font-mono); font-size:.7rem; color:var(--ink-3); margin-left:auto; white-space:nowrap; }
+.profile-manager .empty-state { text-align:center; padding:40px 20px; color:var(--ink-3); }
+.profile-manager .empty-state i { font-size:1.6rem; color:var(--border-2); margin-bottom:10px; display:block; }
+
+/* ── Danger zone ─────────────────────────────── */
+.profile-manager .danger-card { border-color:rgba(200,16,46,.3); }
+.profile-manager .danger-card .card-title { color:var(--ruby-dim); }
+.profile-manager .danger-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 0; flex-wrap:wrap; }
+.profile-manager .danger-row + .danger-row { border-top:1px solid var(--border); }
+.profile-manager .danger-row .d-label { font-weight:700; font-size:.9rem; }
+.profile-manager .danger-row .d-desc { font-size:.78rem; color:var(--ink-3); margin-top:2px; max-width:50ch; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+   ═══════════════════════════════════════════════ */
+@media (min-width: 1400px) {
+  .profile-manager .settings-shell { grid-template-columns:300px 1fr; gap:32px; }
+}
+@media (max-width: 1199px) {
+  .profile-manager .settings-shell { grid-template-columns:240px 1fr; gap:22px; }
+}
+@media (max-width: 1023px) {
+  .profile-manager .settings-shell { grid-template-columns:210px 1fr; gap:18px; }
+}
+
+@media (max-width: 900px) {
+  .profile-manager .settings-shell { grid-template-columns:1fr; }
+  .profile-manager .settings-shell > .settings-aside { position:static; max-height:none; }
+
+  .profile-manager .settings-nav-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .profile-manager .settings-nav-scroll::-webkit-scrollbar { display: none; }
+
+  .profile-manager .settings-nav {
+    display:flex; flex-direction:row; flex-wrap:nowrap; gap:2px;
+    width:max-content; min-width:100%; padding:6px;
+  }
+  .profile-manager .settings-nav li { flex:0 0 auto; }
+  .profile-manager .settings-nav li + li { border-top:none; }
+  .profile-manager .nav-btn {
+    padding:10px 16px; border-radius:var(--r-sm); white-space:nowrap; width:auto;
+    scroll-snap-align: start;
+  }
+  .profile-manager .nav-btn.active { border-radius:var(--r-sm); }
+
+  .profile-manager .form-grid { grid-template-columns:1fr 1fr; }
+  .profile-manager .field-view-grid { grid-template-columns:1fr 1fr; }
+}
+
+@media (max-width: 767px) {
+  .profile-manager .form-grid { grid-template-columns:1fr; }
+  .profile-manager .field.span-2 { grid-column: span 1; }
+  .profile-manager .field-view-grid { grid-template-columns:1fr; }
+  .profile-manager .field-view.span-2 { grid-column: span 1; }
+  .profile-manager .account-meta { grid-template-columns:1fr 1fr; }
+  .profile-manager .stat-cards { grid-template-columns:repeat(2, 1fr); }
+}
+
+
+@media (max-width: 480px) {
+  .profile-manager .toggle-row { align-items:flex-start; gap:12px; padding:14px 0; }
+  .profile-manager .toggle-copy .t-desc { max-width:100%; }
+  .profile-manager .switch { margin-top:2px; }
+  .profile-manager .form-actions { flex-direction:column-reverse; }
+  .profile-manager .form-actions .btn { width:100%; }
+  .profile-manager .danger-row { flex-direction:column; align-items:flex-start; gap:12px; }
+  .profile-manager .danger-row form { width:100%; }
+  .profile-manager .danger-row form .btn { width:100%; }
+  .profile-manager .account-meta { grid-template-columns:1fr; }
+  .profile-manager .meta-item .m-value { font-size:.88rem; }
+  .profile-manager .viewer-row { gap:10px; }
+  .profile-manager .viewer-time { flex-basis:100%; margin-left:46px; }
+  .profile-manager .field-view .fv-row { flex-wrap:wrap; }
+}
+@media (max-width: 360px) {
+  .profile-manager .stat-cards { grid-template-columns:1fr 1fr; gap:10px; }
+  .profile-manager .nav-btn { padding:9px 13px; font-size:.85rem; }
+  .profile-manager .btn { padding:10px 16px; font-size:.82rem; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .profile-manager .page-header { padding-top:16px; padding-bottom:28px; }
+  .profile-manager .header-content { gap:10px; }
+  .profile-manager .settings-shell { margin-top:-16px; }
+  .profile-manager .card { padding-top:16px; padding-bottom:16px; }
+  .profile-manager .toggle-row { padding:10px 0; }
+}
+
+@media (min-width: 901px) and (max-aspect-ratio: 3/4) {
+  .profile-manager .settings-shell { grid-template-columns:1fr; }
+  .profile-manager .settings-shell > .settings-aside { position:static; }
+  .profile-manager .settings-nav {
+    display:flex; flex-direction:row; overflow-x:auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width:none;
+  }
+  .profile-manager .settings-nav::-webkit-scrollbar { display:none; }
+  .profile-manager .settings-nav li + li { border-top:none; }
+  .profile-manager .nav-btn { width:auto; white-space:nowrap; }
+}
+
+@media (min-resolution: 2dppx) {
+  .profile-manager .card,
+  .profile-manager .settings-nav,
+  .profile-manager .stat-card,
+  .profile-manager .meta-item { border-width: 1px; }
+}
+@media print {
+.profile-manager .page-header,
+  .profile-manager .pl-logout-bar,
+  .profile-manager .settings-nav-scroll,
+  .profile-manager .form-actions { display:none !important; }
+  .profile-manager .settings-shell { grid-template-columns:1fr; margin:0; padding:0; }
+  .profile-manager .panel { display:block !important; }
+  .profile-manager .card { box-shadow:none; border:1px solid #000; break-inside:avoid; page-break-inside:avoid; margin-bottom:12px; }
+  .pm-modal-backdrop, .pm-toast-stack { display:none !important; }
+}
+
+</style>
+
+
+{% endblock %}
+
+{% block content %}
+<div class="profile-manager">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-container">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
+            <path d="M3.5 20c.7-3.2 3-5 5.5-5s4.8 1.8 5.5 5"/>
+            <path d="M18.5 13.2v1.2M18.5 19.6v1.2M21.4 14.9l-1 .6M16.6 17.5l-1 .6M21.4 19.1l-1-.6M16.6 15.5l-1-.6"/>
+            <circle cx="18.5" cy="17" r="1.6"/>
+        </svg>
+      </div>
+        <div class="header-text">
+          <h1 class="page-title"><span class="title-accent">Account Manager</span></h1>
+          <p class="page-subtitle">Manage your profile &amp; business</p>
+        </div>
+        <div class="pl-logout-bar">
+          <a href="{% url 'customer:logout' %}" class="pl-logout-link js-logout-btn" role="button" aria-label="Log out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Logout</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+  <div class="settings-messages">
+    {% for message in messages %}
+      <div class="settings-msg {{ message.tags }}">
+        <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Toast stack for AJAX field-save feedback (replaces page-reload messages for field edits) -->
+  <div class="pm-toast-stack js-toast-stack" aria-live="polite"></div>
+
+  <div class="settings-shell">
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <aside class="settings-aside">
+      <div class="settings-nav-scroll">
+        <ul class="settings-nav js-settings-nav">
+          <li><button type="button" class="nav-btn active" data-tab="profile"><i class="fa-solid fa-user"></i> Profile</button></li>
+          <li><button type="button" class="nav-btn" data-tab="location"><i class="fa-solid fa-location-dot"></i> Location</button></li>
+          <li><button type="button" class="nav-btn" data-tab="contact"><i class="fa-solid fa-address-book"></i> Contact</button></li>
+          {% if is_dealer %}
+          <li><button type="button" class="nav-btn" data-tab="business"><i class="fa-solid fa-store"></i> Business</button></li>
+          {% endif %}
+          <li><button type="button" class="nav-btn" data-tab="social"><i class="fa-solid fa-share-nodes"></i> Social Links</button></li>
+          <li><button type="button" class="nav-btn" data-tab="privacy"><i class="fa-solid fa-lock"></i> Privacy</button></li>
+          <li><button type="button" class="nav-btn" data-tab="notifications"><i class="fa-solid fa-bell"></i> Notifications</button></li>
+          <li><button type="button" class="nav-btn" data-tab="account"><i class="fa-solid fa-id-card"></i> Account</button></li>
+          <li><button type="button" class="nav-btn" data-tab="security"><i class="fa-solid fa-shield-halved"></i> Security</button></li>
+          <li><button type="button" class="nav-btn" data-tab="activity"><i class="fa-solid fa-eye"></i> Activity</button></li>
+          <li><button type="button" class="nav-btn" data-tab="danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</button></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- ═══════════════ CONTENT ═══════════════ -->
+    <main class="js-panels-wrap">
+
+      <!-- PROFILE -->
+      <section class="panel active" data-panel="profile">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Profile</div><p class="card-desc">How you appear across PIELAM.</p></div>
+            <span class="badge {% if completion_percentage >= 80 %}ok{% elif completion_percentage >= 40 %}warn{% else %}danger{% endif %}">{{ completion_percentage }}% complete</span>
+          </div>
+
+          <div class="field-view-grid">
+
+            <!-- Display name -->
+            <div class="field-view">
+              <span class="fv-label">Display name</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_name %}empty{% endif %}" data-fv-display="profile_name">{{ profile_info.profile_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_name" data-fv-action="update_profile" data-fv-field="profile_name" data-fv-title="Display name">
+              <input type="text" name="profile_name" value="{{ profile_info.profile_name|default:'' }}" maxlength="150">
+            </template>
+
+            <!-- Gender -->
+            <div class="field-view">
+              <span class="fv-label">Gender</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_gender %}empty{% endif %}" data-fv-display="profile_gender">{{ profile_info.get_profile_gender_display|default:"Prefer not to say" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_gender"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_gender" data-fv-action="update_profile" data-fv-field="profile_gender" data-fv-title="Gender">
+              <select name="profile_gender">
+                <option value="">Prefer not to say</option>
+                {% for value, label in profile_info.Gender.choices %}
+                  <option value="{{ value }}" {% if profile_info.profile_gender == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </template>
+
+            <!-- Bio -->
+            <div class="field-view span-2">
+              <span class="fv-label">Bio</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_bio %}empty{% endif %}" data-fv-display="profile_bio">{{ profile_info.profile_bio|default:"Not set"|truncatewords:24 }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_bio"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_bio" data-fv-action="update_profile" data-fv-field="profile_bio" data-fv-title="Bio">
+              <textarea name="profile_bio" maxlength="500">{{ profile_info.profile_bio|default:'' }}</textarea>
+            </template>
+
+            <!-- Date of birth -->
+            <div class="field-view">
+              <span class="fv-label">Date of birth</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_dob %}empty{% endif %}" data-fv-display="profile_dob">{{ profile_info.profile_dob|date:"M j, Y"|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_dob"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_dob" data-fv-action="update_profile" data-fv-field="profile_dob" data-fv-title="Date of birth">
+              <input type="date" name="profile_dob" value="{{ profile_info.profile_dob|date:'Y-m-d' }}">
+            </template>
+
+            <!-- Preferred language -->
+            <div class="field-view">
+              <span class="fv-label">Preferred language <span class="hint">code, e.g. en, bn</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_language %}empty{% endif %}" data-fv-display="profile_language">{{ profile_info.profile_language|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_language"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_language" data-fv-action="update_profile" data-fv-field="profile_language" data-fv-title="Preferred language">
+              <input type="text" name="profile_language" value="{{ profile_info.profile_language|default:'' }}" placeholder="e.g. en, bn">
+            </template>
+
+            <!-- Profile photo -->
+            <div class="field-view">
+              <span class="fv-label">Profile photo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_photo %}empty{% endif %}">{% if profile_info.profile_photo %}Uploaded{% else %}Not set{% endif %}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_photo"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_photo" data-fv-action="update_profile" data-fv-field="profile_photo" data-fv-title="Profile photo" data-fv-filefield="1">
+              <input type="file" name="profile_photo" accept="image/*">
+            </template>
+
+            <!-- Cover photo -->
+            <div class="field-view">
+              <span class="fv-label">Cover photo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_cover_photo %}empty{% endif %}">{% if profile_info.profile_cover_photo %}Uploaded{% else %}Not set{% endif %}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_cover_photo"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_cover_photo" data-fv-action="update_profile" data-fv-field="profile_cover_photo" data-fv-title="Cover photo" data-fv-filefield="1">
+              <input type="file" name="profile_cover_photo" accept="image/*">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCATION -->
+      <section class="panel" data-panel="location">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Location</div><p class="card-desc">Where you're based.</p></div>
+          </div>
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Country</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.country %}empty{% endif %}" data-fv-display="country">{{ location_info.country|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-country"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-country" data-fv-action="update_location" data-fv-field="country" data-fv-title="Country">
+              <input type="text" name="country" placeholder="e.g. Bangladesh" value="{{ location_info.country|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Country code <span class="hint">ISO 3166-1 alpha-2</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.country_code %}empty{% endif %}" data-fv-display="country_code">{{ location_info.country_code|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-country_code"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-country_code" data-fv-action="update_location" data-fv-field="country_code" data-fv-title="Country code">
+              <input type="text" name="country_code" maxlength="2" value="{{ location_info.country_code|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">State / Province</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.state %}empty{% endif %}" data-fv-display="state">{{ location_info.state|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-state"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-state" data-fv-action="update_location" data-fv-field="state" data-fv-title="State / Province">
+              <input type="text" name="state" value="{{ location_info.state|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">City</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.city %}empty{% endif %}" data-fv-display="city">{{ location_info.city|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-city"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-city" data-fv-action="update_location" data-fv-field="city" data-fv-title="City">
+              <input type="text" name="city" value="{{ location_info.city|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Postal code</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.postal_code %}empty{% endif %}" data-fv-display="postal_code">{{ location_info.postal_code|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-postal_code"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-postal_code" data-fv-action="update_location" data-fv-field="postal_code" data-fv-title="Postal code">
+              <input type="text" name="postal_code" value="{{ location_info.postal_code|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Street address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.address %}empty{% endif %}" data-fv-display="address">{{ location_info.address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-address" data-fv-action="update_location" data-fv-field="address" data-fv-title="Street address">
+              <input type="text" name="address" value="{{ location_info.address|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Present address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.present_address %}empty{% endif %}" data-fv-display="present_address">{{ location_info.present_address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-present_address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-present_address" data-fv-action="update_location" data-fv-field="present_address" data-fv-title="Present address">
+              <input type="text" name="present_address" value="{{ location_info.present_address|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Permanent address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.permanent_address %}empty{% endif %}" data-fv-display="permanent_address">{{ location_info.permanent_address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-permanent_address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-permanent_address" data-fv-action="update_location" data-fv-field="permanent_address" data-fv-title="Permanent address">
+              <input type="text" name="permanent_address" value="{{ location_info.permanent_address|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Latitude <span class="hint">set both or neither</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.latitude %}empty{% endif %}" data-fv-display="latitude">{{ location_info.latitude|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-latitude"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-latitude" data-fv-action="update_location" data-fv-field="latitude" data-fv-title="Latitude">
+              <input type="text" name="latitude" value="{{ location_info.latitude|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Longitude <span class="hint">set both or neither</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.longitude %}empty{% endif %}" data-fv-display="longitude">{{ location_info.longitude|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-longitude"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-longitude" data-fv-action="update_location" data-fv-field="longitude" data-fv-title="Longitude">
+              <input type="text" name="longitude" value="{{ location_info.longitude|default:'' }}">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section class="panel" data-panel="contact">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Contact channels</div><p class="card-desc">Alternate ways people can reach you.</p></div>
+          </div>
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Alternate email</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.alt_email %}empty{% endif %}" data-fv-display="alt_email">{{ contact_info.alt_email|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.alt_email %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="alt_email"
+                      {% if not contact_info.alt_email %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-alt_email"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="alt_email"
+                        {% if not contact_info.alt_email or contact_verifications.alt_email == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-alt_email" data-fv-action="update_contact" data-fv-field="alt_email" data-fv-title="Alternate email">
+              <input type="email" name="alt_email" value="{{ contact_info.alt_email|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Phone number</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.phone_number %}empty{% endif %}" data-fv-display="phone_number">{{ contact_info.phone_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.phone_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="phone_number"
+                      {% if not contact_info.phone_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-phone_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="phone_number"
+                        {% if not contact_info.phone_number or contact_verifications.phone_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-phone_number" data-fv-action="update_contact" data-fv-field="phone_number" data-fv-title="Phone number">
+              <input type="tel" name="phone_number" value="{{ contact_info.phone_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+  <span class="fv-label"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+  <div class="fv-row">
+    <span class="fv-value {% if not contact_info.whatsapp_number %}empty{% endif %}" data-fv-display="whatsapp_number">{{ contact_info.whatsapp_number|default:"Not set" }}</span>
+    {% with vstatus=contact_verifications.whatsapp_number %}
+    <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+          data-verify-badge="whatsapp_number"
+          {% if not contact_info.whatsapp_number %}style="display:none"{% endif %}>
+      {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+    </span>
+    {% endwith %}
+    <button type="button" class="fv-edit-btn" data-fv-open="tpl-whatsapp_number"><i class="fa-solid fa-pen"></i> Edit</button>
+    <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="whatsapp_number"
+            {% if not contact_info.whatsapp_number or contact_verifications.whatsapp_number == 'verified' %}style="display:none"{% endif %}>
+      <i class="fa-solid fa-shield"></i> Verify
+    </button>
+  </div>
+</div>
+<template id="tpl-whatsapp_number" data-fv-action="update_contact" data-fv-field="whatsapp_number" data-fv-title="WhatsApp number">
+  <input type="tel" name="whatsapp_number" value="{{ contact_info.whatsapp_number|default:'' }}">
+</template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-telegram"></i> Telegram</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.telegram_username %}empty{% endif %}" data-fv-display="telegram_username">{{ contact_info.telegram_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.telegram_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="telegram_username"
+                      {% if not contact_info.telegram_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-telegram_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="telegram_username"
+                        {% if not contact_info.telegram_username or contact_verifications.telegram_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-telegram_username" data-fv-action="update_contact" data-fv-field="telegram_username" data-fv-title="Telegram username">
+              <input type="text" name="telegram_username" value="{{ contact_info.telegram_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Signal</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.signal_number %}empty{% endif %}" data-fv-display="signal_number">{{ contact_info.signal_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.signal_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="signal_number"
+                      {% if not contact_info.signal_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-signal_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="signal_number"
+                        {% if not contact_info.signal_number or contact_verifications.signal_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-signal_number" data-fv-action="update_contact" data-fv-field="signal_number" data-fv-title="Signal number">
+              <input type="tel" name="signal_number" value="{{ contact_info.signal_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-viber"></i> Viber</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.viber_number %}empty{% endif %}" data-fv-display="viber_number">{{ contact_info.viber_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.viber_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="viber_number"
+                      {% if not contact_info.viber_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-viber_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="viber_number"
+                        {% if not contact_info.viber_number or contact_verifications.viber_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-viber_number" data-fv-action="update_contact" data-fv-field="viber_number" data-fv-title="Viber number">
+              <input type="tel" name="viber_number" value="{{ contact_info.viber_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weixin"></i> WeChat</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.wechat_id %}empty{% endif %}" data-fv-display="wechat_id">{{ contact_info.wechat_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.wechat_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="wechat_id"
+                      {% if not contact_info.wechat_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-wechat_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="wechat_id"
+                        {% if not contact_info.wechat_id or contact_verifications.wechat_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-wechat_id" data-fv-action="update_contact" data-fv-field="wechat_id" data-fv-title="WeChat ID">
+              <input type="text" name="wechat_id" value="{{ contact_info.wechat_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-line"></i> LINE</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.line_id %}empty{% endif %}" data-fv-display="line_id">{{ contact_info.line_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.line_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="line_id"
+                      {% if not contact_info.line_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-line_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="line_id"
+                        {% if not contact_info.line_id or contact_verifications.line_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-line_id" data-fv-action="update_contact" data-fv-field="line_id" data-fv-title="LINE ID">
+              <input type="text" name="line_id" value="{{ contact_info.line_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">imo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.imo_number %}empty{% endif %}" data-fv-display="imo_number">{{ contact_info.imo_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.imo_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="imo_number"
+                      {% if not contact_info.imo_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-imo_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="imo_number"
+                        {% if not contact_info.imo_number or contact_verifications.imo_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-imo_number" data-fv-action="update_contact" data-fv-field="imo_number" data-fv-title="imo number">
+              <input type="tel" name="imo_number" value="{{ contact_info.imo_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-skype"></i> Skype</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.skype_id %}empty{% endif %}" data-fv-display="skype_id">{{ contact_info.skype_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.skype_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="skype_id"
+                      {% if not contact_info.skype_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-skype_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="skype_id"
+                        {% if not contact_info.skype_id or contact_verifications.skype_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-skype_id" data-fv-action="update_contact" data-fv-field="skype_id" data-fv-title="Skype ID">
+              <input type="text" name="skype_id" value="{{ contact_info.skype_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-discord"></i> Discord</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.discord_username %}empty{% endif %}" data-fv-display="discord_username">{{ contact_info.discord_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.discord_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="discord_username"
+                      {% if not contact_info.discord_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-discord_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="discord_username"
+                        {% if not contact_info.discord_username or contact_verifications.discord_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-discord_username" data-fv-action="update_contact" data-fv-field="discord_username" data-fv-title="Discord username">
+              <input type="text" name="discord_username" value="{{ contact_info.discord_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-facebook-messenger"></i> Messenger</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.facebook_messenger_username %}empty{% endif %}" data-fv-display="facebook_messenger_username">{{ contact_info.facebook_messenger_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.facebook_messenger_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="facebook_messenger_username"
+                      {% if not contact_info.facebook_messenger_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-facebook_messenger_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="facebook_messenger_username"
+                        {% if not contact_info.facebook_messenger_username or contact_verifications.facebook_messenger_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-facebook_messenger_username" data-fv-action="update_contact" data-fv-field="facebook_messenger_username" data-fv-title="Messenger username">
+              <input type="text" name="facebook_messenger_username" value="{{ contact_info.facebook_messenger_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-instagram"></i> Instagram</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.instagram_username %}empty{% endif %}" data-fv-display="instagram_username">{{ contact_info.instagram_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.instagram_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="instagram_username"
+                      {% if not contact_info.instagram_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-instagram_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="instagram_username"
+                        {% if not contact_info.instagram_username or contact_verifications.instagram_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-instagram_username" data-fv-action="update_contact" data-fv-field="instagram_username" data-fv-title="Instagram username">
+              <input type="text" name="instagram_username" value="{{ contact_info.instagram_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-snapchat"></i> Snapchat</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.snapchat_username %}empty{% endif %}" data-fv-display="snapchat_username">{{ contact_info.snapchat_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.snapchat_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="snapchat_username"
+                      {% if not contact_info.snapchat_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-snapchat_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="snapchat_username"
+                        {% if not contact_info.snapchat_username or contact_verifications.snapchat_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-snapchat_username" data-fv-action="update_contact" data-fv-field="snapchat_username" data-fv-title="Snapchat username">
+              <input type="text" name="snapchat_username" value="{{ contact_info.snapchat_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-x-twitter"></i> Twitter / X</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.twitter_username %}empty{% endif %}" data-fv-display="twitter_username">{{ contact_info.twitter_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.twitter_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="twitter_username"
+                      {% if not contact_info.twitter_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-twitter_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="twitter_username"
+                        {% if not contact_info.twitter_username or contact_verifications.twitter_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-twitter_username" data-fv-action="update_contact" data-fv-field="twitter_username" data-fv-title="Twitter / X username">
+              <input type="text" name="twitter_username" value="{{ contact_info.twitter_username|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label"><i class="fa-brands fa-linkedin"></i> LinkedIn URL</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.linkedin_url %}empty{% endif %}" data-fv-display="linkedin_url">{{ contact_info.linkedin_url|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.linkedin_url %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="linkedin_url"
+                      {% if not contact_info.linkedin_url %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-linkedin_url"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="linkedin_url"
+                        {% if not contact_info.linkedin_url or contact_verifications.linkedin_url == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-linkedin_url" data-fv-action="update_contact" data-fv-field="linkedin_url" data-fv-title="LinkedIn URL">
+              <input type="url" name="linkedin_url" value="{{ contact_info.linkedin_url|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-slack"></i> Slack workspace handle</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.slack_workspace_handle %}empty{% endif %}" data-fv-display="slack_workspace_handle">{{ contact_info.slack_workspace_handle|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.slack_workspace_handle %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="slack_workspace_handle"
+                      {% if not contact_info.slack_workspace_handle %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-slack_workspace_handle"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="slack_workspace_handle"
+                        {% if not contact_info.slack_workspace_handle or contact_verifications.slack_workspace_handle == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-slack_workspace_handle" data-fv-action="update_contact" data-fv-field="slack_workspace_handle" data-fv-title="Slack workspace handle">
+              <input type="text" name="slack_workspace_handle" value="{{ contact_info.slack_workspace_handle|default:'' }}" placeholder="workspace:@handle">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Preferred contact method</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="preferred_contact_method">{{ contact_info.get_preferred_contact_method_display|default:"In-App Message" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-preferred_contact_method"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-preferred_contact_method" data-fv-action="update_contact" data-fv-field="preferred_contact_method" data-fv-title="Preferred contact method">
+              <select name="preferred_contact_method">
+                <option value="email" {% if contact_info.preferred_contact_method == "email" %}selected{% endif %}>Email</option>
+                <option value="phone" {% if contact_info.preferred_contact_method == "phone" %}selected{% endif %}>Phone Call</option>
+                <option value="whatsapp" {% if contact_info.preferred_contact_method == "whatsapp" %}selected{% endif %}>WhatsApp</option>
+                <option value="telegram" {% if contact_info.preferred_contact_method == "telegram" %}selected{% endif %}>Telegram</option>
+                <option value="signal" {% if contact_info.preferred_contact_method == "signal" %}selected{% endif %}>Signal</option>
+                <option value="viber" {% if contact_info.preferred_contact_method == "viber" %}selected{% endif %}>Viber</option>
+                <option value="wechat" {% if contact_info.preferred_contact_method == "wechat" %}selected{% endif %}>WeChat</option>
+                <option value="line" {% if contact_info.preferred_contact_method == "line" %}selected{% endif %}>LINE</option>
+                <option value="imo" {% if contact_info.preferred_contact_method == "imo" %}selected{% endif %}>imo</option>
+                <option value="skype" {% if contact_info.preferred_contact_method == "skype" %}selected{% endif %}>Skype</option>
+                <option value="discord" {% if contact_info.preferred_contact_method == "discord" %}selected{% endif %}>Discord</option>
+                <option value="facebook_messenger" {% if contact_info.preferred_contact_method == "facebook_messenger" %}selected{% endif %}>Facebook Messenger</option>
+                <option value="instagram" {% if contact_info.preferred_contact_method == "instagram" %}selected{% endif %}>Instagram</option>
+                <option value="snapchat" {% if contact_info.preferred_contact_method == "snapchat" %}selected{% endif %}>Snapchat</option>
+                <option value="twitter" {% if contact_info.preferred_contact_method == "twitter" %}selected{% endif %}>X / Twitter</option>
+                <option value="linkedin" {% if contact_info.preferred_contact_method == "linkedin" %}selected{% endif %}>LinkedIn</option>
+                <option value="slack" {% if contact_info.preferred_contact_method == "slack" %}selected{% endif %}>Slack</option>
+                <option value="platform_message" {% if contact_info.preferred_contact_method == "platform_message" or not contact_info %}selected{% endif %}>In-App Message</option>
+              </select>
+            </template>
+
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Contact visibility</div><p class="card-desc">Choose which channels are shown on your public profile. Nothing shows unless "Public contact card" is on.</p></div>
+          </div>
+          <!-- Toggle switches stay as instant switches (already single-click edits) -->
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_contact_privacy">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Public contact card</div><div class="t-desc">Master switch — show a contact card on your profile at all.</div></div>
+                <label class="switch"><input type="checkbox" name="is_contact_public" {% if contact_info.is_contact_public %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow contact requests</div><div class="t-desc">Let others request your contact details.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_contact_requests" {% if contact_info.allow_contact_requests %}checked{% elif not contact_info %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Alternate email</div></div><label class="switch"><input type="checkbox" name="show_email" {% if contact_info.show_email %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Phone number</div></div><label class="switch"><input type="checkbox" name="show_phone" {% if contact_info.show_phone %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">WhatsApp</div></div><label class="switch"><input type="checkbox" name="show_whatsapp" {% if contact_info.show_whatsapp %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Telegram</div></div><label class="switch"><input type="checkbox" name="show_telegram" {% if contact_info.show_telegram %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Signal</div></div><label class="switch"><input type="checkbox" name="show_signal" {% if contact_info.show_signal %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Viber</div></div><label class="switch"><input type="checkbox" name="show_viber" {% if contact_info.show_viber %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">WeChat</div></div><label class="switch"><input type="checkbox" name="show_wechat" {% if contact_info.show_wechat %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">LINE</div></div><label class="switch"><input type="checkbox" name="show_line" {% if contact_info.show_line %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">imo</div></div><label class="switch"><input type="checkbox" name="show_imo" {% if contact_info.show_imo %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Skype</div></div><label class="switch"><input type="checkbox" name="show_skype" {% if contact_info.show_skype %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Discord</div></div><label class="switch"><input type="checkbox" name="show_discord" {% if contact_info.show_discord %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Messenger</div></div><label class="switch"><input type="checkbox" name="show_facebook_messenger" {% if contact_info.show_facebook_messenger %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Instagram</div></div><label class="switch"><input type="checkbox" name="show_instagram" {% if contact_info.show_instagram %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Snapchat</div></div><label class="switch"><input type="checkbox" name="show_snapchat" {% if contact_info.show_snapchat %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Twitter / X</div></div><label class="switch"><input type="checkbox" name="show_twitter" {% if contact_info.show_twitter %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">LinkedIn</div></div><label class="switch"><input type="checkbox" name="show_linkedin" {% if contact_info.show_linkedin %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Slack</div></div><label class="switch"><input type="checkbox" name="show_slack" {% if contact_info.show_slack %}checked{% endif %}><span class="track"></span></label></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save visibility</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- BUSINESS (dealer only) -->
+      {% if is_dealer %}
+      <section class="panel" data-panel="business">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Business</div><p class="card-desc">Shown to buyers on your dealer storefront.</p></div>
+            <span class="badge {% if business_completion_percentage >= 80 %}ok{% elif business_completion_percentage >= 40 %}warn{% else %}danger{% endif %}">{{ business_completion_percentage }}% complete</span>
+          </div>
+          <div class="stat-cards">
+            <div class="stat-card"><div class="num">{{ products_listed_count }}</div><div class="lbl">Listed products</div></div>
+            <div class="stat-card"><div class="num">{{ active_products_count }}</div><div class="lbl">Active products</div></div>
+            <div class="stat-card"><div class="num">{{ brands_count }}</div><div class="lbl">Brands on PIELAM</div></div>
+            <div class="stat-card"><div class="num">{{ categories_count }}</div><div class="lbl">Categories</div></div>
+          </div>
+          {% if not business_info %}
+          <div class="inline-alert info"><i class="fa-solid fa-circle-info"></i> You haven't set up your business profile yet — a business name is required before this can be saved.</div>
+          {% endif %}
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Business name <span class="hint">required</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_name %}empty{% endif %}" data-fv-display="business_name">{{ business_info.business_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_name" data-fv-action="update_business" data-fv-field="business_name" data-fv-title="Business name" data-fv-required="1">
+              <input type="text" name="business_name" value="{{ business_info.business_name|default:'' }}" required>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Legal name</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.legal_name %}empty{% endif %}" data-fv-display="legal_name">{{ business_info.legal_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-legal_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-legal_name" data-fv-action="update_business" data-fv-field="legal_name" data-fv-title="Legal name">
+              <input type="text" name="legal_name" value="{{ business_info.legal_name|default:'' }}" placeholder="If different from business name">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business type</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="business_type">{{ business_info.get_business_type_display|default:"Other" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_type"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_type" data-fv-action="update_business" data-fv-field="business_type" data-fv-title="Business type">
+              <select name="business_type">
+                <option value="sole_proprietorship" {% if business_info.business_type == "sole_proprietorship" %}selected{% endif %}>Sole Proprietorship</option>
+                <option value="partnership" {% if business_info.business_type == "partnership" %}selected{% endif %}>Partnership</option>
+                <option value="llc" {% if business_info.business_type == "llc" %}selected{% endif %}>Limited Liability Company</option>
+                <option value="corporation" {% if business_info.business_type == "corporation" %}selected{% endif %}>Corporation</option>
+                <option value="nonprofit" {% if business_info.business_type == "nonprofit" %}selected{% endif %}>Nonprofit</option>
+                <option value="other" {% if business_info.business_type == "other" or not business_info %}selected{% endif %}>Other</option>
+              </select>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Industry</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.industry %}empty{% endif %}" data-fv-display="industry">{{ business_info.industry|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-industry"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-industry" data-fv-action="update_business" data-fv-field="industry" data-fv-title="Industry">
+              <input type="text" name="industry" value="{{ business_info.industry|default:'' }}" placeholder="e.g. Robotics & Automation">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Founded date</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.founded_date %}empty{% endif %}" data-fv-display="founded_date">{{ business_info.founded_date|date:"M j, Y"|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-founded_date"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-founded_date" data-fv-action="update_business" data-fv-field="founded_date" data-fv-title="Founded date">
+              <input type="date" name="founded_date" value="{{ business_info.founded_date|date:'Y-m-d' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Registration number</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.registration_number %}empty{% endif %}" data-fv-display="registration_number">{{ business_info.registration_number|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-registration_number"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-registration_number" data-fv-action="update_business" data-fv-field="registration_number" data-fv-title="Registration number">
+              <input type="text" name="registration_number" value="{{ business_info.registration_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Tax ID</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.tax_id %}empty{% endif %}" data-fv-display="tax_id">{{ business_info.tax_id|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-tax_id"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-tax_id" data-fv-action="update_business" data-fv-field="tax_id" data-fv-title="Tax ID">
+              <input type="text" name="tax_id" value="{{ business_info.tax_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Website</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.website %}empty{% endif %}" data-fv-display="website">{{ business_info.website|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_website"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_website" data-fv-action="update_business" data-fv-field="website" data-fv-title="Website">
+              <input type="url" name="website" value="{{ business_info.website|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business email</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_email %}empty{% endif %}" data-fv-display="business_email">{{ business_info.business_email|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_email"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_email" data-fv-action="update_business" data-fv-field="business_email" data-fv-title="Business email">
+              <input type="email" name="business_email" value="{{ business_info.business_email|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business phone</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_phone %}empty{% endif %}" data-fv-display="business_phone">{{ business_info.business_phone|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_phone"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_phone" data-fv-action="update_business" data-fv-field="business_phone" data-fv-title="Business phone">
+              <input type="tel" name="business_phone" value="{{ business_info.business_phone|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Employee count</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.employee_count %}empty{% endif %}" data-fv-display="employee_count">{{ business_info.employee_count|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-employee_count"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-employee_count" data-fv-action="update_business" data-fv-field="employee_count" data-fv-title="Employee count">
+              <input type="number" name="employee_count" min="0" value="{{ business_info.employee_count|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Annual revenue</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.annual_revenue %}empty{% endif %}" data-fv-display="annual_revenue">{{ business_info.annual_revenue|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-annual_revenue"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-annual_revenue" data-fv-action="update_business" data-fv-field="annual_revenue" data-fv-title="Annual revenue">
+              <input type="number" step="0.01" min="0" name="annual_revenue" value="{{ business_info.annual_revenue|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Currency <span class="hint">ISO code, defaults to USD</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.currency %}empty{% endif %}" data-fv-display="currency">{{ business_info.currency|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_currency"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_currency" data-fv-action="update_business" data-fv-field="currency" data-fv-title="Currency">
+              <input type="text" name="currency" maxlength="3" value="{{ business_info.currency|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Description</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.description %}empty{% endif %}" data-fv-display="description">{{ business_info.description|default:"Not set"|truncatewords:24 }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_description"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_description" data-fv-action="update_business" data-fv-field="description" data-fv-title="Business description">
+              <textarea name="description" maxlength="1000">{{ business_info.description|default:'' }}</textarea>
+            </template>
+
+          </div>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- SOCIAL -->
+      <section class="panel" data-panel="social">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Social links</div><p class="card-desc">Link out to your other profiles. Add as many or as few as you like.</p></div>
+            <span class="badge {% if social_link_count > 0 %}ok{% else %}warn{% endif %}">{{ social_link_count }} link{{ social_link_count|pluralize }}</span>
+          </div>
+
+          <div class="field-view-grid">
+
+            <div class="fv-subhead">Mainstream social</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-facebook"></i> Facebook</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.facebook_url %}empty{% endif %}" data-fv-display="facebook_url">{{ social_info.facebook_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-facebook_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-facebook_url" data-fv-action="update_social" data-fv-field="facebook_url" data-fv-title="Facebook"><input type="url" name="facebook_url" value="{{ social_info.facebook_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-instagram"></i> Instagram</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.instagram_url %}empty{% endif %}" data-fv-display="instagram_url">{{ social_info.instagram_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-instagram_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-instagram_url" data-fv-action="update_social" data-fv-field="instagram_url" data-fv-title="Instagram"><input type="url" name="instagram_url" value="{{ social_info.instagram_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-x-twitter"></i> X / Twitter</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.twitter_url %}empty{% endif %}" data-fv-display="twitter_url">{{ social_info.twitter_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-twitter_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-twitter_url" data-fv-action="update_social" data-fv-field="twitter_url" data-fv-title="X / Twitter"><input type="url" name="twitter_url" value="{{ social_info.twitter_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-threads"></i> Threads</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.threads_url %}empty{% endif %}" data-fv-display="threads_url">{{ social_info.threads_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-threads_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-threads_url" data-fv-action="update_social" data-fv-field="threads_url" data-fv-title="Threads"><input type="url" name="threads_url" value="{{ social_info.threads_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-snapchat"></i> Snapchat</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.snapchat_url %}empty{% endif %}" data-fv-display="snapchat_url">{{ social_info.snapchat_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-snapchat_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-snapchat_url" data-fv-action="update_social" data-fv-field="snapchat_url" data-fv-title="Snapchat"><input type="url" name="snapchat_url" value="{{ social_info.snapchat_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-pinterest"></i> Pinterest</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.pinterest_url %}empty{% endif %}" data-fv-display="pinterest_url">{{ social_info.pinterest_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-pinterest_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-pinterest_url" data-fv-action="update_social" data-fv-field="pinterest_url" data-fv-title="Pinterest"><input type="url" name="pinterest_url" value="{{ social_info.pinterest_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-tiktok"></i> TikTok</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.tiktok_url %}empty{% endif %}" data-fv-display="tiktok_url">{{ social_info.tiktok_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-tiktok_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-tiktok_url" data-fv-action="update_social" data-fv-field="tiktok_url" data-fv-title="TikTok"><input type="url" name="tiktok_url" value="{{ social_info.tiktok_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Bluesky</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.bluesky_url %}empty{% endif %}" data-fv-display="bluesky_url">{{ social_info.bluesky_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-bluesky_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-bluesky_url" data-fv-action="update_social" data-fv-field="bluesky_url" data-fv-title="Bluesky"><input type="url" name="bluesky_url" value="{{ social_info.bluesky_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-mastodon"></i> Mastodon</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.mastodon_url %}empty{% endif %}" data-fv-display="mastodon_url">{{ social_info.mastodon_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-mastodon_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-mastodon_url" data-fv-action="update_social" data-fv-field="mastodon_url" data-fv-title="Mastodon"><input type="url" name="mastodon_url" value="{{ social_info.mastodon_url|default:'' }}" placeholder="Any instance"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-reddit"></i> Reddit</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.reddit_url %}empty{% endif %}" data-fv-display="reddit_url">{{ social_info.reddit_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-reddit_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-reddit_url" data-fv-action="update_social" data-fv-field="reddit_url" data-fv-title="Reddit"><input type="url" name="reddit_url" value="{{ social_info.reddit_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-tumblr"></i> Tumblr</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.tumblr_url %}empty{% endif %}" data-fv-display="tumblr_url">{{ social_info.tumblr_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-tumblr_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-tumblr_url" data-fv-action="update_social" data-fv-field="tumblr_url" data-fv-title="Tumblr"><input type="url" name="tumblr_url" value="{{ social_info.tumblr_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-vk"></i> VK</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.vk_url %}empty{% endif %}" data-fv-display="vk_url">{{ social_info.vk_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-vk_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-vk_url" data-fv-action="update_social" data-fv-field="vk_url" data-fv-title="VK"><input type="url" name="vk_url" value="{{ social_info.vk_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weibo"></i> Weibo</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.weibo_url %}empty{% endif %}" data-fv-display="weibo_url">{{ social_info.weibo_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-weibo_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-weibo_url" data-fv-action="update_social" data-fv-field="weibo_url" data-fv-title="Weibo"><input type="url" name="weibo_url" value="{{ social_info.weibo_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-line"></i> LINE</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.line_url %}empty{% endif %}" data-fv-display="line_url">{{ social_info.line_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_line_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_line_url" data-fv-action="update_social" data-fv-field="line_url" data-fv-title="LINE"><input type="url" name="line_url" value="{{ social_info.line_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weixin"></i> WeChat</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.wechat_url %}empty{% endif %}" data-fv-display="wechat_url">{{ social_info.wechat_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_wechat_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_wechat_url" data-fv-action="update_social" data-fv-field="wechat_url" data-fv-title="WeChat"><input type="url" name="wechat_url" value="{{ social_info.wechat_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Professional</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-linkedin"></i> LinkedIn</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.linkedin_url %}empty{% endif %}" data-fv-display="social_linkedin_url">{{ social_info.linkedin_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_linkedin_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_linkedin_url" data-fv-action="update_social" data-fv-field="linkedin_url" data-fv-title="LinkedIn"><input type="url" name="linkedin_url" value="{{ social_info.linkedin_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-github"></i> GitHub</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.github_url %}empty{% endif %}" data-fv-display="github_url">{{ social_info.github_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-github_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-github_url" data-fv-action="update_social" data-fv-field="github_url" data-fv-title="GitHub"><input type="url" name="github_url" value="{{ social_info.github_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-gitlab"></i> GitLab</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.gitlab_url %}empty{% endif %}" data-fv-display="gitlab_url">{{ social_info.gitlab_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-gitlab_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-gitlab_url" data-fv-action="update_social" data-fv-field="gitlab_url" data-fv-title="GitLab"><input type="url" name="gitlab_url" value="{{ social_info.gitlab_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Behance</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.behance_url %}empty{% endif %}" data-fv-display="behance_url">{{ social_info.behance_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-behance_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-behance_url" data-fv-action="update_social" data-fv-field="behance_url" data-fv-title="Behance"><input type="url" name="behance_url" value="{{ social_info.behance_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-dribbble"></i> Dribbble</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.dribbble_url %}empty{% endif %}" data-fv-display="dribbble_url">{{ social_info.dribbble_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-dribbble_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-dribbble_url" data-fv-action="update_social" data-fv-field="dribbble_url" data-fv-title="Dribbble"><input type="url" name="dribbble_url" value="{{ social_info.dribbble_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Video, streaming &amp; audio</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-youtube"></i> YouTube</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.youtube_url %}empty{% endif %}" data-fv-display="youtube_url">{{ social_info.youtube_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-youtube_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-youtube_url" data-fv-action="update_social" data-fv-field="youtube_url" data-fv-title="YouTube"><input type="url" name="youtube_url" value="{{ social_info.youtube_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-twitch"></i> Twitch</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.twitch_url %}empty{% endif %}" data-fv-display="twitch_url">{{ social_info.twitch_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-twitch_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-twitch_url" data-fv-action="update_social" data-fv-field="twitch_url" data-fv-title="Twitch"><input type="url" name="twitch_url" value="{{ social_info.twitch_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-vimeo"></i> Vimeo</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.vimeo_url %}empty{% endif %}" data-fv-display="vimeo_url">{{ social_info.vimeo_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-vimeo_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-vimeo_url" data-fv-action="update_social" data-fv-field="vimeo_url" data-fv-title="Vimeo"><input type="url" name="vimeo_url" value="{{ social_info.vimeo_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-spotify"></i> Spotify</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.spotify_url %}empty{% endif %}" data-fv-display="spotify_url">{{ social_info.spotify_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-spotify_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-spotify_url" data-fv-action="update_social" data-fv-field="spotify_url" data-fv-title="Spotify"><input type="url" name="spotify_url" value="{{ social_info.spotify_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-soundcloud"></i> SoundCloud</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.soundcloud_url %}empty{% endif %}" data-fv-display="soundcloud_url">{{ social_info.soundcloud_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-soundcloud_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-soundcloud_url" data-fv-action="update_social" data-fv-field="soundcloud_url" data-fv-title="SoundCloud"><input type="url" name="soundcloud_url" value="{{ social_info.soundcloud_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Kick</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.kick_url %}empty{% endif %}" data-fv-display="kick_url">{{ social_info.kick_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-kick_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-kick_url" data-fv-action="update_social" data-fv-field="kick_url" data-fv-title="Kick"><input type="url" name="kick_url" value="{{ social_info.kick_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Writing &amp; community</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-medium"></i> Medium</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.medium_url %}empty{% endif %}" data-fv-display="medium_url">{{ social_info.medium_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-medium_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-medium_url" data-fv-action="update_social" data-fv-field="medium_url" data-fv-title="Medium"><input type="url" name="medium_url" value="{{ social_info.medium_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Substack</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.substack_url %}empty{% endif %}" data-fv-display="substack_url">{{ social_info.substack_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-substack_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-substack_url" data-fv-action="update_social" data-fv-field="substack_url" data-fv-title="Substack"><input type="url" name="substack_url" value="{{ social_info.substack_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-quora"></i> Quora</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.quora_url %}empty{% endif %}" data-fv-display="quora_url">{{ social_info.quora_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-quora_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-quora_url" data-fv-action="update_social" data-fv-field="quora_url" data-fv-title="Quora"><input type="url" name="quora_url" value="{{ social_info.quora_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-discord"></i> Discord</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.discord_url %}empty{% endif %}" data-fv-display="social_discord_url">{{ social_info.discord_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_discord_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_discord_url" data-fv-action="update_social" data-fv-field="discord_url" data-fv-title="Discord"><input type="url" name="discord_url" value="{{ social_info.discord_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-telegram"></i> Telegram</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.telegram_url %}empty{% endif %}" data-fv-display="social_telegram_url">{{ social_info.telegram_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_telegram_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_telegram_url" data-fv-action="update_social" data-fv-field="telegram_url" data-fv-title="Telegram"><input type="url" name="telegram_url" value="{{ social_info.telegram_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.whatsapp_url %}empty{% endif %}" data-fv-display="whatsapp_url">{{ social_info.whatsapp_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-whatsapp_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-whatsapp_url" data-fv-action="update_social" data-fv-field="whatsapp_url" data-fv-title="WhatsApp" ><input type="url" name="whatsapp_url" value="{{ social_info.whatsapp_url|default:'' }}" placeholder="wa.me link"></template>
+
+            <div class="fv-subhead">Interests &amp; niche communities</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-goodreads"></i> Goodreads</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.goodreads_url %}empty{% endif %}" data-fv-display="goodreads_url">{{ social_info.goodreads_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-goodreads_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-goodreads_url" data-fv-action="update_social" data-fv-field="goodreads_url" data-fv-title="Goodreads"><input type="url" name="goodreads_url" value="{{ social_info.goodreads_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Letterboxd</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.letterboxd_url %}empty{% endif %}" data-fv-display="letterboxd_url">{{ social_info.letterboxd_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-letterboxd_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-letterboxd_url" data-fv-action="update_social" data-fv-field="letterboxd_url" data-fv-title="Letterboxd"><input type="url" name="letterboxd_url" value="{{ social_info.letterboxd_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-strava"></i> Strava</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.strava_url %}empty{% endif %}" data-fv-display="strava_url">{{ social_info.strava_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-strava_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-strava_url" data-fv-action="update_social" data-fv-field="strava_url" data-fv-title="Strava"><input type="url" name="strava_url" value="{{ social_info.strava_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Website</div>
+            <div class="field-view span-2">
+              <span class="fv-label">Personal or business website</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not social_info.website_url %}empty{% endif %}" data-fv-display="website_url">{{ social_info.website_url|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-website_url"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-website_url" data-fv-action="update_social" data-fv-field="website_url" data-fv-title="Website">
+              <input type="url" name="website_url" value="{{ social_info.website_url|default:'' }}">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- PRIVACY (toggles — unchanged, already single-click) -->
+      <section class="panel" data-panel="privacy">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Privacy</div><p class="card-desc">Control what others can see and do on your profile.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_privacy">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Public profile</div><div class="t-desc">Anyone can find and view your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="is_profile_public" {% if profile_info.is_profile_public %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show email on profile</div><div class="t-desc">Display your primary account email publicly. (Alt-email visibility is set on the Contact tab.)</div></div>
+                <label class="switch"><input type="checkbox" name="show_email" {% if profile_info.show_email %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show phone on profile</div><div class="t-desc">Display your primary account phone publicly. (Other numbers' visibility is set on the Contact tab.)</div></div>
+                <label class="switch"><input type="checkbox" name="show_phone" {% if profile_info.show_phone %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show date of birth</div><div class="t-desc">Display your birthdate on your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="show_dob" {% if profile_info.show_dob %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show age</div><div class="t-desc">Display your calculated age instead of full DOB.</div></div>
+                <label class="switch"><input type="checkbox" name="show_age" {% if profile_info.show_age %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show location</div><div class="t-desc">Display your city and country from the Location tab.</div></div>
+                <label class="switch"><input type="checkbox" name="show_location" {% if profile_info.show_location %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show followers</div><div class="t-desc">Display your follower count.</div></div>
+                <label class="switch"><input type="checkbox" name="show_followers" {% if profile_info.show_followers %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Show following</div><div class="t-desc">Display who you follow.</div></div>
+                <label class="switch"><input type="checkbox" name="show_following" {% if profile_info.show_following %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow messages</div><div class="t-desc">Let other users message you directly.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_messages" {% if profile_info.allow_messages %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow follows</div><div class="t-desc">Let other users follow your profile.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_follow" {% if profile_info.allow_follow %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save privacy settings</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS (toggles — unchanged) -->
+      <section class="panel" data-panel="notifications">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Notifications</div><p class="card-desc">Choose what PIELAM lets you know about.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_notifications">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">New followers</div><div class="t-desc">Someone starts following you.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_follow" {% if profile_info.notify_on_follow %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">New messages</div><div class="t-desc">You receive a direct message.</div></div>
+                <label class="switch"><input type="checkbox" name="notify_on_message" {% if profile_info.notify_on_message %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Email notifications</div><div class="t-desc">Receive these updates by email.</div></div>
+                <label class="switch"><input type="checkbox" name="email_notifications" {% if profile_info.email_notifications %}checked{% endif %}><span class="track"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">SMS notifications</div><div class="t-desc">Receive these updates by SMS.</div></div>
+                <label class="switch"><input type="checkbox" name="sms_notifications" {% if profile_info.sms_notifications %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save notification settings</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Marketing</div><p class="card-desc">Occasional offers and product news.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_marketing_consent">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy">
+                  <div class="t-label">Marketing emails</div>
+                  <div class="t-desc">{% if user.marketing_consent_date %}Consent given {{ user.marketing_consent_date|date:"M j, Y" }}.{% else %}You haven't opted in yet.{% endif %}</div>
+                </div>
+                <label class="switch"><input type="checkbox" name="marketing_consent" {% if user.marketing_consent %}checked{% endif %}><span class="track"></span></label>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-ghost">Save preference</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ACCOUNT -->
+      <section class="panel" data-panel="account">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Account</div><p class="card-desc">Core identity &amp; regional preferences.</p></div>
+          </div>
+
+          <div class="account-meta">
+            <div class="meta-item"><div class="m-label">Login ID</div><div class="m-value">{{ user.email_or_phone }}</div></div>
+            <div class="meta-item">
+              <div class="m-label">Email</div>
+              <div class="m-value">{{ user.email|default:"—" }} {% if user.email %}{% if user.email_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Unverified</span>{% endif %}{% endif %}</div>
+            </div>
+            <div class="meta-item">
+              <div class="m-label">Phone</div>
+              <div class="m-value">{{ user.phone|default:"—" }} {% if user.phone %}{% if user.phone_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Unverified</span>{% endif %}{% endif %}</div>
+            </div>
+            <div class="meta-item"><div class="m-label">Role</div><div class="m-value">{{ user.get_role_display }}</div></div>
+          </div>
+
+          {% if needs_password_rotation %}
+          <div class="inline-alert warn"><i class="fa-solid fa-triangle-exclamation"></i> Your password is over 90 days old — consider updating it in the Security tab.</div>
+          {% endif %}
+          {% if is_locked %}
+          <div class="inline-alert warn"><i class="fa-solid fa-lock"></i> Your account is temporarily locked due to failed sign-in attempts.</div>
+          {% endif %}
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Language</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="language">{{ user.language|default:"English" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-language"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-language" data-fv-action="update_account" data-fv-field="language" data-fv-title="Language">
+              <select name="language">
+                <option value="English" {% if user.language == "English" %}selected{% endif %}>English</option>
+                <option value="Bengali" {% if user.language == "Bengali" %}selected{% endif %}>Bengali</option>
+                <option value="Spanish" {% if user.language == "Spanish" %}selected{% endif %}>Spanish</option>
+                <option value="French" {% if user.language == "French" %}selected{% endif %}>French</option>
+                <option value="German" {% if user.language == "German" %}selected{% endif %}>German</option>
+                <option value="Chinese" {% if user.language == "Chinese" %}selected{% endif %}>Chinese</option>
+                <option value="Arabic" {% if user.language == "Arabic" %}selected{% endif %}>Arabic</option>
+                <option value="Hindi" {% if user.language == "Hindi" %}selected{% endif %}>Hindi</option>
+              </select>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Country</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not user.country %}empty{% endif %}" data-fv-display="account_country">{{ user.country|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-account_country"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-account_country" data-fv-action="update_account" data-fv-field="country" data-fv-title="Country">
+              <input type="text" name="country" placeholder="e.g. Bangladesh" value="{{ user.country|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Currency</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not user.currency %}empty{% endif %}" data-fv-display="account_currency">{{ user.currency|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-account_currency"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-account_currency" data-fv-action="update_account" data-fv-field="currency" data-fv-title="Currency">
+              <input type="text" name="currency" maxlength="3" placeholder="ISO code, e.g. USD" value="{{ user.currency }}">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY (multi-field actions — stays as dedicated forms) -->
+      <section class="panel" data-panel="security">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Password</div><p class="card-desc">Use at least 8 characters.</p></div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
+            <div class="form-grid">
+              <div class="field span-2"><label>Current password</label><input type="password" name="current_password" required></div>
+              <div class="field"><label>New password</label><input type="password" name="new_password" minlength="8" required></div>
+              <div class="field"><label>Confirm new password</label><input type="password" name="confirm_password" minlength="8" required></div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Change password</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Two-factor authentication</div>
+              <p class="card-desc">{% if user.mfa_enabled %}Enabled via {{ user.get_mfa_method_display }}.{% else %}Add an extra layer of protection.{% endif %}</p>
+            </div>
+            {% if user.mfa_enabled %}<span class="badge ok">Enabled</span>{% else %}<span class="badge warn">Disabled</span>{% endif %}
+          </div>
+
+          {% if user.mfa_enabled %}
+          <form method="post" class="js-confirm-form" data-confirm="Disable two-factor authentication?">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="disable_mfa">
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-danger">Disable two-factor authentication</button>
+            </div>
+          </form>
+          {% else %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="enable_mfa">
+            <div class="form-grid single">
+              <div class="field">
+                <label>Method</label>
+                <select name="mfa_method">
+                  <option value="totp">Authenticator app (TOTP)</option>
+                  <option value="sms">SMS</option>
+                  <option value="email">Email</option>
+                  <option value="backup_codes">Backup codes</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-shield"></i> Enable two-factor authentication</button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- ACTIVITY (read-only — unchanged) -->
+      <section class="panel" data-panel="activity">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Who viewed your profile</div><p class="card-desc">Most recent, identifiable visitors.</p></div>
+            <span class="badge ok">{{ profile_view_count }} total view{{ profile_view_count|pluralize }}</span>
+          </div>
+          {% if recent_viewers %}
+          <ul class="viewer-list">
+            {% for view in recent_viewers %}
+            <li class="viewer-row">
+              <img src="{{ view.viewer.profileinfo.get_profile_photo_url }}" alt="">
+              <span class="viewer-name">{{ view.viewer.profileinfo.profile_name|default:view.viewer.email_or_phone }}</span>
+              <span class="viewer-time">{{ view.viewed_at|timesince }} ago</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="empty-state"><i class="fa-solid fa-eye-slash"></i>No visits yet — once someone views your profile, they'll show up here.</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <!-- DANGER ZONE (unchanged) -->
+      <section class="panel" data-panel="danger">
+        <div class="card danger-card">
+          <div class="card-head">
+            <div><div class="card-title">Danger zone</div><p class="card-desc">These actions affect your entire account.</p></div>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <div class="d-label">Deactivate account</div>
+              <div class="d-desc">Hides your profile and signs you out. You can reach out to support to reactivate later.</div>
+            </div>
+            <form method="post" class="js-confirm-form" data-confirm="Deactivate your account now?">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="deactivate_account">
+              <button type="submit" class="btn btn-danger">Deactivate</button>
+            </form>
+          </div>
+
+          <div class="danger-row">
+            <div>
+              <div class="d-label">Delete account</div>
+              <div class="d-desc">Permanently removes your email and phone from this account. This can't be undone. Type <strong>{{ user.email_or_phone }}</strong> to confirm.</div>
+            </div>
+          </div>
+          <form method="post" class="js-confirm-form" data-confirm="This permanently deletes your account. Continue?">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_account">
+            <div class="form-grid single">
+              <div class="field">
+                <input type="text" name="confirm_delete" placeholder="Type {{ user.email_or_phone }} to confirm">
+              </div>
+            </div>
+            <div class="form-actions align-start">
+              <button type="submit" class="btn btn-danger solid"><i class="fa-solid fa-trash"></i> Permanently delete account</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</div><!-- /.profile-manager -->
+
+<!-- ═══════════════ EDIT-FIELD MODAL (single instance, reused for every field) ═══════════════ -->
+<div class="pm-modal-backdrop js-pm-modal-backdrop" aria-hidden="true">
+  <div class="pm-modal" role="dialog" aria-modal="true" aria-labelledby="pm-modal-title">
+    <h3 id="pm-modal-title" class="js-pm-modal-title">Edit field</h3>
+    <p class="pm-modal-hint">Changes save immediately when you hit Save.</p>
+    <form class="js-pm-modal-form">
+      <div class="pm-field-wrap js-pm-field-wrap"><!-- cloned input/select/textarea goes here --></div>
+      <div class="pm-error js-pm-modal-error"></div>
+      <div class="pm-actions">
+        <button type="button" class="pm-btn pm-btn-cancel js-pm-cancel">Cancel</button>
+        <button type="submit" class="pm-btn pm-btn-save js-pm-save">
+          <span class="pm-spinner"></span>
+          <span class="pm-btn-save-text">Save</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ VERIFY-CHANNEL MODAL (new — separate instance, reused for every verifiable channel) ═══════════════ -->
+<div class="pm-modal-backdrop js-verify-modal-backdrop" aria-hidden="true">
+  <div class="pm-modal" role="dialog" aria-modal="true" aria-labelledby="verify-modal-title">
+    <h3 id="verify-modal-title" class="js-verify-modal-title">Verify</h3>
+    <p class="pm-modal-hint js-verify-modal-hint">Sending a code…</p>
+
+    <form class="js-verify-code-form" style="display:none">
+      <div class="pm-field-wrap">
+        <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
+      </div>
+      <div class="pm-error js-verify-code-error"></div>
+      <div class="pm-actions">
+        <button type="button" class="pm-btn pm-btn-cancel js-verify-cancel">Cancel</button>
+        <button type="submit" class="pm-btn pm-btn-save js-verify-confirm">
+          <span class="pm-spinner"></span>
+          <span class="pm-btn-save-text">Confirm</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="js-verify-static-message" style="display:none">
+      <div class="pm-error js-verify-static-error" style="display:block;color:#1a6b3a;background:#edf7f1;padding:12px;border-radius:8px;"></div>
+      <div class="pm-actions"><button type="button" class="pm-btn pm-btn-cancel js-verify-close">Close</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+(function () {
+  var root = document.querySelector('.profile-manager');
+  if (!root) return;
+
+  /* ── Tab switching (unchanged) ─────────────────────────────── */
+  var buttons = root.querySelectorAll('.nav-btn');
+  var panels = root.querySelectorAll('.panel');
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = btn.getAttribute('data-tab');
+      buttons.forEach(function (b) { b.classList.remove('active'); });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      var panel = root.querySelector('.panel[data-panel="' + target + '"]');
+      if (panel) panel.classList.add('active');
+      history.replaceState(null, '', '#' + target);
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    });
+  });
+
+  var hash = window.location.hash.replace('#', '');
+  if (hash) {
+    var initial = root.querySelector('.nav-btn[data-tab="' + hash + '"]');
+    if (initial) initial.click();
+  }
+
+  var logoutBtn = root.querySelector('.js-logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function (e) {
+      if (!window.confirm('Are you sure you want to log out?')) e.preventDefault();
+    });
+  }
+
+  root.querySelectorAll('.js-confirm-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (!window.confirm(form.getAttribute('data-confirm'))) e.preventDefault();
+    });
+  });
+
+  /* ── Toast helper ───────────────────────────────────────────── */
+  var toastStack = document.querySelector('.js-toast-stack');
+  function showToast(message, type) {
+    if (!toastStack) return;
+    var el = document.createElement('div');
+    el.className = 'pm-toast ' + (type || 'success');
+    el.textContent = message;
+    toastStack.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.remove(); }, 250);
+    }, 3500);
+  }
+
+  /* ── Edit-field modal controller (generic — works for every field) ── */
+  var backdrop = document.querySelector('.js-pm-modal-backdrop');
+  var modalTitle = document.querySelector('.js-pm-modal-title');
+  var modalFieldWrap = document.querySelector('.js-pm-field-wrap');
+  var modalForm = document.querySelector('.js-pm-modal-form');
+  var modalError = document.querySelector('.js-pm-modal-error');
+  var modalSaveBtn = document.querySelector('.js-pm-save');
+  var modalCancelBtn = document.querySelector('.js-pm-cancel');
+  var csrfToken = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+
+  var activeTrigger = null; // the .fv-edit-btn that opened the modal, so we know where to write the result back
+
+  function openModalFor(templateId, triggerBtn) {
+    var tpl = document.getElementById(templateId);
+    if (!tpl) return;
+
+    activeTrigger = triggerBtn;
+    modalTitle.textContent = tpl.getAttribute('data-fv-title') || 'Edit field';
+    modalForm.setAttribute('data-fv-action', tpl.getAttribute('data-fv-action'));
+    modalForm.setAttribute('data-fv-field', tpl.getAttribute('data-fv-field'));
+    modalForm.setAttribute('data-fv-filefield', tpl.getAttribute('data-fv-filefield') || '');
+
+    modalFieldWrap.innerHTML = '';
+    modalFieldWrap.appendChild(tpl.content.cloneNode(true));
+    modalError.classList.remove('show');
+    modalError.textContent = '';
+
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+
+    var firstInput = modalFieldWrap.querySelector('input, select, textarea');
+    if (firstInput) setTimeout(function () { firstInput.focus(); }, 50);
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    activeTrigger = null;
+  }
+
+  root.querySelectorAll('[data-fv-open]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openModalFor(btn.getAttribute('data-fv-open'), btn);
+    });
+  });
+
+  modalCancelBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', function (e) {
+    if (e.target === backdrop) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal();
+  });
+
+  modalForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var action = modalForm.getAttribute('data-fv-action');
+    var fieldName = modalForm.getAttribute('data-fv-field');
+    var isFileField = modalForm.getAttribute('data-fv-filefield') === '1';
+    var input = modalFieldWrap.querySelector('[name="' + fieldName + '"]');
+    if (!input) return;
+
+    if (input.hasAttribute('required') && !input.value) {
+      modalError.textContent = 'This field is required.';
+      modalError.classList.add('show');
+      return;
+    }
+
+    // Snapshot of what the row currently displays, so on success we can
+    // tell whether the value *actually* changed before touching the
+    // verify badge — matches the server, which only invalidates a
+    // verification when the submitted value differs from what was
+    // verified (_invalidate_stale_contact_verifications /
+    // _invalidate_stale_direct_verifications in profile_managers.py).
+    // Previously this reset the badge to "Unverified" on every save
+    // regardless of whether anything changed.
+    var previousDisplayText = null;
+    if (activeTrigger) {
+      var previousRow = activeTrigger.closest('.fv-row');
+      var previousValueEl = previousRow ? previousRow.querySelector('[data-fv-display]') : null;
+      if (previousValueEl) previousDisplayText = previousValueEl.textContent;
+    }
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', action);
+    if (isFileField) {
+      if (input.files && input.files[0]) formData.append(fieldName, input.files[0]);
+    } else {
+      formData.append(fieldName, input.value);
+    }
+
+    modalSaveBtn.classList.add('loading');
+    modalSaveBtn.disabled = true;
+    modalError.classList.remove('show');
+
+    fetch(window.location.pathname, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        modalSaveBtn.classList.remove('loading');
+        modalSaveBtn.disabled = false;
+
+        if (!result.ok || !result.data.success) {
+          var msg = (result.data && result.data.message) || 'Something went wrong. Please try again.';
+          modalError.textContent = msg;
+          modalError.classList.add('show');
+          return;
+        }
+
+        var newDisplayValue = result.data.display_value;
+        var valueActuallyChanged = newDisplayValue !== previousDisplayText;
+
+        // Update the on-page value next to the edit button, then close.
+        if (activeTrigger) {
+          var row = activeTrigger.closest('.fv-row');
+          var valueEl = row ? row.querySelector('[data-fv-display]') : null;
+          if (valueEl) {
+            if (newDisplayValue === undefined || newDisplayValue === null || newDisplayValue === '') {
+              valueEl.textContent = isFileField ? 'Uploaded' : 'Not set';
+              valueEl.classList.toggle('empty', !isFileField);
+            } else {
+              valueEl.textContent = newDisplayValue;
+              valueEl.classList.remove('empty');
+            }
+          } else if (isFileField && row) {
+            var fallback = row.querySelector('.fv-value');
+            if (fallback) { fallback.textContent = 'Uploaded'; fallback.classList.remove('empty'); }
+          }
+        }
+
+        // If this field has a verify badge/button on the row, only reset
+        // it to "Unverified" when the value actually changed — resaving
+        // the same value shouldn't visually un-verify a channel that the
+        // server didn't actually invalidate.
+        if (activeTrigger && valueActuallyChanged) {
+          var editedRow = activeTrigger.closest('.fv-row');
+          if (editedRow) {
+            var badge = editedRow.querySelector('.js-verify-badge');
+            var verifyBtn = editedRow.querySelector('.js-verify-open');
+            var hasValue = !!newDisplayValue;
+            if (badge) {
+              if (hasValue) {
+                badge.style.display = '';
+                badge.classList.remove('ok', 'warn');
+                badge.classList.add('danger');
+                badge.textContent = 'Unverified';
+              } else {
+                badge.style.display = 'none';
+              }
+            }
+            if (verifyBtn) {
+              verifyBtn.style.display = hasValue ? '' : 'none';
+            }
+          }
+        }
+
+        showToast(result.data.message || 'Saved.', 'success');
+        closeModal();
+      })
+      .catch(function () {
+        modalSaveBtn.classList.remove('loading');
+        modalSaveBtn.disabled = false;
+        modalError.textContent = 'Network error — please try again.';
+        modalError.classList.add('show');
+      });
+  });
+
+  /* ── Verify-channel modal controller (new) ───────────────────── */
+  var verifyBackdrop = document.querySelector('.js-verify-modal-backdrop');
+  var verifyTitle = document.querySelector('.js-verify-modal-title');
+  var verifyHint = document.querySelector('.js-verify-modal-hint');
+  var verifyCodeForm = document.querySelector('.js-verify-code-form');
+  var verifyCodeError = document.querySelector('.js-verify-code-error');
+  var verifyConfirmBtn = document.querySelector('.js-verify-confirm');
+  var verifyStaticMsg = document.querySelector('.js-verify-static-message');
+  var verifyStaticError = document.querySelector('.js-verify-static-error');
+  var activeVerifyChannel = null;
+
+  function resetVerifyModal() {
+    verifyCodeForm.style.display = 'none';
+    verifyStaticMsg.style.display = 'none';
+    verifyCodeError.classList.remove('show');
+    verifyCodeError.textContent = '';
+    verifyStaticError.textContent = '';
+    verifyCodeForm.reset();
+  }
+
+  function openVerifyModal(channel, label) {
+    activeVerifyChannel = channel;
+    verifyTitle.textContent = 'Verify ' + label;
+    verifyHint.textContent = 'Sending a code…';
+    resetVerifyModal();
+    verifyBackdrop.classList.add('open');
+    verifyBackdrop.setAttribute('aria-hidden', 'false');
+    startVerification(channel);
+  }
+
+  function closeVerifyModal() {
+    verifyBackdrop.classList.remove('open');
+    verifyBackdrop.setAttribute('aria-hidden', 'true');
+    activeVerifyChannel = null;
+  }
+
+  function updateBadge(channel, status) {
+    var badge = root.querySelector('[data-verify-badge="' + channel + '"]');
+    var verifyBtn = root.querySelector('.js-verify-open[data-verify-channel="' + channel + '"]');
+    if (!badge) return;
+    badge.classList.remove('ok', 'warn', 'danger');
+    if (status === 'verified') {
+      badge.classList.add('ok');
+      badge.innerHTML = '<i class="fa-solid fa-check"></i> Verified';
+      if (verifyBtn) verifyBtn.style.display = 'none';
+    } else if (status === 'pending') {
+      badge.classList.add('warn');
+      badge.textContent = 'Pending';
+    } else {
+      badge.classList.add('danger');
+      badge.textContent = 'Unverified';
+    }
+  }
+
+  function startVerification(channel) {
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', 'start_verification');
+    formData.append('channel', channel);
+
+    fetch(window.location.pathname, {
+      method: 'POST', body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.success) {
+          verifyHint.textContent = '';
+          verifyStaticMsg.style.display = 'block';
+          verifyStaticError.style.color = '#a00d24';
+          verifyStaticError.style.background = '#fef2f2';
+          verifyStaticError.textContent = (result.data && result.data.message) || 'Could not start verification.';
+          return;
+        }
+        if (result.data.next_step === 'enter_code') {
+          verifyHint.textContent = result.data.message;
+          verifyCodeForm.style.display = 'block';
+          var codeInput = verifyCodeForm.querySelector('input[name="code"]');
+          if (codeInput) setTimeout(function () { codeInput.focus(); }, 50);
+        } else {
+          // manual review, phone-match auto-pass, or bot deep-link cases
+          verifyHint.textContent = '';
+          verifyStaticMsg.style.display = 'block';
+          verifyStaticError.style.color = result.data.success ? '#1a6b3a' : '#a00d24';
+          verifyStaticError.style.background = result.data.success ? '#edf7f1' : '#fef2f2';
+          verifyStaticError.textContent = result.data.message;
+          updateBadge(activeVerifyChannel, result.data.success ? 'pending' : 'unverified');
+        }
+      })
+      .catch(function () {
+        verifyHint.textContent = '';
+        verifyStaticMsg.style.display = 'block';
+        verifyStaticError.style.color = '#a00d24';
+        verifyStaticError.style.background = '#fef2f2';
+        verifyStaticError.textContent = 'Network error — please try again.';
+      });
+  }
+
+  root.querySelectorAll('.js-verify-open').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var channel = btn.getAttribute('data-verify-channel');
+      var label = btn.closest('.field-view').querySelector('.fv-label').textContent.trim();
+      openVerifyModal(channel, label);
+    });
+  });
+
+  root.querySelectorAll('.js-verify-cancel, .js-verify-close').forEach(function (btn) {
+    btn.addEventListener('click', closeVerifyModal);
+  });
+  verifyBackdrop.addEventListener('click', function (e) {
+    if (e.target === verifyBackdrop) closeVerifyModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && verifyBackdrop.classList.contains('open')) closeVerifyModal();
+  });
+
+  verifyCodeForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = verifyCodeForm.querySelector('input[name="code"]').value.trim();
+    if (!code) return;
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', 'confirm_verification');
+    formData.append('channel', activeVerifyChannel);
+    formData.append('code', code);
+
+    verifyConfirmBtn.classList.add('loading');
+    verifyConfirmBtn.disabled = true;
+    verifyCodeError.classList.remove('show');
+
+    fetch(window.location.pathname, {
+      method: 'POST', body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        verifyConfirmBtn.classList.remove('loading');
+        verifyConfirmBtn.disabled = false;
+        if (!result.ok || !result.data.success) {
+          verifyCodeError.textContent = (result.data && result.data.message) || 'Incorrect code.';
+          verifyCodeError.classList.add('show');
+          return;
+        }
+        updateBadge(activeVerifyChannel, 'verified');
+        showToast(result.data.message || 'Verified.', 'success');
+        closeVerifyModal();
+      })
+      .catch(function () {
+        verifyConfirmBtn.classList.remove('loading');
+        verifyConfirmBtn.disabled = false;
+        verifyCodeError.textContent = 'Network error — please try again.';
+        verifyCodeError.classList.add('show');
+      });
+  });
+})();
+</script>
+
+{% endblock %}
