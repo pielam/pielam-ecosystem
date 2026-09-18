@@ -1,5 +1,3 @@
-# apps/ponno/views/product_detail.py
-
 """
 ProductDetail View — Optimized for High-Throughput (millions of req/s)
 =======================================================================
@@ -56,6 +54,40 @@ Architecture decisions
    since campaign eligibility is schedule/usage-cap driven and can flip
    mid-lifetime of the cached product row.
 
+10. DEALER CONTACT RESOLUTION: the dealer's public-facing name and
+    contact details are NOT read off ProfileInfo anymore. ProfileInfo's
+    business_name field was removed and moved into its own BusinessInfo
+    model (apps.customer.models.business_info), and ProfileInfo never
+    held an email — the phone field it used to expose (profile_phone)
+    was removed too, with real phone/email now living on ContactInfo
+    (apps.customer.models.contact_info). This view now resolves, in
+    order of preference:
+      - BusinessInfo.business_name / business_phone / business_email,
+        gated on BusinessInfo.is_business_public and not archived —
+        the dealer's public storefront identity/contact.
+      - ContactInfo.phone_number / alt_email as a fallback, each gated
+        by ContactInfo's own per-channel show_phone / show_email flags
+        — for dealers with no (public) BusinessInfo row, e.g.
+        individual sellers never onboarded as a formal business.
+      - ProfileInfo.profile_name as the final fallback for the seller
+        name in structured data, since every user has a ProfileInfo.
+    BusinessInfo and ContactInfo are OneToOne-on-PK with User (same
+    shape as ProfileInfo), so they're pulled into the single cached
+    product query via select_related below — no extra DB round-trip.
+
+    WhatsApp and every other ContactInfo messaging channel (Telegram,
+    Signal, Discord, ...) go through ContactInfo.get_visible_contact_methods()
+    exclusively — there's no BusinessInfo equivalent for these. WhatsApp
+    is resolved separately from the generic channel list
+    (_resolve_dealer_whatsapp vs. _resolve_dealer_messaging_channels)
+    because the template gives WhatsApp its own dedicated button in
+    every placement (desktop order section, mobile bar, footer), while
+    the remaining channels render generically from a loop. The dealer's
+    single ContactInfo.preferred_contact_method is additionally surfaced
+    as dealer_preferred_channel for the mobile order bar — but only when
+    it's one of those "other" messaging channels, never phone/email/
+    whatsapp, which already have dedicated buttons everywhere.
+
 Dependencies
 ------------
 - Django cache backend that supports atomic incr (Redis recommended).
@@ -68,6 +100,13 @@ Dependencies
 - megamind.services.visit_logger for visitor telemetry (DiscoveryVisitLog).
 - apps.ponno.services.campaign_pricing for campaign/MRP-based price
   resolution (see point 9 above).
+- apps.customer.models.business_info.BusinessInfo and
+  apps.customer.models.contact_info.ContactInfo for dealer public
+  name / phone / email / messaging-channel resolution (see point 10
+  above). Accessed via the dealer's reverse OneToOne accessors
+  (`dealer.business_info`, `dealer.contactinfo`) rather than imported
+  and queried directly, so they ride along in the cached product
+  select_related.
 
 Settings expected
 -----------------
@@ -87,7 +126,7 @@ import json
 import logging
 import random
 from decimal import Decimal
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from django.conf import settings
 from django.core.cache import cache
@@ -241,6 +280,7 @@ def _annotate_card_prices(products: list, campaign_results: Optional[dict] = Non
         )
     return products
 
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Internal utilities
 # ──────────────────────────────────────────────────────────────────────────────
@@ -276,6 +316,14 @@ def _get_product(slug: str) -> Optional[Product]:
                 "sub_category",
                 "dealer",
                 "dealer__profileinfo",
+                # BusinessInfo/ContactInfo are OneToOne-on-PK with User,
+                # same shape as profileinfo above -- pulled into this same
+                # cached query so dealer name/phone/email/messaging-channel
+                # resolution (see module docstring point 10) never costs
+                # an extra DB round trip. Both may legitimately be None
+                # (lazily created).
+                "dealer__business_info",
+                "dealer__contactinfo",
             )
             .only(
                 "product_id", "product_name", "product_title", "slug", "sku",
@@ -428,6 +476,212 @@ def invalidate_product_campaign_price_cache(product: Product) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Dealer identity / contact resolution
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _resolve_dealer_seller_name(dealer) -> str:
+    """
+    Best public-facing name for a dealer, for use in structured data.
+
+    ProfileInfo.business_name was removed (see ProfileInfo's changelog)
+    and moved into its own BusinessInfo model, so it's no longer safe to
+    read `profileinfo.business_name` directly -- that attribute simply
+    doesn't exist anymore. Preference order:
+      1. BusinessInfo.business_name, when a BusinessInfo row exists,
+         is public, and isn't archived.
+      2. ProfileInfo.profile_name (always exists -- signal-created,
+         defaults to "Anonymous" rather than empty).
+    """
+    business_info = getattr(dealer, "business_info", None)
+    if business_info and business_info.is_business_public and not business_info.is_business_archived:
+        if business_info.business_name:
+            return business_info.business_name
+
+    profileinfo = getattr(dealer, "profileinfo", None)
+    if profileinfo and profileinfo.profile_name:
+        return profileinfo.profile_name
+
+    return ""
+
+
+class DealerContact(NamedTuple):
+    phone: Optional[str]
+    phone_verified: bool
+    email: Optional[str]
+    email_verified: bool
+
+
+def _resolve_dealer_contact(dealer) -> DealerContact:
+    """
+    Best available (phone, email) pair for a dealer, with verification
+    flags, or (None, False, None, False) for either that isn't
+    available/visible.
+
+    Preference order per channel:
+      1. BusinessInfo.business_phone / business_email -- public
+         storefront contact -- gated on is_business_public and not
+         archived. No verification concept, so verified=False always.
+      2. ContactInfo.phone_number / alt_email -- gated on the
+         is_contact_public MASTER SWITCH (see ContactInfo's docstring:
+         "if False, all show_* fields are ignored and nothing is
+         shown") AND the per-channel show_phone / show_email flags,
+         not archived. Carries each channel's verified state.
+
+    Note this deliberately does NOT fall back to User.phone/User.email
+    -- those are login/notification identifiers, not something a
+    dealer has consented to publish to buyers.
+    """
+    business_info = getattr(dealer, "business_info", None)
+    contact_info  = getattr(dealer, "contactinfo", None)
+
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    phone_verified = False
+    email_verified = False
+
+    if business_info and business_info.is_business_public and not business_info.is_business_archived:
+        phone = business_info.business_phone or None
+        email = business_info.business_email or None
+
+    contact_public = bool(
+        contact_info
+        and not contact_info.is_contact_archived
+        and contact_info.is_contact_public
+    )
+
+    if not phone and contact_public and contact_info.show_phone:
+        phone = contact_info.phone_number or None
+        phone_verified = contact_info.is_phone_verified
+
+    if not email and contact_public and contact_info.show_email:
+        email = contact_info.alt_email or None
+        email_verified = contact_info.is_alt_email_verified
+
+    return DealerContact(phone, phone_verified, email, email_verified)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dealer messaging channels (WhatsApp, Telegram, Signal, etc.)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _digits_only(value: str) -> str:
+    return "".join(ch for ch in value if ch.isdigit())
+
+
+# channel key -> (label, FA icon class, brand color, href-builder or None)
+# href=None means "no reliable universal deep link" -- shown as a plain
+# badge instead of a clickable button. Add more of ContactInfo's 15
+# channels here as the product needs them; the template loop needs no
+# changes to support a new entry.
+_CHANNEL_META: dict = {
+    "whatsapp":  ("WhatsApp",  "fa-brands fa-whatsapp",            "#25D366", lambda v: f"https://wa.me/{_digits_only(v)}"),
+    "telegram":  ("Telegram",  "fa-brands fa-telegram",            "#229ED9", lambda v: f"https://t.me/{v.lstrip('@')}"),
+    "signal":    ("Signal",    "fa-solid fa-comment-dots",         "#3A76F0", None),
+    "viber":     ("Viber",     "fa-brands fa-viber",                "#7360F2", lambda v: f"viber://chat?number={_digits_only(v)}"),
+    "facebook_messenger": ("Messenger", "fa-brands fa-facebook-messenger", "#00B2FF", lambda v: f"https://m.me/{v}"),
+    "instagram": ("Instagram", "fa-brands fa-instagram",            "#DD2A7B", lambda v: f"https://instagram.com/{v.lstrip('@')}"),
+    "twitter":   ("X / Twitter","fa-brands fa-x-twitter",           "#000000", lambda v: f"https://x.com/{v.lstrip('@')}"),
+    "linkedin":  ("LinkedIn",  "fa-brands fa-linkedin-in",          "#0A66C2", lambda v: v),
+    "skype":     ("Skype",     "fa-brands fa-skype",                "#00AFF0", lambda v: f"skype:{v}?chat"),
+    "wechat":    ("WeChat",    "fa-brands fa-weixin",               "#07C160", None),
+    "line":      ("LINE",      "fa-brands fa-line",                 "#00B900", lambda v: f"https://line.me/ti/p/{v}"),
+    "discord":   ("Discord",   "fa-brands fa-discord",              "#5865F2", None),
+    "slack":     ("Slack",     "fa-brands fa-slack",                "#4A154B", None),
+    "snapchat":  ("Snapchat",  "fa-brands fa-snapchat",             "#FFFC00", lambda v: f"https://snapchat.com/add/{v.lstrip('@')}"),
+    "imo":       ("imo",       "fa-solid fa-comment-dots",          "#26A5E4", None),
+}
+
+
+def _resolve_dealer_whatsapp(dealer, viewer=None) -> tuple[Optional[str], bool]:
+    """
+    WhatsApp number + verified flag, sourced from
+    ContactInfo.get_visible_contact_methods() the same way as every
+    other messaging channel below, but returned separately from
+    dealer_messaging_channels since the template gives WhatsApp its own
+    dedicated button in every placement (desktop order section, mobile
+    order bar, footer contact card) rather than rendering it from the
+    generic channel loop.
+    """
+    contact_info = getattr(dealer, "contactinfo", None)
+    if not contact_info:
+        return None, False
+    methods = contact_info.get_visible_contact_methods(viewer=viewer)
+    wa = methods.get("whatsapp")
+    if not wa:
+        return None, False
+    return wa["value"], bool(wa.get("verified", False))
+
+
+def _resolve_dealer_messaging_channels(dealer, viewer=None) -> list[dict]:
+    """
+    Extra contact channels (Telegram, Signal, Discord, ...) for the
+    "Contact the Seller" panel and mobile order bar, sourced from
+    ContactInfo.
+
+    Delegates visibility to ContactInfo.get_visible_contact_methods()
+    rather than re-deriving is_contact_public / show_* gating here, so
+    this view and the model can never drift out of sync on who sees
+    what. phone/email are excluded -- those go through
+    _resolve_dealer_contact()'s BusinessInfo-first precedence so the
+    page never shows two different "phone" sources. whatsapp is
+    excluded too -- see _resolve_dealer_whatsapp() above, since it gets
+    its own dedicated button everywhere rather than rendering from this
+    generic list.
+
+    Returns a list of dicts ready for the template:
+      [{"key", "label", "icon", "color", "href", "value", "verified"}, ...]
+    Channels with no reliable deep link get href=None -- template
+    should render those as a plain badge, not an <a>. `key` matches
+    ContactInfo's short channel key (e.g. "telegram") and is what the
+    template dedups dealer_preferred_channel against.
+    """
+    contact_info = getattr(dealer, "contactinfo", None)
+    if not contact_info:
+        return []
+
+    methods = contact_info.get_visible_contact_methods(viewer=viewer)
+    methods.pop("phone", None)
+    methods.pop("email", None)
+    methods.pop("whatsapp", None)
+
+    display = []
+    for key, data in methods.items():
+        meta = _CHANNEL_META.get(key)
+        if not meta:
+            continue  # unmapped channel -- skip rather than render unstyled
+        label, icon, color, href_fn = meta
+        value = data["value"]
+        display.append({
+            "key":      key,
+            "label":    label,
+            "icon":     icon,
+            "color":    color,
+            "href":     href_fn(value) if href_fn else None,
+            "value":    value,
+            "verified": data.get("verified", False),
+        })
+    return display
+
+
+def _resolve_dealer_preferred_channel(dealer, channels: list[dict]) -> Optional[dict]:
+    """
+    The dealer's single preferred contact channel, for the mobile order
+    bar's `dealer_preferred_channel` slot (see that block's template
+    comment for the exact contract). Only populated when
+    ContactInfo.preferred_contact_method is one of the "other" messaging
+    channels already present in `channels` -- never phone/email/
+    whatsapp, since those already have dedicated buttons everywhere.
+    Takes the already-resolved dealer_messaging_channels list rather
+    than re-deriving it, so this does no extra DB/cache work of its own.
+    """
+    contact_info = getattr(dealer, "contactinfo", None)
+    if not contact_info:
+        return None
+    preferred_key = contact_info.preferred_contact_method
+    return next((c for c in channels if c["key"] == preferred_key), None)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Non-blocking analytics
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -575,11 +829,13 @@ def _build_structured_data(
             ),
         }
 
-        profileinfo = getattr(product.dealer, "profileinfo", None)
-        if profileinfo:
-            seller_name = profileinfo.business_name or profileinfo.profile_name or ""
-            if seller_name:
-                data["offers"]["seller"] = {"@type": "Organization", "name": seller_name}
+        # Seller name resolution moved to a shared helper (see module
+        # docstring point 10) since ProfileInfo.business_name no longer
+        # exists -- it now lives on BusinessInfo, with ProfileInfo's
+        # profile_name as the fallback.
+        seller_name = _resolve_dealer_seller_name(product.dealer)
+        if seller_name:
+            data["offers"]["seller"] = {"@type": "Organization", "name": seller_name}
 
     if product.review_count > 0:
         data["aggregateRating"] = {
@@ -690,6 +946,7 @@ def _get_suggested_products(product: Product, user, limit: int = 12) -> list:
     cache.set(cache_key, pool, _ttl_with_jitter(RELATED_CACHE_TTL))
     return pool
 
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Main view
 # ──────────────────────────────────────────────────────────────────────────────
@@ -721,10 +978,10 @@ def ProductDetailView(request, slug: str):
         _update_session_recently_viewed(request, str(product.product_id))
 
     # ── 4. Supporting data ────────────────────────────────────────────────────
-    categories         = _get_categories()
-    related_products   = _get_related_products(product)
-    dealer_products     = _get_dealer_products(product)
-    suggested_products = _get_suggested_products(product, request.user)
+    categories          = _get_categories()
+    related_products     = _get_related_products(product)
+    dealer_products      = _get_dealer_products(product)
+    suggested_products   = _get_suggested_products(product, request.user)
 
     # ── 4b. Campaign price resolution ─────────────────────────────────────────
     # One resolution for the hero product (cached, short TTL) and one bulk
@@ -774,10 +1031,29 @@ def ProductDetailView(request, slug: str):
         savings     = product.brand_price - product.selling_price
         savings_pct = float(savings / product.brand_price * 100)
 
-    # ── 7. Dealer privacy flags ───────────────────────────────────────────────
-    profileinfo       = getattr(product.dealer, "profileinfo", None)
-    show_dealer_phone = bool(profileinfo and profileinfo.show_phone)
-    show_dealer_email = bool(profileinfo and profileinfo.show_email)
+    # ── 7. Dealer contact info ────────────────────────────────────────────────
+    # ProfileInfo.show_phone/show_email used to gate this, but ProfileInfo
+    # never held an email and its profile_phone field was removed entirely
+    # (see ProfileInfo's changelog, point 7) -- reading it here would raise
+    # AttributeError. Resolution now goes through BusinessInfo (public
+    # storefront contact) first, then ContactInfo (personal contact
+    # channels) as a fallback -- see _resolve_dealer_contact()'s docstring
+    # for the full precedence rules. Both objects ride along in the
+    # cached product query's select_related, so this costs no extra query.
+    #
+    # WhatsApp and every other ContactInfo messaging channel are resolved
+    # separately since neither has a BusinessInfo equivalent and both are
+    # gated purely through ContactInfo.get_visible_contact_methods().
+    dealer_contact = _resolve_dealer_contact(product.dealer)
+    dealer_phone, dealer_email = dealer_contact.phone, dealer_contact.email
+    show_dealer_phone = bool(dealer_phone)
+    show_dealer_email = bool(dealer_email)
+
+    viewer = request.user if request.user.is_authenticated else None
+
+    dealer_messaging_channels = _resolve_dealer_messaging_channels(product.dealer, viewer)
+    dealer_whatsapp, dealer_whatsapp_verified = _resolve_dealer_whatsapp(product.dealer, viewer)
+    dealer_preferred_channel = _resolve_dealer_preferred_channel(product.dealer, dealer_messaging_channels)
 
     # ── 8. SEO ────────────────────────────────────────────────────────────────
     structured_data = _build_structured_data(request, product, campaign_price)
@@ -818,7 +1094,7 @@ def ProductDetailView(request, slug: str):
     # number the template's primary "current price" display should read.
     product.fmt_final_price   = format_price(effective_selling_price) if show_selling_price else None
     product.fmt_brand_price   = format_price(product.brand_price) if (show_brand_price and product.brand_price) else None
-    product.fmt_buying_price = format_price(product.buying_price) if (show_buying_price and product.buying_price) else None
+    product.fmt_buying_price  = format_price(product.buying_price) if (show_buying_price and product.buying_price) else None
     product.fmt_shipping_cost = format_price(product.shipping_cost)
     product.fmt_savings       = format_price(savings) if (savings and show_selling_price) else None
     product.price_hidden      = not (show_selling_price or show_brand_price)
@@ -869,8 +1145,23 @@ def ProductDetailView(request, slug: str):
         "og_image":            og_image,
         "og_url":              request.build_absolute_uri(),
         "structured_data":     json.dumps(structured_data, ensure_ascii=False),
-        "show_dealer_phone":   show_dealer_phone,
-        "show_dealer_email":   show_dealer_email,
+
+        # Dealer contact — resolved via BusinessInfo/ContactInfo (see module
+        # docstring point 10). The template must not read these off
+        # product.dealer.profileinfo, since ProfileInfo no longer carries a
+        # phone/business field, and profileinfo.social_whatsapp is likewise
+        # superseded by dealer_whatsapp below.
+        "show_dealer_phone":        show_dealer_phone,
+        "show_dealer_email":        show_dealer_email,
+        "dealer_phone":             dealer_phone,
+        "dealer_email":             dealer_email,
+        "dealer_phone_verified":    dealer_contact.phone_verified,
+        "dealer_email_verified":    dealer_contact.email_verified,
+        "dealer_whatsapp":          dealer_whatsapp,
+        "dealer_whatsapp_verified": dealer_whatsapp_verified,
+        "dealer_messaging_channels": dealer_messaging_channels,
+        "dealer_preferred_channel":  dealer_preferred_channel,
+
         "user_authenticated":  request.user.is_authenticated,
         "video_info":          get_video_info_cached(product.video_url or ""),
         "user_wishlisted_ids": user_wishlisted_ids,

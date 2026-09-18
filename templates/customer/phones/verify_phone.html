@@ -1,0 +1,84 @@
+{% extends "customer/base.html" %}
+{# ASSUMPTION: your other customer templates (e.g. signup.html) extend a
+   base template — update "customer/base.html" above to whatever that
+   file is actually called in your project. If there isn't one, delete
+   the {% extends %} / {% block %} tags and use the <!DOCTYPE html> ...
+   fallback markup left commented out at the bottom of this file. #}
+
+{% block title %}Verify your phone number{% endblock %}
+
+{% block content %}
+<div class="verify-phone-container" style="max-width: 420px; margin: 60px auto; padding: 32px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);">
+
+  <h1 style="font-size: 1.4rem; margin-bottom: 8px;">Enter your verification code</h1>
+  <p style="color: #555; margin-bottom: 24px;">
+    We texted a {{ otp_length|default:"6" }}-digit code to the phone number you signed up with.
+  </p>
+
+  {% if messages %}
+    <ul style="list-style: none; padding: 0; margin-bottom: 20px;">
+      {% for message in messages %}
+        <li style="padding: 10px 14px; border-radius: 4px; margin-bottom: 8px;
+                    {% if message.tags == 'error' %}background:#fdecea; color:#611a15;
+                    {% elif message.tags == 'success' %}background:#e7f6ec; color:#0b4d24;
+                    {% elif message.tags == 'warning' %}background:#fff4e5; color:#663c00;
+                    {% else %}background:#eef1f5; color:#1c2733;{% endif %}">
+          {{ message }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post" action="{% url 'customer:verify-phone' %}" novalidate>
+    {% csrf_token %}
+
+    <label for="otp" style="display:block; font-weight:600; margin-bottom:6px;">
+      Verification code
+    </label>
+    <input
+      type="text"
+      id="otp"
+      name="otp"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      autocomplete="one-time-code"
+      maxlength="6"
+      required
+      autofocus
+      style="width:100%; padding:10px 12px; font-size:1.1rem; letter-spacing:0.3em;
+             text-align:center; border:1px solid #ccc; border-radius:4px; margin-bottom:20px;"
+    >
+
+    <button type="submit" style="width:100%; padding:12px; font-size:1rem; font-weight:600;
+                                   border:none; border-radius:4px; cursor:pointer;
+                                   background:#1c2733; color:#fff;">
+      Verify
+    </button>
+  </form>
+
+  <p style="margin-top:20px; font-size:0.9rem; color:#666; text-align:center;">
+    Didn't get a code?
+    {# ASSUMPTION: no "resend code" endpoint exists yet. Point this at one
+       if/when you build it, or remove the link entirely for now. #}
+    <a href="{% url 'customer:signup' %}">Sign up again</a> to request a new one.
+  </p>
+
+</div>
+
+{# ---------------------------------------------------------------------
+   If your project has no shared base template to extend, delete the
+   {% extends %} and {% block %} tags above/below and wrap the markup
+   above in the following instead:
+
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <title>Verify your phone number</title>
+   </head>
+   <body>
+     ... (the .verify-phone-container div above) ...
+   </body>
+   </html>
+--------------------------------------------------------------------- #}
+{% endblock %}

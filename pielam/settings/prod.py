@@ -48,7 +48,7 @@ EMAIL_USE_TLS = False      # TLS ON
 EMAIL_USE_SSL = True     # SSL must be OFF
 
 EMAIL_HOST_USER = 'no-reply@pielam.com'
-EMAIL_HOST_PASSWORD = '-RuUCUOE*=4YyKE9'   # NOT your Gmail login password
+EMAIL_HOST_PASSWORD = 'sm0*}(3h0t-z.rJ8'   # NOT your Gmail login password
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 

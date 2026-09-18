@@ -35,6 +35,17 @@ again -- a view rendering `location.location_display` should still
 gate it behind `profile_info.show_location`, since that flag was never
 moved or duplicated onto this model.
 
+ADDRESS FIELD OVERLAP (address vs. present_address vs. permanent_address)
+------------------------------------------------------------------
+`address` (generic single field) predates `present_address` /
+`permanent_address`, which were added later without removing it -- so
+there are now three overlapping address fields on this model. That
+overlap wasn't resolved here since removing `address` wasn't
+requested; if `present_address`/`permanent_address` are meant to
+fully replace the generic one going forward, `address` should be
+deprecated/removed in a follow-up, and any view still reading/writing
+it will need updating.
+
 NOT YET WIRED: GDPR / soft-delete cascade
 ------------------------------------------------------------------
 User.soft_delete() (account.py) anonymizes email/phone and, via
@@ -122,6 +133,20 @@ class LocationInfo(models.Model):
         help_text=_("Country name, e.g. 'Bangladesh', 'Japan', 'England'"),
     )
 
+    # Companion to `country` above: the actual ISO code, kept separate
+    # since `country` deliberately stores a free-text display name
+    # (not always a real ISO name -- see 'England' in the help text)
+    # and isn't reliably reversible into a code. Useful for phone
+    # formatting, flag icons, dialing codes, etc. Normalized to
+    # uppercase and validated as exactly 2 letters in clean() below.
+    country_code = models.CharField(
+        _("Country Code"),
+        max_length=2,
+        blank=True,
+        null=True,
+        help_text=_("ISO 3166-1 alpha-2 country code, e.g. 'BD', 'JP', 'GB'"),
+    )
+
     state = models.CharField(
         _("State/Province"),
         max_length=100,
@@ -144,6 +169,26 @@ class LocationInfo(models.Model):
         blank=True,
         null=True,
         help_text=_("Full street address"),
+    )
+
+    # NOTE: present_address / permanent_address were added alongside
+    # the existing generic `address` field above, not as a replacement
+    # for it -- see this file's docstring for the overlap this creates
+    # and what to do about it.
+    present_address = models.TextField(
+        _("Present Address"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Current/temporary residential address"),
+    )
+
+    permanent_address = models.TextField(
+        _("Permanent Address"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Permanent/home address"),
     )
 
     postal_code = models.CharField(
@@ -184,6 +229,7 @@ class LocationInfo(models.Model):
         indexes = [
             models.Index(fields=["uuid"]),
             models.Index(fields=["country", "city"]),
+            models.Index(fields=["country_code"]),
         ]
 
     def __str__(self) -> str:
@@ -222,9 +268,12 @@ class LocationInfo(models.Model):
         return {
             "uuid": str(self.uuid),
             "country": self.country,
+            "country_code": self.country_code,
             "state": self.state,
             "city": self.city,
             "address": self.address,
+            "present_address": self.present_address,
+            "permanent_address": self.permanent_address,
             "postal_code": self.postal_code,
             "latitude": float(self.latitude) if self.latitude is not None else None,
             "longitude": float(self.longitude) if self.longitude is not None else None,
@@ -238,6 +287,14 @@ class LocationInfo(models.Model):
 
     def clean(self) -> None:
         super().clean()
+
+        if self.country_code:
+            normalized = self.country_code.strip().upper()
+            if len(normalized) != 2 or not normalized.isalpha():
+                raise ValidationError(
+                    _("Country code must be exactly 2 letters (ISO 3166-1 alpha-2), e.g. 'BD'")
+                )
+            self.country_code = normalized
 
         if self.latitude is not None and not (Decimal("-90") <= self.latitude <= Decimal("90")):
             raise ValidationError(_("Latitude must be between -90 and 90"))

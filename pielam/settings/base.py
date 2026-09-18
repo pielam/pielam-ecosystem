@@ -254,3 +254,7 @@ CONNECTED_SERVICE_SYNC_PRODUCT_ON_FETCH = True
 
 # Optional â€” only needed if you want service types beyond the default {"product", "brand"}
 CONNECTED_SERVICE_PRODUCT_SYNC_TYPES = {"product", "brand", "category", "subcategory", "education", "News", "location", "api", "person", "business", "entertainment"}
+
+import os
+
+SITE_URL = os.environ.get("SITE_URL", "http://pielam.com")

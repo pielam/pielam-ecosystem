@@ -56,6 +56,16 @@ CHANGELOG (bug-fix pass)
    User row and its still-present email_or_phone. soft_delete() now
    proactively detaches those rows (viewer=None, ip_address=None) to
    compensate -- see soft_delete()'s docstring below.
+
+6. data_processing_consent had no give/revoke methods, unlike
+   marketing_consent which has both give_marketing_consent() and
+   revoke_marketing_consent(). Added give_data_processing_consent()
+   and revoke_data_processing_consent() for symmetry. NOTE: revoking
+   this flag doesn't itself stop or delete any processing that's
+   already happening elsewhere in the app -- it's a record of consent
+   state, not an enforcement mechanism. Anything that actually acts on
+   user data (analytics, personalization, third-party sharing, etc.)
+   needs to separately check this field before proceeding.
 """
 
 import uuid
@@ -918,6 +928,36 @@ class User(AbstractBaseUser, PermissionsMixin):
         self.marketing_consent = False
         if save:
             self.save(update_fields=['marketing_consent'])
+
+    def give_data_processing_consent(self, save: bool = True) -> None:
+        """
+        Give (or re-give) general data-processing consent (GDPR).
+        Added for symmetry with give_marketing_consent() — previously
+        this field could only ever be set at its True default; there
+        was no method to grant it back after a revoke.
+        """
+        self.data_processing_consent = True
+        if save:
+            self.save(update_fields=['data_processing_consent'])
+
+    def revoke_data_processing_consent(self, save: bool = True) -> None:
+        """
+        Revoke general data-processing consent (GDPR). Added for
+        symmetry with revoke_marketing_consent() — previously nothing
+        in the codebase could ever set this field to False.
+
+        IMPORTANT: this only records consent state. It does NOT stop,
+        undo, or delete any processing already performed, and it does
+        NOT automatically disable features elsewhere in the app
+        (analytics, personalization, third-party data sharing, etc).
+        Anything that actually processes user data needs to check
+        `user.data_processing_consent` itself before proceeding — see
+        the data_consent_required decorator for gating view access on
+        this flag specifically.
+        """
+        self.data_processing_consent = False
+        if save:
+            self.save(update_fields=['data_processing_consent'])
     
     def export_data(self) -> dict:
         """
@@ -947,6 +987,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             'marketing_consent': self.marketing_consent,
             'terms_accepted': self.terms_accepted,
             'privacy_accepted': self.privacy_accepted,
+            'data_processing_consent': self.data_processing_consent,
             'date_joined': self.date_joined.isoformat(),
             'last_login': self.last_login.isoformat() if self.last_login else None,
             'metadata': self.metadata,

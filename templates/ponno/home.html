@@ -293,6 +293,51 @@
   .post-media[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 1 / 1; }
   .post-media[data-count="4"] .cell { height: 100%; }
 
+  /* ── Carousel: 5+ media items ──────────────────────────── */
+.post-media.m-carousel {
+  position: relative;
+  grid-template-columns: 1fr;
+  aspect-ratio: var(--media-ar, 4 / 3);
+}
+.post-media.m-carousel .carousel-track { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.post-media.m-carousel .carousel-slide {
+  position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+}
+.post-media.m-carousel .carousel-slide.active { opacity: 1; pointer-events: auto; }
+.post-media.m-carousel .carousel-slide .cell { width: 100%; height: 100%; }
+
+.carousel-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  width: 34px; height: 34px; border-radius: 50%; border: 0; cursor: pointer;
+  background: rgba(15,20,32,.55); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: background .15s ease;
+}
+.carousel-nav:hover { background: rgba(15,20,32,.8); }
+.carousel-nav:disabled { opacity: .35; pointer-events: none; }
+.carousel-nav--prev { left: 8px; }
+.carousel-nav--next { right: 8px; }
+
+.carousel-counter {
+  position: absolute; top: 8px; right: 8px; z-index: 5;
+  background: rgba(15,20,32,.6); color: #fff; font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono, monospace);
+}
+
+.carousel-dots {
+  position: absolute; bottom: 8px; left: 0; right: 0; z-index: 5;
+  display: flex; justify-content: center; gap: 5px;
+}
+.carousel-dot {
+  width: 6px; height: 6px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: rgba(255,255,255,.5); transition: background .15s, transform .15s;
+}
+.carousel-dot.active { background: #fff; transform: scale(1.35); }
+
+@media (max-width: 560px) {
+  .carousel-nav { width: 30px; height: 30px; font-size: 11px; }
+}
+
   .post-media .cell { position: relative; }
   .post-media .cell.more-overlay::after {
     content: attr(data-more); font-weight: 800; font-size: 1.1rem; position: absolute; inset: 0;
@@ -306,8 +351,14 @@
 
   .media-ctrls {
     position: absolute; top: 6px; right: 6px; z-index: 6;
-    display: flex; gap: 4px; opacity: .85; transition: opacity var(--t-fast, .15s ease);
+    display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 12px);
+    justify-content: flex-end;
+    opacity: .85; transition: opacity var(--t-fast, .15s ease);
   }
+  @media (max-width: 480px) {
+    .media-ctrl-btn { width: 24px; height: 24px; font-size: 10px; }
+  }
+
   .cell:hover .media-ctrls, .gallery-cell:hover .media-ctrls { opacity: 1; }
   .media-ctrl-btn {
     width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
@@ -1139,14 +1190,37 @@
     catch { toast('Could not share this link.'); }
   }
 
-  function mediaCtrlsHTML(copyUrl, openUrl) {
+  // ── PATCH: mediaCtrlsHTML now takes an options object and renders
+  // up to five actions — copy, download, open, share, deep crawl —
+  // instead of just copy + open. `downloadUrl` should only be passed
+  // for direct file assets (images, direct video files), not iframe
+  // embeds (YouTube/Vimeo/etc. can't be downloaded this way). `svcId`
+  // gates the deep-crawl button, since that action needs a service id
+  // to hit the link-scan endpoint against.
+  function mediaCtrlsHTML({ copyUrl, openUrl, downloadUrl, shareTitle, svcId } = {}) {
     const url = copyUrl || openUrl;
     if (!url) return '';
     const openHref = openUrl || copyUrl;
-    return `<div class="media-ctrls" onclick="event.stopPropagation()">
-      <button type="button" class="media-ctrl-btn" data-copy-link="${esc(url)}" title="Copy link" aria-label="Copy link"><i class="fa-regular fa-copy"></i></button>
-      <a class="media-ctrl-btn" href="${esc(openHref)}" target="_blank" rel="noopener" title="Open in new tab" aria-label="Open link"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-    </div>`;
+    const shareHref = openHref;
+    const btns = [];
+
+    btns.push(`<button type="button" class="media-ctrl-btn" data-copy-link="${esc(url)}" title="Copy link" aria-label="Copy link"><i class="fa-regular fa-copy"></i></button>`);
+
+    if (downloadUrl) {
+      btns.push(`<a class="media-ctrl-btn" href="${esc(downloadUrl)}" download target="_blank" rel="noopener" title="Download" aria-label="Download"><i class="fa-solid fa-download"></i></a>`);
+    }
+
+    btns.push(`<a class="media-ctrl-btn" href="${esc(openHref)}" target="_blank" rel="noopener" title="Open in new tab" aria-label="Open link"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`);
+
+    btns.push(`<button type="button" class="media-ctrl-btn" title="Share" aria-label="Share"
+      onclick="shareLink('${escJsAttr(shareHref)}', '${escJsAttr(shareTitle || '')}')"><i class="fa-solid fa-share-nodes"></i></button>`);
+
+    if (svcId) {
+      btns.push(`<button type="button" class="media-ctrl-btn" title="Deep crawl this link" aria-label="Deep crawl this link"
+        onclick="deepCrawlLink('${escJsAttr(svcId)}', '${escJsAttr(shareHref)}', this)"><i class="fa-solid fa-magnifying-glass-chart"></i></button>`);
+    }
+
+    return `<div class="media-ctrls" onclick="event.stopPropagation()">${btns.join('')}</div>`;
   }
 
   function linkCtrlsHTML(url) {
@@ -1264,7 +1338,14 @@
     return '16 / 9';
   }
 
-  function videoTagHTML(v) {
+  // ── PATCH: videoTagHTML now takes `post` (instead of just `sid`) so
+  // mediaCtrlsHTML can pull a share title, plus a downloadUrl for
+  // direct (non-iframe) video files. The duplicate/orphaned tail of
+  // this function that existed in the previous version (a stray
+  // second `const id = 'vp' + ...` block sitting outside any function)
+  // has been removed — it was dead code that would have thrown a
+  // syntax error.
+  function videoTagHTML(v, post) {
     const ratio = ratioForVideo(v);
     const src = v.embed_url || v.url || '';
     const watchUrl = v.watch_url || src;
@@ -1274,13 +1355,21 @@
       ? `<img class="cover-image" src="${esc(v.thumbnail)}" alt="" loading="lazy">`
       : `<div class="cover-image" style="background:#0f1420"></div>`;
 
+    const ctrlsOpts = {
+      copyUrl: linkUrl,
+      openUrl: watchUrl,
+      downloadUrl: v.type !== 'iframe' ? src : null,
+      shareTitle: (post && (post.og_title || post.svc_name)) || label,
+      svcId: post ? post.svc_id : null,
+    };
+
     if (v.type === 'iframe' && v.platform === 'tiktok') {
       return `<div class="card-video-wrapper" style="aspect-ratio:${ratio}" title="${esc(linkUrl)}">
         <iframe class="player-slot inline-iframe-player" src="${esc(src)}" title="${esc(linkUrl)}"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen loading="lazy"></iframe>
         <span class="platform-badge">${esc(label)}</span>
-        ${mediaCtrlsHTML(linkUrl, watchUrl)}
+        ${mediaCtrlsHTML(ctrlsOpts)}
       </div>`;
     }
 
@@ -1291,7 +1380,7 @@
           <span class="play-button-overlay"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
           <span class="platform-badge">${esc(label)}</span>
         </a>
-        ${mediaCtrlsHTML(linkUrl, watchUrl)}
+        ${mediaCtrlsHTML(ctrlsOpts)}
       </div>`;
     }
 
@@ -1306,7 +1395,7 @@
           <span class="platform-badge">${esc(label)}</span>
         </button>
       </div>
-      ${mediaCtrlsHTML(linkUrl, watchUrl)}
+      ${mediaCtrlsHTML(ctrlsOpts)}
     </div>`;
   }
 
@@ -1326,32 +1415,63 @@
     ];
   }
 
+  window._cardCarouselIdx = window._cardCarouselIdx || {};
+
+  // ── PATCH: pass `post` (not post.svc_id) into videoTagHTML, and use
+  // the new options-object form of mediaCtrlsHTML for images too, so
+  // carousel slides get download/share/deep-crawl just like mosaic cells.
+  function carouselSlideInner(post, it) {
+    if (it.kind === 'video') return videoTagHTML(it, post);
+    return `<a class="media-link" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener" title="${esc(it.url)}" onclick="event.stopPropagation()">
+              <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" title="${esc(it.url)}" loading="lazy"></a>${mediaCtrlsHTML({
+                copyUrl: it.url,
+                openUrl: imageTarget(post, it),
+                downloadUrl: it.url,
+                shareTitle: post.og_title || post.svc_name,
+                svcId: post.svc_id,
+              })}`;
+  }
+
+  function carouselHTML(post, media) {
+    const svcId = String(post.svc_id);
+    window._cardCarouselIdx[svcId] = 0;
+    const slides = media.map((it, i) => `
+      <div class="carousel-slide${i === 0 ? ' active' : ''}" data-i="${i}">
+        <div class="cell ${it.kind === 'video' ? 'is-video' : ''}">${carouselSlideInner(post, it)}</div>
+      </div>`).join('');
+    const dots = media.map((_, i) => `<button type="button" class="carousel-dot${i === 0 ? ' active' : ''}" data-i="${i}" aria-label="Go to item ${i + 1}"></button>`).join('');
+
+    return `<div class="post-media m-carousel" data-svc-id="${esc(svcId)}">
+        <div class="carousel-track">${slides}</div>
+        <button type="button" class="carousel-nav carousel-nav--prev" disabled aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" class="carousel-nav carousel-nav--next" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
+        <span class="carousel-counter">1 / ${media.length}</span>
+        <div class="carousel-dots">${dots}</div>
+      </div>`;
+  }
+
+  // ── PATCH: use the options-object form of mediaCtrlsHTML for both
+  // the video and image branches, so every mosaic tile also gets
+  // download/share/deep-crawl.
   function mosaicHTML(post) {
     const media = buildMediaSet(post);
     state.itemsByPostId.set(String(post.svc_id), { post, media });
     if (!media.length) return '';
 
+    if (media.length > 4) return carouselHTML(post, media);
+
     const shown = media.slice(0, 4);
-    const extra = media.length - shown.length;
-
     const cells = shown.map((it, i) => {
-      const isLast = i === shown.length - 1 && extra > 0;
-      const classes = ['cell', it.kind === 'video' ? 'is-video' : ''];
-      if (isLast) classes.push('more-overlay');
-      const dataMore = isLast ? ` data-more="+${extra}"` : '';
-
-      let inner;
-      if (isLast) {
-        const thumb = it.kind === 'video' ? (it.thumbnail || post.og_thumbnail || '') : it.url;
-        inner = `<button type="button" class="cell-gallery-btn" data-open-details="${esc(post.svc_id)}"
-                    aria-label="View all ${media.length} items for this post" style="background-image:url('${esc(thumb)}')"></button>`;
-      } else if (it.kind === 'video') {
-        inner = videoTagHTML(it);
-      } else {
-        inner = `<a class="media-link" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener" title="${esc(it.url)}" onclick="event.stopPropagation()">
-                    <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" title="${esc(it.url)}" loading="lazy"></a>${mediaCtrlsHTML(it.url, imageTarget(post, it))}`;
-      }
-      return `<div class="${classes.join(' ')}"${dataMore}>${inner}</div>`;
+      let inner = it.kind === 'video' ? videoTagHTML(it, post) :
+        `<a class="media-link" href="${esc(imageTarget(post, it))}" target="_blank" rel="noopener" title="${esc(it.url)}" onclick="event.stopPropagation()">
+          <img src="${esc(it.url)}" alt="${esc(it.alt || '')}" title="${esc(it.url)}" loading="lazy"></a>${mediaCtrlsHTML({
+            copyUrl: it.url,
+            openUrl: imageTarget(post, it),
+            downloadUrl: it.url,
+            shareTitle: post.og_title || post.svc_name,
+            svcId: post.svc_id,
+          })}`;
+      return `<div class="cell ${it.kind === 'video' ? 'is-video' : ''}">${inner}</div>`;
     }).join('');
 
     const variant = shown.length === 1 ? 'm-solo' : '';
@@ -1385,6 +1505,17 @@
       }
       const video = cell.querySelector('video');
       const img = cell.querySelector('img');
+      if (video) bindMediaAspectRatio(container, video, 'video');
+      else if (img) bindMediaAspectRatio(container, img, 'image');
+    });
+  }
+
+  function bindCarouselAspectRatios(root) {
+    root.querySelectorAll('.post-media.m-carousel').forEach((container) => {
+      const firstCell = container.querySelector('.carousel-slide[data-i="0"] .cell');
+      if (!firstCell) return;
+      const video = firstCell.querySelector('video');
+      const img = firstCell.querySelector('img');
       if (video) bindMediaAspectRatio(container, video, 'video');
       else if (img) bindMediaAspectRatio(container, img, 'image');
     });
@@ -1477,6 +1608,7 @@
     const frag = posts.map((post, i) => renderPostCard(post, i));
     els.streamAll.innerHTML = frag.join('');
     bindSoloAspectRatios(els.streamAll);
+    bindCarouselAspectRatios(els.streamAll);
     updateEmptyState();
   }
 
@@ -1608,6 +1740,11 @@
       .then(() => toast('Link copied')).catch(() => toast('Copy failed'));
   });
 
+  // ── PATCH: this listener now ONLY handles data-play-video, exactly
+  // as it should. The carousel-nav/carousel-dot listener that had been
+  // incorrectly pasted *inside* this callback body (before its own
+  // logic even ran) has been moved out to its own top-level listener
+  // below, right after this one.
   document.addEventListener('click', function (e) {
     const cover = e.target.closest('[data-play-video]');
     if (!cover) return;
@@ -1641,6 +1778,44 @@
 
     container.innerHTML = '';
     container.appendChild(player);
+  });
+
+  // ── FIX: moved out of the data-play-video listener above, where it
+  // had accidentally been nested. This needs to be its own top-level
+  // 'click' listener to fire on carousel nav/dot clicks at all.
+  function setCardCarouselSlide(root, idx) {
+    const track = root.querySelector('.carousel-track');
+    const slides = track.querySelectorAll('.carousel-slide');
+    const total = slides.length;
+    idx = Math.max(0, Math.min(idx, total - 1));
+
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    root.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+    root.querySelector('.carousel-counter').textContent = `${idx + 1} / ${total}`;
+    root.querySelector('.carousel-nav--prev').disabled = idx === 0;
+    root.querySelector('.carousel-nav--next').disabled = idx === total - 1;
+
+    const svcId = root.getAttribute('data-svc-id');
+    if (svcId) window._cardCarouselIdx[svcId] = idx;
+  }
+
+  document.addEventListener('click', function (e) {
+    const nav = e.target.closest('.carousel-nav, .carousel-dot');
+    if (!nav) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const root = nav.closest('.post-media.m-carousel');
+    if (!root) return;
+    const svcId = root.getAttribute('data-svc-id');
+    const current = window._cardCarouselIdx[svcId] || 0;
+
+    let next = current;
+    if (nav.classList.contains('carousel-nav--prev')) next = current - 1;
+    else if (nav.classList.contains('carousel-nav--next')) next = current + 1;
+    else if (nav.classList.contains('carousel-dot')) next = parseInt(nav.getAttribute('data-i'), 10);
+
+    setCardCarouselSlide(root, next);
   });
 
   document.addEventListener('play', (e) => { e.target.closest('.video-wrap')?.classList.add('playing'); }, true);
@@ -2869,9 +3044,12 @@
   });
 
   let _singleScanSeq = 0;
+
   async function deepCrawlLink(sid, href, btnEl) {
     if (!btnEl || btnEl.disabled) return;
-    const iconOnly = btnEl.classList.contains('video-item__iconbtn');
+    const iconOnly = btnEl.classList.contains('video-item__iconbtn')
+      || btnEl.classList.contains('media-ctrl-btn')
+      || btnEl.classList.contains('link-ctrl-btn');
     const origHTML = btnEl.innerHTML;
     btnEl.disabled = true;
     btnEl.innerHTML = iconOnly ? '<i class="fas fa-rotate fa-spin"></i>' : '<i class="fas fa-rotate fa-spin"></i> Scanning…';
@@ -2893,6 +3071,7 @@
       btnEl.innerHTML = origHTML;
     }
   }
+
   function renderSingleLinkOutcome(data, href, sid) {
     const scraped = data.scraped || []; const errors = data.errors || []; const skipped = data.skipped || [];
     const entry = scraped.find((s) => s.href === href) || scraped[0];

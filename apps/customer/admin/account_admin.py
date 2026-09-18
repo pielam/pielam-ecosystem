@@ -1,4 +1,4 @@
-# apps/customer/admin.py
+# apps/customer/admin/account_admin.py
 
 """
 Django Admin Configuration for User Model
@@ -10,6 +10,26 @@ Features:
 - Verification management
 - Audit trail display
 - GDPR compliance actions
+
+CHANGELOG (sync pass with account.py bug-fix pass)
+----------------------------------------------------
+1. User.delete() now routes through soft_delete() (see account.py fix #4),
+   and User.objects.filter(...).delete() does the same via UserQuerySet.
+   That means the built-in "Delete selected users" admin action and the
+   per-object delete confirmation page in this admin now soft-delete
+   instead of hard-deleting -- which is what we want by default, but it
+   also means has_delete_permission() returning True for superusers no
+   longer maps to "irreversible delete" the way it used to. Added an
+   explicit 'hard_delete_action', restricted to superusers, as the
+   escape hatch for a real, irreversible delete (uses
+   User.objects.filter(...).hard_delete() from the custom queryset).
+
+2. soft_delete_action already existed and is unaffected functionally,
+   but its message now more accurately reflects that the default admin
+   delete button does the same thing.
+
+3. get_queryset() select_related('deleted_by') is kept as-is; it's
+   unaffected by the soft-delete routing change.
 """
 
 from django.contrib import admin
@@ -91,7 +111,7 @@ class VerificationStatusFilter(admin.SimpleListFilter):
     """Filter users by verification status"""
     title = _('Verification Status')
     parameter_name = 'verification'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('verified', _('Verified (Email or Phone)')),
@@ -100,7 +120,7 @@ class VerificationStatusFilter(admin.SimpleListFilter):
             ('email_verified', _('Email Verified')),
             ('phone_verified', _('Phone Verified')),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() == 'verified':
             return queryset.filter(Q(email_verified=True) | Q(phone_verified=True))
@@ -119,7 +139,7 @@ class AccountSecurityFilter(admin.SimpleListFilter):
     """Filter users by security status"""
     title = _('Security Status')
     parameter_name = 'security'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('locked', _('Locked')),
@@ -127,7 +147,7 @@ class AccountSecurityFilter(admin.SimpleListFilter):
             ('failed_attempts', _('Failed Login Attempts')),
             ('password_rotation_needed', _('Password Rotation Needed')),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() == 'locked':
             return queryset.filter(
@@ -146,13 +166,13 @@ class SoftDeletedFilter(admin.SimpleListFilter):
     """Filter to show/hide soft-deleted users"""
     title = _('Deletion Status')
     parameter_name = 'deleted'
-    
+
     def lookups(self, request, model_admin):
         return (
             ('active', _('Active (Not Deleted)')),
             ('deleted', _('Soft Deleted')),
         )
-    
+
     def queryset(self, request, queryset):
         if self.value() == 'active':
             return queryset.filter(deleted_at__isnull=True)
@@ -170,15 +190,15 @@ class UserAdmin(BaseUserAdmin):
     """
     Enhanced Admin interface for User model
     """
-    
+
     # Use custom forms
     form = UserChangeForm
     add_form = UserCreationForm
-    
+
     # ================================================================
     # LIST DISPLAY
     # ================================================================
-    
+
     list_display = (
         'email_or_phone',
         'display_name_colored',
@@ -191,9 +211,9 @@ class UserAdmin(BaseUserAdmin):
         'date_joined',
         'last_login',
     )
-    
+
     list_display_links = ('email_or_phone', 'display_name_colored')
-    
+
     list_filter = (
         'role',
         'account_status',
@@ -209,7 +229,7 @@ class UserAdmin(BaseUserAdmin):
         'country',
         'date_joined',
     )
-    
+
     search_fields = (
         'email_or_phone',
         'email',
@@ -217,13 +237,13 @@ class UserAdmin(BaseUserAdmin):
         'uuid',
         'last_login_ip',
     )
-    
+
     ordering = ('-date_joined',)
-    
+
     # ================================================================
     # CUSTOM DISPLAY METHODS
     # ================================================================
-    
+
     @admin.display(description='Name', ordering='email_or_phone')
     def display_name_colored(self, obj):
         """Display name with color coding based on verification"""
@@ -237,7 +257,7 @@ class UserAdmin(BaseUserAdmin):
             else:
                 color = '#dc3545'  # Red
                 icon = '✗'
-            
+
             return format_html(
                 '<span style="color: {};">{} {}</span>',
                 color,
@@ -246,20 +266,20 @@ class UserAdmin(BaseUserAdmin):
             )
         except Exception:
             return obj.email_or_phone
-    
+
     @admin.display(description='Role')
     def role_badge(self, obj):
         """Display role with colored badge"""
         colors = {
             'admin': '#dc3545',      # Red
-            'dealer': '#17a2b8',     # Cyan
-            'customer': '#6c757d',   # Gray
+            'business': '#17a2b8',   # Cyan
+            'user': '#6c757d',       # Gray
             'staff': '#007bff',      # Blue
             'moderator': '#ffc107',  # Yellow
         }
-        
+
         color = colors.get(obj.role, '#6c757d')
-        
+
         return format_html(
             '<span style="background-color: {}; color: white; '
             'padding: 3px 10px; border-radius: 3px; font-size: 11px; '
@@ -267,7 +287,7 @@ class UserAdmin(BaseUserAdmin):
             color,
             obj.get_role_display().upper()
         )
-    
+
     @admin.display(description='Status')
     def account_status_badge(self, obj):
         """Display account status with colored badge"""
@@ -278,21 +298,21 @@ class UserAdmin(BaseUserAdmin):
             'pending': '#ffc107',     # Yellow
             'locked': '#fd7e14',      # Orange
         }
-        
+
         color = colors.get(obj.account_status, '#6c757d')
-        
+
         return format_html(
             '<span style="background-color: {}; color: white; '
             'padding: 3px 10px; border-radius: 3px; font-size: 11px;">{}</span>',
             color,
             obj.get_account_status_display().upper()
         )
-    
+
     @admin.display(description='Verification')
     def verification_badges(self, obj):
         """Display verification status badges"""
         badges = []
-        
+
         # Email verification
         if obj.email:
             if obj.email_verified:
@@ -307,7 +327,7 @@ class UserAdmin(BaseUserAdmin):
                     'padding: 2px 6px; border-radius: 3px; font-size: 10px; '
                     'margin-right: 3px;">📧 ✗</span>'
                 )
-        
+
         # Phone verification
         if obj.phone:
             if obj.phone_verified:
@@ -320,9 +340,9 @@ class UserAdmin(BaseUserAdmin):
                     '<span style="background-color: #dc3545; color: white; '
                     'padding: 2px 6px; border-radius: 3px; font-size: 10px;">📱 ✗</span>'
                 )
-        
+
         return format_html(''.join(badges) if badges else '-')
-    
+
     @admin.display(description='MFA')
     def mfa_badge(self, obj):
         """Display MFA status badge"""
@@ -335,34 +355,31 @@ class UserAdmin(BaseUserAdmin):
             '<span style="background-color: #6c757d; color: white; '
             'padding: 2px 6px; border-radius: 3px; font-size: 10px;">🔐 OFF</span>'
         )
-    
+
     # ================================================================
     # FIELDSETS (for detail view)
     # ================================================================
-    
+
     def get_fieldsets(self, request, obj=None):
         """
         Dynamic fieldsets that only include fields that exist in the model
         """
-        # Get all field names from the model
         model_fields = [f.name for f in self.model._meta.get_fields()]
-        
-        # Helper function to filter fields
+
         def filter_fields(fields):
             """Filter out fields that don't exist in model"""
             filtered = []
             for field in fields:
                 if isinstance(field, tuple):
-                    # Handle tuple of fields (for inline display)
                     tuple_fields = tuple(f for f in field if f in model_fields)
                     if tuple_fields:
                         filtered.append(tuple_fields)
                 elif field in model_fields:
                     filtered.append(field)
             return tuple(filtered) if filtered else None
-        
+
         fieldsets = []
-        
+
         # Basic Information
         basic_fields = filter_fields((
             'uuid',
@@ -376,7 +393,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': basic_fields,
                 'description': 'Core user identification and authentication fields'
             }))
-        
+
         # Role & Permissions
         role_fields = filter_fields((
             'role',
@@ -392,7 +409,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': role_fields,
                 'classes': ('collapse',),
             }))
-        
+
         # Verification Status
         verification_fields = filter_fields((
             ('email_verified', 'email_verified_at'),
@@ -403,7 +420,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': verification_fields,
                 'classes': ('collapse',),
             }))
-        
+
         # Multi-Factor Authentication
         mfa_fields = filter_fields((
             'mfa_enabled',
@@ -416,7 +433,7 @@ class UserAdmin(BaseUserAdmin):
                 'classes': ('collapse',),
                 'description': 'Two-factor authentication settings'
             }))
-        
+
         # Security
         security_fields = filter_fields((
             'failed_login_attempts',
@@ -432,8 +449,8 @@ class UserAdmin(BaseUserAdmin):
                 'fields': security_fields,
                 'classes': ('collapse',),
             }))
-        
-        # Internationalization (only if fields exist)
+
+        # Internationalization
         i18n_fields = filter_fields((
             'timezone',
             'language',
@@ -445,7 +462,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': i18n_fields,
                 'classes': ('collapse',),
             }))
-        
+
         # GDPR & Privacy
         gdpr_fields = filter_fields((
             ('marketing_consent', 'marketing_consent_date'),
@@ -458,7 +475,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': gdpr_fields,
                 'classes': ('collapse',),
             }))
-        
+
         # Timestamps
         timestamp_fields = filter_fields((
             'date_joined',
@@ -470,7 +487,7 @@ class UserAdmin(BaseUserAdmin):
                 'fields': timestamp_fields,
                 'classes': ('collapse',),
             }))
-        
+
         # Metadata
         metadata_fields = filter_fields(('metadata',))
         if metadata_fields:
@@ -478,13 +495,13 @@ class UserAdmin(BaseUserAdmin):
                 'fields': metadata_fields,
                 'classes': ('collapse',),
             }))
-        
+
         return fieldsets
-    
+
     # ================================================================
     # FIELDSETS FOR ADD USER
     # ================================================================
-    
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -500,20 +517,18 @@ class UserAdmin(BaseUserAdmin):
             ),
         }),
     )
-    
+
     # ================================================================
     # READONLY FIELDS
     # ================================================================
-    
+
     def get_readonly_fields(self, request, obj=None):
         """
         Make certain fields readonly based on conditions
         Dynamic to handle fields that may not exist in DB yet
         """
-        # Get all field names from the model
         model_fields = [f.name for f in self.model._meta.get_fields()]
-        
-        # Base readonly fields (only if they exist)
+
         readonly_candidates = [
             'uuid',
             'date_joined',
@@ -530,22 +545,22 @@ class UserAdmin(BaseUserAdmin):
             'last_login_ip',
             'last_login_user_agent',
         ]
-        
+
         readonly = [field for field in readonly_candidates if field in model_fields]
-        
+
         # Make email_or_phone readonly after creation
         if obj and 'email_or_phone' in model_fields:
             if 'email_or_phone' not in readonly:
                 readonly.append('email_or_phone')
-        
+
         return readonly
-    
+
     # ================================================================
     # FILTERS & ACTIONS
     # ================================================================
-    
+
     filter_horizontal = ('groups', 'user_permissions')
-    
+
     actions = [
         'verify_email_action',
         'verify_phone_action',
@@ -558,12 +573,14 @@ class UserAdmin(BaseUserAdmin):
         'force_password_change_action',
         'export_user_data_action',
         'soft_delete_action',
+        'hard_delete_action',
+        'restore_action',
     ]
-    
+
     # ================================================================
     # ADMIN ACTIONS
     # ================================================================
-    
+
     @admin.action(description='✓ Verify Email for selected users')
     def verify_email_action(self, request, queryset):
         """Bulk verify email addresses"""
@@ -572,13 +589,13 @@ class UserAdmin(BaseUserAdmin):
             if user.email and not user.email_verified:
                 user.verify_email()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully verified email for {count} user(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='✓ Verify Phone for selected users')
     def verify_phone_action(self, request, queryset):
         """Bulk verify phone numbers"""
@@ -587,13 +604,13 @@ class UserAdmin(BaseUserAdmin):
             if user.phone and not user.phone_verified:
                 user.verify_phone()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully verified phone for {count} user(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='✓ Activate selected accounts')
     def activate_accounts(self, request, queryset):
         """Bulk activate user accounts"""
@@ -602,13 +619,13 @@ class UserAdmin(BaseUserAdmin):
             if not user.is_active:
                 user.activate_account()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully activated {count} account(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='✗ Deactivate selected accounts')
     def deactivate_accounts(self, request, queryset):
         """Bulk deactivate user accounts"""
@@ -617,13 +634,13 @@ class UserAdmin(BaseUserAdmin):
             if user.is_active:
                 user.deactivate_account()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully deactivated {count} account(s).',
             messages.WARNING
         )
-    
+
     @admin.action(description='🚫 Suspend selected accounts')
     def suspend_accounts(self, request, queryset):
         """Bulk suspend user accounts"""
@@ -632,13 +649,13 @@ class UserAdmin(BaseUserAdmin):
             if user.account_status != User.AccountStatus.SUSPENDED:
                 user.suspend_account()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully suspended {count} account(s).',
             messages.WARNING
         )
-    
+
     @admin.action(description='🔓 Unlock selected accounts')
     def unlock_accounts(self, request, queryset):
         """Bulk unlock user accounts"""
@@ -647,13 +664,13 @@ class UserAdmin(BaseUserAdmin):
             if user.is_locked:
                 user.unlock_account()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully unlocked {count} account(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='🔐 Enable MFA for selected users')
     def enable_mfa_action(self, request, queryset):
         """Bulk enable MFA"""
@@ -662,13 +679,13 @@ class UserAdmin(BaseUserAdmin):
             if not user.mfa_enabled:
                 user.enable_mfa(method='email')
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully enabled MFA for {count} user(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='🔓 Disable MFA for selected users')
     def disable_mfa_action(self, request, queryset):
         """Bulk disable MFA"""
@@ -677,76 +694,141 @@ class UserAdmin(BaseUserAdmin):
             if user.mfa_enabled:
                 user.disable_mfa()
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully disabled MFA for {count} user(s).',
             messages.SUCCESS
         )
-    
+
     @admin.action(description='🔑 Force password change on next login')
     def force_password_change_action(self, request, queryset):
         """Force users to change password on next login"""
         count = queryset.update(require_password_change=True)
-        
+
         self.message_user(
             request,
             f'Password change required for {count} user(s) on next login.',
             messages.WARNING
         )
-    
+
     @admin.action(description='📥 Export user data (GDPR)')
     def export_user_data_action(self, request, queryset):
         """Export user data for GDPR compliance"""
         data = []
         for user in queryset:
             data.append(user.export_data())
-        
+
         self.message_user(
             request,
             f'Data exported for {len(data)} user(s). '
             f'In production, this would trigger a download or email.',
             messages.INFO
         )
-    
+
     @admin.action(description='🗑️ Soft delete selected accounts (GDPR)')
     def soft_delete_action(self, request, queryset):
-        """Soft delete user accounts (GDPR compliant)"""
+        """
+        Soft delete user accounts (GDPR compliant).
+
+        Note: this is functionally identical to what the default
+        "Delete selected users" admin action now does, since
+        User.objects.filter(...).delete() is redirected to soft_delete()
+        for every row (see UserQuerySet.delete() in account.py). This
+        action is kept as an explicit, clearly-labeled alternative.
+        """
         count = 0
         for user in queryset:
             if not user.deleted_at:
                 user.soft_delete(deleted_by_user=request.user)
                 count += 1
-        
+
         self.message_user(
             request,
             f'Successfully soft-deleted {count} account(s). '
             f'Data anonymized per GDPR requirements.',
             messages.WARNING
         )
-    
+
+    @admin.action(description='♻️ Restore soft-deleted accounts')
+    def restore_action(self, request, queryset):
+        """
+        Restore soft-deleted accounts. Note that email/phone were
+        anonymized (nulled) by soft_delete() and are NOT recovered by
+        this action -- only account_status/is_active/deleted_at/
+        deleted_by are reset. There is no way to recover the original
+        email/phone once soft_delete() has run.
+        """
+        count = 0
+        for user in queryset:
+            if user.deleted_at:
+                user.restore()
+                count += 1
+
+        self.message_user(
+            request,
+            f'Restored {count} account(s). Note: original email/phone '
+            f'were anonymized on deletion and are not recoverable.',
+            messages.INFO
+        )
+
+    @admin.action(description='☠️ PERMANENTLY hard-delete selected accounts (irreversible)')
+    def hard_delete_action(self, request, queryset):
+        """
+        Real, irreversible row deletion -- bypasses soft_delete()
+        entirely via UserQuerySet.hard_delete() (see account.py).
+
+        Restricted to superusers only. Needed because, as of the
+        account.py bug-fix pass, neither User.delete() nor
+        queryset.delete() perform a real delete anymore -- both route
+        through soft_delete() -- so an actual hard delete requires this
+        explicit escape hatch rather than the default admin delete flow.
+        """
+        if not request.user.is_superuser:
+            self.message_user(
+                request,
+                'Only superusers may perform a permanent hard delete.',
+                messages.ERROR
+            )
+            return
+
+        count = queryset.count()
+        queryset.hard_delete()
+
+        self.message_user(
+            request,
+            f'PERMANENTLY deleted {count} account(s). This cannot be undone.',
+            messages.ERROR
+        )
+
     # ================================================================
     # ADDITIONAL CONFIGURATIONS
     # ================================================================
-    
+
     def get_queryset(self, request):
         """
         Customize queryset to optimize database queries
         """
         qs = super().get_queryset(request)
-        # Optimize queries with select_related
         qs = qs.select_related('deleted_by')
         return qs
-    
+
     def save_model(self, request, obj, form, change):
         """
         Custom save logic
         """
         super().save_model(request, obj, form, change)
-    
+
     def has_delete_permission(self, request, obj=None):
         """
-        Control delete permission - only superusers can hard delete
+        Control delete permission.
+
+        Note: since User.delete() now routes through soft_delete()
+        (account.py fix #4), granting this to superusers no longer
+        means "superusers can irreversibly delete users" the way it
+        used to -- the default delete button/action will soft-delete.
+        Real, irreversible deletion is only available via the
+        superuser-gated 'hard_delete_action' bulk action above.
         """
         if request.user.is_superuser:
             return True

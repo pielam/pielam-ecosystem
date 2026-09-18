@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% load static %}
 {% load socialaccount %}
 
@@ -91,7 +91,7 @@
         min-height: 100%;
     }
 
-    /* ── LEFT: BRANDING ── */
+    /* â”€â”€ LEFT: BRANDING â”€â”€ */
     .auth-branding {
         position: relative;
         background: linear-gradient(160deg, var(--auth-primary-dark) 0%, var(--auth-primary-blue) 100%);
@@ -259,7 +259,7 @@
     .circle-2 { width: 220px; height: 220px; bottom: -60px; left: -70px; }
     .circle-3 { width: 140px; height: 140px; bottom: 20%;  right: 8%; background: radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 70%); }
 
-    /* ── RIGHT: FORM ── */
+    /* â”€â”€ RIGHT: FORM â”€â”€ */
     .auth-form-section {
         background: var(--auth-surface);
         display: flex;
@@ -586,9 +586,9 @@
     }
     .signin-link:hover { text-decoration: none; }
 
-    /* ══════════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        RESPONSIVE BREAKPOINTS
-       ══════════════════════════════════════════════ */
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
     @media (min-width: 1025px) and (max-width: 1279px) {
         .branding-content { max-width: 400px; }
@@ -773,7 +773,7 @@
                     <h2 class="form-title">
                         <span class="title-accent">Create</span> Account
                     </h2>
-                    <p class="form-subtitle">Fill in your details to get started</p>
+
                 </div>
 
                 <!-- Messages Display -->
@@ -979,10 +979,10 @@ emailInput.addEventListener('blur', function() {
         emailFeedback.textContent = '';
         emailFeedback.className = 'field-feedback';
     } else if (emailPattern.test(value)) {
-        emailFeedback.textContent = '✓ Valid email';
+        emailFeedback.textContent = 'âœ“ Valid email';
         emailFeedback.className = 'field-feedback success';
     } else {
-        emailFeedback.textContent = '⚠ Please enter a valid email address';
+        emailFeedback.textContent = 'âš  Please enter a valid email address';
         emailFeedback.className = 'field-feedback error';
     }
 });
@@ -1018,12 +1018,12 @@ password1Input.addEventListener('input', function() {
     } else if (value.length < 8) {
         strengthText.textContent = 'Too short';
         strengthText.className = 'strength-text weak';
-        passwordFeedback.textContent = '⚠ Password must be at least 8 characters';
+        passwordFeedback.textContent = 'âš  Password must be at least 8 characters';
         passwordFeedback.className = 'field-feedback error';
     } else {
         strengthText.textContent = strength.text;
         strengthText.className = `strength-text ${strength.class}`;
-        passwordFeedback.textContent = `✓ ${strength.feedback}`;
+        passwordFeedback.textContent = `âœ“ ${strength.feedback}`;
         passwordFeedback.className = 'field-feedback success';
     }
 });
@@ -1061,10 +1061,10 @@ password2Input.addEventListener('input', function() {
         confirmFeedback.textContent = '';
         confirmFeedback.className = 'field-feedback';
     } else if (password1 === password2) {
-        confirmFeedback.textContent = '✓ Passwords match';
+        confirmFeedback.textContent = 'âœ“ Passwords match';
         confirmFeedback.className = 'field-feedback success';
     } else {
-        confirmFeedback.textContent = '⚠ Passwords do not match';
+        confirmFeedback.textContent = 'âš  Passwords do not match';
         confirmFeedback.className = 'field-feedback error';
     }
 });

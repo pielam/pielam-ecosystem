@@ -1,7 +1,8 @@
 # apps/ponno/views/home.py
 #
 # See original module docstring for full architecture notes (kept
-# below, unchanged) — this version applies two fixes on top of it:
+# below, unchanged) — this version applies three fixes/enhancements
+# on top of it:
 #
 #   PATCH 1 (CRITICAL): _personalize_feed() was leaking raw datetime
 #   objects ('_created_at_dt' and 'created_at') into dicts that get
@@ -20,6 +21,36 @@
 #   trying to enumerate/delete every possible key. Bumping the version
 #   makes every previously-cached page key unreachable instantly,
 #   without needing delete_many() over an unbounded key space.
+#
+#   PATCH 3: replaced ad-hoc `getattr(user, 'profileinfo', None)`
+#   profile lookups with apps.customer.models.user_info.UserInfo /
+#   get_user_info(), the single aggregation point across
+#   User/ProfileInfo/ContactInfo/LocationInfo/SocialInfo.
+#
+#     - In the bulk feed paths (get_feed_page, _get_top_contributors)
+#       we build `UserInfo(user=..., profile=...)` directly from data
+#       we've *already* fetched via select_related — this is a plain
+#       dataclass construction, so it costs zero extra queries. It
+#       just gives _serialize_service access to UserInfo's convenience
+#       methods (is_verified(), social_links(), etc.) instead of
+#       re-deriving them inline. Contact/Location/Social are left None
+#       on these instances (not prefetched — see UserInfo's own
+#       docstring on why they're lazy/sparse), so those methods
+#       degrade to their documented empty-safe defaults.
+#
+#     - In the single-object paths (refresh_feed_post,
+#       feed_post_detail, HomeEngineView) we call get_user_info(...)
+#       for real, since it's one user per request and the extra
+#       queries for Contact/Location/Social are worth it there for
+#       richer response data.
+#
+#     - _serialize_service()'s signature changed from
+#       `_serialize_service(svc, profile)` to
+#       `_serialize_service(svc, user_info)`. All existing output keys
+#       are unchanged (still sourced from `.profile` exactly as
+#       before) — this only *adds* two new keys, 'is_verified' and
+#       'social_links', so nothing already reading this dict (e.g.
+#       ponno/home.html's JS) needs to change.
 #
 #   VERIFIED AGAINST: megamind/models/connected_service.py (enterprise
 #   crawling schema — DomainCrawlPolicy / CrawlAttempt / ConnectedService,
@@ -68,6 +99,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.customer.models.account import User
 from apps.customer.models.profile_info import ProfileInfo
+from apps.customer.models.user_info import UserInfo, get_user_info
 from megamind.models.connected_service import ConnectedService, UnsafeCrawlURLError
 from megamind.utils.feed_cache import refresh_feed_cache
 from megamind.utils.link_info import prepare_links_for_display
@@ -84,6 +116,9 @@ from engine.profile_views.engine_profile import (
     _run_guarded_fetch,
     _serialize_service as _engine_serialize_service,
 )
+
+
+from apps.customer.models.location_info import LocationInfo
 
 logger = logging.getLogger(__name__)
 
@@ -351,7 +386,25 @@ def _normalize_videos(raw_videos) -> list:
     return normalized
 
 
-def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) -> dict:
+def _serialize_service(svc: ConnectedService, user_info: Optional[UserInfo] = None) -> dict:
+    """
+    PATCH 3: this now takes a `UserInfo` bag instead of a bare
+    `ProfileInfo`. Every field below that used to read `profile.*`
+    still reads `profile.*` (via `user_info.profile`) exactly as
+    before — output is unchanged for existing keys. The only additions
+    are 'is_verified' and 'social_links' at the bottom, sourced from
+    UserInfo's convenience methods.
+
+    Callers building this from a bulk-fetched queryset (get_feed_page)
+    pass a `UserInfo(user=..., profile=...)` built directly from
+    already-select_related data — that's a free dataclass construction,
+    not a new query. Callers with a single service (refresh_feed_post)
+    pass the result of get_user_info(), which does hit the DB for the
+    fuller Contact/Location/Social picture, which is fine at that
+    per-request scale.
+    """
+    profile = user_info.profile if user_info else None
+
     og_title       = svc.og_title       or ""
     og_description = svc.og_description or ""
     og_thumbnail   = svc.og_thumbnail   or ""
@@ -407,10 +460,28 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
         'user_role':        svc.user.role,
         'profile_name':     profile.profile_name if profile else svc.user.email_or_phone,
         'profile_photo':    profile.get_profile_photo_url() if profile else '/static/defaults/default-profile-picture.png',
-        'profile_tagline':  profile.profile_tagline if profile else '',
-        'profile_location': profile.location_display if profile else '',
+        # PATCH 4: profile_tagline / profile_location / profile_type
+        # all previously read fields that no longer exist on
+        # ProfileInfo (see profile_info.py changelog #4, #6, #8):
+        #   - profile_tagline was removed outright -> now falls back
+        #     to profile_bio, the closest surviving field.
+        #   - location_display was removed from ProfileInfo itself
+        #     (the whole address block is gone) and now lives on
+        #     UserInfo.location_display(), backed by the separate
+        #     LocationInfo model -- so this reads through user_info
+        #     instead of profile. NOTE: only populated when user_info
+        #     was built via get_user_info() (single-object paths like
+        #     refresh_feed_post/feed_post_detail); the bulk feed path
+        #     (get_feed_page) constructs UserInfo without a `location`,
+        #     so this will be '' there until/unless that path is also
+        #     updated to fetch LocationInfo.
+        #   - profile_type was removed with no replacement (no more
+        #     profile-category flag) -- dropped entirely rather than
+        #     hardcoded, since nothing on the model can answer this
+        #     anymore.
+        'profile_tagline':  profile.profile_bio if profile else '',
+        'profile_location': user_info.location_display() if user_info else '',
         'profile_verified': profile.is_profile_verified if profile else False,
-        'profile_type':     profile.profile_type if profile else 'personal',
         'profile_url':      reverse('customer:profile_view', kwargs={'username': svc.user.email_or_phone}),
         'follower_count':   getattr(svc, 'follower_count', 0) or 0,
 
@@ -464,8 +535,15 @@ def _serialize_service(svc: ConnectedService, profile: Optional[ProfileInfo]) ->
 
         'refresh_url':        CONNECTED_SERVICE_REFRESH_URL_TEMPLATE.format(pk=svc.pk),
         'detail_url':         CONNECTED_SERVICE_PREVIEW_URL_TEMPLATE.format(pk=svc.pk),
-    }
 
+        # ── PATCH 3: additive fields sourced from UserInfo ──────────
+        # 'profile_verified' above (ProfileInfo.is_profile_verified)
+        # is kept as-is for backward compatibility with existing JS.
+        # 'is_verified' is the broader account-or-profile check from
+        # UserInfo.is_verified(), for anywhere that wants that instead.
+        'is_verified':        user_info.is_verified() if user_info else bool(profile and profile.is_profile_verified),
+        'social_links':       user_info.social_links() if user_info else {},
+    }
 
 def _feed_base_queryset():
     return (
@@ -475,7 +553,6 @@ def _feed_base_queryset():
         .annotate(follower_count=Count('user__profileinfo__followers', distinct=True))
         .order_by('-created_at', '-id')
     )
-
 
 def get_feed_page(cursor: Optional[str] = None, page_size: int = FEED_PAGE_SIZE) -> dict:
     page_size = min(max(page_size, 1), FEED_PAGE_SIZE_MAX)
@@ -502,12 +579,35 @@ def get_feed_page(cursor: Optional[str] = None, page_size: int = FEED_PAGE_SIZE)
     has_more = len(rows) > page_size
     rows = rows[:page_size]
 
-    profiles_by_user = {
-        row.user_id: getattr(row.user, 'profileinfo', None)
+    # PATCH 5: bulk-fetch LocationInfo for every user on this page in
+    # a single extra query (confirmed against location_info.py --
+    # `user` is the OneToOneField-on-PK field name, mirroring
+    # ProfileInfo's own shape), so 'profile_location' can actually be
+    # populated on the main feed instead of always coming back blank.
+    # Still just one query for the whole page, not per-row.
+    user_ids = [row.user_id for row in rows]
+    locations_by_user = {
+        loc.user_id: loc
+        for loc in LocationInfo.objects.filter(user_id__in=user_ids)
+    }
+
+    # PATCH 3 (updated by PATCH 5): wrap each row's already-select_related
+    # user/profile — plus the just-bulk-fetched location — in a UserInfo
+    # dataclass. Zero additional per-row queries: the location fetch
+    # above was the one extra query for the *entire* page. Contact/
+    # Social stay None here (not needed for feed card fields);
+    # anything needing those should call get_user_info() directly on a
+    # single user instead (see refresh_feed_post / feed_post_detail).
+    user_info_by_user = {
+        row.user_id: UserInfo(
+            user=row.user,
+            profile=getattr(row.user, 'profileinfo', None),
+            location=locations_by_user.get(row.user_id),
+        )
         for row in rows
     }
 
-    items = [_serialize_service(row, profiles_by_user.get(row.user_id)) for row in rows]
+    items = [_serialize_service(row, user_info_by_user.get(row.user_id)) for row in rows]
     next_cursor = items[-1]['_cursor'] if (has_more and items) else None
 
     result = {'items': items, 'next_cursor': next_cursor}
@@ -516,7 +616,6 @@ def get_feed_page(cursor: Optional[str] = None, page_size: int = FEED_PAGE_SIZE)
         cache.set(KEY_FEED_FIRST_PAGE, result, FEED_PAGE_TTL)
 
     return result
-
 
 def _personalize_feed(items: list, viewer_id: int, viewer=None) -> list:
     """
@@ -601,6 +700,10 @@ def _get_top_contributors(limit: int = 10) -> list:
         if user is None:
             continue
         profile = getattr(user, 'profileinfo', None)
+        # PATCH 3: same free-construction pattern as get_feed_page —
+        # no extra query, just reuses UserInfo.is_verified() instead
+        # of re-deriving the "verified" check inline.
+        user_info = UserInfo(user=user, profile=profile)
         contributors.append({
             'user_id':        user.pk,
             'username':       user.email_or_phone,
@@ -608,6 +711,7 @@ def _get_top_contributors(limit: int = 10) -> list:
             'profile_photo':  profile.get_profile_photo_url() if profile else '/static/defaults/default-profile-picture.png',
             'profile_url':    reverse('customer:profile_view', kwargs={'username': user.email_or_phone}),
             'service_count':  row['service_count'],
+            'is_verified':    user_info.is_verified(),
         })
 
     cache.set(KEY_CONTRIBUTORS, contributors, CONTRIBUTORS_TTL)
@@ -641,7 +745,7 @@ def _get_global_stats() -> dict:
 # VIEWS — page shell + pagination
 # ═══════════════════════════════════════════════════════════════════
 
-@login_required(login_url='/customer/signin/')
+@login_required(login_url='/user/signin/')
 @cache_control(private=True, max_age=15, must_revalidate=True)
 def HomeEngineView(request):
     page = get_feed_page(cursor=None, page_size=FEED_PAGE_SIZE)
@@ -649,8 +753,18 @@ def HomeEngineView(request):
     top_contributors = _get_top_contributors(limit=10)
     stats = _get_global_stats()
 
+    # PATCH 3: fetch the current viewer's full UserInfo (with
+    # create_missing=True so LocationInfo/SocialInfo rows exist for
+    # them going forward — this is a single-user, once-per-page-load
+    # cost, so the extra queries are cheap here). Kept alongside the
+    # existing 'current_user' key rather than replacing it, so any
+    # template code still reading `current_user` directly keeps
+    # working unchanged.
+    current_user_info = get_user_info(request.user, create_missing=True)
+
     context = {
         'current_user':      request.user,
+        'current_user_info': current_user_info,
         'feed':               feed_items,
         'feed_count':         len(feed_items),
         'next_cursor':        page['next_cursor'],
@@ -747,15 +861,17 @@ def refresh_feed_post(request, service_id):
         return JsonResponse({'success': False, 'error': str(exc)}, status=409)
     except (UnsafeCrawlURLError, ServiceRefreshBlockedError) as exc:
         service.refresh_from_db()
-        profile = getattr(service.user, 'profileinfo', None)
+        # PATCH 3: single-object path — real get_user_info() call is
+        # fine here (one user, one request).
+        user_info = get_user_info(service.user)
         return JsonResponse(
-            {'success': False, 'error': str(exc), **_serialize_service(service, profile)},
+            {'success': False, 'error': str(exc), **_serialize_service(service, user_info)},
             status=200,
         )
 
     service.refresh_from_db()
-    profile = getattr(service.user, 'profileinfo', None)
-    post = _serialize_service(service, profile)
+    user_info = get_user_info(service.user)
+    post = _serialize_service(service, user_info)
     post = _personalize_feed([post], request.user.id, viewer=None)[0]
     return JsonResponse({'success': True, **post})
 
@@ -778,7 +894,12 @@ def feed_post_detail(request, service_id):
 
     detail = _engine_serialize_service(service)
 
-    profile = getattr(service.user, 'profileinfo', None)
+    # PATCH 3: single-object path — use get_user_info() for the fuller
+    # picture (profile + verified status + social links + the viewer's
+    # visible contact methods), since this is one user per request.
+    user_info = get_user_info(service.user)
+    profile = user_info.profile
+
     detail['username'] = service.user.email_or_phone
     detail['profile_name'] = profile.profile_name if profile else service.user.email_or_phone
     detail['profile_photo'] = (
@@ -787,6 +908,11 @@ def feed_post_detail(request, service_id):
     detail['profile_url'] = reverse('customer:profile_view', kwargs={'username': service.user.email_or_phone})
     detail['posted_at_human'] = _time_ago(service.created_at)
     detail['last_fetch_human'] = _time_ago(service.last_fetch_time)
+
+    # New, additive fields sourced from UserInfo.
+    detail['is_verified'] = user_info.is_verified()
+    detail['social_links'] = user_info.social_links()
+    detail['contact_methods'] = user_info.visible_contact_methods(viewer=request.user)
 
     return JsonResponse({'success': True, **detail})
 

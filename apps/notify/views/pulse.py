@@ -51,7 +51,7 @@ def _serialize_notification(notification: Notification) -> dict:
 
 from django.shortcuts import redirect
 
-@login_required(login_url='/customer/signin/')
+@login_required(login_url='/user/signin/')
 @require_GET
 def go(request, slug):
     """Resolve a notification's slug link: mark it read, then redirect
@@ -67,7 +67,7 @@ def go(request, slug):
 # FULL NOTIFICATIONS PAGE
 # ====================================================================
 
-@login_required(login_url='/customer/signin/')
+@login_required(login_url='/user/signin/')
 @require_GET
 def NotificationView(request):
     """

@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.customer.views.signup import SignUpView
+from apps.customer.web_views.signup import SignUpView
 from apps.tomal.views import DashboardView, PatientsView, AppointmentView,TestandPackagesView, SamplecollectionView, ReportsView, InventoryView, BillingView, DoctorsView, StuffView, AnalyticsView, SettingsView, SearchView, NotificationView, ProfileView, HomeView
 
 app_name = "tomal"

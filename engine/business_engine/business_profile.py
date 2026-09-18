@@ -18,14 +18,14 @@ Query budget (all cache-miss paths)
 ────────────────────────────────────
   _load_base_context          →  3 queries  (profile, followers COUNT, following COUNT)
   _load_customer_context      →  0 queries  (pure config)
-  _load_dealer_context        →  6 queries  (catalog + brands + categories + subcategories)
+  _load_dealer_context        →  7 queries  (business_info + catalog + brands + categories + subcategories)
   _load_dealer_analytics      →  6 queries  (products, orders, views, wishlists, ratings, searches)
   _load_dealer_activity       →  3 queries  (recent views, top searches, top wishlist products)
   _load_staff_context         →  0 queries  (metadata read from profile_info)
   _load_moderator_context     →  0 queries  (pure config)
   _load_admin_context         →  1 query    (user aggregate)
   ─────────────────────────────────────────
-  Worst-case cold path        → 19 queries  (dealer: 3 base + 6 catalog + 6 analytics + 3 activity + 1 ratings)
+  Worst-case cold path        → 20 queries  (dealer: 3 base + 7 catalog + 6 analytics + 3 activity + 1 ratings)
   Warm path                   →  0 DB queries
 """
 
@@ -43,6 +43,7 @@ from django.utils import timezone
 from django.db.models import Avg, Count, Q, Sum
 from apps.customer.models.account import User
 from apps.customer.models.profile_info import ProfileInfo
+from apps.customer.models.business_info import BusinessInfo
 
 logger = logging.getLogger(__name__)
 
@@ -167,8 +168,11 @@ def _load_base_context(user) -> dict:
         "user":                  user,
         "profile_info":          profile_info,
         "role":                  user.role,
+        # ProfileInfo.VerificationLevel was removed (see profile_info.py
+        # changelog #5) -- verification is now a plain boolean. There is
+        # no granular "level" left to report, so that key is gone; use
+        # is_verified below for the boolean check.
         "is_verified":           profile_info.is_profile_verified,
-        "verification_level":    profile_info.verification_level,
         "completion_percentage": profile_info.completion_percentage,
         "profile_complete":      profile_info.is_complete,
         "follower_count":        follower_count,
@@ -178,7 +182,7 @@ def _load_base_context(user) -> dict:
 
 def _load_customer_context(user, profile_info) -> dict:
     """
-    Extra context for Role.CUSTOMER.
+    Extra context for Role.USER.
     Pure config — 0 DB queries.
     """
     return {
@@ -206,28 +210,40 @@ def _load_customer_context(user, profile_info) -> dict:
 
 def _load_dealer_context(user, profile_info) -> dict:
     """
-    Core catalog context for Role.DEALER.
-    ~6 DB queries on cache miss.
+    Core catalog context for Role.BUSINESS.
+    ~7 DB queries on cache miss.
 
     Queries
     ───────
-    1. Product aggregate  — total / active / pending / featured / trending
-    2. Brand list         — filter(created_by=user)
-    3. Category list      — filter(brand__created_by=user)
-    4. SubCategory list   — filter(brand__created_by=user)
-    5. Stock summary      — in_stock / low_stock / out_of_stock counts
-    6. Top-5 products     — by total_sales
-
-    business_completion is derived from already-loaded profile_info — no extra DB hit.
+    1. BusinessInfo        — business_info.py's dedicated model (may be None
+                              if the user has never filled out a business
+                              profile -- see BusinessInfo's lazy-creation
+                              docstring)
+    2. Product aggregate    — total / active / pending / featured / trending
+    3. Brand list           — filter(created_by=user)
+    4. Category list        — filter(created_by=user)
+    5. SubCategory list     — filter(created_by=user)
+    6. Stock summary        — in_stock / low_stock / out_of_stock counts
+    7. Top-5 products       — by total_sales
     """
     from apps.ponno.models.product      import Product
     from apps.ponno.models.brand        import Brand
     from apps.ponno.models.category     import Category
     from apps.ponno.models.sub_category import SubCategory
 
+    # ── 1. Business info ─────────────────────────────────────────
+    # Business data lives on its own model now, not on ProfileInfo
+    # (see profile_info.py changelog #8 and business_info.py's own
+    # docstring) -- it's lazily created, so a user with role=BUSINESS
+    # may still have no BusinessInfo row yet (e.g. they were switched
+    # to that role but haven't filled out the form at
+    # /business/profile/ yet). Handle that gracefully instead of
+    # assuming it exists.
+    business_info = BusinessInfo.objects.for_user(user)
+
     base_qs = Product.objects.filter(dealer=user, deleted_at__isnull=True)
 
-    # ── 1. Product aggregate ─────────────────────────────────────
+    # ── 2. Product aggregate ─────────────────────────────────────
     product_stats = base_qs.aggregate(
         total_products    = Count('id'),
         active_products   = Count('id', filter=Q(is_active=True)),
@@ -236,7 +252,7 @@ def _load_dealer_context(user, profile_info) -> dict:
         trending_products = Count('id', filter=Q(is_trending=True)),
     )
 
-    # ── 2. Brands ────────────────────────────────────────────────
+    # ── 3. Brands ────────────────────────────────────────────────
     brands = list(
         Brand.objects
         .filter(created_by=user, deleted_at__isnull=True)
@@ -258,11 +274,10 @@ def _load_dealer_context(user, profile_info) -> dict:
     active_brands         = sum(1 for b in brands if b.is_active)
     verified_brands_count = sum(1 for b in brands if b.is_verified)
 
-    # ── 3. Categories ────────────────────────────────────────────
-# ── 3. Categories ────────────────────────────────────────────
+    # ── 4. Categories ────────────────────────────────────────────
     categories = list(
         Category.objects
-        .filter(created_by=user, deleted_at__isnull=True)   # ← was brand__created_by=user
+        .filter(created_by=user, deleted_at__isnull=True)
         .select_related('parent', 'brand')
         .only(
             'id', 'category_name', 'category_slug', 'category_type',
@@ -281,7 +296,7 @@ def _load_dealer_context(user, profile_info) -> dict:
     active_categories = sum(1 for c in categories if c.is_active)
     root_categories   = sum(1 for c in categories if c.parent is None)
 
-    # ── 4. SubCategories ─────────────────────────────────────────
+    # ── 5. SubCategories ─────────────────────────────────────────
     sub_categories = list(
         SubCategory.objects
         .filter(created_by=user, deleted_at__isnull=True)
@@ -305,7 +320,7 @@ def _load_dealer_context(user, profile_info) -> dict:
     featured_sub_categories = sum(1 for s in sub_categories if s.is_featured)
     trending_sub_categories = sum(1 for s in sub_categories if s.is_trending)
 
-    # ── 5. Stock summary ─────────────────────────────────────────
+    # ── 6. Stock summary ─────────────────────────────────────────
     stock_stats = base_qs.filter(is_active=True).aggregate(
         in_stock     = Count('id', filter=Q(stock_status='in_stock')),
         low_stock    = Count('id', filter=Q(stock_status='low_stock')),
@@ -313,7 +328,7 @@ def _load_dealer_context(user, profile_info) -> dict:
         pre_order    = Count('id', filter=Q(stock_status='pre_order')),
     )
 
-    # ── 6. Top-5 products by sales ───────────────────────────────
+    # ── 7. Top-5 products by sales ───────────────────────────────
     top_products = list(
         base_qs
         .filter(is_active=True)
@@ -325,19 +340,6 @@ def _load_dealer_context(user, profile_info) -> dict:
         .order_by('-total_sales')[:5]
     )
 
-    # ── Business completion ──────────────────────────────────────
-    business_fields = [
-        profile_info.business_name,
-        profile_info.business_email,
-        profile_info.business_phone,
-        profile_info.business_registration,
-        profile_info.business_description,
-        profile_info.business_website,
-    ]
-    business_completion = int(
-        sum(1 for f in business_fields if f) / len(business_fields) * 100
-    )
-
     return {
         "show_upgrade_prompt":   False,
         "show_business_section": True,
@@ -345,17 +347,26 @@ def _load_dealer_context(user, profile_info) -> dict:
         "show_admin_panel_link": False,
 
         # ── Business info ────────────────────────────────────────
-        "business_name":         profile_info.business_name,
-        "business_type":         profile_info.business_type,
-        "business_email":        profile_info.business_email,
-        "business_phone":        profile_info.business_phone,
-        "business_website":      profile_info.business_website,
-        "business_description":  profile_info.business_description,
-        "business_registration": profile_info.business_registration,
-        "business_completion":   business_completion,
-        "business_verified": (
-            profile_info.verification_level == ProfileInfo.VerificationLevel.BUSINESS
-        ),
+        # Context key names kept the same as before (business_name,
+        # business_website, business_description, business_registration,
+        # ...) so templates don't need to change -- only where each
+        # value is sourced from changed: BusinessInfo, not ProfileInfo,
+        # and a couple of its field names differ from the old
+        # ProfileInfo ones (website / description / registration_number
+        # instead of business_website / business_description /
+        # business_registration). business_info may be None if the
+        # user hasn't filled the form out yet -- every value falls
+        # back to None/0 in that case rather than raising.
+        "business_info":          business_info,
+        "business_name":          business_info.business_name        if business_info else None,
+        "business_type":          business_info.business_type        if business_info else None,
+        "business_email":         business_info.business_email       if business_info else None,
+        "business_phone":         business_info.business_phone       if business_info else None,
+        "business_website":       business_info.website              if business_info else None,
+        "business_description":   business_info.description          if business_info else None,
+        "business_registration":  business_info.registration_number  if business_info else None,
+        "business_completion":    business_info.completion_percentage if business_info else 0,
+        "business_verified":      business_info.is_business_verified if business_info else False,
 
         # ── Products ─────────────────────────────────────────────
         "total_products":     product_stats["total_products"]    or 0,
@@ -403,7 +414,7 @@ def _load_dealer_context(user, profile_info) -> dict:
 
 def _load_dealer_analytics(user) -> dict:
     """
-    Order, revenue, rating, and view analytics for Role.DEALER.
+    Order, revenue, rating, and view analytics for Role.BUSINESS.
     ~6 DB queries on cache miss.
 
     Queries
@@ -585,7 +596,7 @@ def _load_dealer_analytics(user) -> dict:
 
 def _load_dealer_activity(user) -> dict:
     """
-    Recent activity signals for Role.DEALER — high-churn data kept
+    Recent activity signals for Role.BUSINESS — high-churn data kept
     in a short-TTL cache slice (3 min).
     ~3 DB queries on cache miss.
 
@@ -729,7 +740,7 @@ def _load_admin_context(user, profile_info) -> dict:
         .filter(is_active=True, deleted_at__isnull=True)
         .aggregate(
             total_users   = Count('id'),
-            total_dealers = Count('id', filter=Q(role=User.Role.DEALER)),
+            total_dealers = Count('id', filter=Q(role=User.Role.BUSINESS)),
         )
     )
 
@@ -752,8 +763,8 @@ def _load_admin_context(user, profile_info) -> dict:
 # ═══════════════════════════════════════════════════════════════════
 
 _ROLE_LOADERS = {
-    User.Role.USER:  _load_customer_context,
-    User.Role.BUSINESS:    _load_dealer_context,
+    User.Role.USER:      _load_customer_context,
+    User.Role.BUSINESS:  _load_dealer_context,
     User.Role.STAFF:     _load_staff_context,
     User.Role.MODERATOR: _load_moderator_context,
     User.Role.ADMIN:     _load_admin_context,
@@ -787,7 +798,10 @@ def BusinessProfileView(request):
     """
     uid  = request.user.pk
     role = str(request.user.role)
-    is_dealer = (request.user.role == User.Role.DEALER)
+    # User.Role has no DEALER member (see account.py) -- the business
+    # role is User.Role.BUSINESS. User.is_dealer already encodes this
+    # exact check, so use it directly instead of re-deriving it here.
+    is_dealer = request.user.is_dealer
 
     cache_keys = [_key_base(uid), _key_role(role, uid)]
     if is_dealer:

@@ -16,17 +16,18 @@ admin.site.index_title = "pielam"
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    path('user/',   include('apps.customer.web_urls')), # Web urls for customer App
+
     path('', include('apps.ponno.web_urls')),
     path('engine/', include('dispos.web_urls')),
-    path('customer/',   include('apps.customer.web_urls')),
+
     path('notifications/', include('apps.notify.web_urls')),
 
     path("accounts/", include("allauth.urls")),
 
-    
+
     path('tomal/',         include('apps.tomal.urls')),
-    
-    path('kobutor/',       include('apps.kobutor.urls')),
+
 
     # ── Megamind API ──────────────────────────────────────────────────────
     # Registers:

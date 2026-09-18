@@ -37,13 +37,82 @@ Cache topology
 Query budget
 ────────────
   Cold path  →  up to 4 loaders run in parallel (ThreadPoolExecutor)
-                 _load_profile_context  → 6 queries
+                 _load_profile_context  → ~9 queries (see NOTE below)
                  _load_activity_context → 5 queries
                  _load_recently_viewed  → 1 query
                  _load_engine_context   → 1 query
                  ─────────────────────────────────────────────────
                  Wall-clock time ≈ slowest single loader (not sum)
   Warm path  →  0 DB queries (single Redis get_many)
+
+  NOTE on _load_profile_context's query count: it now goes through
+  get_user_info(), which pulls User + ProfileInfo + ContactInfo in one
+  query (select_related) plus up to 2 more for the lazily-created
+  LocationInfo/SocialInfo rows (see apps/customer/models/user_info.py).
+  That's +2 queries versus the old direct ProfileInfo query. On top of
+  that, this loader does one more query of its own for BusinessInfo
+  (BusinessInfo.objects.for_user(user) — not lazily created, so a plain
+  fetch, not a get_or_create) to restore the business_* fields — see
+  "PROFILE_INFO FIELD MIGRATION" below. 1 (ProfileInfo/ContactInfo) + 2
+  (Location/Social) + 1 (BusinessInfo) + the product/brand/category/
+  rating aggregates below ≈ 9 total.
+
+PROFILE_INFO FIELD MIGRATION
+──────────────────────────────
+  ProfileInfo was trimmed down (see its own changelog) and several
+  fields this view used to read directly no longer exist on it. This
+  view now sources them from the sibling models via get_user_info(),
+  plus one direct BusinessInfo lookup for the business_* fields:
+
+    old ProfileInfo field         new source
+    ────────────────────────────  ─────────────────────────────────
+    profile_address                LocationInfo.address
+    profile_postal_code            LocationInfo.postal_code
+    location_display               LocationInfo.location_display
+                                    (still gated by ProfileInfo.show_location,
+                                    same as before — see UserInfo.location_display())
+    social_facebook                SocialInfo.facebook_url
+    social_twitter                 SocialInfo.twitter_url
+    social_instagram               SocialInfo.instagram_url
+    social_linkedin                SocialInfo.linkedin_url
+    social_youtube                 SocialInfo.youtube_url
+    social_tiktok                  SocialInfo.tiktok_url
+    social_whatsapp                SocialInfo.whatsapp_url
+    profile_phone                  ContactInfo.phone_number (the user's own
+                                    contact number — distinct from the
+                                    business's storefront number below)
+    business_name                  BusinessInfo.business_name
+    business_type                  BusinessInfo.business_type
+    business_registration          BusinessInfo.registration_number
+    business_tax_id                BusinessInfo.tax_id
+    business_website               BusinessInfo.website
+    business_email                 BusinessInfo.business_email
+    business_phone                 BusinessInfo.business_phone (the
+                                    business's own storefront number —
+                                    previously approximated via
+                                    ContactInfo.phone_number before
+                                    BusinessInfo existed; now sourced
+                                    directly, since it's real data, not
+                                    an approximation)
+    business_description           BusinessInfo.description
+
+  BusinessInfo is lazily created (see its own docstring), so a user
+  who has never filled out a business profile simply has no row —
+  every business_* value below falls back to None (or False for
+  business_verified) in that case rather than raising.
+
+  The following fields were removed with NO replacement anywhere
+  (per profile_info.py's changelog items #4, #5, and #6 — the
+  profile_type/verification_level/profile_tagline concepts were
+  dropped as a product decision, not moved). They're no longer
+  present in this view's output at all:
+
+    profile_type, get_profile_type_display, verification_level,
+    profile_tagline
+
+  If the template (`customer/profile.html`) still references any of
+  these four, it needs a matching update — this file can't fix that
+  half on its own.
 
 Security note
 ──────────────
@@ -67,12 +136,14 @@ from django.core.cache import cache
 from django.db.models import (
     Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum,
 )
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.http import Http404, HttpResponse
+from django.shortcuts import render
 from django.views.decorators.cache import cache_control
 from django.views.decorators.vary import vary_on_cookie
 
+from apps.customer.models.business_info import BusinessInfo
 from apps.customer.models.profile_info import ProfileInfo
+from apps.customer.models.user_info import get_user_info
 from apps.ponno.models.brand import Brand
 from apps.ponno.models.product import (
     Order, Product, ProductView, SearchHistory, Wishlist,
@@ -197,17 +268,35 @@ _FALLBACKS: dict[str, Any] = {
 
 def _load_profile_context(user) -> dict[str, Any]:
     """
-    ~6 DB queries. Returns plain dict — safe to pickle & cache.
+    ~9 DB queries. Returns plain dict — safe to pickle & cache.
 
     CRITICAL loader: this is the only data the page cannot render
-    without (it's also where get_object_or_404 can raise Http404 for
-    a missing profile), so its exceptions are allowed to propagate.
+    without, so its exceptions are allowed to propagate. Raises
+    Http404 if the user has no ProfileInfo row (mirrors the old
+    get_object_or_404 behavior).
+
+    Sources ProfileInfo, ContactInfo, LocationInfo, and SocialInfo in
+    one call via get_user_info() instead of a raw ProfileInfo query —
+    see this module's docstring ("PROFILE_INFO FIELD MIGRATION") for
+    why: several fields this loader used to read straight off
+    ProfileInfo were moved to those sibling models (or removed
+    outright) when ProfileInfo was trimmed down. Business fields are
+    sourced separately from BusinessInfo (also lazily created, may not
+    exist yet for this user).
     """
 
-    profile_info = get_object_or_404(
-        ProfileInfo.objects.select_related('user'),
-        user=user,
-    )
+    info = get_user_info(user, create_missing=True)
+
+    if info.profile is None:
+        # Mirrors the old get_object_or_404(ProfileInfo...) behavior —
+        # the page cannot render without a profile.
+        raise Http404("Profile not found")
+
+    profile_info  = info.profile
+    location      = info.location   # may be an empty-but-existing row (create_missing=True)
+    social        = info.social     # ditto
+    contact       = info.contact    # may legitimately be None — not lazily created here
+    business_info = BusinessInfo.objects.for_user(user)  # may legitimately be None — lazily created
 
     product_stats = (
         Product.objects
@@ -263,6 +352,9 @@ def _load_profile_context(user) -> dict[str, Any]:
     # remove email_or_phone from this projection immediately, since it
     # would then leak every followed user's contact identifier to
     # whoever is viewing that page.
+    #
+    # 'profile_type' was dropped from this .values() call — the field
+    # no longer exists on ProfileInfo (see module docstring).
     following_profiles = list(
         ProfileInfo.objects
         .filter(
@@ -276,7 +368,6 @@ def _load_profile_context(user) -> dict[str, Any]:
             'profile_name_slug',
             'profile_photo',
             'is_profile_verified',
-            'profile_type',
         )
     )
 
@@ -295,15 +386,13 @@ def _load_profile_context(user) -> dict[str, Any]:
     )
 
     return {
-        # Serialize profile_info to a plain dict — never cache ORM instances
+        # Serialize profile_info (+ sibling models) to a plain dict —
+        # never cache ORM instances.
         "profile_info": {
             'profile_name':               profile_info.profile_name,
             'profile_name_slug':          profile_info.profile_name_slug,
             'profile_photo':              profile_info.get_profile_photo_url(),
             'profile_cover_photo':        profile_info.get_profile_cover_photo_url(),
-            'profile_tagline':            profile_info.profile_tagline,
-            'profile_type':               profile_info.profile_type,
-            'get_profile_type_display':   profile_info.get_profile_type_display(),
             'profile_gender':             profile_info.profile_gender,
             'get_profile_gender_display': (
                 profile_info.get_profile_gender_display()
@@ -312,36 +401,53 @@ def _load_profile_context(user) -> dict[str, Any]:
             'profile_dob':                profile_info.profile_dob,
             'show_dob':                   profile_info.show_dob,
             'show_location':              profile_info.show_location,
-            'location_display':           profile_info.location_display,
-            'profile_address':            profile_info.profile_address,
-            'profile_postal_code':        profile_info.profile_postal_code,
             'profile_language':           profile_info.profile_language,
             'is_profile_verified':        profile_info.is_profile_verified,
-            'verification_level':         profile_info.verification_level,
             'verified_at':                profile_info.verified_at,
             'profile_creation_time':      profile_info.profile_creation_time,
             'profile_updated_time':       profile_info.profile_updated_time,
 
-            # Business info (only meaningful when profile_type is
-            # business/professional, but always included — the
-            # template itself gates display via profile_type)
-            'business_name':              profile_info.business_name,
-            'business_type':              profile_info.business_type,
-            'business_registration':      profile_info.business_registration,
-            'business_tax_id':            profile_info.business_tax_id,
-            'business_website':           profile_info.business_website,
-            'business_email':             profile_info.business_email,
-            'business_phone':             profile_info.business_phone,
-            'business_description':       profile_info.business_description,
+            # -- Location (now sourced from LocationInfo, gated by
+            #    ProfileInfo.show_location the same way the old
+            #    location_display property used to be) --
+            'location_display':           info.location_display(),
+            'profile_address':            location.address if location else None,
+            'profile_postal_code':        location.postal_code if location else None,
 
-            # Social links
-            'social_facebook':            profile_info.social_facebook,
-            'social_twitter':             profile_info.social_twitter,
-            'social_instagram':           profile_info.social_instagram,
-            'social_linkedin':            profile_info.social_linkedin,
-            'social_youtube':             profile_info.social_youtube,
-            'social_tiktok':              profile_info.social_tiktok,
-            'social_whatsapp':            profile_info.social_whatsapp,
+            # -- Contact (now sourced from ContactInfo; this is the
+            #    user's own profile page, so no need to gate on
+            #    show_phone the way a public-facing view would) --
+            'profile_phone':              contact.phone_number if contact else None,
+
+            # -- Social links (now sourced from SocialInfo; field
+            #    names changed from social_x to x_url) --
+            'social_facebook':            social.facebook_url if social else None,
+            'social_twitter':             social.twitter_url if social else None,
+            'social_instagram':           social.instagram_url if social else None,
+            'social_linkedin':            social.linkedin_url if social else None,
+            'social_youtube':             social.youtube_url if social else None,
+            'social_tiktok':              social.tiktok_url if social else None,
+            'social_whatsapp':            social.whatsapp_url if social else None,
+
+            # -- Business info (now sourced from BusinessInfo, its own
+            #    model — see business_info.py. business_info may be
+            #    None for a user who hasn't filled out a business
+            #    profile yet, so every value below falls back
+            #    accordingly rather than raising. --
+            'business_name':              business_info.business_name if business_info else None,
+            'business_type':              business_info.business_type if business_info else None,
+            'business_email':             business_info.business_email if business_info else None,
+            'business_phone':             business_info.business_phone if business_info else None,
+            'business_website':           business_info.website if business_info else None,
+            'business_description':       business_info.description if business_info else None,
+            'business_registration':      business_info.registration_number if business_info else None,
+            'business_tax_id':            business_info.tax_id if business_info else None,
+            'business_verified':          business_info.is_business_verified if business_info else False,
+            'business_completion':        business_info.completion_percentage if business_info else 0,
+
+            # -- Removed with no replacement (see module docstring):
+            #    profile_type, get_profile_type_display,
+            #    verification_level, profile_tagline
         },
         "profile_completion":      profile_info.completion_percentage,
         "engagement_score":        round(profile_info.get_engagement_score(), 1),
@@ -489,12 +595,6 @@ def _load_recently_viewed(user) -> list[dict[str, Any]]:
         })
     return result
 
-from urllib.parse import urlparse
-from typing import Any
-
-from megamind.models.connected_service import ConnectedService
-from megamind.utils.media_info import normalize_images, normalize_links
-
 
 def _find_href_for_alt(alt: str, alt_to_href: dict, fallback: str) -> str:
     """Fallback only — used when an image has no direct href of its own."""
@@ -507,8 +607,6 @@ def _find_href_for_alt(alt: str, alt_to_href: dict, fallback: str) -> str:
         if text.startswith(alt_lower):
             return href
     return fallback
-
-
 
 
 def _load_engine_context(user) -> dict[str, Any]:
@@ -643,7 +741,7 @@ def _build_etag(
 # VIEW
 # ═══════════════════════════════════════════════════════════════════
 
-@login_required(login_url='/customer/signin/')
+@login_required(login_url='/user/signin/')
 @vary_on_cookie                          # CDN must vary by session cookie
 @cache_control(private=True, max_age=0, must_revalidate=True)
 def ProfileView(request) -> HttpResponse:
@@ -753,21 +851,10 @@ def ProfileView(request) -> HttpResponse:
         or engine is _EMPTY_ENGINE
     )
 
-# ── Layer 4: compute + store ETag ────────────────────────────
-    
     etag = cached_etag or _build_etag(uid, ctx, activity, recently_viewed, engine)
     if not cached_etag and not degraded:
         cache.set(ck_etag, etag, _jittered_ttl(ETAG_TTL))
 
-
-    # TEMPORARY DEBUG — remove after diagnosing
-    logger.warning(
-        "PROFILE DEBUG uid=%s engine_is_none=%s engine_keys=%s images_count=%s degraded=%s",
-        uid, engine is None,
-        list(engine.keys()) if isinstance(engine, dict) else None,
-        engine.get('images_count') if isinstance(engine, dict) else None,
-        degraded,
-    )
     # Defensive guard: never let a None section reach the template/
     # unpack. ctx should be impossible to be None here (critical
     # loader raises instead of returning None) — if it IS None,

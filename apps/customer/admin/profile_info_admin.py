@@ -8,9 +8,64 @@ Features:
 - Profile management with badges
 - Verification controls
 - Social feature management
-- Business profile handling
 - Privacy settings
 - Analytics display
+
+CHANGELOG (sync pass against apps/customer/models/profile_info.py)
+--------------------------------------------------------------------
+The model dropped ProfileType, VerificationLevel, all business_*/
+social_*/location fields, profile_tagline, profile_phone, and
+notify_on_comment/notify_on_mention. This file referenced every one
+of those, so it would have failed at import time (ProfileTypeFilter's
+`ProfileInfo.ProfileType.choices` alone is enough to blow up admin
+autodiscovery) or thrown FieldError the moment any filter/fieldset
+touched a removed column. Changes made to bring it back in sync:
+
+1. Removed `ProfileTypeFilter` and `BusinessProfileFilter` outright --
+   both filter on `profile_type`, which no longer exists, and there's
+   no replacement concept to filter on (is_business was removed too,
+   not just renamed).
+
+2. `VerificationStatusFilter` trimmed to verified/unverified only. The
+   email/phone/id/business granular lookups filtered on
+   `verification_level`, which is gone now that verification is a
+   plain boolean.
+
+3. `verification_badge()` simplified to a two-state badge (verified /
+   not verified) instead of a per-level color, since there's no level
+   left to color by.
+
+4. Removed `profile_type_badge()` entirely and dropped it from
+   `list_display`.
+
+5. `list_filter`: removed `ProfileTypeFilter`, `BusinessProfileFilter`,
+   and `'profile_country'` (field no longer exists).
+
+6. `search_fields`: removed `'profile_phone'` and `'business_name'`
+   (both gone).
+
+7. `get_fieldsets()`:
+   - Basic Information: dropped `profile_type` and `profile_tagline`.
+   - Personal Information: dropped `profile_phone`.
+   - Location & Address fieldset: removed entirely (all of
+     profile_country/state/city/address/postal_code/lat/lng gone).
+   - Business Information fieldset: removed entirely, along with the
+     `if obj and obj.is_business:` guard that gated it -- `is_business`
+     no longer exists on the model.
+   - Social Media fieldset: removed entirely (all social_* fields gone).
+   - Verification & Status: dropped `verification_level`.
+   - Notification Preferences: dropped `notify_on_comment` and
+     `notify_on_mention`.
+   Note `filter_fields()` already silently drops any field name not
+   present on the model, so most of this would have degraded to
+   "fieldset just doesn't show up" rather than crashing -- except the
+   two filter classes above, which reference `ProfileInfo.ProfileType`
+   directly and fail at class-definition/import time, not at
+   queryset-build time.
+
+Everything else (analytics, timestamps, social features, actions,
+queryset optimization, delete permission) was untouched since it only
+ever referenced fields that are still on the model.
 """
 
 from django.contrib import admin
@@ -37,10 +92,6 @@ class VerificationStatusFilter(admin.SimpleListFilter):
         return (
             ('verified', _('Verified')),
             ('unverified', _('Not Verified')),
-            ('email', _('Email Verified')),
-            ('phone', _('Phone Verified')),
-            ('id', _('ID Verified')),
-            ('business', _('Business Verified')),
         )
     
     def queryset(self, request, queryset):
@@ -48,22 +99,6 @@ class VerificationStatusFilter(admin.SimpleListFilter):
             return queryset.filter(is_profile_verified=True)
         elif self.value() == 'unverified':
             return queryset.filter(is_profile_verified=False)
-        elif self.value() in ['email', 'phone', 'id', 'business']:
-            return queryset.filter(verification_level=self.value())
-        return queryset
-
-
-class ProfileTypeFilter(admin.SimpleListFilter):
-    """Filter profiles by type"""
-    title = _('Profile Type')
-    parameter_name = 'profile_type'
-    
-    def lookups(self, request, model_admin):
-        return ProfileInfo.ProfileType.choices
-    
-    def queryset(self, request, queryset):
-        if self.value():
-            return queryset.filter(profile_type=self.value())
         return queryset
 
 
@@ -127,29 +162,6 @@ class FollowerCountFilter(admin.SimpleListFilter):
         return queryset
 
 
-class BusinessProfileFilter(admin.SimpleListFilter):
-    """Filter business profiles"""
-    title = _('Business Profile')
-    parameter_name = 'is_business'
-    
-    def lookups(self, request, model_admin):
-        return (
-            ('yes', _('Yes')),
-            ('no', _('No')),
-        )
-    
-    def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(
-                profile_type__in=['business', 'professional']
-            )
-        elif self.value() == 'no':
-            return queryset.exclude(
-                profile_type__in=['business', 'professional']
-            )
-        return queryset
-
-
 # ====================================================================
 # PROFILE INFO ADMIN
 # ====================================================================
@@ -168,7 +180,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
         'profile_photo_thumbnail',
         'profile_name_display',
         'user_link',
-        'profile_type_badge',
         'verification_badge',
         'status_badges',
         'follower_count_display',
@@ -181,9 +192,7 @@ class ProfileInfoAdmin(admin.ModelAdmin):
     
     list_filter = (
         VerificationStatusFilter,
-        ProfileTypeFilter,
         ProfileStatusFilter,
-        BusinessProfileFilter,
         FollowerCountFilter,
         'is_profile_verified',
         'is_profile_public',
@@ -191,7 +200,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
         'is_profile_suspended',
         'is_profile_archived',
         'profile_gender',
-        'profile_country',
         'profile_creation_time',
     )
     
@@ -201,8 +209,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
         'profile_bio',
         'user__email',
         'user__email_or_phone',
-        'profile_phone',
-        'business_name',
         'uuid',
     )
     
@@ -260,46 +266,14 @@ class ProfileInfoAdmin(admin.ModelAdmin):
             obj.user.email_or_phone
         )
     
-    @admin.display(description='Type')
-    def profile_type_badge(self, obj):
-        """Display profile type badge"""
-        colors = {
-            'personal': '#6c757d',
-            'business': '#17a2b8',
-            'professional': '#007bff',
-            'public_figure': '#ffc107',
-        }
-        
-        color = colors.get(obj.profile_type, '#6c757d')
-        
-        return format_html(
-            '<span style="background-color: {}; color: white; '
-            'padding: 3px 8px; border-radius: 3px; font-size: 11px; '
-            'font-weight: bold;">{}</span>',
-            color,
-            obj.get_profile_type_display().upper()
-        )
-    
     @admin.display(description='Verification')
     def verification_badge(self, obj):
         """Display verification badge"""
         if obj.is_profile_verified:
-            colors = {
-                'email': '#17a2b8',
-                'phone': '#28a745',
-                'id': '#ffc107',
-                'business': '#007bff',
-                'none': '#6c757d',
-            }
-            
-            color = colors.get(obj.verification_level, '#28a745')
-            
             return format_html(
-                '<span style="background-color: {}; color: white; '
+                '<span style="background-color: #28a745; color: white; '
                 'padding: 3px 8px; border-radius: 3px; font-size: 10px;">'
-                '✓ {}</span>',
-                color,
-                obj.get_verification_level_display().upper()
+                '✓ VERIFIED</span>'
             )
         
         return format_html(
@@ -400,7 +374,7 @@ class ProfileInfoAdmin(admin.ModelAdmin):
     
     def get_fieldsets(self, request, obj=None):
         """
-        Dynamic fieldsets based on profile type and existing fields
+        Dynamic fieldsets based on existing fields
         """
         # Get all field names from the model
         model_fields = [f.name for f in self.model._meta.get_fields()]
@@ -426,8 +400,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
             'uuid',
             'profile_name',
             'profile_name_slug',
-            'profile_type',
-            'profile_tagline',
             'profile_bio',
         ))
         if basic_fields:
@@ -451,7 +423,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
         personal_fields = filter_fields((
             'profile_gender',
             'profile_dob',
-            'profile_phone',
             'profile_language',
         ))
         if personal_fields:
@@ -460,58 +431,8 @@ class ProfileInfoAdmin(admin.ModelAdmin):
                 'classes': ('collapse',),
             }))
         
-        # Location
-        location_fields = filter_fields((
-            'profile_country',
-            'profile_state',
-            'profile_city',
-            'profile_address',
-            'profile_postal_code',
-            ('profile_latitude', 'profile_longitude'),
-        ))
-        if location_fields:
-            fieldsets.append((_('Location & Address'), {
-                'fields': location_fields,
-                'classes': ('collapse',),
-            }))
-        
-        # Business Information (only show for business profiles)
-        if obj and obj.is_business:
-            business_fields = filter_fields((
-                'business_name',
-                'business_type',
-                'business_registration',
-                'business_tax_id',
-                'business_website',
-                ('business_email', 'business_phone'),
-                'business_description',
-            ))
-            if business_fields:
-                fieldsets.append((_('Business Information'), {
-                    'fields': business_fields,
-                    'classes': ('wide',),
-                    'description': 'Business and professional details'
-                }))
-        
-        # Social Media Links
-        social_fields = filter_fields((
-            'social_facebook',
-            'social_twitter',
-            'social_instagram',
-            'social_linkedin',
-            'social_youtube',
-            'social_tiktok',
-            'social_whatsapp',
-        ))
-        if social_fields:
-            fieldsets.append((_('Social Media'), {
-                'fields': social_fields,
-                'classes': ('collapse',),
-            }))
-        
         # Verification & Status
         verification_fields = filter_fields((
-            'verification_level',
             ('is_profile_verified', 'verified_at'),
             'verified_by',
             'is_profile_public',
@@ -545,8 +466,6 @@ class ProfileInfoAdmin(admin.ModelAdmin):
         notification_fields = filter_fields((
             'notify_on_follow',
             'notify_on_message',
-            'notify_on_comment',
-            'notify_on_mention',
             ('email_notifications', 'sms_notifications'),
         ))
         if notification_fields:

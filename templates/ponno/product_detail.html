@@ -1107,6 +1107,9 @@
   .contact-action-btn.phone     { background: linear-gradient(135deg,var(--accent),var(--accent-2)); color: #fff; }
   .contact-action-btn.email-btn { background: linear-gradient(135deg,#3f4450,#2a2e36); color: #fff; }
   .contact-action-btn.website-btn { background: linear-gradient(135deg,#2c4a7c,#1e3760); color: #fff; }
+  .contact-action-btn .verify-check {
+    font-size: .7rem; opacity: .9;
+  }
 
   .dealer-social-section {
     background: rgba(255,255,255,.03);
@@ -1216,20 +1219,50 @@
 ══════════════════════════════════════════════════════════════════ -->
 <style>
   .mob-order-bar {
-    display: none; 
-    position: fixed; 
-    bottom: 0; 
+    display: none;
+    position: fixed;
+    bottom: 0;
     left: 0; right: 0;
-    z-index: 999; 
+    z-index: 999;
     padding: 10px 14px; gap: 10px;
     background: whitesmoke;
+
+    /* ── Horizontal scroll for an unbounded number of contact
+         channels, instead of the old flex:1 3-button layout. ── */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+
+    transition: mask-image .2s ease, -webkit-mask-image .2s ease;
   }
+  .mob-order-bar::-webkit-scrollbar { display: none; }
+
+  /* Fade the right edge only when there's actually more to scroll to,
+     toggled by JS (see initMobBarScrollHint). */
+  .mob-order-bar.scrollable:not(.at-end) {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  }
+
   .mob-order-bar .order-btn {
-    flex: 1; border-radius: var(--r-sm); padding: 13px 10px; font-size: .88rem;
-    min-width: 0; white-space: nowrap; overflow: hidden;
+    flex: 0 0 auto;
+    border-radius: var(--r-sm);
+    padding: 13px 18px;
+    font-size: .88rem;
+    white-space: nowrap;
+    scroll-snap-align: start;
   }
-  .mob-order-bar .order-btn span {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+
+  /* Generic style for arbitrary ContactInfo channels (Telegram,
+     Signal, Discord, etc.) whose color comes from the view per-channel
+     rather than a dedicated CSS class like .whatsapp/.call/.email. */
+  .mob-order-bar .order-btn.channel {
+    color: #fff;
+    box-shadow: var(--shadow-sm);
   }
 
   @media (max-width: 768px) {
@@ -1238,14 +1271,8 @@
 
   @media (max-width: 420px) {
     .mob-order-bar { padding: 8px 10px; gap: 6px; }
-    .mob-order-bar .order-btn { padding: 11px 6px; font-size: .78rem; gap: 6px; }
+    .mob-order-bar .order-btn { padding: 11px 14px; font-size: .82rem; gap: 6px; }
     .mob-order-bar .order-btn i { font-size: 1rem; }
-  }
-
-  @media (max-width: 340px) {
-    .mob-order-bar .order-btn span { display: none; }
-    .mob-order-bar .order-btn { gap: 0; }
-    .mob-order-bar .order-btn i { font-size: 1.15rem; }
   }
 </style>
 
@@ -1596,20 +1623,29 @@
               </span>
             {% else %}
 
-              {% if product.dealer.profileinfo.social_whatsapp %}
-              <a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}%20SKU:%20{{ product.sku }}"
+              <!-- ── WhatsApp now reads dealer_whatsapp, resolved via
+                   ContactInfo.get_visible_contact_methods() in the view
+                   (see _resolve_dealer_whatsapp). profileinfo.social_whatsapp
+                   is no longer the source of truth. ── -->
+              {% if dealer_whatsapp %}
+              <a href="https://wa.me/{{ dealer_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}%20SKU:%20{{ product.sku }}"
                 target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
                 <i class="fa-brands fa-whatsapp fa-shake" aria-hidden="true" style="--fa-animation-duration: 1.5s;"></i>
                 <span>Order via WhatsApp</span>
+                {% if dealer_whatsapp_verified %}<i class="fa-solid fa-circle-check" title="Verified" aria-hidden="true"></i>{% endif %}
               </a>
               {% endif %}
 
-              {% if show_dealer_phone and product.dealer.profileinfo.profile_phone %}
-              <a href="tel:{{ product.dealer.profileinfo.profile_phone }}" class="order-btn call">
-                <i class="fa-solid fa-phone" aria-hidden="true"></i>
-                <span>Call to Order</span>
-              </a>
-              {% endif %}
+              <!-- ── Call button now reads the resolved dealer_phone (BusinessInfo
+                   first, then ContactInfo — see _resolve_dealer_contact in the
+                   view). profileinfo.profile_phone no longer exists on ProfileInfo. ── -->
+              {% if show_dealer_phone %}
+                <a href="tel:{{ dealer_phone }}" class="order-btn call">
+                  <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                  <span>Call to Order</span>
+                  {% if dealer_phone_verified %}<i class="fa-solid fa-circle-check" title="Verified" aria-hidden="true"></i>{% endif %}
+                </a>
+                {% endif %}
             {% endif %}
           </div>
         </div>
@@ -2303,12 +2339,19 @@
           <a href="{% url 'customer:profile_view' username=product.dealer.email_or_phone %}" class="dealer-name">
             {{ product.dealer.profileinfo.profile_name|default:product.dealer.email }}
           </a>
-          {% if product.dealer.profileinfo.business_name %}
+
+          <!-- ── Business name now lives on BusinessInfo, not ProfileInfo
+               (ProfileInfo.business_name was removed) — gated the same
+               way the view gates it: public + not archived. ── -->
+          {% with biz=product.dealer.business_info %}
+          {% if biz and biz.is_business_public and not biz.is_business_archived and biz.business_name %}
           <p class="dealer-business">
             <i class="fa-solid fa-building" aria-hidden="true"></i>
-            {{ product.dealer.profileinfo.business_name }}
+            {{ biz.business_name }}
           </p>
           {% endif %}
+          {% endwith %}
+
           {% if product.dealer.profileinfo.profile_tagline %}
           <p class="dealer-tagline">{{ product.dealer.profileinfo.profile_tagline }}</p>
           {% endif %}
@@ -2363,6 +2406,61 @@
           </div>
           {% endif %}
         </div>
+
+        <!-- ══════════════════════════════════════════════════════════
+             DEALER CONTACT ACTIONS — phone / email resolved via
+             BusinessInfo → ContactInfo (see _resolve_dealer_contact),
+             WhatsApp via _resolve_dealer_whatsapp, plus every
+             additional messaging channel the dealer has opted to make
+             visible on ContactInfo (_resolve_dealer_messaging_channels /
+             get_visible_contact_methods). A verified checkmark shows
+             next to phone/email/WhatsApp when that specific channel
+             has been verified.
+        ══════════════════════════════════════════════════════════ -->
+        {% if show_dealer_phone or show_dealer_email or dealer_whatsapp or dealer_messaging_channels %}
+      <div class="dealer-contact-actions">
+        <h4 class="contact-title"><i class="fa-solid fa-headset" aria-hidden="true"></i> Contact the Seller</h4>
+        <div class="contact-buttons">
+
+          {% if dealer_whatsapp %}
+          <a href="https://wa.me/{{ dealer_whatsapp }}" target="_blank" rel="noopener noreferrer" class="contact-action-btn whatsapp">
+            <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp
+            {% if dealer_whatsapp_verified %}<i class="fa-solid fa-circle-check verify-check" title="Verified" aria-hidden="true"></i>{% endif %}
+          </a>
+          {% endif %}
+
+          {% if show_dealer_phone %}
+          <a href="tel:{{ dealer_phone }}" class="contact-action-btn phone">
+            <i class="fa-solid fa-phone" aria-hidden="true"></i> Call
+            {% if dealer_phone_verified %}<i class="fa-solid fa-circle-check verify-check" title="Verified" aria-hidden="true"></i>{% endif %}
+          </a>
+          {% endif %}
+
+          {% if show_dealer_email %}
+          <a href="mailto:{{ dealer_email }}" class="contact-action-btn email-btn">
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i> Email
+            {% if dealer_email_verified %}<i class="fa-solid fa-circle-check verify-check" title="Verified" aria-hidden="true"></i>{% endif %}
+          </a>
+          {% endif %}
+
+          {% for ch in dealer_messaging_channels %}
+            {% if ch.href %}
+            <a href="{{ ch.href }}" target="_blank" rel="noopener noreferrer"
+              class="contact-action-btn" style="background:{{ ch.color }}; color:#fff;">
+              <i class="{{ ch.icon }}" aria-hidden="true"></i> {{ ch.label }}
+              {% if ch.verified %}<i class="fa-solid fa-circle-check verify-check" title="Verified" aria-hidden="true"></i>{% endif %}
+            </a>
+            {% else %}
+            <span class="contact-action-btn" style="background:{{ ch.color }}; color:#fff; opacity:.85; cursor:default;">
+              <i class="{{ ch.icon }}" aria-hidden="true"></i> {{ ch.label }}: {{ ch.value }}
+              {% if ch.verified %}<i class="fa-solid fa-circle-check verify-check" title="Verified" aria-hidden="true"></i>{% endif %}
+            </span>
+            {% endif %}
+          {% endfor %}
+
+        </div>
+      </div>
+      {% endif %}
 
         <!-- Social media -->
         {% if product.dealer.profileinfo.has_social_media %}
@@ -2440,23 +2538,73 @@
     </span>
   {% else %}
 
-{% if product.dealer.profileinfo.social_whatsapp %}
-<a href="https://wa.me/{{ product.dealer.profileinfo.social_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}"
-   target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
-  <i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span>WhatsApp</span>
-</a>
-{% endif %}
+    <!-- ── WhatsApp reads dealer_whatsapp (resolved via ContactInfo,
+         see _resolve_dealer_whatsapp in the view) rather than
+         profileinfo.social_whatsapp. ── -->
+    {% if dealer_whatsapp %}
+    <a href="https://wa.me/{{ dealer_whatsapp }}?text=Hi,%20I%20want%20to%20buy%20{{ product.product_name|urlencode }}{% if product.brand %}%20({{ product.brand.brand_name|urlencode }}){% endif %}{% if product.show_selling_price %}%20Price:%20{{ product.selling_price }}%20{{ product.currency }}{% endif %}"
+       target="_blank" rel="noopener noreferrer" class="order-btn whatsapp">
+      <i class="fa-brands fa-whatsapp" aria-hidden="true"></i><span>WhatsApp</span>
+    </a>
+    {% endif %}
 
-    {% if show_dealer_phone and product.dealer.profileinfo.profile_phone %}
-    <a href="tel:{{ product.dealer.profileinfo.profile_phone }}" class="order-btn call">
+    {% if show_dealer_phone %}
+    <a href="tel:{{ dealer_phone }}" class="order-btn call">
       <i class="fa-solid fa-phone" aria-hidden="true"></i><span>Call</span>
     </a>
     {% endif %}
-    {% if show_dealer_email and product.dealer.profileinfo.profile_email %}
-    <a href="mailto:{{ product.dealer.profileinfo.profile_email }}?subject=Order%20Enquiry:%20{{ product.product_name|urlencode }}" class="order-btn email">
+
+    <!-- ── Dealer's single preferred contact channel, from
+         ContactInfo.preferred_contact_method / get_preferred_contact_value().
+         View contract: `dealer_preferred_channel` should only be
+         populated when the preferred method is one of the "other"
+         messaging channels (telegram, signal, viber, wechat, line,
+         imo, skype, discord, facebook_messenger, instagram, snapchat,
+         twitter, linkedin, slack) — i.e. NOT phone/email/whatsapp,
+         since those already have dedicated buttons above/below. It
+         should also respect get_visible_contact_methods() (so it's
+         omitted if the channel has no value or isn't opted-in to be
+         shown). Shape: {key, label, icon, color, href, value, verified},
+         same as each item in dealer_messaging_channels — `key` is new
+         and used only for the dedup check in the loop below. ── -->
+    {% if dealer_preferred_channel %}
+    <a href="{{ dealer_preferred_channel.href }}" target="_blank" rel="noopener noreferrer"
+       class="order-btn channel" style="background:{{ dealer_preferred_channel.color }};"
+       aria-label="Contact via {{ dealer_preferred_channel.label }} (preferred)">
+      <i class="{{ dealer_preferred_channel.icon }}" aria-hidden="true"></i>
+      <span>{{ dealer_preferred_channel.label }}</span>
+    </a>
+    {% endif %}
+
+    {% if show_dealer_email %}
+    <a href="mailto:{{ dealer_email }}?subject=Order%20Enquiry:%20{{ product.product_name|urlencode }}" class="order-btn email">
       <i class="fa-solid fa-envelope" aria-hidden="true"></i><span>Email</span>
     </a>
     {% endif %}
+
+    <!-- ── Every other opted-in ContactInfo channel — same source as
+         the desktop footer's dealer-contact-actions loop
+         (get_visible_contact_methods → dealer_messaging_channels).
+         Skips whichever one was already surfaced as
+         dealer_preferred_channel so it isn't shown twice. No cap here:
+         the bar scrolls horizontally. ── -->
+    {% for ch in dealer_messaging_channels %}
+      {% if not dealer_preferred_channel or ch.key != dealer_preferred_channel.key %}
+        {% if ch.href %}
+        <a href="{{ ch.href }}" target="_blank" rel="noopener noreferrer"
+           class="order-btn channel" style="background:{{ ch.color }};"
+           aria-label="Contact via {{ ch.label }}">
+          <i class="{{ ch.icon }}" aria-hidden="true"></i><span>{{ ch.label }}</span>
+        </a>
+        {% else %}
+        <span class="order-btn channel" style="background:{{ ch.color }}; opacity:.85; cursor:default;"
+              aria-label="{{ ch.label }}: {{ ch.value }}">
+          <i class="{{ ch.icon }}" aria-hidden="true"></i><span>{{ ch.label }}</span>
+        </span>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
   {% endif %}
 </div>
 {% endif %}
@@ -2500,7 +2648,25 @@
       return res.json();
     });
   }
+    /* ─────────────────────────────────────────────────────────────
+    MOBILE ORDER BAR — scroll-fade hint
+  ───────────────────────────────────────────────────────────── */
 
+  function initMobBarScrollHint() {
+    const bar = document.getElementById('mobBar');
+    if (!bar) return;
+
+    const update = () => {
+      const scrollable = bar.scrollWidth > bar.clientWidth + 1;
+      bar.classList.toggle('scrollable', scrollable);
+      const atEnd = bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 4;
+      bar.classList.toggle('at-end', atEnd);
+    };
+
+    bar.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
   /* ─────────────────────────────────────────────────────────────
      IMAGE ZOOM
   ───────────────────────────────────────────────────────────── */
@@ -2863,6 +3029,7 @@
     initShare();
     initTabs();
     initScrollers();
+    initMobBarScrollHint();
   });
 
 })();
@@ -2879,4 +3046,6 @@
     } catch (e) { /* unsupported — ignore */ }
   }
 </script>
+
+
 {% endblock %}

@@ -44,9 +44,13 @@ Cache key namespace
 Role / anonymous-visitor safety
 ────────────────────────────────
 This view is accessed by ALL user types: anonymous visitors, and every
-authenticated Role (admin, dealer, customer, staff, moderator). No
-sub-section may assume `request.user` is authenticated or has a
-particular role. Every per-user block below either:
+authenticated Role (admin, business/"dealer", user/"customer", staff,
+moderator — see apps.customer.models.account.User.Role; there is no
+separate DEALER or CUSTOMER role value, those are just the informal
+names for BUSINESS and USER respectively, per User.is_dealer /
+User.is_customer). No sub-section may assume `request.user` is
+authenticated or has a particular role. Every per-user block below
+either:
   (a) checks `request.user.is_authenticated` first, or
   (b) uses `_safe_user_role()` which returns None for anonymous users,
       and never raises.
@@ -117,16 +121,6 @@ from apps.ponno.product_badges import attach_badges_to_products, resolve_badges_
 
 logger = logging.getLogger(__name__)
 User   = get_user_model()
-
-# ═══════════════════════════════════════════════════════════════════
-# ██  CAMPAIGN DISPLAY STRIP  (promo banners above the product grid)
-# ═══════════════════════════════════════════════════════════════════
-#
-# Distinct from _batch_active_campaigns(): that resolves one campaign
-# per product for price-badge purposes. This is just "what's currently
-# running", for a promo strip — same Campaign.objects.active() scope,
-# fragment-cached like brands/cats/subcats since it's identical for
-# every visitor (anonymous or any Role).
 
 # ═══════════════════════════════════════════════════════════════════
 # ██  CAMPAIGN DISPLAY STRIP  (promo banners above the product grid)
@@ -323,7 +317,7 @@ def _safe_user_role(user) -> str | None:
     Returns the user's role string (User.Role.* value), or None for
     anonymous visitors. Never raises — AnonymousUser has no `role`
     attribute, and this must work identically for every Role
-    (admin / dealer / customer / staff / moderator).
+    (admin / business / user / staff / moderator).
     """
     if not user or not getattr(user, 'is_authenticated', False):
         return None
@@ -1020,6 +1014,12 @@ def _resolve_seller_info(user) -> dict:
     item types render an identical dealer strip in the template. Works
     for a seller of any Role, and tolerates a missing/None user or
     missing ProfileInfo.
+
+    NOTE: ProfileInfo has no `full_name` field (never did — see
+    apps.customer.models.profile_info.ProfileInfo), so the getattr()
+    below always falls through to `profile_name`. Kept as a defensive
+    getattr() rather than removed outright in case a future model adds
+    the field back, but it currently never resolves to anything.
     """
     info = {
         'seller_name':        'Seller',
@@ -1505,7 +1505,20 @@ def _resolve_following_ids(user) -> list[int]:
 # ═══════════════════════════════════════════════════════════════════
 
 def _load_profile_context(user) -> dict[str, Any]:
-    """~6 DB queries. CRITICAL — raises on miss (Http404 or 500)."""
+    """
+    ~6 DB queries. CRITICAL — raises on miss (Http404 or 500).
+
+    Field set trimmed to match the current ProfileInfo model
+    (apps.customer.models.profile_info). Per that model's changelog
+    (items 4/5/6/8), the following were removed and are NOT read here
+    anymore: profile_type / get_profile_type_display(),
+    verification_level, profile_tagline, profile_address,
+    profile_postal_code, location_display, and every business_*/
+    social_* field. Reading any of those would raise AttributeError
+    for every user regardless of role. `show_location` is kept
+    (harmless no-op per that model's docstring) but there is no
+    location value left to gate with it.
+    """
     profile_info = get_object_or_404(
         ProfileInfo.objects.select_related('user'), user=user
     )
@@ -1545,7 +1558,7 @@ def _load_profile_context(user) -> dict[str, Any]:
         .values(
             'user_id', 'user__email_or_phone', 'profile_name',
             'profile_name_slug', 'profile_photo',
-            'is_profile_verified', 'profile_type',
+            'is_profile_verified',
         )
     )
 
@@ -1565,9 +1578,6 @@ def _load_profile_context(user) -> dict[str, Any]:
             'profile_name_slug':          profile_info.profile_name_slug,
             'profile_photo':              profile_info.get_profile_photo_url(),
             'profile_cover_photo':        profile_info.get_profile_cover_photo_url(),
-            'profile_tagline':            profile_info.profile_tagline,
-            'profile_type':               profile_info.profile_type,
-            'get_profile_type_display':   profile_info.get_profile_type_display(),
             'profile_gender':             profile_info.profile_gender,
             'get_profile_gender_display': (
                 profile_info.get_profile_gender_display()
@@ -1576,30 +1586,11 @@ def _load_profile_context(user) -> dict[str, Any]:
             'profile_dob':                profile_info.profile_dob,
             'show_dob':                   profile_info.show_dob,
             'show_location':              profile_info.show_location,
-            'location_display':           profile_info.location_display,
-            'profile_address':            profile_info.profile_address,
-            'profile_postal_code':        profile_info.profile_postal_code,
             'profile_language':           profile_info.profile_language,
             'is_profile_verified':        profile_info.is_profile_verified,
-            'verification_level':         profile_info.verification_level,
             'verified_at':                profile_info.verified_at,
             'profile_creation_time':      profile_info.profile_creation_time,
             'profile_updated_time':       profile_info.profile_updated_time,
-            'business_name':              profile_info.business_name,
-            'business_type':              profile_info.business_type,
-            'business_registration':      profile_info.business_registration,
-            'business_tax_id':            profile_info.business_tax_id,
-            'business_website':           profile_info.business_website,
-            'business_email':             profile_info.business_email,
-            'business_phone':             profile_info.business_phone,
-            'business_description':       profile_info.business_description,
-            'social_facebook':            profile_info.social_facebook,
-            'social_twitter':             profile_info.social_twitter,
-            'social_instagram':           profile_info.social_instagram,
-            'social_linkedin':            profile_info.social_linkedin,
-            'social_youtube':             profile_info.social_youtube,
-            'social_tiktok':              profile_info.social_tiktok,
-            'social_whatsapp':            profile_info.social_whatsapp,
         },
         'profile_completion':      profile_info.completion_percentage,
         'engagement_score':        round(profile_info.get_engagement_score(), 1),
@@ -1815,10 +1806,10 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
     Accessible by ANY visitor:
       - Anonymous (not logged in) — every per-user section below
         degrades to an empty/default value, never raises.
-      - Any authenticated Role (admin, dealer, customer, staff,
-        moderator) — no section assumes a specific role; non-critical
-        sections are wrapped in try/except so one failure never 500s
-        the whole page for any role.
+      - Any authenticated Role (admin, business/"dealer", user/
+        "customer", staff, moderator) — no section assumes a specific
+        role; non-critical sections are wrapped in try/except so one
+        failure never 500s the whole page for any role.
     """
 
     # ── 0. Rate limit ─────────────────────────────────────────────
@@ -1933,19 +1924,29 @@ def DiscoveryEngineView(request: HttpRequest) -> HttpResponse:
     # customers / anonymous visitors browsing the marketplace; dealers,
     # staff, admins and moderators simply won't see it (empty list),
     # which the template already handles via `{% if suggested_dealers %}`.
+    #
+    # "Dealer" == User.Role.BUSINESS and "customer" == User.Role.USER
+    # in the current model (apps.customer.models.account.User.Role has
+    # no separate DEALER/CUSTOMER value — see User.is_dealer /
+    # User.is_customer). Previously this compared against
+    # User.Role.DEALER / User.Role.CUSTOMER, which don't exist and
+    # raised AttributeError on every request that reached this branch;
+    # the error was masked by the broad except below, so
+    # suggested_dealers silently stayed empty for everyone instead of
+    # surfacing the bug.
     already_following: list[int] = []
     suggested_dealers: list = []
 
     user_role = _safe_user_role(request.user)
 
-    if user_role in (None, User.Role.CUSTOMER):
+    if user_role in (None, User.Role.USER):
         try:
             if request.user.is_authenticated:
                 already_following = _resolve_following_ids(request.user)
 
             dealer_qs = (
                 User.objects
-                .filter(role=User.Role.DEALER, is_active=True, deleted_at__isnull=True)
+                .filter(role=User.Role.BUSINESS, is_active=True, deleted_at__isnull=True)
                 .exclude(id__in=already_following)
             )
             current_uid = _safe_user_pk(request.user)

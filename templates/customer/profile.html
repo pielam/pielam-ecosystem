@@ -1,22 +1,22 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} — Profile | PIELAM{% endblock %}
+{% block title %}{{ profile_info.profile_name|default:user.email_or_phone }} â€” Profile | PIELAM{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'customer/css/profile.css' %}">
 
 <style>
 
-/* ═══════════════════════════════════════════════
-       GLOBAL — Design Tokens, Reset, Base
-    ═══════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       GLOBAL â€” Design Tokens, Reset, Base
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
     :root {
-      --r: 12px; 
-      --r-sm: 8px;   
-      --purple: #7c3aed; 
-      --shadow-xs: 0 1px 3px rgba(10,37,64,.05); 
+      --r: 12px;
+      --r-sm: 8px;
+      --purple: #7c3aed;
+      --shadow-xs: 0 1px 3px rgba(10,37,64,.05);
 
       --ink:        #0f0f0f;
       --ink-2:      #3a3a3a;
@@ -92,7 +92,7 @@
       --ruby:     #c8102e;
       --sapphire: #1565c0;
 
-      
+
     }
 
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -104,7 +104,7 @@
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;  /* ← safe cross-browser fix */
+      overflow-x: hidden;  /* â† safe cross-browser fix */
 
       padding-bottom: var(--bottom-bar-height);
     }
@@ -114,7 +114,7 @@
       background-image:
         radial-gradient(circle at 25% 25%, rgba(13,71,161,0.03) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(212,175,55,0.02) 0%, transparent 50%);
-      pointer-events: none; 
+      pointer-events: none;
       z-index: 0;
     }
     a      { text-decoration:none; color:inherit; }
@@ -146,7 +146,7 @@
 
 <style>
 
-/* ═══ PROFILE COVER ═══ */
+/* â•â•â• PROFILE COVER â•â•â• */
 .profile-cover {
   position: relative;
   width: 100%;
@@ -164,7 +164,7 @@
   display: block;
 }
 
-/* ── button group ── */
+/* â”€â”€ button group â”€â”€ */
 .profile-cover .cover-edit-btn {
   display: inline-flex;
   align-items: center;
@@ -203,35 +203,35 @@
   stroke: #fff;
 }
 
-/* ── position all buttons bottom-right ── */
+/* â”€â”€ position all buttons bottom-right â”€â”€ */
 .profile-cover .cover-edit-btn:nth-child(n+2) {
   position: absolute;
 }
 
-/* "Edit cover" — bottom-right */
+/* "Edit cover" â€” bottom-right */
 .profile-cover .cover-edit-btn:nth-child(2) {
   position: absolute;
   bottom: 16px;
   right: 16px;
 }
 
-/* "Edit" — top-right */
+/* "Edit" â€” top-right */
 .profile-cover .cover-edit-btn:nth-child(3) {
   top: 16px;
   right: 130px;
 }
 
-/* "Settings" — top-right edge */
+/* "Settings" â€” top-right edge */
 .profile-cover .cover-edit-btn:nth-child(4) {
   top: 16px;
   right: 16px;
 }
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE BREAKPOINTS
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Tablet (≤ 1024px) ── */
+/* â”€â”€ Tablet (â‰¤ 1024px) â”€â”€ */
 @media (max-width: 1024px) {
   .profile-cover {
     height: 260px;
@@ -333,13 +333,13 @@
         <span>Manager</span>
             </a>
       </div>
-{# ═══ COVER ═══ #}
+{# â•â•â• COVER â•â•â• #}
 
 
 
 <style>
-  
-/* ═══ IDENTITY SECTION ═══ */
+
+/* â•â•â• IDENTITY SECTION â•â•â• */
 .profile-identity-section {
   background: #fff;
   padding: 0 24px 20px;
@@ -355,7 +355,7 @@
   margin-top: -28px; /* less overlap, avatar still peeks over */
 }
 
-/* ═══ AVATAR ═══ */
+/* â•â•â• AVATAR â•â•â• */
 .profile-avatar-wrap {
   position: relative;
   flex-shrink: 0;
@@ -397,7 +397,7 @@
 }
 
 
-/* ═══ NAME + PILLS ═══ */
+/* â•â•â• NAME + PILLS â•â•â• */
 .profile-identity-main {
   flex: 1;
   min-width: 0; /* prevents overflow on small screens */
@@ -438,7 +438,7 @@
 }
 
 
-/* ═══ PILLS ROW ═══ */
+/* â•â•â• PILLS ROW â•â•â• */
 .profile-pills-row {
   display: flex;
   flex-wrap: nowrap;
@@ -483,11 +483,11 @@
 }
 
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Tablet (≤ 768px) ── */
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
 @media (max-width: 768px) {
   .profile-identity-section { padding: 0 16px 16px; }
   .profile-identity-row { margin-top: -22px; }
@@ -496,7 +496,7 @@
   .profile-pill { font-size: 11px; padding: 3px 10px; }
 }
 
-/* ── Mobile (≤ 480px) ── */
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
 @media (max-width: 480px) {
   .profile-identity-section { padding: 0 12px 14px; }
   .profile-identity-row { margin-top: -18px; }
@@ -507,7 +507,7 @@
 
 </style>
 
-    {# ═══ IDENTITY ROW ═══ #}
+    {# â•â•â• IDENTITY ROW â•â•â• #}
     <div class="profile-identity-section">
       <div class="profile-identity-row">
 
@@ -546,7 +546,7 @@
               <span class="profile-pill pill-gray">
                 {{ followings_count }} Following
               </span>
-              
+
               {% if avg_rating_received > 0 %}
               <span class="profile-pill pill-amber">
                 {{ avg_rating_received }} Rating
@@ -555,7 +555,7 @@
             </div>
           </div>
 
-          
+
         </div>
 
       </div>
@@ -565,7 +565,7 @@
 
 <style>
 
-/* ═══ PROFILE ACTIONS ═══ */
+/* â•â•â• PROFILE ACTIONS â•â•â• */
 .profile-actions {
   display: flex;
   align-items: center;
@@ -601,7 +601,7 @@
   transform: scale(0.97);
 }
 
-/* ── Ghost variant ── */
+/* â”€â”€ Ghost variant â”€â”€ */
 .profile-action-btn--ghost {
   background: transparent;
   color: #374151;
@@ -615,9 +615,9 @@
 }
 
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (max-width: 768px) {
   .profile-actions {
     width: 100%;
@@ -625,20 +625,20 @@
     gap: 8px;
   }
 
-  /* two buttons — 50% each */
+  /* two buttons â€” 50% each */
   .profile-action-btn {
     flex: 0 0 calc(50% - 4px);
     padding: 9px 10px;
     font-size: 13px;
   }
 
-  /* one button (non-dealer) — full width */
+  /* one button (non-dealer) â€” full width */
   .profile-action-btn:only-child {
     flex: 0 0 100%;
   }
 }
 
-/* ── Mobile (≤ 480px) ── */
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
 @media (max-width: 480px) {
   .profile-actions {
     width: 100%;
@@ -646,14 +646,14 @@
     gap: 8px;
   }
 
-  /* two buttons — 50% each */
+  /* two buttons â€” 50% each */
   .profile-action-btn {
     flex: 0 0 calc(50% - 4px);
     padding: 9px 10px;
     font-size: 13px;
   }
 
-  /* one button (non-dealer) — full width */
+  /* one button (non-dealer) â€” full width */
   .profile-action-btn:only-child {
     flex: 0 0 100%;
   }
@@ -663,37 +663,35 @@
 
 <div class="profile-actions">
 
-  {% if user.role == 'dealer' %}
+
   <a href="{% url 'business_profile' %}" class="profile-action-btn profile-action-btn--ghost">
     <i class="fa-solid fa-building"></i>
     <span>Business</span>
   </a>
-  {% endif %}
 
   <a href="{% url 'service_profile' %}" class="profile-action-btn profile-action-btn--ghost">
     <i class="fas fa-spider"></i>
     <span>Engine</span>
-  </a>  
+  </a>
 
-  {% if user.role == 'dealer' %}
+
   <a href="{% url 'customer:campaign_profile' %}" class="profile-action-btn profile-action-btn--ghost">
     <i class="fas fa-bullhorn"></i>
     <span>Campaign</span>
   </a>
-  {% endif %}
 
-  {% if profile_completion == 100 %}
+
+
   <a href="{% url 'customer:dashboard' %}" class="profile-action-btn profile-action-btn--ghost">
-    
+
     <span>Dashboard</span>
   </a>
-  {% endif %}
 
 </div>
 
 <style>
 
-  /* ═══ BANNER STRIP ═══ */
+  /* â•â•â• BANNER STRIP â•â•â• */
 .banner-strip {
   width: 100%;
   padding: 12px 24px 16px;
@@ -709,7 +707,7 @@
   border-radius: 12px;
 }
 
-/* ── Icon box ── */
+/* â”€â”€ Icon box â”€â”€ */
 .promo-banner-icon {
   width: 44px;
   height: 44px;
@@ -723,7 +721,7 @@
   font-size: 1.1rem;
 }
 
-/* ── Text block ── */
+/* â”€â”€ Text block â”€â”€ */
 .promo-banner-text {
   flex: 1;
   min-width: 0;
@@ -744,7 +742,7 @@
   line-height: 1.4;
 }
 
-/* ── CTA button ── */
+/* â”€â”€ CTA button â”€â”€ */
 .promo-banner-btn {
   display: inline-flex;
   align-items: center;
@@ -779,11 +777,11 @@
 }
 
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Tablet (≤ 768px) ── */
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
 @media (max-width: 768px) {
   .banner-strip {
     padding: 10px 16px 14px;
@@ -814,7 +812,7 @@
   }
 }
 
-/* ── Mobile (≤ 480px) ── */
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
 @media (max-width: 480px) {
   .banner-strip {
     padding: 8px 12px 12px;
@@ -862,9 +860,9 @@
 
 </style>
 
-<!-- ═══ PROMO BANNER STRIP ═══ -->
+<!-- â•â•â• PROMO BANNER STRIP â•â•â• -->
 <div class="banner-strip">
-  {% if user.role != 'dealer' %}
+  {% if user.role != 'business' %}
   <div class="promo-banner">
     <div class="promo-banner-icon">
       <i class="fa-solid fa-building-circle-check"></i>
@@ -883,7 +881,7 @@
 
 <style>
 
-  /* ═══ COMPLETION STRIP ═══ */
+  /* â•â•â• COMPLETION STRIP â•â•â• */
 .completion-strip {
   width: 100%;
   padding: 6px 24px 16px;
@@ -900,7 +898,7 @@
 }
 
 
-/* ── Circle ── */
+/* â”€â”€ Circle â”€â”€ */
 .completion-circle {
   position: relative;
   width: 52px;
@@ -938,7 +936,7 @@
 }
 
 
-/* ── Info block ── */
+/* â”€â”€ Info block â”€â”€ */
 .completion-info {
   flex: 1;
   min-width: 0;
@@ -973,7 +971,7 @@
 }
 
 
-/* ── Divider ── */
+/* â”€â”€ Divider â”€â”€ */
 .section-divider {
   height: 1px;
   background: #e2e8f0;
@@ -981,11 +979,11 @@
 }
 
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Tablet (≤ 768px) ── */
+/* â”€â”€ Tablet (â‰¤ 768px) â”€â”€ */
 @media (max-width: 768px) {
   .completion-strip {
     padding: 6px 12px 12px;
@@ -1015,7 +1013,7 @@
   }
 }
 
-/* ── Mobile (≤ 480px) ── */
+/* â”€â”€ Mobile (â‰¤ 480px) â”€â”€ */
 @media (max-width: 480px) {
   .completion-strip {
     padding: 6px 12px 12px;
@@ -1049,7 +1047,7 @@
 </style>
 
 {% if profile_completion < 100 %}
-<!-- ═══ PROFILE COMPLETION BAR ═══ -->
+<!-- â•â•â• PROFILE COMPLETION BAR â•â•â• -->
 <div class="completion-strip">
   <div class="completion-card">
 
@@ -1114,10 +1112,10 @@ function animateCompletionCircle() {
 
 <style>
 
-  /* ═══ PROFILE TAB BAR ═══ */
+  /* â•â•â• PROFILE TAB BAR â•â•â• */
 .profile-tabs-bar {
   position: sticky;
-  top: var(--header-h); /* ← instead of hardcoded 64px */
+  top: var(--header-h); /* â† instead of hardcoded 64px */
   z-index: 100;
   background: #fff;
   border-radius: 1rem;
@@ -1202,22 +1200,22 @@ function animateCompletionCircle() {
 }
 
 
-/* ════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RESPONSIVE
-════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── 1400px+ ── */
+/* â”€â”€ 1400px+ â”€â”€ */
 @media (min-width: 1400px) {
   .profile-tabs-inner { padding: 0 3rem; }
   .tab-btn { font-size: .9rem; }
 }
 
-/* ── 1024px ── */
+/* â”€â”€ 1024px â”€â”€ */
 @media (max-width: 1024px) {
   .profile-tabs-inner { padding: 0 1.5rem; }
 }
 
-/* ── 768px ── */
+/* â”€â”€ 768px â”€â”€ */
 @media (max-width: 768px) {
   .profile-tabs-inner { padding: 0 1rem; }
   .tab-btn {
@@ -1226,7 +1224,7 @@ function animateCompletionCircle() {
   }
 }
 
-/* ── 640px ── */
+/* â”€â”€ 640px â”€â”€ */
 @media (max-width: 640px) {
   .profile-tabs-inner { padding: 0 .875rem; }
   .tab-btn {
@@ -1243,7 +1241,7 @@ function animateCompletionCircle() {
   }
 }
 
-/* ── 480px ── */
+/* â”€â”€ 480px â”€â”€ */
 @media (max-width: 480px) {
   .profile-tabs-inner { padding: 0 .75rem; }
   .tab-btn {
@@ -1252,11 +1250,11 @@ function animateCompletionCircle() {
     gap: 4px;
   }
 
-  /* hide text labels — icons only */
+  /* hide text labels â€” icons only */
   .tab-btn span:not(.tab-count) { display: none; }
 }
 
-/* ── 360px ── */
+/* â”€â”€ 360px â”€â”€ */
 @media (max-width: 360px) {
   .profile-tabs-inner { padding: 0 .625rem; }
   .tab-btn {
@@ -1272,18 +1270,18 @@ function animateCompletionCircle() {
   }
 }
 
-/* ── 320px ── */
+/* â”€â”€ 320px â”€â”€ */
 @media (max-width: 320px) {
   .profile-tabs-inner { padding: 0 .5rem; }
   .tab-btn { padding: 8px 6px; font-size: .65rem; }
 }
 
-/* ── Reduced motion ── */
+/* â”€â”€ Reduced motion â”€â”€ */
 @media (prefers-reduced-motion: reduce) {
   .tab-btn { transition: none; }
 }
 
-/* ── High contrast ── */
+/* â”€â”€ High contrast â”€â”€ */
 @media (forced-colors: active) {
   .tab-btn.active {
     border-bottom-color: Highlight;
@@ -1299,9 +1297,9 @@ function animateCompletionCircle() {
 }
 </style>
 
-<!-- ═══════════════════════════════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      TAB BAR
-═══════════════════════════════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="profile-tabs-bar">
   <nav class="profile-tabs-inner" role="tablist" aria-label="Profile sections">
 
@@ -1328,20 +1326,20 @@ function animateCompletionCircle() {
   </nav>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     TWO-COLUMN LAYOUT — open tag only (closed in part 3)
-═══════════════════════════════════════════════════════════════ -->
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     TWO-COLUMN LAYOUT â€” open tag only (closed in part 3)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="profile-content">
 
 
-  <!-- ── MAIN PANEL ── -->
+  <!-- â”€â”€ MAIN PANEL â”€â”€ -->
   <main class="fb-main">
 
-<!-- ═══════════════════════════════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      TAB: PRODUCTS
-═══════════════════════════════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <style>
-/* ═══ UPGRADED PRODUCT CARD ═══ */
+/* â•â•â• UPGRADED PRODUCT CARD â•â•â• */
 
 .section-head {
   display: flex;
@@ -1357,7 +1355,7 @@ function animateCompletionCircle() {
   padding: 16px 18px 20px;
 }
 
-/* ── Card shell ── */
+/* â”€â”€ Card shell â”€â”€ */
 .pcard {
   display: flex;
   flex-direction: column;
@@ -1377,7 +1375,7 @@ function animateCompletionCircle() {
   border-color: #1565c0;
 }
 
-/* ── Thumb ── */
+/* â”€â”€ Thumb â”€â”€ */
 .pcard-thumb {
   position: relative;
   width: 100%;
@@ -1398,7 +1396,7 @@ function animateCompletionCircle() {
   transform: scale(1.07);
 }
 
-/* ── Quick View overlay ── */
+/* â”€â”€ Quick View overlay â”€â”€ */
 .pcard-quickview {
   position: absolute;
   bottom: 12px;
@@ -1426,7 +1424,7 @@ function animateCompletionCircle() {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Wishlist heart (top-right) ── */
+/* â”€â”€ Wishlist heart (top-right) â”€â”€ */
 .pcard-wish {
   position: absolute;
   top: 10px;
@@ -1449,7 +1447,7 @@ function animateCompletionCircle() {
 .pcard-wish:hover,
 .pcard-wish.active { color: #ef4444; background: #fff; }
 
-/* ── Wishlist count (below heart) ── */
+/* â”€â”€ Wishlist count (below heart) â”€â”€ */
 .pcard-wish-count {
   position: absolute;
   top: 46px;
@@ -1462,7 +1460,7 @@ function animateCompletionCircle() {
   line-height: 1;
 }
 
-/* ── Views badge (bottom-left) ── */
+/* â”€â”€ Views badge (bottom-left) â”€â”€ */
 .pcard-views {
   position: absolute;
   bottom: 52px;
@@ -1479,7 +1477,7 @@ function animateCompletionCircle() {
   z-index: 2;
 }
 
-/* ── Sale badge (top-left) ── */
+/* â”€â”€ Sale badge (top-left) â”€â”€ */
 .pcard-sale {
   position: absolute;
   top: 10px;
@@ -1494,7 +1492,7 @@ function animateCompletionCircle() {
   letter-spacing: .3px;
 }
 
-/* ── Stock badge (top-left, below sale) ── */
+/* â”€â”€ Stock badge (top-left, below sale) â”€â”€ */
 .pcard-stock {
   position: absolute;
   top: 36px;
@@ -1508,7 +1506,7 @@ function animateCompletionCircle() {
 .pcard-stock.out { background: #dc2626; color: #fff; }
 .pcard-stock.low { background: #ea580c; color: #fff; }
 
-/* ── Body ── */
+/* â”€â”€ Body â”€â”€ */
 .pcard-body {
   padding: 12px 13px 14px;
   display: flex;
@@ -1517,7 +1515,7 @@ function animateCompletionCircle() {
   flex: 1;
 }
 
-/* product_title — big bold name */
+/* product_title â€” big bold name */
 .pcard-title {
   font-size: .88rem;
   font-weight: 700;
@@ -1530,7 +1528,7 @@ function animateCompletionCircle() {
   margin: 0;
 }
 
-/* product_name — model/SKU in blue */
+/* product_name â€” model/SKU in blue */
 .pcard-model {
   font-size: .75rem;
   font-weight: 600;
@@ -1540,7 +1538,7 @@ function animateCompletionCircle() {
   text-overflow: ellipsis;
 }
 
-/* ── Stars ── */
+/* â”€â”€ Stars â”€â”€ */
 .pcard-stars {
   display: flex;
   align-items: center;
@@ -1557,7 +1555,7 @@ function animateCompletionCircle() {
   font-weight: 500;
 }
 
-/* ── Price box ── */
+/* â”€â”€ Price box â”€â”€ */
 .pcard-price-box {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1600,7 +1598,7 @@ function animateCompletionCircle() {
   color: #15803d;
 }
 
-/* ── Tags row ── */
+/* â”€â”€ Tags row â”€â”€ */
 .pcard-tags {
   display: flex;
   align-items: center;
@@ -1638,7 +1636,7 @@ function animateCompletionCircle() {
   border: 1px solid #e9d5ff;
 }
 
-/* ── Time label ── */
+/* â”€â”€ Time label â”€â”€ */
 .pcard-time {
   font-size: .6rem;
   color: #9ca3af;
@@ -1648,7 +1646,7 @@ function animateCompletionCircle() {
   margin-top: 2px;
 }
 
-/* ════════ RESPONSIVE ════════ */
+/* â•â•â•â•â•â•â•â• RESPONSIVE â•â•â•â•â•â•â•â• */
 @media (max-width: 1024px) {
   .product-grid-v2 {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -1717,7 +1715,7 @@ function animateCompletionCircle() {
       {% for pv in recently_viewed %}
       <a href="{% url 'ponno:product_detail' slug=pv.product.slug %}" class="pcard">
 
-        <!-- ── Thumbnail ── -->
+        <!-- â”€â”€ Thumbnail â”€â”€ -->
         <div class="pcard-thumb">
           <img src="{{ pv.product.image_url }}"
                alt="{{ pv.product.product_name }}" loading="lazy">
@@ -1753,7 +1751,7 @@ function animateCompletionCircle() {
           </span>
         </div>
 
-        <!-- ── Body ── -->
+        <!-- â”€â”€ Body â”€â”€ -->
         <div class="pcard-body">
 
           <!-- Product title (full name) -->
@@ -2131,7 +2129,7 @@ function animateCompletionCircle() {
 <style>
 
 
-  /* ═══ ABOUT TAB ═══ */
+  /* â•â•â• ABOUT TAB â•â•â• */
   .info-blocks-wrap {
     padding: 4px 18px 16px;
   }
@@ -2268,7 +2266,7 @@ function animateCompletionCircle() {
     display: block;
   }
 
-  /* ══ RESPONSIVE ══ */
+  /* â•â• RESPONSIVE â•â• */
   @media (min-width: 1400px) {
     .info-blocks-wrap { padding: 6px 22px 18px; }
     .info-block-icon  { width: 44px; height: 44px; font-size: 1rem; }
@@ -2309,18 +2307,18 @@ function animateCompletionCircle() {
   }
 </style>
 
-<!-- ═══════════════════════════════════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      TAB: ABOUT
-═══════════════════════════════════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="tab-panel" id="tab-info" role="tabpanel">
   <div class="card">
     <div class="card-header"><h2 class="card-title">About</h2></div>
     <div class="info-blocks-wrap">
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: PROFILE
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-id-card"></i> Profile</p>
 
       <!-- Profile completion -->
@@ -2334,19 +2332,10 @@ function animateCompletionCircle() {
           </div>
           <span class="completion-label">
             {% if profile_completion == 100 %}Profile is complete!
-            {% elif profile_completion >= 70 %}Almost there — fill in the remaining fields.
+            {% elif profile_completion >= 70 %}Almost there â€” fill in the remaining fields.
             {% else %}Complete your profile to build trust with buyers.
             {% endif %}
           </span>
-        </div>
-      </div>
-
-      <!-- Account type -->
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-user-tag"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Account Type</p>
-          <p class="info-block-value">{{ profile_info.get_profile_type_display|default:"—" }}</p>
         </div>
       </div>
 
@@ -2379,38 +2368,6 @@ function animateCompletionCircle() {
         </div>
       </div>
 
-      <!-- Verification level -->
-      {% if profile_info.verification_level and profile_info.verification_level != 'none' %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-medal"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Verification Level</p>
-          <p class="info-block-value">
-            {% if profile_info.verification_level == 'email' %}
-              <span class="info-badge info-badge-blue"><i class="fa-solid fa-envelope"></i> Email Verified</span>
-            {% elif profile_info.verification_level == 'phone' %}
-              <span class="info-badge info-badge-green"><i class="fa-solid fa-phone"></i> Phone Verified</span>
-            {% elif profile_info.verification_level == 'id' %}
-              <span class="info-badge info-badge-purple"><i class="fa-solid fa-id-badge"></i> ID Verified</span>
-            {% elif profile_info.verification_level == 'business' %}
-              <span class="info-badge info-badge-amber"><i class="fa-solid fa-briefcase"></i> Business Verified</span>
-            {% endif %}
-          </p>
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- Tagline -->
-      {% if profile_info.profile_tagline %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-quote-left"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Tagline</p>
-          <p class="info-block-value">{{ profile_info.profile_tagline }}</p>
-        </div>
-      </div>
-      {% endif %}
-
       <!-- Engagement score -->
       <div class="info-block">
         <div class="info-block-icon" style="color:#7c3aed"><i class="fa-solid fa-bolt"></i></div>
@@ -2421,9 +2378,9 @@ function animateCompletionCircle() {
       </div>
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: PERSONAL
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-person"></i> Personal</p>
 
       {% if profile_info.profile_gender %}
@@ -2456,10 +2413,22 @@ function animateCompletionCircle() {
       </div>
       {% endif %}
 
+      {% if profile_info.profile_phone %}
+      <div class="info-block">
+        <div class="info-block-icon"><i class="fa-solid fa-phone"></i></div>
+        <div class="info-block-details">
+          <p class="info-block-label">Contact Phone</p>
+          <p class="info-block-value">
+            <a href="tel:{{ profile_info.profile_phone }}">{{ profile_info.profile_phone }}</a>
+          </p>
+        </div>
+      </div>
+      {% endif %}
 
-      <!-- ══════════════════════════════
+
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: ACCOUNT
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-lock"></i> Account</p>
 
       <!-- Account status -->
@@ -2489,7 +2458,7 @@ function animateCompletionCircle() {
         <div class="info-block-details">
           <p class="info-block-label">Email</p>
           <p class="info-block-value">
-            {{ user.email|default:"—" }}
+            {{ user.email|default:"â€”" }}
             {% if user.email_verified %}
               <span class="info-badge info-badge-green" style="margin-left:6px"><i class="fa-solid fa-check"></i> Verified</span>
             {% else %}
@@ -2563,9 +2532,9 @@ function animateCompletionCircle() {
       </div>
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: LOCATION
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       {% if profile_info.show_location and profile_info.location_display %}
       <p class="info-section-title"><i class="fa-solid fa-location-dot"></i> Location</p>
 
@@ -2599,107 +2568,9 @@ function animateCompletionCircle() {
       {% endif %}
 
 
-      <!-- ══════════════════════════════
-           SECTION: BUSINESS
-      ══════════════════════════════ -->
-      {% if profile_info.profile_type == 'business' or profile_info.profile_type == 'professional' %}
-      <p class="info-section-title"><i class="fa-solid fa-briefcase"></i> Business</p>
-
-      {% if profile_info.business_name %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-building"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Business Name</p>
-          <p class="info-block-value">{{ profile_info.business_name }}</p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_type %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-industry"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Business Type</p>
-          <p class="info-block-value">{{ profile_info.business_type }}</p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_registration %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-file-certificate"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Registration No.</p>
-          <p class="info-block-value">{{ profile_info.business_registration }}</p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_tax_id %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-receipt"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Tax ID</p>
-          <p class="info-block-value">{{ profile_info.business_tax_id }}</p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_email %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Business Email</p>
-          <p class="info-block-value">
-            <a href="mailto:{{ profile_info.business_email }}">{{ profile_info.business_email }}</a>
-          </p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_phone %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-phone-office"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Business Phone</p>
-          <p class="info-block-value">
-            <a href="tel:{{ profile_info.business_phone }}">{{ profile_info.business_phone }}</a>
-          </p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_website %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-globe"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Website</p>
-          <p class="info-block-value">
-            <a href="{{ profile_info.business_website }}" target="_blank" rel="noopener">
-              {{ profile_info.business_website }}
-            </a>
-          </p>
-        </div>
-      </div>
-      {% endif %}
-
-      {% if profile_info.business_description %}
-      <div class="info-block">
-        <div class="info-block-icon"><i class="fa-solid fa-align-left"></i></div>
-        <div class="info-block-details">
-          <p class="info-block-label">Description</p>
-          <p class="info-block-value" style="font-weight:500;color:#374151">
-            {{ profile_info.business_description }}
-          </p>
-        </div>
-      </div>
-      {% endif %}
-      {% endif %}
-
-
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: SOCIAL MEDIA
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       {% if profile_info.social_facebook or profile_info.social_twitter or profile_info.social_instagram or profile_info.social_linkedin or profile_info.social_youtube or profile_info.social_tiktok or profile_info.social_whatsapp %}
       <p class="info-section-title"><i class="fa-solid fa-share-nodes"></i> Social Media</p>
 
@@ -2739,7 +2610,7 @@ function animateCompletionCircle() {
             </a>
             {% endif %}
             {% if profile_info.social_whatsapp %}
-            <a href="https://wa.me/{{ profile_info.social_whatsapp }}" target="_blank" rel="noopener" class="social-link-btn">
+            <a href="{{ profile_info.social_whatsapp }}" target="_blank" rel="noopener" class="social-link-btn">
               <i class="fa-brands fa-whatsapp" style="color:#25d366"></i> WhatsApp
             </a>
             {% endif %}
@@ -2749,9 +2620,9 @@ function animateCompletionCircle() {
       {% endif %}
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: SELLER STATS
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-chart-line"></i> Seller Stats</p>
 
       {% if ratings_received_count > 0 %}
@@ -2760,7 +2631,7 @@ function animateCompletionCircle() {
         <div class="info-block-details">
           <p class="info-block-label">Seller Rating</p>
           <p class="info-block-value">
-            {{ avg_rating_received }}★
+            {{ avg_rating_received }}â˜…
             <span style="font-size:.78rem;color:#718096;font-weight:500">
               from {{ ratings_received_count }} review{{ ratings_received_count|pluralize }}
             </span>
@@ -2841,9 +2712,9 @@ function animateCompletionCircle() {
       {% endif %}
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: GDPR / PRIVACY
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-user-shield"></i> Privacy & Consent</p>
 
       <div class="info-block">
@@ -2918,9 +2789,9 @@ function animateCompletionCircle() {
       </div>
 
 
-      <!-- ══════════════════════════════
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
            SECTION: TIMESTAMPS
-      ══════════════════════════════ -->
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <p class="info-section-title"><i class="fa-solid fa-clock"></i> Timeline</p>
 
       <div class="info-block">
@@ -2936,7 +2807,7 @@ function animateCompletionCircle() {
         <div class="info-block-icon"><i class="fa-solid fa-right-to-bracket"></i></div>
         <div class="info-block-details">
           <p class="info-block-label">Last Login</p>
-          <p class="info-block-value">{{ user.last_login|date:"M d, Y · H:i" }}</p>
+          <p class="info-block-value">{{ user.last_login|date:"M d, Y Â· H:i" }}</p>
         </div>
       </div>
       {% endif %}
@@ -2955,7 +2826,7 @@ function animateCompletionCircle() {
         <div class="info-block-icon"><i class="fa-solid fa-rotate"></i></div>
         <div class="info-block-details">
           <p class="info-block-label">Profile Last Updated</p>
-          <p class="info-block-value">{{ profile_info.profile_updated_time|date:"M d, Y · H:i" }}</p>
+          <p class="info-block-value">{{ profile_info.profile_updated_time|date:"M d, Y Â· H:i" }}</p>
         </div>
       </div>
 
@@ -2970,12 +2841,12 @@ function animateCompletionCircle() {
 {% block extra_js %}
 <script>
 
-/* ── Tab Switching ── */
+/* â”€â”€ Tab Switching â”€â”€ */
 const tabBtns    = document.querySelectorAll('.tab-btn');
 const tabPanels  = document.querySelectorAll('.tab-panel');
 const bottomBtns = document.querySelectorAll('.bottom-bar-btn[data-tab]');
 
-/* ── Entry-animation observer ──
+/* â”€â”€ Entry-animation observer â”€â”€
    Declared at top level (not inside DOMContentLoaded) so switchTab()
    can also reach it to release cards from observation once a tab
    reveals them. */
@@ -3002,7 +2873,7 @@ function switchTab(targetId) {
   // Force any cards in the newly active panel to be visible right away.
   // They may have been assigned opacity:0 + observer.observe() at page
   // load while their panel was hidden (display:none), and a tab switch
-  // alone doesn't trigger a new IntersectionObserver check — only a
+  // alone doesn't trigger a new IntersectionObserver check â€” only a
   // scroll/resize event does. Without this, content stays invisible
   // until the user happens to scroll.
   const activePanel = document.getElementById(`tab-${targetId}`);
@@ -3032,7 +2903,7 @@ bottomBtns.forEach(btn => {
 });
 
 
-/* ── Engagement Bar ── */
+/* â”€â”€ Engagement Bar â”€â”€ */
 function animateEngBar() {
   const el = document.getElementById('engBarFill');
   if (!el) return;
@@ -3041,7 +2912,7 @@ function animateEngBar() {
 }
 
 
-/* ── Entry Animations ── */
+/* â”€â”€ Entry Animations â”€â”€ */
 document.addEventListener('DOMContentLoaded', () => {
 
   animateCompletionCircle();
@@ -3062,17 +2933,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 80 + i * 40);
   });
 
-  // NEW — skip cards already in the viewport
+  // NEW â€” skip cards already in the viewport
   document.querySelectorAll('.card').forEach(card => {
     const rect = card.getBoundingClientRect();
     const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
 
     if (alreadyVisible) {
-      // already in view — show immediately, no animation
+      // already in view â€” show immediately, no animation
       card.style.opacity   = '1';
       card.style.transform = 'translateY(0)';
     } else {
-      // below the fold — animate on scroll
+      // below the fold â€” animate on scroll
       card.style.opacity    = '0';
       card.style.transform  = 'translateY(12px)';
       card.style.transition = 'opacity .4s ease, transform .4s ease';

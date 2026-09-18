@@ -9,13 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 
-<!-- ═══════════════════════════════════════════════
-     DESIGN TOKENS + STYLES
-     Jewel-tone ledger design. Everything is scoped
-     under the .profile-manager class (NOT an ID) so
-     it never collides with base.html's own selectors
-     and can be safely reused/duplicated if needed.
-     ═══════════════════════════════════════════════ -->
 <style>
 
 :root {
@@ -182,9 +175,7 @@
 .profile-manager .settings-aside {
   min-width: 0;
 }
-/* ── Sidebar nav (default = original vertical list, large screens) ── */
 .profile-manager .settings-nav-scroll {
-  /* No scroll behavior by default; enabled only in small-screen media queries below */
   min-width: 0;
   max-width: 100%;
 }
@@ -224,7 +215,7 @@
 .profile-manager .stat-card .num { font-family:var(--font-display); font-weight:700; font-size: var(--fs-stat-num); }
 .profile-manager .stat-card .lbl { font-family:var(--font-mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-top:2px; overflow-wrap:anywhere; }
 
-/* ── Forms ───────────────────────────────────── */
+/* ── Forms (still used by Security / Danger Zone / multi-field actions) ── */
 .profile-manager .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px 20px; }
 .profile-manager .form-grid.single { grid-template-columns:1fr; }
 .profile-manager .field { display:flex; flex-direction:column; gap:6px; min-width:0; }
@@ -236,6 +227,7 @@
 .profile-manager .field input[type="url"],
 .profile-manager .field input[type="tel"],
 .profile-manager .field input[type="date"],
+.profile-manager .field input[type="number"],
 .profile-manager .field input[type="password"],
 .profile-manager .field select,
 .profile-manager .field textarea {
@@ -250,6 +242,13 @@
   outline:none; border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-trace);
 }
 .profile-manager .field input[type="file"] { font-size:.82rem; padding:8px 0; min-height:auto; }
+
+.profile-manager .form-subhead {
+  grid-column: 1 / -1;
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-4); margin:18px 0 -6px; padding-top:16px; border-top:1px dashed var(--border);
+}
+.profile-manager .form-subhead:first-of-type { margin-top:0; padding-top:0; border-top:none; }
 
 .profile-manager .form-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:24px; flex-wrap:wrap; }
 .profile-manager .form-actions.align-start { justify-content:flex-start; }
@@ -271,6 +270,92 @@
 .profile-manager .btn-danger.solid { background:var(--ruby); color:#fff; border-color:var(--ruby); }
 .profile-manager .btn-danger.solid:hover { background:var(--ruby-dim); }
 .profile-manager .btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+.profile-manager .btn[disabled] { opacity:.6; cursor:default; transform:none !important; }
+
+/* ── Field display + edit button (NEW — replaces raw inline inputs) ── */
+.profile-manager .field-view-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px 20px; }
+.profile-manager .field-view-grid.single { grid-template-columns:1fr; }
+.profile-manager .field-view { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.profile-manager .field-view.span-2 { grid-column: span 2; }
+.profile-manager .field-view .fv-label { font-size:.78rem; font-weight:700; color:var(--ink-2); letter-spacing:.01em; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.profile-manager .field-view .fv-label .hint { font-size:.72rem; color:var(--ink-4); font-weight:400; }
+.profile-manager .field-view .fv-row {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 13px; border:1px solid var(--border-2); border-radius:var(--r-sm);
+  background:var(--surface); min-height:44px;
+}
+.profile-manager .field-view .fv-value { font-size:.92rem; color:var(--ink); overflow-wrap:anywhere; }
+.profile-manager .field-view .fv-value.empty { color:var(--ink-4); font-style:italic; }
+.profile-manager .field-view .fv-edit-btn {
+  flex-shrink:0; display:inline-flex; align-items:center; gap:6px;
+  padding:6px 12px; border-radius:20px; font-size:.75rem; font-weight:700;
+  color:var(--gold); border:1px solid var(--gold-dim); background:transparent;
+  transition: background var(--t-fast), color var(--t-fast); min-height:32px;
+}
+.profile-manager .field-view .fv-edit-btn:hover { background:var(--gold-trace); }
+.profile-manager .field-view .fv-edit-btn:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+
+.profile-manager .fv-subhead {
+  grid-column: 1 / -1;
+  font-family:var(--font-mono); font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-4); margin:18px 0 -4px; padding-top:16px; border-top:1px dashed var(--border);
+}
+.profile-manager .fv-subhead:first-of-type { margin-top:0; padding-top:0; border-top:none; }
+
+/* ── Edit-field modal ────────────────────────────────────────────── */
+.pm-modal-backdrop {
+  position:fixed; inset:0; background:rgba(15,15,15,.5); z-index:1000;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.pm-modal-backdrop.open { opacity:1; pointer-events:auto; }
+.pm-modal {
+  background:#fff; border-radius:16px; width:100%; max-width:440px;
+  padding:24px; box-shadow:0 20px 50px rgba(0,0,0,.25);
+  transform:translateY(10px); transition:transform .2s ease;
+  font-family:'Syne', sans-serif;
+}
+.pm-modal-backdrop.open .pm-modal { transform:translateY(0); }
+.pm-modal h3 { font-family:'Cormorant Garamond',serif; font-weight:700; font-size:1.35rem; margin:0 0 4px; color:#0f0f0f; }
+.pm-modal .pm-modal-hint { font-size:.78rem; color:#6b6b6b; margin-bottom:16px; }
+.pm-modal .pm-field-wrap input,
+.pm-modal .pm-field-wrap select,
+.pm-modal .pm-field-wrap textarea {
+  width:100%; padding:11px 13px; border:1px solid #d0cfc9; border-radius:8px; font-size:1rem; font-family:inherit;
+}
+.pm-modal .pm-field-wrap textarea { min-height:110px; resize:vertical; }
+.pm-modal .pm-field-wrap input:focus,
+.pm-modal .pm-field-wrap select:focus,
+.pm-modal .pm-field-wrap textarea:focus { outline:none; border-color:#b8860b; box-shadow:0 0 0 3px rgba(184,134,11,.08); }
+.pm-modal .pm-error { color:#c8102e; font-size:.8rem; margin-top:10px; display:none; }
+.pm-modal .pm-error.show { display:block; }
+.pm-modal .pm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.pm-modal .pm-btn { padding:10px 20px; border-radius:8px; font-weight:700; font-size:.85rem; min-height:40px; }
+.pm-modal .pm-btn-cancel { background:transparent; border:1px solid #d0cfc9; color:#3a3a3a; }
+.pm-modal .pm-btn-cancel:hover { border-color:#9b9b9b; }
+.pm-modal .pm-btn-save { background:#0f0f0f; color:#fff; display:inline-flex; align-items:center; gap:8px; }
+.pm-modal .pm-btn-save[disabled] { opacity:.6; cursor:default; }
+.pm-spinner {
+  width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff; animation:pmSpin .6s linear infinite; display:none;
+}
+.pm-btn-save.loading .pm-spinner { display:inline-block; }
+.pm-btn-save.loading .pm-btn-save-text { opacity:.7; }
+@keyframes pmSpin { to { transform: rotate(360deg); } }
+
+/* Small inline toast for AJAX success/error, since we no longer redirect */
+.pm-toast-stack {
+  position:fixed; top:16px; right:16px; z-index:1100;
+  display:flex; flex-direction:column; gap:8px; max-width:min(360px, calc(100vw - 32px));
+}
+.pm-toast {
+  padding:12px 16px; border-radius:8px; font-size:.85rem; font-weight:600;
+  border-left:3px solid; box-shadow:0 6px 16px rgba(0,0,0,.12);
+  background:#fff; opacity:0; transform:translateY(-6px); transition:opacity .2s ease, transform .2s ease;
+}
+.pm-toast.show { opacity:1; transform:translateY(0); }
+.pm-toast.success { color:#1a6b3a; border-color:#1a6b3a; }
+.pm-toast.error { color:#a00d24; border-color:#c8102e; }
 
 /* ── Toggle switches ─────────────────────────── */
 .profile-manager .toggle-list { display:flex; flex-direction:column; }
@@ -326,8 +411,7 @@
 .profile-manager .danger-row .d-desc { font-size:.78rem; color:var(--ink-3); margin-top:2px; max-width:50ch; }
 
 /* ═══════════════════════════════════════════════
-   RESPONSIVE BREAKPOINTS — 1400+ / 1199 / 1023 / 900 / 767 / 480 / 360
-   plus landscape, foldable, hi-dpi and print handling.
+   RESPONSIVE BREAKPOINTS
    ═══════════════════════════════════════════════ */
 @media (min-width: 1400px) {
   .profile-manager .settings-shell { grid-template-columns:300px 1fr; gap:32px; }
@@ -366,11 +450,14 @@
   .profile-manager .nav-btn.active { border-radius:var(--r-sm); }
 
   .profile-manager .form-grid { grid-template-columns:1fr 1fr; }
+  .profile-manager .field-view-grid { grid-template-columns:1fr 1fr; }
 }
 
 @media (max-width: 767px) {
   .profile-manager .form-grid { grid-template-columns:1fr; }
   .profile-manager .field.span-2 { grid-column: span 1; }
+  .profile-manager .field-view-grid { grid-template-columns:1fr; }
+  .profile-manager .field-view.span-2 { grid-column: span 1; }
   .profile-manager .account-meta { grid-template-columns:1fr 1fr; }
   .profile-manager .stat-cards { grid-template-columns:repeat(2, 1fr); }
 }
@@ -389,6 +476,7 @@
   .profile-manager .meta-item .m-value { font-size:.88rem; }
   .profile-manager .viewer-row { gap:10px; }
   .profile-manager .viewer-time { flex-basis:100%; margin-left:46px; }
+  .profile-manager .field-view .fv-row { flex-wrap:wrap; }
 }
 @media (max-width: 360px) {
   .profile-manager .stat-cards { grid-template-columns:1fr 1fr; gap:10px; }
@@ -430,8 +518,9 @@
   .profile-manager .settings-shell { grid-template-columns:1fr; margin:0; padding:0; }
   .profile-manager .panel { display:block !important; }
   .profile-manager .card { box-shadow:none; border:1px solid #000; break-inside:avoid; page-break-inside:avoid; margin-bottom:12px; }
+  .pm-modal-backdrop, .pm-toast-stack { display:none !important; }
 }
-  
+
 </style>
 
 
@@ -477,6 +566,9 @@
   </div>
   {% endif %}
 
+  <!-- Toast stack for AJAX field-save feedback (replaces page-reload messages for field edits) -->
+  <div class="pm-toast-stack js-toast-stack" aria-live="polite"></div>
+
   <div class="settings-shell">
 
     <!-- ═══════════════ SIDEBAR ═══════════════ -->
@@ -484,6 +576,8 @@
       <div class="settings-nav-scroll">
         <ul class="settings-nav js-settings-nav">
           <li><button type="button" class="nav-btn active" data-tab="profile"><i class="fa-solid fa-user"></i> Profile</button></li>
+          <li><button type="button" class="nav-btn" data-tab="location"><i class="fa-solid fa-location-dot"></i> Location</button></li>
+          <li><button type="button" class="nav-btn" data-tab="contact"><i class="fa-solid fa-address-book"></i> Contact</button></li>
           {% if is_dealer %}
           <li><button type="button" class="nav-btn" data-tab="business"><i class="fa-solid fa-store"></i> Business</button></li>
           {% endif %}
@@ -506,39 +600,680 @@
         <div class="card">
           <div class="card-head">
             <div><div class="card-title">Profile</div><p class="card-desc">How you appear across PIELAM.</p></div>
+            <span class="badge {% if completion_percentage >= 80 %}ok{% elif completion_percentage >= 40 %}warn{% else %}danger{% endif %}">{{ completion_percentage }}% complete</span>
           </div>
-          <form method="post" enctype="multipart/form-data">
+
+          <div class="field-view-grid">
+
+            <!-- Display name -->
+            <div class="field-view">
+              <span class="fv-label">Display name</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_name %}empty{% endif %}" data-fv-display="profile_name">{{ profile_info.profile_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_name" data-fv-action="update_profile" data-fv-field="profile_name" data-fv-title="Display name">
+              <input type="text" name="profile_name" value="{{ profile_info.profile_name|default:'' }}" maxlength="150">
+            </template>
+
+            <!-- Gender -->
+            <div class="field-view">
+              <span class="fv-label">Gender</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_gender %}empty{% endif %}" data-fv-display="profile_gender">{{ profile_info.get_profile_gender_display|default:"Prefer not to say" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_gender"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_gender" data-fv-action="update_profile" data-fv-field="profile_gender" data-fv-title="Gender">
+              <select name="profile_gender">
+                <option value="">Prefer not to say</option>
+                {% for value, label in profile_info.Gender.choices %}
+                  <option value="{{ value }}" {% if profile_info.profile_gender == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </template>
+
+            <!-- Bio -->
+            <div class="field-view span-2">
+              <span class="fv-label">Bio</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_bio %}empty{% endif %}" data-fv-display="profile_bio">{{ profile_info.profile_bio|default:"Not set"|truncatewords:24 }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_bio"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_bio" data-fv-action="update_profile" data-fv-field="profile_bio" data-fv-title="Bio">
+              <textarea name="profile_bio" maxlength="500">{{ profile_info.profile_bio|default:'' }}</textarea>
+            </template>
+
+            <!-- Date of birth -->
+            <div class="field-view">
+              <span class="fv-label">Date of birth</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_dob %}empty{% endif %}" data-fv-display="profile_dob">{{ profile_info.profile_dob|date:"M j, Y"|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_dob"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_dob" data-fv-action="update_profile" data-fv-field="profile_dob" data-fv-title="Date of birth">
+              <input type="date" name="profile_dob" value="{{ profile_info.profile_dob|date:'Y-m-d' }}">
+            </template>
+
+            <!-- Preferred language -->
+            <div class="field-view">
+              <span class="fv-label">Preferred language <span class="hint">code, e.g. en, bn</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_language %}empty{% endif %}" data-fv-display="profile_language">{{ profile_info.profile_language|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_language"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_language" data-fv-action="update_profile" data-fv-field="profile_language" data-fv-title="Preferred language">
+              <input type="text" name="profile_language" value="{{ profile_info.profile_language|default:'' }}" placeholder="e.g. en, bn">
+            </template>
+
+            <!-- Profile photo -->
+            <div class="field-view">
+              <span class="fv-label">Profile photo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_photo %}empty{% endif %}">{% if profile_info.profile_photo %}Uploaded{% else %}Not set{% endif %}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_photo"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_photo" data-fv-action="update_profile" data-fv-field="profile_photo" data-fv-title="Profile photo" data-fv-filefield="1">
+              <input type="file" name="profile_photo" accept="image/*">
+            </template>
+
+            <!-- Cover photo -->
+            <div class="field-view">
+              <span class="fv-label">Cover photo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not profile_info.profile_cover_photo %}empty{% endif %}">{% if profile_info.profile_cover_photo %}Uploaded{% else %}Not set{% endif %}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-profile_cover_photo"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-profile_cover_photo" data-fv-action="update_profile" data-fv-field="profile_cover_photo" data-fv-title="Cover photo" data-fv-filefield="1">
+              <input type="file" name="profile_cover_photo" accept="image/*">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- LOCATION -->
+      <section class="panel" data-panel="location">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Location</div><p class="card-desc">Where you're based.</p></div>
+          </div>
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Country</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.country %}empty{% endif %}" data-fv-display="country">{{ location_info.country|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-country"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-country" data-fv-action="update_location" data-fv-field="country" data-fv-title="Country">
+              <input type="text" name="country" placeholder="e.g. Bangladesh" value="{{ location_info.country|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Country code <span class="hint">ISO 3166-1 alpha-2</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.country_code %}empty{% endif %}" data-fv-display="country_code">{{ location_info.country_code|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-country_code"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-country_code" data-fv-action="update_location" data-fv-field="country_code" data-fv-title="Country code">
+              <input type="text" name="country_code" maxlength="2" value="{{ location_info.country_code|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">State / Province</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.state %}empty{% endif %}" data-fv-display="state">{{ location_info.state|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-state"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-state" data-fv-action="update_location" data-fv-field="state" data-fv-title="State / Province">
+              <input type="text" name="state" value="{{ location_info.state|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">City</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.city %}empty{% endif %}" data-fv-display="city">{{ location_info.city|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-city"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-city" data-fv-action="update_location" data-fv-field="city" data-fv-title="City">
+              <input type="text" name="city" value="{{ location_info.city|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Postal code</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.postal_code %}empty{% endif %}" data-fv-display="postal_code">{{ location_info.postal_code|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-postal_code"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-postal_code" data-fv-action="update_location" data-fv-field="postal_code" data-fv-title="Postal code">
+              <input type="text" name="postal_code" value="{{ location_info.postal_code|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Street address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.address %}empty{% endif %}" data-fv-display="address">{{ location_info.address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-address" data-fv-action="update_location" data-fv-field="address" data-fv-title="Street address">
+              <input type="text" name="address" value="{{ location_info.address|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Present address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.present_address %}empty{% endif %}" data-fv-display="present_address">{{ location_info.present_address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-present_address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-present_address" data-fv-action="update_location" data-fv-field="present_address" data-fv-title="Present address">
+              <input type="text" name="present_address" value="{{ location_info.present_address|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Permanent address</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.permanent_address %}empty{% endif %}" data-fv-display="permanent_address">{{ location_info.permanent_address|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-permanent_address"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-permanent_address" data-fv-action="update_location" data-fv-field="permanent_address" data-fv-title="Permanent address">
+              <input type="text" name="permanent_address" value="{{ location_info.permanent_address|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Latitude <span class="hint">set both or neither</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.latitude %}empty{% endif %}" data-fv-display="latitude">{{ location_info.latitude|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-latitude"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-latitude" data-fv-action="update_location" data-fv-field="latitude" data-fv-title="Latitude">
+              <input type="text" name="latitude" value="{{ location_info.latitude|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Longitude <span class="hint">set both or neither</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not location_info.longitude %}empty{% endif %}" data-fv-display="longitude">{{ location_info.longitude|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-longitude"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-longitude" data-fv-action="update_location" data-fv-field="longitude" data-fv-title="Longitude">
+              <input type="text" name="longitude" value="{{ location_info.longitude|default:'' }}">
+            </template>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section class="panel" data-panel="contact">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Contact channels</div><p class="card-desc">Alternate ways people can reach you.</p></div>
+          </div>
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Alternate email</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.alt_email %}empty{% endif %}" data-fv-display="alt_email">{{ contact_info.alt_email|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.alt_email %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="alt_email"
+                      {% if not contact_info.alt_email %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-alt_email"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="alt_email"
+                        {% if not contact_info.alt_email or contact_verifications.alt_email == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-alt_email" data-fv-action="update_contact" data-fv-field="alt_email" data-fv-title="Alternate email">
+              <input type="email" name="alt_email" value="{{ contact_info.alt_email|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Phone number</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.phone_number %}empty{% endif %}" data-fv-display="phone_number">{{ contact_info.phone_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.phone_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="phone_number"
+                      {% if not contact_info.phone_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-phone_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="phone_number"
+                        {% if not contact_info.phone_number or contact_verifications.phone_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-phone_number" data-fv-action="update_contact" data-fv-field="phone_number" data-fv-title="Phone number">
+              <input type="tel" name="phone_number" value="{{ contact_info.phone_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+  <span class="fv-label"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+  <div class="fv-row">
+    <span class="fv-value {% if not contact_info.whatsapp_number %}empty{% endif %}" data-fv-display="whatsapp_number">{{ contact_info.whatsapp_number|default:"Not set" }}</span>
+    {% with vstatus=contact_verifications.whatsapp_number %}
+    <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+          data-verify-badge="whatsapp_number"
+          {% if not contact_info.whatsapp_number %}style="display:none"{% endif %}>
+      {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+    </span>
+    {% endwith %}
+    <button type="button" class="fv-edit-btn" data-fv-open="tpl-whatsapp_number"><i class="fa-solid fa-pen"></i> Edit</button>
+    <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="whatsapp_number"
+            {% if not contact_info.whatsapp_number or contact_verifications.whatsapp_number == 'verified' %}style="display:none"{% endif %}>
+      <i class="fa-solid fa-shield"></i> Verify
+    </button>
+  </div>
+</div>
+<template id="tpl-whatsapp_number" data-fv-action="update_contact" data-fv-field="whatsapp_number" data-fv-title="WhatsApp number">
+  <input type="tel" name="whatsapp_number" value="{{ contact_info.whatsapp_number|default:'' }}">
+</template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-telegram"></i> Telegram</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.telegram_username %}empty{% endif %}" data-fv-display="telegram_username">{{ contact_info.telegram_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.telegram_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="telegram_username"
+                      {% if not contact_info.telegram_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-telegram_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="telegram_username"
+                        {% if not contact_info.telegram_username or contact_verifications.telegram_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-telegram_username" data-fv-action="update_contact" data-fv-field="telegram_username" data-fv-title="Telegram username">
+              <input type="text" name="telegram_username" value="{{ contact_info.telegram_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Signal</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.signal_number %}empty{% endif %}" data-fv-display="signal_number">{{ contact_info.signal_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.signal_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="signal_number"
+                      {% if not contact_info.signal_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-signal_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="signal_number"
+                        {% if not contact_info.signal_number or contact_verifications.signal_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-signal_number" data-fv-action="update_contact" data-fv-field="signal_number" data-fv-title="Signal number">
+              <input type="tel" name="signal_number" value="{{ contact_info.signal_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-viber"></i> Viber</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.viber_number %}empty{% endif %}" data-fv-display="viber_number">{{ contact_info.viber_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.viber_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="viber_number"
+                      {% if not contact_info.viber_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-viber_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="viber_number"
+                        {% if not contact_info.viber_number or contact_verifications.viber_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-viber_number" data-fv-action="update_contact" data-fv-field="viber_number" data-fv-title="Viber number">
+              <input type="tel" name="viber_number" value="{{ contact_info.viber_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weixin"></i> WeChat</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.wechat_id %}empty{% endif %}" data-fv-display="wechat_id">{{ contact_info.wechat_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.wechat_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="wechat_id"
+                      {% if not contact_info.wechat_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-wechat_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="wechat_id"
+                        {% if not contact_info.wechat_id or contact_verifications.wechat_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-wechat_id" data-fv-action="update_contact" data-fv-field="wechat_id" data-fv-title="WeChat ID">
+              <input type="text" name="wechat_id" value="{{ contact_info.wechat_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-line"></i> LINE</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.line_id %}empty{% endif %}" data-fv-display="line_id">{{ contact_info.line_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.line_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="line_id"
+                      {% if not contact_info.line_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-line_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="line_id"
+                        {% if not contact_info.line_id or contact_verifications.line_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-line_id" data-fv-action="update_contact" data-fv-field="line_id" data-fv-title="LINE ID">
+              <input type="text" name="line_id" value="{{ contact_info.line_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">imo</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.imo_number %}empty{% endif %}" data-fv-display="imo_number">{{ contact_info.imo_number|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.imo_number %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="imo_number"
+                      {% if not contact_info.imo_number %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-imo_number"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="imo_number"
+                        {% if not contact_info.imo_number or contact_verifications.imo_number == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-imo_number" data-fv-action="update_contact" data-fv-field="imo_number" data-fv-title="imo number">
+              <input type="tel" name="imo_number" value="{{ contact_info.imo_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-skype"></i> Skype</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.skype_id %}empty{% endif %}" data-fv-display="skype_id">{{ contact_info.skype_id|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.skype_id %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="skype_id"
+                      {% if not contact_info.skype_id %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-skype_id"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="skype_id"
+                        {% if not contact_info.skype_id or contact_verifications.skype_id == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-skype_id" data-fv-action="update_contact" data-fv-field="skype_id" data-fv-title="Skype ID">
+              <input type="text" name="skype_id" value="{{ contact_info.skype_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-discord"></i> Discord</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.discord_username %}empty{% endif %}" data-fv-display="discord_username">{{ contact_info.discord_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.discord_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="discord_username"
+                      {% if not contact_info.discord_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-discord_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="discord_username"
+                        {% if not contact_info.discord_username or contact_verifications.discord_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-discord_username" data-fv-action="update_contact" data-fv-field="discord_username" data-fv-title="Discord username">
+              <input type="text" name="discord_username" value="{{ contact_info.discord_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-facebook-messenger"></i> Messenger</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.facebook_messenger_username %}empty{% endif %}" data-fv-display="facebook_messenger_username">{{ contact_info.facebook_messenger_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.facebook_messenger_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="facebook_messenger_username"
+                      {% if not contact_info.facebook_messenger_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-facebook_messenger_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="facebook_messenger_username"
+                        {% if not contact_info.facebook_messenger_username or contact_verifications.facebook_messenger_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-facebook_messenger_username" data-fv-action="update_contact" data-fv-field="facebook_messenger_username" data-fv-title="Messenger username">
+              <input type="text" name="facebook_messenger_username" value="{{ contact_info.facebook_messenger_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-instagram"></i> Instagram</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.instagram_username %}empty{% endif %}" data-fv-display="instagram_username">{{ contact_info.instagram_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.instagram_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="instagram_username"
+                      {% if not contact_info.instagram_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-instagram_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="instagram_username"
+                        {% if not contact_info.instagram_username or contact_verifications.instagram_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-instagram_username" data-fv-action="update_contact" data-fv-field="instagram_username" data-fv-title="Instagram username">
+              <input type="text" name="instagram_username" value="{{ contact_info.instagram_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-snapchat"></i> Snapchat</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.snapchat_username %}empty{% endif %}" data-fv-display="snapchat_username">{{ contact_info.snapchat_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.snapchat_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="snapchat_username"
+                      {% if not contact_info.snapchat_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-snapchat_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="snapchat_username"
+                        {% if not contact_info.snapchat_username or contact_verifications.snapchat_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-snapchat_username" data-fv-action="update_contact" data-fv-field="snapchat_username" data-fv-title="Snapchat username">
+              <input type="text" name="snapchat_username" value="{{ contact_info.snapchat_username|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-x-twitter"></i> Twitter / X</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.twitter_username %}empty{% endif %}" data-fv-display="twitter_username">{{ contact_info.twitter_username|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.twitter_username %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="twitter_username"
+                      {% if not contact_info.twitter_username %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-twitter_username"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="twitter_username"
+                        {% if not contact_info.twitter_username or contact_verifications.twitter_username == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-twitter_username" data-fv-action="update_contact" data-fv-field="twitter_username" data-fv-title="Twitter / X username">
+              <input type="text" name="twitter_username" value="{{ contact_info.twitter_username|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label"><i class="fa-brands fa-linkedin"></i> LinkedIn URL</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.linkedin_url %}empty{% endif %}" data-fv-display="linkedin_url">{{ contact_info.linkedin_url|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.linkedin_url %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="linkedin_url"
+                      {% if not contact_info.linkedin_url %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-linkedin_url"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="linkedin_url"
+                        {% if not contact_info.linkedin_url or contact_verifications.linkedin_url == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-linkedin_url" data-fv-action="update_contact" data-fv-field="linkedin_url" data-fv-title="LinkedIn URL">
+              <input type="url" name="linkedin_url" value="{{ contact_info.linkedin_url|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-slack"></i> Slack workspace handle</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not contact_info.slack_workspace_handle %}empty{% endif %}" data-fv-display="slack_workspace_handle">{{ contact_info.slack_workspace_handle|default:"Not set" }}</span>
+                {% with vstatus=contact_verifications.slack_workspace_handle %}
+                <span class="badge js-verify-badge {% if vstatus == 'verified' %}ok{% elif vstatus == 'pending' %}warn{% else %}danger{% endif %}"
+                      data-verify-badge="slack_workspace_handle"
+                      {% if not contact_info.slack_workspace_handle %}style="display:none"{% endif %}>
+                  {% if vstatus == 'verified' %}<i class="fa-solid fa-check"></i> Verified{% elif vstatus == 'pending' %}Pending{% else %}Unverified{% endif %}
+                </span>
+                {% endwith %}
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-slack_workspace_handle"><i class="fa-solid fa-pen"></i> Edit</button>
+                <button type="button" class="fv-edit-btn js-verify-open" data-verify-channel="slack_workspace_handle"
+                        {% if not contact_info.slack_workspace_handle or contact_verifications.slack_workspace_handle == 'verified' %}style="display:none"{% endif %}>
+                  <i class="fa-solid fa-shield"></i> Verify
+                </button>
+              </div>
+            </div>
+            <template id="tpl-slack_workspace_handle" data-fv-action="update_contact" data-fv-field="slack_workspace_handle" data-fv-title="Slack workspace handle">
+              <input type="text" name="slack_workspace_handle" value="{{ contact_info.slack_workspace_handle|default:'' }}" placeholder="workspace:@handle">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Preferred contact method</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="preferred_contact_method">{{ contact_info.get_preferred_contact_method_display|default:"In-App Message" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-preferred_contact_method"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-preferred_contact_method" data-fv-action="update_contact" data-fv-field="preferred_contact_method" data-fv-title="Preferred contact method">
+              <select name="preferred_contact_method">
+                <option value="email" {% if contact_info.preferred_contact_method == "email" %}selected{% endif %}>Email</option>
+                <option value="phone" {% if contact_info.preferred_contact_method == "phone" %}selected{% endif %}>Phone Call</option>
+                <option value="whatsapp" {% if contact_info.preferred_contact_method == "whatsapp" %}selected{% endif %}>WhatsApp</option>
+                <option value="telegram" {% if contact_info.preferred_contact_method == "telegram" %}selected{% endif %}>Telegram</option>
+                <option value="signal" {% if contact_info.preferred_contact_method == "signal" %}selected{% endif %}>Signal</option>
+                <option value="viber" {% if contact_info.preferred_contact_method == "viber" %}selected{% endif %}>Viber</option>
+                <option value="wechat" {% if contact_info.preferred_contact_method == "wechat" %}selected{% endif %}>WeChat</option>
+                <option value="line" {% if contact_info.preferred_contact_method == "line" %}selected{% endif %}>LINE</option>
+                <option value="imo" {% if contact_info.preferred_contact_method == "imo" %}selected{% endif %}>imo</option>
+                <option value="skype" {% if contact_info.preferred_contact_method == "skype" %}selected{% endif %}>Skype</option>
+                <option value="discord" {% if contact_info.preferred_contact_method == "discord" %}selected{% endif %}>Discord</option>
+                <option value="facebook_messenger" {% if contact_info.preferred_contact_method == "facebook_messenger" %}selected{% endif %}>Facebook Messenger</option>
+                <option value="instagram" {% if contact_info.preferred_contact_method == "instagram" %}selected{% endif %}>Instagram</option>
+                <option value="snapchat" {% if contact_info.preferred_contact_method == "snapchat" %}selected{% endif %}>Snapchat</option>
+                <option value="twitter" {% if contact_info.preferred_contact_method == "twitter" %}selected{% endif %}>X / Twitter</option>
+                <option value="linkedin" {% if contact_info.preferred_contact_method == "linkedin" %}selected{% endif %}>LinkedIn</option>
+                <option value="slack" {% if contact_info.preferred_contact_method == "slack" %}selected{% endif %}>Slack</option>
+                <option value="platform_message" {% if contact_info.preferred_contact_method == "platform_message" or not contact_info %}selected{% endif %}>In-App Message</option>
+              </select>
+            </template>
+
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Contact visibility</div><p class="card-desc">Choose which channels are shown on your public profile. Nothing shows unless "Public contact card" is on.</p></div>
+          </div>
+          <!-- Toggle switches stay as instant switches (already single-click edits) -->
+          <form method="post">
             {% csrf_token %}
-            <input type="hidden" name="action" value="update_profile">
-            <div class="form-grid">
-              <div class="field"><label>Display name</label><input type="text" name="profile_name" value="{{ profile_info.profile_name|default:'' }}"></div>
-              <div class="field"><label>Tagline</label><input type="text" name="profile_tagline" maxlength="100" value="{{ profile_info.profile_tagline|default:'' }}"></div>
-              <div class="field span-2"><label>Bio</label><textarea name="profile_bio" maxlength="500">{{ profile_info.profile_bio|default:'' }}</textarea></div>
-              <div class="field">
-                <label>Gender</label>
-                <select name="profile_gender">
-                  <option value="">Prefer not to say</option>
-                  {% for value, label in profile_info.Gender.choices %}
-                    <option value="{{ value }}" {% if profile_info.profile_gender == value %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
+            <input type="hidden" name="action" value="update_contact_privacy">
+            <div class="toggle-list">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Public contact card</div><div class="t-desc">Master switch — show a contact card on your profile at all.</div></div>
+                <label class="switch"><input type="checkbox" name="is_contact_public" {% if contact_info.is_contact_public %}checked{% endif %}><span class="track"></span></label>
               </div>
-              <div class="field"><label>Date of birth</label><input type="date" name="profile_dob" value="{{ profile_info.profile_dob|date:'Y-m-d' }}"></div>
-              <div class="field"><label>Phone</label><input type="tel" name="profile_phone" value="{{ profile_info.profile_phone|default:'' }}"></div>
-              <div class="field">
-                <label>Preferred language</label>
-                <input type="text" name="profile_language" value="{{ profile_info.profile_language|default:'' }}" placeholder="e.g. en, bn">
+              <div class="toggle-row">
+                <div class="toggle-copy"><div class="t-label">Allow contact requests</div><div class="t-desc">Let others request your contact details.</div></div>
+                <label class="switch"><input type="checkbox" name="allow_contact_requests" {% if contact_info.allow_contact_requests %}checked{% elif not contact_info %}checked{% endif %}><span class="track"></span></label>
               </div>
-              <div class="field"><label>Country</label><input type="text" name="profile_country" maxlength="2" placeholder="ISO code, e.g. BD" value="{{ profile_info.profile_country|default:'' }}"></div>
-              <div class="field"><label>State / Province</label><input type="text" name="profile_state" value="{{ profile_info.profile_state|default:'' }}"></div>
-              <div class="field"><label>City</label><input type="text" name="profile_city" value="{{ profile_info.profile_city|default:'' }}"></div>
-              <div class="field"><label>Postal code</label><input type="text" name="profile_postal_code" value="{{ profile_info.profile_postal_code|default:'' }}"></div>
-              <div class="field span-2"><label>Street address</label><input type="text" name="profile_address" value="{{ profile_info.profile_address|default:'' }}"></div>
-              <div class="field"><label>Profile photo</label><input type="file" name="profile_photo" accept="image/*"></div>
-              <div class="field"><label>Cover photo</label><input type="file" name="profile_cover_photo" accept="image/*"></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Alternate email</div></div><label class="switch"><input type="checkbox" name="show_email" {% if contact_info.show_email %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Phone number</div></div><label class="switch"><input type="checkbox" name="show_phone" {% if contact_info.show_phone %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">WhatsApp</div></div><label class="switch"><input type="checkbox" name="show_whatsapp" {% if contact_info.show_whatsapp %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Telegram</div></div><label class="switch"><input type="checkbox" name="show_telegram" {% if contact_info.show_telegram %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Signal</div></div><label class="switch"><input type="checkbox" name="show_signal" {% if contact_info.show_signal %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Viber</div></div><label class="switch"><input type="checkbox" name="show_viber" {% if contact_info.show_viber %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">WeChat</div></div><label class="switch"><input type="checkbox" name="show_wechat" {% if contact_info.show_wechat %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">LINE</div></div><label class="switch"><input type="checkbox" name="show_line" {% if contact_info.show_line %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">imo</div></div><label class="switch"><input type="checkbox" name="show_imo" {% if contact_info.show_imo %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Skype</div></div><label class="switch"><input type="checkbox" name="show_skype" {% if contact_info.show_skype %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Discord</div></div><label class="switch"><input type="checkbox" name="show_discord" {% if contact_info.show_discord %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Messenger</div></div><label class="switch"><input type="checkbox" name="show_facebook_messenger" {% if contact_info.show_facebook_messenger %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Instagram</div></div><label class="switch"><input type="checkbox" name="show_instagram" {% if contact_info.show_instagram %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Snapchat</div></div><label class="switch"><input type="checkbox" name="show_snapchat" {% if contact_info.show_snapchat %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Twitter / X</div></div><label class="switch"><input type="checkbox" name="show_twitter" {% if contact_info.show_twitter %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">LinkedIn</div></div><label class="switch"><input type="checkbox" name="show_linkedin" {% if contact_info.show_linkedin %}checked{% endif %}><span class="track"></span></label></div>
+              <div class="toggle-row"><div class="toggle-copy"><div class="t-label">Slack</div></div><label class="switch"><input type="checkbox" name="show_slack" {% if contact_info.show_slack %}checked{% endif %}><span class="track"></span></label></div>
             </div>
             <div class="form-actions">
-              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save profile</button>
+              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save visibility</button>
             </div>
           </form>
         </div>
@@ -550,6 +1285,7 @@
         <div class="card">
           <div class="card-head">
             <div><div class="card-title">Business</div><p class="card-desc">Shown to buyers on your dealer storefront.</p></div>
+            <span class="badge {% if business_completion_percentage >= 80 %}ok{% elif business_completion_percentage >= 40 %}warn{% else %}danger{% endif %}">{{ business_completion_percentage }}% complete</span>
           </div>
           <div class="stat-cards">
             <div class="stat-card"><div class="num">{{ products_listed_count }}</div><div class="lbl">Listed products</div></div>
@@ -557,23 +1293,174 @@
             <div class="stat-card"><div class="num">{{ brands_count }}</div><div class="lbl">Brands on PIELAM</div></div>
             <div class="stat-card"><div class="num">{{ categories_count }}</div><div class="lbl">Categories</div></div>
           </div>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_business">
-            <div class="form-grid">
-              <div class="field"><label>Business name</label><input type="text" name="business_name" value="{{ profile_info.business_name|default:'' }}"></div>
-              <div class="field"><label>Business type</label><input type="text" name="business_type" value="{{ profile_info.business_type|default:'' }}" placeholder="Retail, Wholesale…"></div>
-              <div class="field"><label>Registration number</label><input type="text" name="business_registration" value="{{ profile_info.business_registration|default:'' }}"></div>
-              <div class="field"><label>Tax ID</label><input type="text" name="business_tax_id" value="{{ profile_info.business_tax_id|default:'' }}"></div>
-              <div class="field"><label>Website</label><input type="url" name="business_website" value="{{ profile_info.business_website|default:'' }}"></div>
-              <div class="field"><label>Business email</label><input type="email" name="business_email" value="{{ profile_info.business_email|default:'' }}"></div>
-              <div class="field"><label>Business phone</label><input type="tel" name="business_phone" value="{{ profile_info.business_phone|default:'' }}"></div>
-              <div class="field span-2"><label>Description</label><textarea name="business_description" maxlength="1000">{{ profile_info.business_description|default:'' }}</textarea></div>
+          {% if not business_info %}
+          <div class="inline-alert info"><i class="fa-solid fa-circle-info"></i> You haven't set up your business profile yet — a business name is required before this can be saved.</div>
+          {% endif %}
+
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Business name <span class="hint">required</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_name %}empty{% endif %}" data-fv-display="business_name">{{ business_info.business_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save business info</button>
+            <template id="tpl-business_name" data-fv-action="update_business" data-fv-field="business_name" data-fv-title="Business name" data-fv-required="1">
+              <input type="text" name="business_name" value="{{ business_info.business_name|default:'' }}" required>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Legal name</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.legal_name %}empty{% endif %}" data-fv-display="legal_name">{{ business_info.legal_name|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-legal_name"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
             </div>
-          </form>
+            <template id="tpl-legal_name" data-fv-action="update_business" data-fv-field="legal_name" data-fv-title="Legal name">
+              <input type="text" name="legal_name" value="{{ business_info.legal_name|default:'' }}" placeholder="If different from business name">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business type</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="business_type">{{ business_info.get_business_type_display|default:"Other" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_type"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_type" data-fv-action="update_business" data-fv-field="business_type" data-fv-title="Business type">
+              <select name="business_type">
+                <option value="sole_proprietorship" {% if business_info.business_type == "sole_proprietorship" %}selected{% endif %}>Sole Proprietorship</option>
+                <option value="partnership" {% if business_info.business_type == "partnership" %}selected{% endif %}>Partnership</option>
+                <option value="llc" {% if business_info.business_type == "llc" %}selected{% endif %}>Limited Liability Company</option>
+                <option value="corporation" {% if business_info.business_type == "corporation" %}selected{% endif %}>Corporation</option>
+                <option value="nonprofit" {% if business_info.business_type == "nonprofit" %}selected{% endif %}>Nonprofit</option>
+                <option value="other" {% if business_info.business_type == "other" or not business_info %}selected{% endif %}>Other</option>
+              </select>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Industry</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.industry %}empty{% endif %}" data-fv-display="industry">{{ business_info.industry|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-industry"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-industry" data-fv-action="update_business" data-fv-field="industry" data-fv-title="Industry">
+              <input type="text" name="industry" value="{{ business_info.industry|default:'' }}" placeholder="e.g. Robotics & Automation">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Founded date</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.founded_date %}empty{% endif %}" data-fv-display="founded_date">{{ business_info.founded_date|date:"M j, Y"|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-founded_date"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-founded_date" data-fv-action="update_business" data-fv-field="founded_date" data-fv-title="Founded date">
+              <input type="date" name="founded_date" value="{{ business_info.founded_date|date:'Y-m-d' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Registration number</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.registration_number %}empty{% endif %}" data-fv-display="registration_number">{{ business_info.registration_number|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-registration_number"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-registration_number" data-fv-action="update_business" data-fv-field="registration_number" data-fv-title="Registration number">
+              <input type="text" name="registration_number" value="{{ business_info.registration_number|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Tax ID</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.tax_id %}empty{% endif %}" data-fv-display="tax_id">{{ business_info.tax_id|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-tax_id"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-tax_id" data-fv-action="update_business" data-fv-field="tax_id" data-fv-title="Tax ID">
+              <input type="text" name="tax_id" value="{{ business_info.tax_id|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Website</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.website %}empty{% endif %}" data-fv-display="website">{{ business_info.website|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_website"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_website" data-fv-action="update_business" data-fv-field="website" data-fv-title="Website">
+              <input type="url" name="website" value="{{ business_info.website|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business email</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_email %}empty{% endif %}" data-fv-display="business_email">{{ business_info.business_email|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_email"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_email" data-fv-action="update_business" data-fv-field="business_email" data-fv-title="Business email">
+              <input type="email" name="business_email" value="{{ business_info.business_email|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Business phone</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.business_phone %}empty{% endif %}" data-fv-display="business_phone">{{ business_info.business_phone|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-business_phone"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-business_phone" data-fv-action="update_business" data-fv-field="business_phone" data-fv-title="Business phone">
+              <input type="tel" name="business_phone" value="{{ business_info.business_phone|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Employee count</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.employee_count %}empty{% endif %}" data-fv-display="employee_count">{{ business_info.employee_count|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-employee_count"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-employee_count" data-fv-action="update_business" data-fv-field="employee_count" data-fv-title="Employee count">
+              <input type="number" name="employee_count" min="0" value="{{ business_info.employee_count|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Annual revenue</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.annual_revenue %}empty{% endif %}" data-fv-display="annual_revenue">{{ business_info.annual_revenue|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-annual_revenue"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-annual_revenue" data-fv-action="update_business" data-fv-field="annual_revenue" data-fv-title="Annual revenue">
+              <input type="number" step="0.01" min="0" name="annual_revenue" value="{{ business_info.annual_revenue|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Currency <span class="hint">ISO code, defaults to USD</span></span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.currency %}empty{% endif %}" data-fv-display="currency">{{ business_info.currency|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_currency"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_currency" data-fv-action="update_business" data-fv-field="currency" data-fv-title="Currency">
+              <input type="text" name="currency" maxlength="3" value="{{ business_info.currency|default:'' }}">
+            </template>
+
+            <div class="field-view span-2">
+              <span class="fv-label">Description</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not business_info.description %}empty{% endif %}" data-fv-display="description">{{ business_info.description|default:"Not set"|truncatewords:24 }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-b_description"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-b_description" data-fv-action="update_business" data-fv-field="description" data-fv-title="Business description">
+              <textarea name="description" maxlength="1000">{{ business_info.description|default:'' }}</textarea>
+            </template>
+
+          </div>
         </div>
       </section>
       {% endif %}
@@ -582,32 +1469,253 @@
       <section class="panel" data-panel="social">
         <div class="card">
           <div class="card-head">
-            <div><div class="card-title">Social links</div><p class="card-desc">Link out to your other profiles.</p></div>
+            <div><div class="card-title">Social links</div><p class="card-desc">Link out to your other profiles. Add as many or as few as you like.</p></div>
+            <span class="badge {% if social_link_count > 0 %}ok{% else %}warn{% endif %}">{{ social_link_count }} link{{ social_link_count|pluralize }}</span>
           </div>
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_social">
-            <div class="form-grid">
-              <div class="field"><label><i class="fa-brands fa-facebook"></i> Facebook</label><input type="url" name="social_facebook" value="{{ profile_info.social_facebook|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-x-twitter"></i> Twitter / X</label><input type="url" name="social_twitter" value="{{ profile_info.social_twitter|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-instagram"></i> Instagram</label><input type="url" name="social_instagram" value="{{ profile_info.social_instagram|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-linkedin"></i> LinkedIn</label><input type="url" name="social_linkedin" value="{{ profile_info.social_linkedin|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-youtube"></i> YouTube</label><input type="url" name="social_youtube" value="{{ profile_info.social_youtube|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-tiktok"></i> TikTok</label><input type="url" name="social_tiktok" value="{{ profile_info.social_tiktok|default:'' }}"></div>
-              <div class="field"><label><i class="fa-brands fa-whatsapp"></i> WhatsApp</label><input type="tel" name="social_whatsapp" value="{{ profile_info.social_whatsapp|default:'' }}"></div>
+
+          <div class="field-view-grid">
+
+            <div class="fv-subhead">Mainstream social</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-facebook"></i> Facebook</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.facebook_url %}empty{% endif %}" data-fv-display="facebook_url">{{ social_info.facebook_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-facebook_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save links</button>
+            <template id="tpl-facebook_url" data-fv-action="update_social" data-fv-field="facebook_url" data-fv-title="Facebook"><input type="url" name="facebook_url" value="{{ social_info.facebook_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-instagram"></i> Instagram</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.instagram_url %}empty{% endif %}" data-fv-display="instagram_url">{{ social_info.instagram_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-instagram_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
             </div>
-          </form>
+            <template id="tpl-instagram_url" data-fv-action="update_social" data-fv-field="instagram_url" data-fv-title="Instagram"><input type="url" name="instagram_url" value="{{ social_info.instagram_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-x-twitter"></i> X / Twitter</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.twitter_url %}empty{% endif %}" data-fv-display="twitter_url">{{ social_info.twitter_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-twitter_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-twitter_url" data-fv-action="update_social" data-fv-field="twitter_url" data-fv-title="X / Twitter"><input type="url" name="twitter_url" value="{{ social_info.twitter_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-threads"></i> Threads</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.threads_url %}empty{% endif %}" data-fv-display="threads_url">{{ social_info.threads_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-threads_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-threads_url" data-fv-action="update_social" data-fv-field="threads_url" data-fv-title="Threads"><input type="url" name="threads_url" value="{{ social_info.threads_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-snapchat"></i> Snapchat</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.snapchat_url %}empty{% endif %}" data-fv-display="snapchat_url">{{ social_info.snapchat_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-snapchat_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-snapchat_url" data-fv-action="update_social" data-fv-field="snapchat_url" data-fv-title="Snapchat"><input type="url" name="snapchat_url" value="{{ social_info.snapchat_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-pinterest"></i> Pinterest</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.pinterest_url %}empty{% endif %}" data-fv-display="pinterest_url">{{ social_info.pinterest_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-pinterest_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-pinterest_url" data-fv-action="update_social" data-fv-field="pinterest_url" data-fv-title="Pinterest"><input type="url" name="pinterest_url" value="{{ social_info.pinterest_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-tiktok"></i> TikTok</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.tiktok_url %}empty{% endif %}" data-fv-display="tiktok_url">{{ social_info.tiktok_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-tiktok_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-tiktok_url" data-fv-action="update_social" data-fv-field="tiktok_url" data-fv-title="TikTok"><input type="url" name="tiktok_url" value="{{ social_info.tiktok_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Bluesky</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.bluesky_url %}empty{% endif %}" data-fv-display="bluesky_url">{{ social_info.bluesky_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-bluesky_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-bluesky_url" data-fv-action="update_social" data-fv-field="bluesky_url" data-fv-title="Bluesky"><input type="url" name="bluesky_url" value="{{ social_info.bluesky_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-mastodon"></i> Mastodon</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.mastodon_url %}empty{% endif %}" data-fv-display="mastodon_url">{{ social_info.mastodon_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-mastodon_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-mastodon_url" data-fv-action="update_social" data-fv-field="mastodon_url" data-fv-title="Mastodon"><input type="url" name="mastodon_url" value="{{ social_info.mastodon_url|default:'' }}" placeholder="Any instance"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-reddit"></i> Reddit</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.reddit_url %}empty{% endif %}" data-fv-display="reddit_url">{{ social_info.reddit_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-reddit_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-reddit_url" data-fv-action="update_social" data-fv-field="reddit_url" data-fv-title="Reddit"><input type="url" name="reddit_url" value="{{ social_info.reddit_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-tumblr"></i> Tumblr</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.tumblr_url %}empty{% endif %}" data-fv-display="tumblr_url">{{ social_info.tumblr_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-tumblr_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-tumblr_url" data-fv-action="update_social" data-fv-field="tumblr_url" data-fv-title="Tumblr"><input type="url" name="tumblr_url" value="{{ social_info.tumblr_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-vk"></i> VK</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.vk_url %}empty{% endif %}" data-fv-display="vk_url">{{ social_info.vk_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-vk_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-vk_url" data-fv-action="update_social" data-fv-field="vk_url" data-fv-title="VK"><input type="url" name="vk_url" value="{{ social_info.vk_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weibo"></i> Weibo</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.weibo_url %}empty{% endif %}" data-fv-display="weibo_url">{{ social_info.weibo_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-weibo_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-weibo_url" data-fv-action="update_social" data-fv-field="weibo_url" data-fv-title="Weibo"><input type="url" name="weibo_url" value="{{ social_info.weibo_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-line"></i> LINE</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.line_url %}empty{% endif %}" data-fv-display="line_url">{{ social_info.line_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_line_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_line_url" data-fv-action="update_social" data-fv-field="line_url" data-fv-title="LINE"><input type="url" name="line_url" value="{{ social_info.line_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-weixin"></i> WeChat</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.wechat_url %}empty{% endif %}" data-fv-display="wechat_url">{{ social_info.wechat_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_wechat_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_wechat_url" data-fv-action="update_social" data-fv-field="wechat_url" data-fv-title="WeChat"><input type="url" name="wechat_url" value="{{ social_info.wechat_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Professional</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-linkedin"></i> LinkedIn</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.linkedin_url %}empty{% endif %}" data-fv-display="social_linkedin_url">{{ social_info.linkedin_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_linkedin_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_linkedin_url" data-fv-action="update_social" data-fv-field="linkedin_url" data-fv-title="LinkedIn"><input type="url" name="linkedin_url" value="{{ social_info.linkedin_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-github"></i> GitHub</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.github_url %}empty{% endif %}" data-fv-display="github_url">{{ social_info.github_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-github_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-github_url" data-fv-action="update_social" data-fv-field="github_url" data-fv-title="GitHub"><input type="url" name="github_url" value="{{ social_info.github_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-gitlab"></i> GitLab</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.gitlab_url %}empty{% endif %}" data-fv-display="gitlab_url">{{ social_info.gitlab_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-gitlab_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-gitlab_url" data-fv-action="update_social" data-fv-field="gitlab_url" data-fv-title="GitLab"><input type="url" name="gitlab_url" value="{{ social_info.gitlab_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Behance</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.behance_url %}empty{% endif %}" data-fv-display="behance_url">{{ social_info.behance_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-behance_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-behance_url" data-fv-action="update_social" data-fv-field="behance_url" data-fv-title="Behance"><input type="url" name="behance_url" value="{{ social_info.behance_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-dribbble"></i> Dribbble</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.dribbble_url %}empty{% endif %}" data-fv-display="dribbble_url">{{ social_info.dribbble_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-dribbble_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-dribbble_url" data-fv-action="update_social" data-fv-field="dribbble_url" data-fv-title="Dribbble"><input type="url" name="dribbble_url" value="{{ social_info.dribbble_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Video, streaming &amp; audio</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-youtube"></i> YouTube</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.youtube_url %}empty{% endif %}" data-fv-display="youtube_url">{{ social_info.youtube_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-youtube_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-youtube_url" data-fv-action="update_social" data-fv-field="youtube_url" data-fv-title="YouTube"><input type="url" name="youtube_url" value="{{ social_info.youtube_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-twitch"></i> Twitch</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.twitch_url %}empty{% endif %}" data-fv-display="twitch_url">{{ social_info.twitch_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-twitch_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-twitch_url" data-fv-action="update_social" data-fv-field="twitch_url" data-fv-title="Twitch"><input type="url" name="twitch_url" value="{{ social_info.twitch_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-vimeo"></i> Vimeo</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.vimeo_url %}empty{% endif %}" data-fv-display="vimeo_url">{{ social_info.vimeo_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-vimeo_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-vimeo_url" data-fv-action="update_social" data-fv-field="vimeo_url" data-fv-title="Vimeo"><input type="url" name="vimeo_url" value="{{ social_info.vimeo_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-spotify"></i> Spotify</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.spotify_url %}empty{% endif %}" data-fv-display="spotify_url">{{ social_info.spotify_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-spotify_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-spotify_url" data-fv-action="update_social" data-fv-field="spotify_url" data-fv-title="Spotify"><input type="url" name="spotify_url" value="{{ social_info.spotify_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-soundcloud"></i> SoundCloud</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.soundcloud_url %}empty{% endif %}" data-fv-display="soundcloud_url">{{ social_info.soundcloud_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-soundcloud_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-soundcloud_url" data-fv-action="update_social" data-fv-field="soundcloud_url" data-fv-title="SoundCloud"><input type="url" name="soundcloud_url" value="{{ social_info.soundcloud_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Kick</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.kick_url %}empty{% endif %}" data-fv-display="kick_url">{{ social_info.kick_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-kick_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-kick_url" data-fv-action="update_social" data-fv-field="kick_url" data-fv-title="Kick"><input type="url" name="kick_url" value="{{ social_info.kick_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Writing &amp; community</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-medium"></i> Medium</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.medium_url %}empty{% endif %}" data-fv-display="medium_url">{{ social_info.medium_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-medium_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-medium_url" data-fv-action="update_social" data-fv-field="medium_url" data-fv-title="Medium"><input type="url" name="medium_url" value="{{ social_info.medium_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Substack</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.substack_url %}empty{% endif %}" data-fv-display="substack_url">{{ social_info.substack_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-substack_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-substack_url" data-fv-action="update_social" data-fv-field="substack_url" data-fv-title="Substack"><input type="url" name="substack_url" value="{{ social_info.substack_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-quora"></i> Quora</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.quora_url %}empty{% endif %}" data-fv-display="quora_url">{{ social_info.quora_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-quora_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-quora_url" data-fv-action="update_social" data-fv-field="quora_url" data-fv-title="Quora"><input type="url" name="quora_url" value="{{ social_info.quora_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-discord"></i> Discord</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.discord_url %}empty{% endif %}" data-fv-display="social_discord_url">{{ social_info.discord_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_discord_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_discord_url" data-fv-action="update_social" data-fv-field="discord_url" data-fv-title="Discord"><input type="url" name="discord_url" value="{{ social_info.discord_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-telegram"></i> Telegram</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.telegram_url %}empty{% endif %}" data-fv-display="social_telegram_url">{{ social_info.telegram_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-social_telegram_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-social_telegram_url" data-fv-action="update_social" data-fv-field="telegram_url" data-fv-title="Telegram"><input type="url" name="telegram_url" value="{{ social_info.telegram_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.whatsapp_url %}empty{% endif %}" data-fv-display="whatsapp_url">{{ social_info.whatsapp_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-whatsapp_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-whatsapp_url" data-fv-action="update_social" data-fv-field="whatsapp_url" data-fv-title="WhatsApp" ><input type="url" name="whatsapp_url" value="{{ social_info.whatsapp_url|default:'' }}" placeholder="wa.me link"></template>
+
+            <div class="fv-subhead">Interests &amp; niche communities</div>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-goodreads"></i> Goodreads</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.goodreads_url %}empty{% endif %}" data-fv-display="goodreads_url">{{ social_info.goodreads_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-goodreads_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-goodreads_url" data-fv-action="update_social" data-fv-field="goodreads_url" data-fv-title="Goodreads"><input type="url" name="goodreads_url" value="{{ social_info.goodreads_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label">Letterboxd</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.letterboxd_url %}empty{% endif %}" data-fv-display="letterboxd_url">{{ social_info.letterboxd_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-letterboxd_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-letterboxd_url" data-fv-action="update_social" data-fv-field="letterboxd_url" data-fv-title="Letterboxd"><input type="url" name="letterboxd_url" value="{{ social_info.letterboxd_url|default:'' }}"></template>
+
+            <div class="field-view">
+              <span class="fv-label"><i class="fa-brands fa-strava"></i> Strava</span>
+              <div class="fv-row"><span class="fv-value {% if not social_info.strava_url %}empty{% endif %}" data-fv-display="strava_url">{{ social_info.strava_url|default:"Not set" }}</span><button type="button" class="fv-edit-btn" data-fv-open="tpl-strava_url"><i class="fa-solid fa-pen"></i> Edit</button></div>
+            </div>
+            <template id="tpl-strava_url" data-fv-action="update_social" data-fv-field="strava_url" data-fv-title="Strava"><input type="url" name="strava_url" value="{{ social_info.strava_url|default:'' }}"></template>
+
+            <div class="fv-subhead">Website</div>
+            <div class="field-view span-2">
+              <span class="fv-label">Personal or business website</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not social_info.website_url %}empty{% endif %}" data-fv-display="website_url">{{ social_info.website_url|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-website_url"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-website_url" data-fv-action="update_social" data-fv-field="website_url" data-fv-title="Website">
+              <input type="url" name="website_url" value="{{ social_info.website_url|default:'' }}">
+            </template>
+
+          </div>
         </div>
       </section>
 
-      <!-- PRIVACY -->
+      <!-- PRIVACY (toggles — unchanged, already single-click) -->
       <section class="panel" data-panel="privacy">
         <div class="card">
           <div class="card-head">
-            <div><div class="card-title">Privacy</div><p class="card-desc">Control what others can see and do.</p></div>
+            <div><div class="card-title">Privacy</div><p class="card-desc">Control what others can see and do on your profile.</p></div>
           </div>
           <form method="post">
             {% csrf_token %}
@@ -618,11 +1726,11 @@
                 <label class="switch"><input type="checkbox" name="is_profile_public" {% if profile_info.is_profile_public %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
-                <div class="toggle-copy"><div class="t-label">Show email</div><div class="t-desc">Display your email address publicly.</div></div>
+                <div class="toggle-copy"><div class="t-label">Show email on profile</div><div class="t-desc">Display your primary account email publicly. (Alt-email visibility is set on the Contact tab.)</div></div>
                 <label class="switch"><input type="checkbox" name="show_email" {% if profile_info.show_email %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
-                <div class="toggle-copy"><div class="t-label">Show phone</div><div class="t-desc">Display your phone number publicly.</div></div>
+                <div class="toggle-copy"><div class="t-label">Show phone on profile</div><div class="t-desc">Display your primary account phone publicly. (Other numbers' visibility is set on the Contact tab.)</div></div>
                 <label class="switch"><input type="checkbox" name="show_phone" {% if profile_info.show_phone %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
@@ -634,7 +1742,7 @@
                 <label class="switch"><input type="checkbox" name="show_age" {% if profile_info.show_age %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
-                <div class="toggle-copy"><div class="t-label">Show location</div><div class="t-desc">Display your city and country.</div></div>
+                <div class="toggle-copy"><div class="t-label">Show location</div><div class="t-desc">Display your city and country from the Location tab.</div></div>
                 <label class="switch"><input type="checkbox" name="show_location" {% if profile_info.show_location %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
@@ -661,7 +1769,7 @@
         </div>
       </section>
 
-      <!-- NOTIFICATIONS -->
+      <!-- NOTIFICATIONS (toggles — unchanged) -->
       <section class="panel" data-panel="notifications">
         <div class="card">
           <div class="card-head">
@@ -678,14 +1786,6 @@
               <div class="toggle-row">
                 <div class="toggle-copy"><div class="t-label">New messages</div><div class="t-desc">You receive a direct message.</div></div>
                 <label class="switch"><input type="checkbox" name="notify_on_message" {% if profile_info.notify_on_message %}checked{% endif %}><span class="track"></span></label>
-              </div>
-              <div class="toggle-row">
-                <div class="toggle-copy"><div class="t-label">New comments</div><div class="t-desc">Someone comments on your content.</div></div>
-                <label class="switch"><input type="checkbox" name="notify_on_comment" {% if profile_info.notify_on_comment %}checked{% endif %}><span class="track"></span></label>
-              </div>
-              <div class="toggle-row">
-                <div class="toggle-copy"><div class="t-label">Mentions</div><div class="t-desc">Someone mentions you.</div></div>
-                <label class="switch"><input type="checkbox" name="notify_on_mention" {% if profile_info.notify_on_mention %}checked{% endif %}><span class="track"></span></label>
               </div>
               <div class="toggle-row">
                 <div class="toggle-copy"><div class="t-label">Email notifications</div><div class="t-desc">Receive these updates by email.</div></div>
@@ -752,34 +1852,55 @@
           <div class="inline-alert warn"><i class="fa-solid fa-lock"></i> Your account is temporarily locked due to failed sign-in attempts.</div>
           {% endif %}
 
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_account">
-            <div class="form-grid">
-              <div class="field">
-                <label>Language</label>
-                <select name="language">
-                  <option value="en" {% if user.language == "en" %}selected{% endif %}>English</option>
-                  <option value="bn" {% if user.language == "bn" %}selected{% endif %}>Bengali</option>
-                  <option value="es" {% if user.language == "es" %}selected{% endif %}>Spanish</option>
-                  <option value="fr" {% if user.language == "fr" %}selected{% endif %}>French</option>
-                  <option value="de" {% if user.language == "de" %}selected{% endif %}>German</option>
-                  <option value="zh" {% if user.language == "zh" %}selected{% endif %}>Chinese</option>
-                  <option value="ar" {% if user.language == "ar" %}selected{% endif %}>Arabic</option>
-                  <option value="hi" {% if user.language == "hi" %}selected{% endif %}>Hindi</option>
-                </select>
+          <div class="field-view-grid">
+
+            <div class="field-view">
+              <span class="fv-label">Language</span>
+              <div class="fv-row">
+                <span class="fv-value" data-fv-display="language">{{ user.language|default:"English" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-language"><i class="fa-solid fa-pen"></i> Edit</button>
               </div>
-              <div class="field"><label>Country</label><input type="text" name="country" maxlength="2" placeholder="ISO code" value="{{ user.country|default:'' }}"></div>
-              <div class="field"><label>Currency</label><input type="text" name="currency" maxlength="3" placeholder="ISO code, e.g. USD" value="{{ user.currency }}"></div>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-gold"><i class="fa-solid fa-check"></i> Save account settings</button>
+            <template id="tpl-language" data-fv-action="update_account" data-fv-field="language" data-fv-title="Language">
+              <select name="language">
+                <option value="English" {% if user.language == "English" %}selected{% endif %}>English</option>
+                <option value="Bengali" {% if user.language == "Bengali" %}selected{% endif %}>Bengali</option>
+                <option value="Spanish" {% if user.language == "Spanish" %}selected{% endif %}>Spanish</option>
+                <option value="French" {% if user.language == "French" %}selected{% endif %}>French</option>
+                <option value="German" {% if user.language == "German" %}selected{% endif %}>German</option>
+                <option value="Chinese" {% if user.language == "Chinese" %}selected{% endif %}>Chinese</option>
+                <option value="Arabic" {% if user.language == "Arabic" %}selected{% endif %}>Arabic</option>
+                <option value="Hindi" {% if user.language == "Hindi" %}selected{% endif %}>Hindi</option>
+              </select>
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Country</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not user.country %}empty{% endif %}" data-fv-display="account_country">{{ user.country|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-account_country"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
             </div>
-          </form>
+            <template id="tpl-account_country" data-fv-action="update_account" data-fv-field="country" data-fv-title="Country">
+              <input type="text" name="country" placeholder="e.g. Bangladesh" value="{{ user.country|default:'' }}">
+            </template>
+
+            <div class="field-view">
+              <span class="fv-label">Currency</span>
+              <div class="fv-row">
+                <span class="fv-value {% if not user.currency %}empty{% endif %}" data-fv-display="account_currency">{{ user.currency|default:"Not set" }}</span>
+                <button type="button" class="fv-edit-btn" data-fv-open="tpl-account_currency"><i class="fa-solid fa-pen"></i> Edit</button>
+              </div>
+            </div>
+            <template id="tpl-account_currency" data-fv-action="update_account" data-fv-field="currency" data-fv-title="Currency">
+              <input type="text" name="currency" maxlength="3" placeholder="ISO code, e.g. USD" value="{{ user.currency }}">
+            </template>
+
+          </div>
         </div>
       </section>
 
-      <!-- SECURITY -->
+      <!-- SECURITY (multi-field actions — stays as dedicated forms) -->
       <section class="panel" data-panel="security">
         <div class="card">
           <div class="card-head">
@@ -809,7 +1930,7 @@
           </div>
 
           {% if user.mfa_enabled %}
-          <form method="post">
+          <form method="post" class="js-confirm-form" data-confirm="Disable two-factor authentication?">
             {% csrf_token %}
             <input type="hidden" name="action" value="disable_mfa">
             <div class="form-actions align-start">
@@ -839,11 +1960,12 @@
         </div>
       </section>
 
-      <!-- ACTIVITY -->
+      <!-- ACTIVITY (read-only — unchanged) -->
       <section class="panel" data-panel="activity">
         <div class="card">
           <div class="card-head">
             <div><div class="card-title">Who viewed your profile</div><p class="card-desc">Most recent, identifiable visitors.</p></div>
+            <span class="badge ok">{{ profile_view_count }} total view{{ profile_view_count|pluralize }}</span>
           </div>
           {% if recent_viewers %}
           <ul class="viewer-list">
@@ -861,7 +1983,7 @@
         </div>
       </section>
 
-      <!-- DANGER ZONE -->
+      <!-- DANGER ZONE (unchanged) -->
       <section class="panel" data-panel="danger">
         <div class="card danger-card">
           <div class="card-head">
@@ -905,14 +2027,62 @@
   </div>
 
 </div><!-- /.profile-manager -->
+
+<!-- ═══════════════ EDIT-FIELD MODAL (single instance, reused for every field) ═══════════════ -->
+<div class="pm-modal-backdrop js-pm-modal-backdrop" aria-hidden="true">
+  <div class="pm-modal" role="dialog" aria-modal="true" aria-labelledby="pm-modal-title">
+    <h3 id="pm-modal-title" class="js-pm-modal-title">Edit field</h3>
+    <p class="pm-modal-hint">Changes save immediately when you hit Save.</p>
+    <form class="js-pm-modal-form">
+      <div class="pm-field-wrap js-pm-field-wrap"><!-- cloned input/select/textarea goes here --></div>
+      <div class="pm-error js-pm-modal-error"></div>
+      <div class="pm-actions">
+        <button type="button" class="pm-btn pm-btn-cancel js-pm-cancel">Cancel</button>
+        <button type="submit" class="pm-btn pm-btn-save js-pm-save">
+          <span class="pm-spinner"></span>
+          <span class="pm-btn-save-text">Save</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ VERIFY-CHANNEL MODAL (new — separate instance, reused for every verifiable channel) ═══════════════ -->
+<div class="pm-modal-backdrop js-verify-modal-backdrop" aria-hidden="true">
+  <div class="pm-modal" role="dialog" aria-modal="true" aria-labelledby="verify-modal-title">
+    <h3 id="verify-modal-title" class="js-verify-modal-title">Verify</h3>
+    <p class="pm-modal-hint js-verify-modal-hint">Sending a code…</p>
+
+    <form class="js-verify-code-form" style="display:none">
+      <div class="pm-field-wrap">
+        <input type="text" name="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
+      </div>
+      <div class="pm-error js-verify-code-error"></div>
+      <div class="pm-actions">
+        <button type="button" class="pm-btn pm-btn-cancel js-verify-cancel">Cancel</button>
+        <button type="submit" class="pm-btn pm-btn-save js-verify-confirm">
+          <span class="pm-spinner"></span>
+          <span class="pm-btn-save-text">Confirm</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="js-verify-static-message" style="display:none">
+      <div class="pm-error js-verify-static-error" style="display:block;color:#1a6b3a;background:#edf7f1;padding:12px;border-radius:8px;"></div>
+      <div class="pm-actions"><button type="button" class="pm-btn pm-btn-cancel js-verify-close">Close</button></div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
 (function () {
   var root = document.querySelector('.profile-manager');
   if (!root) return;
 
+  /* ── Tab switching (unchanged) ─────────────────────────────── */
   var buttons = root.querySelectorAll('.nav-btn');
   var panels = root.querySelectorAll('.panel');
 
@@ -947,6 +2117,353 @@
       if (!window.confirm(form.getAttribute('data-confirm'))) e.preventDefault();
     });
   });
+
+  /* ── Toast helper ───────────────────────────────────────────── */
+  var toastStack = document.querySelector('.js-toast-stack');
+  function showToast(message, type) {
+    if (!toastStack) return;
+    var el = document.createElement('div');
+    el.className = 'pm-toast ' + (type || 'success');
+    el.textContent = message;
+    toastStack.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.remove(); }, 250);
+    }, 3500);
+  }
+
+  /* ── Edit-field modal controller (generic — works for every field) ── */
+  var backdrop = document.querySelector('.js-pm-modal-backdrop');
+  var modalTitle = document.querySelector('.js-pm-modal-title');
+  var modalFieldWrap = document.querySelector('.js-pm-field-wrap');
+  var modalForm = document.querySelector('.js-pm-modal-form');
+  var modalError = document.querySelector('.js-pm-modal-error');
+  var modalSaveBtn = document.querySelector('.js-pm-save');
+  var modalCancelBtn = document.querySelector('.js-pm-cancel');
+  var csrfToken = (document.querySelector('[name=csrfmiddlewaretoken]') || {}).value || '';
+
+  var activeTrigger = null; // the .fv-edit-btn that opened the modal, so we know where to write the result back
+
+  function openModalFor(templateId, triggerBtn) {
+    var tpl = document.getElementById(templateId);
+    if (!tpl) return;
+
+    activeTrigger = triggerBtn;
+    modalTitle.textContent = tpl.getAttribute('data-fv-title') || 'Edit field';
+    modalForm.setAttribute('data-fv-action', tpl.getAttribute('data-fv-action'));
+    modalForm.setAttribute('data-fv-field', tpl.getAttribute('data-fv-field'));
+    modalForm.setAttribute('data-fv-filefield', tpl.getAttribute('data-fv-filefield') || '');
+
+    modalFieldWrap.innerHTML = '';
+    modalFieldWrap.appendChild(tpl.content.cloneNode(true));
+    modalError.classList.remove('show');
+    modalError.textContent = '';
+
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+
+    var firstInput = modalFieldWrap.querySelector('input, select, textarea');
+    if (firstInput) setTimeout(function () { firstInput.focus(); }, 50);
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden', 'true');
+    activeTrigger = null;
+  }
+
+  root.querySelectorAll('[data-fv-open]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      openModalFor(btn.getAttribute('data-fv-open'), btn);
+    });
+  });
+
+  modalCancelBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', function (e) {
+    if (e.target === backdrop) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && backdrop.classList.contains('open')) closeModal();
+  });
+
+  modalForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var action = modalForm.getAttribute('data-fv-action');
+    var fieldName = modalForm.getAttribute('data-fv-field');
+    var isFileField = modalForm.getAttribute('data-fv-filefield') === '1';
+    var input = modalFieldWrap.querySelector('[name="' + fieldName + '"]');
+    if (!input) return;
+
+    if (input.hasAttribute('required') && !input.value) {
+      modalError.textContent = 'This field is required.';
+      modalError.classList.add('show');
+      return;
+    }
+
+    // Snapshot of what the row currently displays, so on success we can
+    // tell whether the value *actually* changed before touching the
+    // verify badge — matches the server, which only invalidates a
+    // verification when the submitted value differs from what was
+    // verified (_invalidate_stale_contact_verifications /
+    // _invalidate_stale_direct_verifications in profile_managers.py).
+    // Previously this reset the badge to "Unverified" on every save
+    // regardless of whether anything changed.
+    var previousDisplayText = null;
+    if (activeTrigger) {
+      var previousRow = activeTrigger.closest('.fv-row');
+      var previousValueEl = previousRow ? previousRow.querySelector('[data-fv-display]') : null;
+      if (previousValueEl) previousDisplayText = previousValueEl.textContent;
+    }
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', action);
+    if (isFileField) {
+      if (input.files && input.files[0]) formData.append(fieldName, input.files[0]);
+    } else {
+      formData.append(fieldName, input.value);
+    }
+
+    modalSaveBtn.classList.add('loading');
+    modalSaveBtn.disabled = true;
+    modalError.classList.remove('show');
+
+    fetch(window.location.pathname, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        modalSaveBtn.classList.remove('loading');
+        modalSaveBtn.disabled = false;
+
+        if (!result.ok || !result.data.success) {
+          var msg = (result.data && result.data.message) || 'Something went wrong. Please try again.';
+          modalError.textContent = msg;
+          modalError.classList.add('show');
+          return;
+        }
+
+        var newDisplayValue = result.data.display_value;
+        var valueActuallyChanged = newDisplayValue !== previousDisplayText;
+
+        // Update the on-page value next to the edit button, then close.
+        if (activeTrigger) {
+          var row = activeTrigger.closest('.fv-row');
+          var valueEl = row ? row.querySelector('[data-fv-display]') : null;
+          if (valueEl) {
+            if (newDisplayValue === undefined || newDisplayValue === null || newDisplayValue === '') {
+              valueEl.textContent = isFileField ? 'Uploaded' : 'Not set';
+              valueEl.classList.toggle('empty', !isFileField);
+            } else {
+              valueEl.textContent = newDisplayValue;
+              valueEl.classList.remove('empty');
+            }
+          } else if (isFileField && row) {
+            var fallback = row.querySelector('.fv-value');
+            if (fallback) { fallback.textContent = 'Uploaded'; fallback.classList.remove('empty'); }
+          }
+        }
+
+        // If this field has a verify badge/button on the row, only reset
+        // it to "Unverified" when the value actually changed — resaving
+        // the same value shouldn't visually un-verify a channel that the
+        // server didn't actually invalidate.
+        if (activeTrigger && valueActuallyChanged) {
+          var editedRow = activeTrigger.closest('.fv-row');
+          if (editedRow) {
+            var badge = editedRow.querySelector('.js-verify-badge');
+            var verifyBtn = editedRow.querySelector('.js-verify-open');
+            var hasValue = !!newDisplayValue;
+            if (badge) {
+              if (hasValue) {
+                badge.style.display = '';
+                badge.classList.remove('ok', 'warn');
+                badge.classList.add('danger');
+                badge.textContent = 'Unverified';
+              } else {
+                badge.style.display = 'none';
+              }
+            }
+            if (verifyBtn) {
+              verifyBtn.style.display = hasValue ? '' : 'none';
+            }
+          }
+        }
+
+        showToast(result.data.message || 'Saved.', 'success');
+        closeModal();
+      })
+      .catch(function () {
+        modalSaveBtn.classList.remove('loading');
+        modalSaveBtn.disabled = false;
+        modalError.textContent = 'Network error — please try again.';
+        modalError.classList.add('show');
+      });
+  });
+
+  /* ── Verify-channel modal controller (new) ───────────────────── */
+  var verifyBackdrop = document.querySelector('.js-verify-modal-backdrop');
+  var verifyTitle = document.querySelector('.js-verify-modal-title');
+  var verifyHint = document.querySelector('.js-verify-modal-hint');
+  var verifyCodeForm = document.querySelector('.js-verify-code-form');
+  var verifyCodeError = document.querySelector('.js-verify-code-error');
+  var verifyConfirmBtn = document.querySelector('.js-verify-confirm');
+  var verifyStaticMsg = document.querySelector('.js-verify-static-message');
+  var verifyStaticError = document.querySelector('.js-verify-static-error');
+  var activeVerifyChannel = null;
+
+  function resetVerifyModal() {
+    verifyCodeForm.style.display = 'none';
+    verifyStaticMsg.style.display = 'none';
+    verifyCodeError.classList.remove('show');
+    verifyCodeError.textContent = '';
+    verifyStaticError.textContent = '';
+    verifyCodeForm.reset();
+  }
+
+  function openVerifyModal(channel, label) {
+    activeVerifyChannel = channel;
+    verifyTitle.textContent = 'Verify ' + label;
+    verifyHint.textContent = 'Sending a code…';
+    resetVerifyModal();
+    verifyBackdrop.classList.add('open');
+    verifyBackdrop.setAttribute('aria-hidden', 'false');
+    startVerification(channel);
+  }
+
+  function closeVerifyModal() {
+    verifyBackdrop.classList.remove('open');
+    verifyBackdrop.setAttribute('aria-hidden', 'true');
+    activeVerifyChannel = null;
+  }
+
+  function updateBadge(channel, status) {
+    var badge = root.querySelector('[data-verify-badge="' + channel + '"]');
+    var verifyBtn = root.querySelector('.js-verify-open[data-verify-channel="' + channel + '"]');
+    if (!badge) return;
+    badge.classList.remove('ok', 'warn', 'danger');
+    if (status === 'verified') {
+      badge.classList.add('ok');
+      badge.innerHTML = '<i class="fa-solid fa-check"></i> Verified';
+      if (verifyBtn) verifyBtn.style.display = 'none';
+    } else if (status === 'pending') {
+      badge.classList.add('warn');
+      badge.textContent = 'Pending';
+    } else {
+      badge.classList.add('danger');
+      badge.textContent = 'Unverified';
+    }
+  }
+
+  function startVerification(channel) {
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', 'start_verification');
+    formData.append('channel', channel);
+
+    fetch(window.location.pathname, {
+      method: 'POST', body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.success) {
+          verifyHint.textContent = '';
+          verifyStaticMsg.style.display = 'block';
+          verifyStaticError.style.color = '#a00d24';
+          verifyStaticError.style.background = '#fef2f2';
+          verifyStaticError.textContent = (result.data && result.data.message) || 'Could not start verification.';
+          return;
+        }
+        if (result.data.next_step === 'enter_code') {
+          verifyHint.textContent = result.data.message;
+          verifyCodeForm.style.display = 'block';
+          var codeInput = verifyCodeForm.querySelector('input[name="code"]');
+          if (codeInput) setTimeout(function () { codeInput.focus(); }, 50);
+        } else {
+          // manual review, phone-match auto-pass, or bot deep-link cases
+          verifyHint.textContent = '';
+          verifyStaticMsg.style.display = 'block';
+          verifyStaticError.style.color = result.data.success ? '#1a6b3a' : '#a00d24';
+          verifyStaticError.style.background = result.data.success ? '#edf7f1' : '#fef2f2';
+          verifyStaticError.textContent = result.data.message;
+          updateBadge(activeVerifyChannel, result.data.success ? 'pending' : 'unverified');
+        }
+      })
+      .catch(function () {
+        verifyHint.textContent = '';
+        verifyStaticMsg.style.display = 'block';
+        verifyStaticError.style.color = '#a00d24';
+        verifyStaticError.style.background = '#fef2f2';
+        verifyStaticError.textContent = 'Network error — please try again.';
+      });
+  }
+
+  root.querySelectorAll('.js-verify-open').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var channel = btn.getAttribute('data-verify-channel');
+      var label = btn.closest('.field-view').querySelector('.fv-label').textContent.trim();
+      openVerifyModal(channel, label);
+    });
+  });
+
+  root.querySelectorAll('.js-verify-cancel, .js-verify-close').forEach(function (btn) {
+    btn.addEventListener('click', closeVerifyModal);
+  });
+  verifyBackdrop.addEventListener('click', function (e) {
+    if (e.target === verifyBackdrop) closeVerifyModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && verifyBackdrop.classList.contains('open')) closeVerifyModal();
+  });
+
+  verifyCodeForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = verifyCodeForm.querySelector('input[name="code"]').value.trim();
+    if (!code) return;
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('action', 'confirm_verification');
+    formData.append('channel', activeVerifyChannel);
+    formData.append('code', code);
+
+    verifyConfirmBtn.classList.add('loading');
+    verifyConfirmBtn.disabled = true;
+    verifyCodeError.classList.remove('show');
+
+    fetch(window.location.pathname, {
+      method: 'POST', body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        verifyConfirmBtn.classList.remove('loading');
+        verifyConfirmBtn.disabled = false;
+        if (!result.ok || !result.data.success) {
+          verifyCodeError.textContent = (result.data && result.data.message) || 'Incorrect code.';
+          verifyCodeError.classList.add('show');
+          return;
+        }
+        updateBadge(activeVerifyChannel, 'verified');
+        showToast(result.data.message || 'Verified.', 'success');
+        closeVerifyModal();
+      })
+      .catch(function () {
+        verifyConfirmBtn.classList.remove('loading');
+        verifyConfirmBtn.disabled = false;
+        verifyCodeError.textContent = 'Network error — please try again.';
+        verifyCodeError.classList.add('show');
+      });
+  });
 })();
 </script>
+
 {% endblock %}
